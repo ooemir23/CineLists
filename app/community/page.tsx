@@ -56,7 +56,7 @@ export default async function CommunityPage(props: { searchParams: Promise<{ q?:
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {users.map(async (user) => {
+                {await Promise.all(users.map(async (user) => {
                     const isFollowing = currentUserId ? await getFollowStatus(user.id) : false;
 
                     return (
@@ -80,7 +80,7 @@ export default async function CommunityPage(props: { searchParams: Promise<{ q?:
                             )}
                         </div>
                     );
-                })}
+                }))}
             </div>
 
             {users.length === 0 && query && (

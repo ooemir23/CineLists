@@ -7,10 +7,10 @@ export const authConfig = {
     callbacks: {
         authorized({ auth, request: { nextUrl } }) {
             const isLoggedIn = !!auth?.user;
-            const isOnProfile = nextUrl.pathname.startsWith("/profile");
-            const isOnWatchlist = nextUrl.pathname.startsWith("/watchlist");
+            const protectedRoutes = ["/profile", "/watchlist", "/feed", "/notifications", "/community", "/messages", "/stats"];
+            const isProtectedRoute = protectedRoutes.some(route => nextUrl.pathname.startsWith(route));
 
-            if (isOnProfile || isOnWatchlist) {
+            if (isProtectedRoute) {
                 if (isLoggedIn) return true;
                 return false; // Redirect unauthenticated users to login page
             }
