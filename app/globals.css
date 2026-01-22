@@ -24,37 +24,46 @@
 }
 
 :root {
-  /* HSL Color Palette - VibeCode Premium Dark Mode */
-  --background: 240 10% 3.9%;
-  --foreground: 0 0% 98%;
+  /* WatchMeOn Inspired Color Palette */
 
-  --card: 240 10% 4.5%;
-  /* Slightly lighter than bg */
-  --card-foreground: 0 0% 98%;
+  /* Main Background: Slate 950 (#020617) */
+  --background: 222 47% 11%;
+  --foreground: 210 40% 98%;
 
-  --popover: 240 10% 3.9%;
-  --popover-foreground: 0 0% 98%;
+  /* Cards / Sidebar: Slate 900 (#0F172A) */
+  --card: 222 47% 11%;
+  --card-foreground: 210 40% 98%;
 
-  --primary: 263.4 70% 50.4%;
-  /* Deep Purple/Violet Vibe */
-  --primary-foreground: 210 40% 98%;
+  /* Popovers */
+  --popover: 222 47% 11%;
+  --popover-foreground: 210 40% 98%;
 
-  --secondary: 240 3.7% 15.9%;
-  --secondary-foreground: 0 0% 98%;
+  /* Primary Accent: Amber 500 (#F59E0B) */
+  --primary: 38 92% 50%;
+  --primary-foreground: 0 0% 9%;
+  /* Black text on amber */
 
-  --muted: 240 3.7% 15.9%;
-  --muted-foreground: 240 5% 64.9%;
+  /* Secondary: Slate 800 (#1E293B) */
+  --secondary: 215 28% 17%;
+  --secondary-foreground: 210 40% 98%;
 
-  --accent: 263.4 70% 50.4%;
-  /* Duplicate of primary for semantics */
-  --accent-foreground: 0 0% 98%;
+  /* Muted: Slate 800 */
+  --muted: 215 28% 17%;
+  --muted-foreground: 215 20% 65%;
 
+  /* Accent: Hover states */
+  --accent: 215 28% 17%;
+  --accent-foreground: 210 40% 98%;
+
+  /* Destructive */
   --destructive: 0 62.8% 30.6%;
-  --destructive-foreground: 0 0% 98%;
+  --destructive-foreground: 210 40% 98%;
 
-  --border: 240 3.7% 15.9%;
-  --input: 240 3.7% 15.9%;
-  --ring: 240 4.9% 83.9%;
+  /* Border / Input / Ring */
+  --border: 215 28% 17%;
+  --input: 215 28% 17%;
+  --ring: 38 92% 50%;
+  /* Using Primary Amber */
 
   --radius: 0.75rem;
 }

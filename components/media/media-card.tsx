@@ -19,7 +19,7 @@ export function MediaCard({ id, title, posterPath, voteAverage, type }: MediaCar
 
     return (
         <Link href={`/${type}/${id}`} className="group relative flex flex-col gap-2 w-36 md:w-44 flex-none snap-start">
-            <div className="relative aspect-[2/3] rounded-xl overflow-hidden bg-neutral-800 shadow-lg transition-all duration-300 group-hover:scale-105 group-hover:shadow-2xl group-hover:ring-2 group-hover:ring-primary/50">
+            <div className="relative aspect-[2/3] rounded-xl overflow-hidden bg-card shadow-lg transition-all duration-300 group-hover:scale-105 group-hover:shadow-2xl group-hover:ring-2 group-hover:ring-primary/50">
                 <Image
                     src={`${IMAGE_BASE_URL}${posterPath}`}
                     alt={title}

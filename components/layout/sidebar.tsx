@@ -22,7 +22,7 @@ export function Sidebar({ user }: SidebarProps) {
     const pathname = usePathname();
 
     return (
-        <aside className="fixed left-0 top-0 z-40 h-screen w-64 border-r border-white/10 bg-black/50 backdrop-blur-xl hidden md:flex flex-col">
+        <aside className="fixed left-0 top-0 z-40 h-screen w-64 border-r border-white/10 bg-card/80 backdrop-blur-xl hidden md:flex flex-col">
             <div className="flex h-16 items-center px-6 border-b border-white/10">
                 <Link href="/" className="flex items-center gap-2 font-bold text-2xl tracking-tighter text-white">
                     Watch<span className="text-primary">Go</span>
