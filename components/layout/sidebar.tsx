@@ -55,94 +55,90 @@ export function Sidebar({ user }: SidebarProps) {
                     Keşfet
                 </Link>
 
-                {user && (
-                    <>
-                        <Link
-                            href="/watchlist"
-                            className={cn(
-                                "flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 group text-sm font-medium",
-                                pathname === "/watchlist"
-                                    ? "bg-primary/20 text-primary shadow-[0_0_20px_-5px_var(--primary)]"
-                                    : "text-neutral-400 hover:text-white hover:bg-white/5"
-                            )}
-                        >
-                            <Heart className={cn("w-5 h-5", pathname === "/watchlist" ? "text-primary" : "text-neutral-500 group-hover:text-white")} />
-                            İzleme Listem
-                        </Link>
-                        <Link
-                            href="/feed"
-                            className={cn(
-                                "flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 group text-sm font-medium",
-                                pathname === "/feed"
-                                    ? "bg-primary/20 text-primary shadow-[0_0_20px_-5px_var(--primary)]"
-                                    : "text-neutral-400 hover:text-white hover:bg-white/5"
-                            )}
-                        >
-                            <Activity className={cn("w-5 h-5", pathname === "/feed" ? "text-primary" : "text-neutral-500 group-hover:text-white")} />
-                            Akış
-                        </Link>
-                        <Link
-                            href="/notifications"
-                            className={cn(
-                                "flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 group text-sm font-medium",
-                                pathname === "/notifications"
-                                    ? "bg-primary/20 text-primary shadow-[0_0_20px_-5px_var(--primary)]"
-                                    : "text-neutral-400 hover:text-white hover:bg-white/5"
-                            )}
-                        >
-                            <Bell className={cn("w-5 h-5", pathname === "/notifications" ? "text-primary" : "text-neutral-500 group-hover:text-white")} />
-                            Bildirimler
-                        </Link>
-                        <Link
-                            href="/community"
-                            className={cn(
-                                "flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 group text-sm font-medium",
-                                pathname === "/community"
-                                    ? "bg-primary/20 text-primary shadow-[0_0_20px_-5px_var(--primary)]"
-                                    : "text-neutral-400 hover:text-white hover:bg-white/5"
-                            )}
-                        >
-                            <Users className={cn("w-5 h-5", pathname === "/community" ? "text-primary" : "text-neutral-500 group-hover:text-white")} />
-                            Topluluk
-                        </Link>
-                        <Link
-                            href="/messages"
-                            className={cn(
-                                "flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 group text-sm font-medium",
-                                pathname.startsWith("/messages")
-                                    ? "bg-primary/20 text-primary shadow-[0_0_20px_-5px_var(--primary)]"
-                                    : "text-neutral-400 hover:text-white hover:bg-white/5"
-                            )}
-                        >
-                            <MessageSquare className={cn("w-5 h-5", pathname.startsWith("/messages") ? "text-primary" : "text-neutral-500 group-hover:text-white")} />
-                            Mesajlar
-                        </Link>
-                        <Link
-                            href="/profile"
-                            className={cn(
-                                "flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 group text-sm font-medium",
-                                pathname === "/profile"
-                                    ? "bg-primary/20 text-primary shadow-[0_0_20px_-5px_var(--primary)]"
-                                    : "text-neutral-400 hover:text-white hover:bg-white/5"
-                            )}
-                        >
-                            <User className={cn("w-5 h-5", pathname === "/profile" ? "text-primary" : "text-neutral-500 group-hover:text-white")} />
-                            Profil
-                        </Link>
-                        <Link
-                            href="/stats"
-                            className={cn(
-                                "flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 group text-sm font-medium",
-                                pathname === "/stats"
-                                    ? "bg-primary/20 text-primary shadow-[0_0_20px_-5px_var(--primary)]"
-                                    : "text-neutral-400 hover:text-white hover:bg-white/5"
-                            )}
-                        >
-                            <BarChart3 className={cn("w-5 h-5", pathname === "/stats" ? "text-primary" : "text-neutral-500 group-hover:text-white")} />
-                            İstatistikler
-                        </Link>
-                    </>
-                )}
+                <Link
+                    href="/watchlist"
+                    className={cn(
+                        "flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 group text-sm font-medium",
+                        pathname === "/watchlist"
+                            ? "bg-primary/20 text-primary shadow-[0_0_20px_-5px_var(--primary)]"
+                            : "text-neutral-400 hover:text-white hover:bg-white/5"
+                    )}
+                >
+                    <Heart className={cn("w-5 h-5", pathname === "/watchlist" ? "text-primary" : "text-neutral-500 group-hover:text-white")} />
+                    İzleme Listem
+                </Link>
+                <Link
+                    href="/feed"
+                    className={cn(
+                        "flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 group text-sm font-medium",
+                        pathname === "/feed"
+                            ? "bg-primary/20 text-primary shadow-[0_0_20px_-5px_var(--primary)]"
+                            : "text-neutral-400 hover:text-white hover:bg-white/5"
+                    )}
+                >
+                    <Activity className={cn("w-5 h-5", pathname === "/feed" ? "text-primary" : "text-neutral-500 group-hover:text-white")} />
+                    Akış
+                </Link>
+                <Link
+                    href="/notifications"
+                    className={cn(
+                        "flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 group text-sm font-medium",
+                        pathname === "/notifications"
+                            ? "bg-primary/20 text-primary shadow-[0_0_20px_-5px_var(--primary)]"
+                            : "text-neutral-400 hover:text-white hover:bg-white/5"
+                    )}
+                >
+                    <Bell className={cn("w-5 h-5", pathname === "/notifications" ? "text-primary" : "text-neutral-500 group-hover:text-white")} />
+                    Bildirimler
+                </Link>
+                <Link
+                    href="/community"
+                    className={cn(
+                        "flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 group text-sm font-medium",
+                        pathname === "/community"
+                            ? "bg-primary/20 text-primary shadow-[0_0_20px_-5px_var(--primary)]"
+                            : "text-neutral-400 hover:text-white hover:bg-white/5"
+                    )}
+                >
+                    <Users className={cn("w-5 h-5", pathname === "/community" ? "text-primary" : "text-neutral-500 group-hover:text-white")} />
+                    Topluluk
+                </Link>
+                <Link
+                    href="/messages"
+                    className={cn(
+                        "flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 group text-sm font-medium",
+                        pathname.startsWith("/messages")
+                            ? "bg-primary/20 text-primary shadow-[0_0_20px_-5px_var(--primary)]"
+                            : "text-neutral-400 hover:text-white hover:bg-white/5"
+                    )}
+                >
+                    <MessageSquare className={cn("w-5 h-5", pathname.startsWith("/messages") ? "text-primary" : "text-neutral-500 group-hover:text-white")} />
+                    Mesajlar
+                </Link>
+                <Link
+                    href="/profile"
+                    className={cn(
+                        "flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 group text-sm font-medium",
+                        pathname === "/profile"
+                            ? "bg-primary/20 text-primary shadow-[0_0_20px_-5px_var(--primary)]"
+                            : "text-neutral-400 hover:text-white hover:bg-white/5"
+                    )}
+                >
+                    <User className={cn("w-5 h-5", pathname === "/profile" ? "text-primary" : "text-neutral-500 group-hover:text-white")} />
+                    Profil
+                </Link>
+                <Link
+                    href="/stats"
+                    className={cn(
+                        "flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 group text-sm font-medium",
+                        pathname === "/stats"
+                            ? "bg-primary/20 text-primary shadow-[0_0_20px_-5px_var(--primary)]"
+                            : "text-neutral-400 hover:text-white hover:bg-white/5"
+                    )}
+                >
+                    <BarChart3 className={cn("w-5 h-5", pathname === "/stats" ? "text-primary" : "text-neutral-500 group-hover:text-white")} />
+                    İstatistikler
+                </Link>
             </nav>
 
             <div className="p-4 border-t border-white/10">

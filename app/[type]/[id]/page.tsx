@@ -12,13 +12,14 @@ import SeasonList from "@/components/media/season-list";
 import { Star, Calendar, Clock, Share2, MessageSquare } from "lucide-react";
 
 type Props = {
-    params: {
+    params: Promise<{
         type: string;
         id: string;
-    };
+    }>;
 };
 
-export default async function DetailsPage({ params }: Props) {
+export default async function DetailsPage(props: Props) {
+    const params = await props.params;
     const { type, id } = params;
 
     if (type !== "movie" && type !== "tv") {

@@ -7,7 +7,8 @@ import Link from "next/link";
 import { Users } from "lucide-react";
 import { prisma } from "@/lib/prisma"; // Direct prisma access for initial load if needed
 
-export default async function CommunityPage({ searchParams }: { searchParams: { q?: string } }) {
+export default async function CommunityPage(props: { searchParams: Promise<{ q?: string }> }) {
+    const searchParams = await props.searchParams;
     const session = await auth();
     const query = searchParams.q || "";
 
