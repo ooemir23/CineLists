@@ -1,0 +1,248 @@
+generator client {
+  provider = "prisma-client-js"
+  engineType = "library"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// NextAuth Models
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime?
+  image         String?
+  bio           String?   @db.Text
+  
+  accounts      Account[]
+  sessions      Session[]
+  
+  // Social
+  followedBy    Follow[]  @relation("followedBy")
+  following     Follow[]  @relation("following")
+  
+  // App Data
+  activities    Activity[]
+  comments      Comment[]
+  sentRecommendations     Recommendation[] @relation("sentRecommendations")
+  receivedRecommendations Recommendation[] @relation("receivedRecommendations")
+  
+  // Lists
+  watchlistItems WatchlistItem[]
+  watchedEpisodes WatchedEpisode[]
+
+  // Messaging
+  sentMessages     Message[] @relation("sentMessages")
+  receivedMessages Message[] @relation("receivedMessages")
+
+  // Notifications
+  notifications Indicates[]
+}
+
+model Follow {
+  followerId String
+  followingId String
+  follower   User   @relation("following", fields: [followerId], references: [id])
+  following  User   @relation("followedBy", fields: [followingId], references: [id])
+
+  @@id([followerId, followingId])
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// App Core Models
+
+enum MediaType {
+  MOVIE
+  TV
+  PERSON
+}
+
+model MediaItem {
+  id          String   @id @default(cuid())
+  tmdbId      Int      @unique
+  type        MediaType
+  title       String
+  posterPath  String?
+  backdropPath String?
+  overview    String?  @db.Text
+  releaseDate DateTime?
+  seasonCount Int?
+  episodeCount Int?
+  
+  activities     Activity[]
+  watchlistItems WatchlistItem[]
+  recommendations Recommendation[]
+  episodes       Episode[]
+}
+
+enum WatchStatus {
+  PLAN_TO_WATCH
+  WATCHING
+  COMPLETED
+  DROPPED
+}
+
+model WatchlistItem {
+  id        String      @id @default(cuid())
+  userId    String
+  mediaId   String
+  status    WatchStatus @default(PLAN_TO_WATCH)
+  addedAt   DateTime    @default(now())
+  
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  media     MediaItem @relation(fields: [mediaId], references: [id])
+
+  @@unique([userId, mediaId])
+}
+
+model Activity {
+  id          String   @id @default(cuid())
+  userId      String
+  mediaId     String
+  type        ActivityType // WATCHED, RATED, REVIEWED
+  rating      Float?   // 0-10
+  review      String?  @db.Text
+  watchedAt   DateTime?
+  watchedWith String?  // Free text or JSON for tagged users
+  platform    String?  // Netflix, Amazon, etc.
+  createdAt   DateTime @default(now())
+  
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  media       MediaItem @relation(fields: [mediaId], references: [id])
+  episodeId   String?
+  episode     Episode?  @relation(fields: [episodeId], references: [id])
+  comments    Comment[]
+}
+
+enum ActivityType {
+  WATCHED
+  RATED
+  REVIEWED
+  ADDED_TO_LIST
+}
+
+model Comment {
+  id         String   @id @default(cuid())
+  userId     String
+  activityId String?
+  episodeId  String?
+  content    String   @db.Text
+  createdAt  DateTime @default(now())
+  
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  activity   Activity? @relation(fields: [activityId], references: [id], onDelete: Cascade)
+  episode    Episode?  @relation(fields: [episodeId], references: [id], onDelete: Cascade)
+}
+
+model Recommendation {
+  id          String   @id @default(cuid())
+  senderId    String
+  receiverId  String
+  mediaId     String
+  message     String?  @db.Text
+  createdAt   DateTime @default(now())
+  isRead      Boolean  @default(false)
+  
+  sender      User      @relation("sentRecommendations", fields: [senderId], references: [id])
+  receiver    User      @relation("receivedRecommendations", fields: [receiverId], references: [id])
+  media       MediaItem @relation(fields: [mediaId], references: [id])
+}
+
+model Message {
+  id        String   @id @default(cuid())
+  senderId  String
+  receiverId String
+  content   String   @db.Text
+  createdAt DateTime @default(now())
+  isRead    Boolean  @default(false)
+  
+  sender    User     @relation("sentMessages", fields: [senderId], references: [id])
+  receiver  User     @relation("receivedMessages", fields: [receiverId], references: [id])
+}
+
+model Indicates { // Notification
+  id        String   @id @default(cuid())
+  userId    String
+  type      NotificationType
+  message   String
+  link      String? // Link to activity or user
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+  
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+enum NotificationType {
+  NEW_FOLLOWER
+  NEW_COMMENT
+  NEW_RECOMMENDATION
+  MENTION
+  FRIEND_ACTIVITY
+}
+
+model Episode {
+  id           String   @id @default(cuid())
+  mediaId      String
+  seasonNumber Int
+  episodeNumber Int
+  title        String?
+  overview     String?  @db.Text
+  stillPath    String?
+  airDate      DateTime?
+  
+  media        MediaItem @relation(fields: [mediaId], references: [id], onDelete: Cascade)
+  watchedBy    WatchedEpisode[]
+  activities   Activity[]
+  comments     Comment[]
+
+  @@unique([mediaId, seasonNumber, episodeNumber])
+}
+
+model WatchedEpisode {
+  id        String   @id @default(cuid())
+  userId    String
+  episodeId String
+  watchedAt DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  episode   Episode  @relation(fields: [episodeId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, episodeId])
+}
