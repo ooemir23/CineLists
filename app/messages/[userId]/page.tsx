@@ -7,11 +7,11 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { ChatInput } from "@/components/messages/chat-input";
 
-export default async function ChatPage({ params }: { params: { userId: string } }) {
+export default async function ChatPage({ params }: { params: Promise<{ userId: string }> }) {
     const session = await auth();
     if (!session?.user) redirect("/login");
 
-    const partnerId = params.userId;
+    const { userId: partnerId } = await params;
     const partner = await prisma.user.findUnique({ where: { id: partnerId } }); // Helper fetch
 
     if (!partner) redirect("/messages");

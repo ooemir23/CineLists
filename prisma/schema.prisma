@@ -65,15 +65,36 @@ model User {
   sentMessages     Message[] @relation("sentMessages")
   receivedMessages Message[] @relation("receivedMessages")
 
+  // Onboarding & Preferences
+  hasCompletedOnboarding Boolean @default(false)
+  favoriteGenres        String[]
+  platforms             String[]
+  
   // Notifications
   notifications Indicates[]
+
+  // Favorites
+  favoritePersons FavoritePerson[]
+}
+
+model FavoritePerson {
+  id          String   @id @default(cuid())
+  userId      String
+  tmdbId      Int
+  name        String
+  profilePath String?
+  addedAt     DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, tmdbId])
 }
 
 model Follow {
   followerId String
   followingId String
-  follower   User   @relation("following", fields: [followerId], references: [id])
-  following  User   @relation("followedBy", fields: [followingId], references: [id])
+  follower   User   @relation("following", fields: [followerId], references: [id], onDelete: Cascade)
+  following  User   @relation("followedBy", fields: [followingId], references: [id], onDelete: Cascade)
 
   @@id([followerId, followingId])
 }
@@ -124,6 +145,7 @@ model WatchlistItem {
   userId    String
   mediaId   String
   status    WatchStatus @default(PLAN_TO_WATCH)
+  userRating Float?     // User's rating 0-10
   addedAt   DateTime    @default(now())
   
   user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -149,6 +171,8 @@ model Activity {
   episodeId   String?
   episode     Episode?  @relation(fields: [episodeId], references: [id])
   comments    Comment[]
+
+  @@unique([userId, mediaId, type], name: "userId_mediaId_type")
 }
 
 enum ActivityType {
@@ -180,8 +204,8 @@ model Recommendation {
   createdAt   DateTime @default(now())
   isRead      Boolean  @default(false)
   
-  sender      User      @relation("sentRecommendations", fields: [senderId], references: [id])
-  receiver    User      @relation("receivedRecommendations", fields: [receiverId], references: [id])
+  sender      User      @relation("sentRecommendations", fields: [senderId], references: [id], onDelete: Cascade)
+  receiver    User      @relation("receivedRecommendations", fields: [receiverId], references: [id], onDelete: Cascade)
   media       MediaItem @relation(fields: [mediaId], references: [id])
 }
 
@@ -193,8 +217,8 @@ model Message {
   createdAt DateTime @default(now())
   isRead    Boolean  @default(false)
   
-  sender    User     @relation("sentMessages", fields: [senderId], references: [id])
-  receiver  User     @relation("receivedMessages", fields: [receiverId], references: [id])
+  sender    User     @relation("sentMessages", fields: [senderId], references: [id], onDelete: Cascade)
+  receiver  User     @relation("receivedMessages", fields: [receiverId], references: [id], onDelete: Cascade)
 }
 
 model Indicates { // Notification

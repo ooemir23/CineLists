@@ -15,23 +15,29 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
             clientSecret: process.env.AUTH_GOOGLE_SECRET,
         }),
         Credentials({
-            id: "guest",
-            name: "Guest",
+            id: "email",
+            name: "Email",
             credentials: {
-                email: { label: "Email", type: "text" },
+                email: { label: "Email", type: "email" },
             },
             async authorize(credentials) {
                 if (!credentials?.email) return null;
+                const email = credentials.email as string;
 
-                // Trust the server action to verify/create the user before calling signIn
-                const user = await prisma.user.findUnique({
-                    where: { email: credentials.email as string },
+                let user = await prisma.user.findUnique({
+                    where: { email },
                 });
 
-                if (user && user.email?.endsWith("@guest.watchgo.local")) {
-                    return user;
+                if (!user) {
+                    user = await prisma.user.create({
+                        data: {
+                            email,
+                            name: email.split("@")[0],
+                        },
+                    });
                 }
-                return null;
+
+                return user;
             }
         }),
     ],
@@ -40,6 +46,15 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
         async session({ session, token }) {
             if (token.sub && session.user) {
                 session.user.id = token.sub;
+
+                const dbUser = await prisma.user.findUnique({
+                    where: { id: token.sub },
+                    select: { hasCompletedOnboarding: true }
+                });
+
+                if (dbUser) {
+                    (session.user as any).hasCompletedOnboarding = dbUser.hasCompletedOnboarding;
+                }
             }
             return session;
         },

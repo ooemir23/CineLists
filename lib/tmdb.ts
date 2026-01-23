@@ -57,4 +57,46 @@ export const tmdb = {
     async getSeasonDetails(tvId: string, seasonNumber: number) {
         return this.fetch(`/tv/${tvId}/season/${seasonNumber}`);
     },
+
+    async getWatchProviders(type: "movie" | "tv", id: string) {
+        return this.fetch(`/${type}/${id}/watch/providers`);
+    },
+
+    async discover(type: "movie" | "tv", params: Record<string, string>) {
+        return this.fetch(`/discover/${type}`, { params });
+    },
+
+    async getTopRated(type: "movie" | "tv") {
+        return this.fetch(`/${type}/top_rated`);
+    },
+
+    async getPopular(type: "movie" | "tv") {
+        return this.fetch(`/${type}/popular`);
+    },
+
+    async getUpcomingMovies() {
+        return this.fetch("/movie/upcoming");
+    },
+
+    async getAiringTodayTV() {
+        return this.fetch("/tv/airing_today");
+    },
+
+    async getGenres(type: "movie" | "tv") {
+        return this.fetch(`/genre/${type}/list`);
+    },
+
+    async getPersonDetails(id: string) {
+        return this.fetch(`/person/${id}`, {
+            params: { append_to_response: "external_ids,combined_credits,images" }
+        });
+    },
+
+    async getPersonExternalIds(id: string) {
+        return this.fetch(`/person/${id}/external_ids`);
+    },
+
+    async getPersonCombinedCredits(id: string) {
+        return this.fetch(`/person/${id}/combined_credits`);
+    },
 };

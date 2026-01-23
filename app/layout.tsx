@@ -21,9 +21,9 @@ export default async function RootLayout({
   const session = await auth();
 
   return (
-    <html lang="tr" className="dark">
-      <body className={cn(inter.className, "bg-background text-foreground overflow-x-hidden")}>
-        <div className="flex min-h-screen">
+    <html lang="tr" className="dark" suppressHydrationWarning>
+      <body className={cn(inter.className, "bg-background text-foreground overflow-x-hidden")} suppressHydrationWarning>
+        <div className="flex min-h-screen max-w-[1920px] mx-auto shadow-2xl shadow-black/50">
           <Sidebar user={session?.user} />
           <main className="flex-1 md:pl-64 pb-20 md:pb-0 min-h-screen relative z-0">
             {children}

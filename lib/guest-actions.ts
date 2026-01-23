@@ -19,7 +19,7 @@ export async function loginAsGuest() {
     });
 
     // Sign in with these credentials - Auth.js will handle the redirect
-    await signIn("credentials", {
+    await signIn("guest", {
         email: guestEmail,
         redirectTo: "/profile",
     });

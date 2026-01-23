@@ -20,19 +20,19 @@ export default async function WatchlistPage() {
     });
 
     return (
-        <div className="container mx-auto px-6 py-10 min-h-screen">
-            <div className="flex items-center gap-3 mb-8">
-                <Heart className="w-8 h-8 text-primary fill-current" />
-                <h1 className="text-3xl font-bold text-white">İzleme Listem</h1>
+        <div className="max-w-7xl mx-auto px-6 md:px-10 lg:px-16 py-10 min-h-screen">
+            <div className="flex items-center gap-3 mb-12">
+                <Heart className="w-10 h-10 text-primary fill-current" />
+                <h1 className="text-3xl md:text-5xl font-black text-white tracking-tight">İzleme Listem</h1>
             </div>
 
             {watchlist.length === 0 ? (
                 <div className="text-center text-neutral-500 mt-20">
-                    <p className="text-lg">Listeniz henüz boş.</p>
-                    <p className="text-sm">Keşfetmeye başlayın ve favorilerinizi ekleyin.</p>
+                    <p className="text-xl font-bold">Listeniz henüz boş.</p>
+                    <p className="text-neutral-400">Keşfetmeye başlayın ve favorilerinizi ekleyin.</p>
                 </div>
             ) : (
-                <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6">
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-8">
                     {watchlist.map((item) => (
                         <MediaCard
                             key={item.id}

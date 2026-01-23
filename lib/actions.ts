@@ -10,6 +10,15 @@ export async function toggleWatchlist(mediaId: number, type: "movie" | "tv" | "p
         return { error: "Giriş yapmalısınız" };
     }
 
+    // Verify user exists in DB
+    const dbUser = await prisma.user.findUnique({
+        where: { id: session.user.id },
+    });
+
+    if (!dbUser) {
+        return { error: "Oturum geçersiz, lütfen tekrar giriş yapın." };
+    }
+
     // Ensure media exists in our DB
     let media = await prisma.mediaItem.findUnique({
         where: { tmdbId: mediaId },

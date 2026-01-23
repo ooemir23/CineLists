@@ -8,9 +8,9 @@ import { FollowButton } from "@/components/social/follow-button";
 import { getFollowStatus } from "@/lib/social-actions";
 import { MediaCard } from "@/components/media/media-card";
 
-export default async function PublicProfilePage({ params }: { params: { id: string } }) {
+export default async function PublicProfilePage({ params }: { params: Promise<{ id: string }> }) {
     const session = await auth();
-    const userId = params.id;
+    const { id: userId } = await params;
 
     // If viewing own profile via id, technically valid, but maybe redirect or just show as is.
     const isOwnProfile = session?.user?.id === userId;
