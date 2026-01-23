@@ -58,8 +58,11 @@ model User {
   receivedRecommendations Recommendation[] @relation("receivedRecommendations")
   
   // Lists
-  watchlistItems WatchlistItem[]
-  watchedEpisodes WatchedEpisode[]
+  watched           Watched[]         @relation("UserWatched")
+  toWatch           ToWatch[]
+  watchedEpisodes   WatchedEpisode[]
+  watchedRecommendations Watched[]     @relation("WatchedRecommendations")
+  activityRecommendations Activity[]   @relation("ActivityRecommendations")
 
   // Messaging
   sentMessages     Message[] @relation("sentMessages")
@@ -128,24 +131,33 @@ model MediaItem {
   episodeCount Int?
   
   activities     Activity[]
-  watchlistItems WatchlistItem[]
+  watchedBy      Watched[]
+  toWatchBy      ToWatch[]
   recommendations Recommendation[]
   episodes       Episode[]
 }
 
-enum WatchStatus {
-  PLAN_TO_WATCH
-  WATCHING
-  COMPLETED
-  DROPPED
+model Watched {
+  id              String      @id @default(cuid())
+  userId          String
+  mediaId         String
+  rating          Float?      // User's rating 0-10
+  watchedAt       DateTime    @default(now())
+  recommendedById String?
+  recommendedByText String?
+  
+  user            User      @relation("UserWatched", fields: [userId], references: [id], onDelete: Cascade)
+  media           MediaItem @relation(fields: [mediaId], references: [id])
+  recommendedBy   User?     @relation("WatchedRecommendations", fields: [recommendedById], references: [id])
+
+  @@unique([userId, mediaId])
 }
 
-model WatchlistItem {
+
+model ToWatch {
   id        String      @id @default(cuid())
   userId    String
   mediaId   String
-  status    WatchStatus @default(PLAN_TO_WATCH)
-  userRating Float?     // User's rating 0-10
   addedAt   DateTime    @default(now())
   
   user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -154,23 +166,27 @@ model WatchlistItem {
   @@unique([userId, mediaId])
 }
 
+
 model Activity {
-  id          String   @id @default(cuid())
-  userId      String
-  mediaId     String
-  type        ActivityType // WATCHED, RATED, REVIEWED
-  rating      Float?   // 0-10
-  review      String?  @db.Text
-  watchedAt   DateTime?
-  watchedWith String?  // Free text or JSON for tagged users
-  platform    String?  // Netflix, Amazon, etc.
-  createdAt   DateTime @default(now())
+  id              String   @id @default(cuid())
+  userId          String
+  mediaId         String
+  type            ActivityType // WATCHED, RATED, REVIEWED
+  rating          Float?   // 0-10
+  review          String?  @db.Text
+  watchedAt       DateTime?
+  watchedWith     String?  // Store as JSON string [id1, id2] or names
+  recommendedById String?
+  recommendedByText String?
+  platform        String?  // Netflix, Amazon, etc.
+  createdAt       DateTime @default(now())
   
-  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  media       MediaItem @relation(fields: [mediaId], references: [id])
-  episodeId   String?
-  episode     Episode?  @relation(fields: [episodeId], references: [id])
-  comments    Comment[]
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  media           MediaItem @relation(fields: [mediaId], references: [id])
+  recommendedBy   User?     @relation("ActivityRecommendations", fields: [recommendedById], references: [id])
+  episodeId       String?
+  episode         Episode?  @relation(fields: [episodeId], references: [id])
+  comments        Comment[]
 
   @@unique([userId, mediaId, type], name: "userId_mediaId_type")
 }
@@ -187,6 +203,7 @@ model Comment {
   userId     String
   activityId String?
   episodeId  String?
+  personId   Int?     // TMDB Person ID for comments on person pages
   content    String   @db.Text
   createdAt  DateTime @default(now())
   

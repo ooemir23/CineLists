@@ -34,7 +34,7 @@ export async function toggleWatchedStatus(mediaId: number, type: "movie" | "tv",
     }
 
     // Check current status
-    const existingEntry = await prisma.watchlistItem.findUnique({
+    const existingEntry = await prisma.watched.findUnique({
         where: {
             userId_mediaId: {
                 userId: session.user.id,
@@ -43,24 +43,20 @@ export async function toggleWatchedStatus(mediaId: number, type: "movie" | "tv",
         },
     });
 
-    const isCurrentlyWatched = existingEntry?.status === "COMPLETED";
+    const isCurrentlyWatched = !!existingEntry;
 
     if (isCurrentlyWatched) {
-        // Toggle OFF (Revert to PLAN_TO_WATCH)
-        await prisma.watchlistItem.update({
+        // Toggle OFF
+        await prisma.watched.delete({
             where: {
                 userId_mediaId: {
                     userId: session.user.id,
                     mediaId: media.id,
                 },
             },
-            data: {
-                status: "PLAN_TO_WATCH",
-            },
         });
 
         // Optional: Remove the last 'WATCHED' activity to keep feed clean
-        // We find the most recent WATCHED activity for this media
         const lastActivity = await prisma.activity.findFirst({
             where: {
                 userId: session.user.id,
@@ -84,32 +80,49 @@ export async function toggleWatchedStatus(mediaId: number, type: "movie" | "tv",
 
     } else {
         // Toggle ON (Mark as WATCHED)
-        await prisma.watchlistItem.upsert({
+        // Remove from toWatch if exists
+        const toWatch = await prisma.toWatch.findUnique({
             where: {
                 userId_mediaId: {
                     userId: session.user.id,
                     mediaId: media.id,
                 },
             },
-            update: {
-                status: "COMPLETED",
-                addedAt: new Date(),
-            },
-            create: {
+        });
+
+        if (toWatch) {
+            await prisma.toWatch.delete({
+                where: { id: toWatch.id },
+            });
+        }
+
+        await prisma.watched.create({
+            data: {
                 userId: session.user.id,
                 mediaId: media.id,
-                status: "COMPLETED",
             },
         });
 
-        await prisma.activity.create({
-            data: {
+        await prisma.activity.upsert({
+            where: {
+                userId_mediaId_type: {
+                    userId: session.user.id,
+                    mediaId: media.id,
+                    type: "WATCHED",
+                },
+            },
+            update: {
+                watchedAt: new Date(),
+                createdAt: new Date(), // Reset creation time to show at top of feed
+            },
+            create: {
                 userId: session.user.id,
                 mediaId: media.id,
                 type: "WATCHED",
                 watchedAt: new Date(),
             },
         });
+
 
         revalidatePath("/watchlist");
         revalidatePath("/profile");
@@ -129,7 +142,7 @@ export async function getWatchStatus(mediaId: number) {
 
     if (!media) return null;
 
-    const item = await prisma.watchlistItem.findUnique({
+    const watched = await prisma.watched.findUnique({
         where: {
             userId_mediaId: {
                 userId: session.user.id,
@@ -138,8 +151,22 @@ export async function getWatchStatus(mediaId: number) {
         },
     });
 
-    return item?.status;
+    if (watched) return "COMPLETED";
+
+    const toWatch = await prisma.toWatch.findUnique({
+        where: {
+            userId_mediaId: {
+                userId: session.user.id,
+                mediaId: media.id,
+            },
+        },
+    });
+
+    if (toWatch) return "PLAN_TO_WATCH";
+
+    return null;
 }
+
 
 export async function addComment(mediaId: number, type: "movie" | "tv", content: string, title: string, posterPath: string | null) {
     const session = await auth();
@@ -173,4 +200,106 @@ export async function addComment(mediaId: number, type: "movie" | "tv", content:
 
     revalidatePath(`/${type}/${mediaId}`);
     return { success: true, activity };
+}
+
+export async function saveWatchDetails(params: {
+    tmdbId: number;
+    type: "movie" | "tv";
+    title: string;
+    posterPath: string | null;
+    rating?: number;
+    watchedAt?: Date;
+    watchedWith?: string[]; // Array of user IDs or names
+    recommendedById?: string;
+    recommendedByText?: string;
+}) {
+    const session = await auth();
+    if (!session?.user?.id) {
+        return { error: "Giriş yapmalısınız" };
+    }
+
+    const { tmdbId, type, title, posterPath, rating, watchedAt, watchedWith, recommendedById, recommendedByText } = params;
+
+    let media = await prisma.mediaItem.findUnique({
+        where: { tmdbId },
+    });
+
+    if (!media) {
+        media = await prisma.mediaItem.create({
+            data: {
+                tmdbId,
+                type: type === "movie" ? "MOVIE" : "TV",
+                title,
+                posterPath,
+            },
+        });
+    }
+
+    // Update Watched entry
+    await prisma.watched.upsert({
+        where: {
+            userId_mediaId: {
+                userId: session.user.id,
+                mediaId: media.id,
+            },
+        },
+        update: {
+            rating: rating !== undefined ? rating : undefined,
+            watchedAt: watchedAt || new Date(),
+            recommendedById: recommendedById || null,
+            recommendedByText: recommendedByText || null,
+        },
+        create: {
+            userId: session.user.id,
+            mediaId: media.id,
+            rating: rating || null,
+            watchedAt: watchedAt || new Date(),
+            recommendedById: recommendedById || null,
+            recommendedByText: recommendedByText || null,
+        },
+    });
+
+    // Update Activity
+    await prisma.activity.upsert({
+        where: {
+            userId_mediaId_type: {
+                userId: session.user.id,
+                mediaId: media.id,
+                type: "WATCHED",
+            },
+        },
+        update: {
+            rating: rating !== undefined ? rating : undefined,
+            watchedAt: watchedAt || new Date(),
+            watchedWith: watchedWith ? JSON.stringify(watchedWith) : undefined,
+            recommendedById: recommendedById || null,
+            recommendedByText: recommendedByText || null,
+            createdAt: new Date(),
+        },
+        create: {
+            userId: session.user.id,
+            mediaId: media.id,
+            type: "WATCHED",
+            rating: rating || null,
+            watchedAt: watchedAt || new Date(),
+            watchedWith: watchedWith ? JSON.stringify(watchedWith) : null,
+            recommendedById: recommendedById || null,
+            recommendedByText: recommendedByText || null,
+        },
+    });
+
+    // Remove from toWatch if exists
+    await prisma.toWatch.deleteMany({
+        where: {
+            userId: session.user.id,
+            mediaId: media.id,
+        },
+    });
+
+    revalidatePath("/watchlist");
+    revalidatePath("/watched");
+    revalidatePath("/profile");
+    revalidatePath(`/${type}/${tmdbId}`);
+
+    return { success: true };
 }

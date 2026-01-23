@@ -107,3 +107,23 @@ export async function searchUsers(query: string) {
         followersCount: (u as any)._count.followedBy
     }));
 }
+
+export async function getFriends() {
+    const session = await auth();
+    if (!session?.user?.id) return [];
+
+    const following = await prisma.follow.findMany({
+        where: { followerId: session.user.id },
+        include: {
+            following: {
+                select: {
+                    id: true,
+                    name: true,
+                    image: true,
+                },
+            },
+        },
+    });
+
+    return following.map(f => f.following);
+}

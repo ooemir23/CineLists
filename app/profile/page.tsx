@@ -29,7 +29,8 @@ export default async function ProfilePage() {
                 },
                 _count: {
                     select: {
-                        watchlistItems: true,
+                        toWatch: true,
+                        watched: true,
                         followedBy: true,
                         following: true,
                     },
@@ -94,15 +95,16 @@ export default async function ProfilePage() {
                         </div>
                         <div className="bg-gradient-to-br from-pink-600/10 to-transparent border border-white/5 p-6 rounded-3xl backdrop-blur-sm">
                             <Heart className="w-6 h-6 text-pink-500 mb-3" />
-                            <div className="text-3xl font-black text-white tracking-tight">{user._count.watchlistItems}</div>
+                            <div className="text-3xl font-black text-white tracking-tight">{user._count.toWatch}</div>
                             <div className="text-xs font-bold text-neutral-500 uppercase tracking-widest">İzlenecek</div>
                         </div>
                         <div className="bg-gradient-to-br from-yellow-600/10 to-transparent border border-white/5 p-6 rounded-3xl backdrop-blur-sm">
-                            <Star className="w-6 h-6 text-yellow-500 mb-3" />
-                            <div className="text-3xl font-black text-white tracking-tight">{stats.episodeCount}</div>
-                            <div className="text-xs font-bold text-neutral-500 uppercase tracking-widest">Bölüm</div>
+                            <ActivityIcon className="w-6 h-6 text-yellow-500 mb-3" />
+                            <div className="text-3xl font-black text-white tracking-tight">{user._count.watched}</div>
+                            <div className="text-xs font-bold text-neutral-500 uppercase tracking-widest">İzlenen</div>
                         </div>
                     </div>
+
 
                     <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
                         {/* Activity Feed */}

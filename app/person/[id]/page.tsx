@@ -7,6 +7,10 @@ import { notFound } from "next/navigation";
 import { Instagram, Twitter, Globe, Facebook, Star, Film, Tv } from "lucide-react";
 import { FavoritePersonButton } from "@/components/media/favorite-person-button";
 import { MediaRow } from "@/components/media/media-row";
+import { Biography } from "@/components/person/biography";
+import { PersonCredits } from "@/components/person/person-credits";
+import { PersonComments } from "@/components/person/person-comments";
+import { getPersonComments } from "@/lib/comment-actions";
 
 type Props = {
     params: Promise<{ id: string }>;
@@ -15,9 +19,10 @@ type Props = {
 export default async function PersonPage(props: Props) {
     const { id } = await props.params;
 
-    const [person, isFavorite] = await Promise.all([
+    const [person, isFavorite, comments] = await Promise.all([
         tmdb.getPersonDetails(id).catch(() => null),
         getIsFavoritePerson(parseInt(id)),
+        getPersonComments(parseInt(id)),
     ]);
 
     if (!person) notFound();
@@ -118,47 +123,13 @@ export default async function PersonPage(props: Props) {
                                     <Star className="w-6 h-6 text-primary fill-current" />
                                     Hakkında
                                 </h2>
-                                <p className="text-neutral-300 leading-relaxed text-lg whitespace-pre-wrap italic">
-                                    {person.biography}
-                                </p>
+                                <Biography text={person.biography} />
                             </section>
                         )}
 
-                        <section className="space-y-8">
-                            <h2 className="text-2xl font-bold text-white flex items-center gap-2">
-                                <Film className="w-6 h-6 text-primary" />
-                                Öne Çıkan Yapımlar
-                            </h2>
-                            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-6">
-                                {actingCredits.map((item: any) => (
-                                    <Link
-                                        key={`${item.media_type}-${item.id}`}
-                                        href={`/${item.media_type}/${item.id}`}
-                                        className="group space-y-3"
-                                    >
-                                        <div className="relative aspect-[2/3] rounded-xl overflow-hidden ring-1 ring-white/10 group-hover:ring-primary transition-all">
-                                            {item.poster_path ? (
-                                                <Image
-                                                    src={`https://image.tmdb.org/t/p/w342${item.poster_path}`}
-                                                    alt={item.title || item.name}
-                                                    fill
-                                                    className="object-cover group-hover:scale-105 transition-transform duration-500"
-                                                />
-                                            ) : (
-                                                <div className="w-full h-full bg-neutral-900 flex items-center justify-center">🎬</div>
-                                            )}
-                                            <div className="absolute top-2 right-2 px-1.5 py-0.5 bg-black/60 backdrop-blur-md rounded text-[10px] font-bold text-white border border-white/10">
-                                                {item.media_type === "movie" ? "FİLM" : "DİZİ"}
-                                            </div>
-                                        </div>
-                                        <div>
-                                            <p className="text-sm font-bold text-white line-clamp-1 group-hover:text-primary transition-colors">{item.title || item.name}</p>
-                                            <p className="text-xs text-neutral-500 line-clamp-1">{item.character || "Oyuncu"}</p>
-                                        </div>
-                                    </Link>
-                                ))}
-                            </div>
-                        </section>
+                        <PersonCredits credits={actingCredits} />
+
+                        <PersonComments personId={person.id} initialComments={comments} />
                     </div>
                 </div>
             </div>

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, Search, Heart, User, LogOut, LogIn, Users, Bell, Activity, MessageSquare, BarChart3 } from "lucide-react";
+import { Home, Search, Heart, User, LogOut, LogIn, Users, Bell, Activity, MessageSquare, BarChart3, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
 
@@ -65,8 +65,21 @@ export function Sidebar({ user }: SidebarProps) {
                     )}
                 >
                     <Heart className={cn("w-5 h-5", pathname === "/watchlist" ? "text-primary" : "text-neutral-500 group-hover:text-white")} />
-                    İzleme Listem
+                    İzlenecekler
                 </Link>
+                <Link
+                    href="/watched"
+                    className={cn(
+                        "flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 group text-sm font-medium",
+                        pathname === "/watched"
+                            ? "bg-primary/20 text-primary shadow-[0_0_20px_-5px_var(--primary)]"
+                            : "text-neutral-400 hover:text-white hover:bg-white/5"
+                    )}
+                >
+                    <Check className={cn("w-5 h-5", pathname === "/watched" ? "text-primary" : "text-neutral-500 group-hover:text-white")} />
+                    İzlenenler
+                </Link>
+
                 <Link
                     href="/feed"
                     className={cn(

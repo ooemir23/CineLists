@@ -4,7 +4,7 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 
-export async function toggleWatchlist(mediaId: number, type: "movie" | "tv" | "person", title: string, posterPath: string | null) {
+export async function toggleToWatch(mediaId: number, type: "movie" | "tv" | "person", title: string, posterPath: string | null) {
     const session = await auth();
     if (!session?.user?.id) {
         return { error: "Giriş yapmalısınız" };
@@ -35,8 +35,8 @@ export async function toggleWatchlist(mediaId: number, type: "movie" | "tv" | "p
         });
     }
 
-    // Check if already in watchlist
-    const existing = await prisma.watchlistItem.findUnique({
+    // Check if already in toWatch
+    const existing = await prisma.toWatch.findUnique({
         where: {
             userId_mediaId: {
                 userId: session.user.id,
@@ -46,7 +46,7 @@ export async function toggleWatchlist(mediaId: number, type: "movie" | "tv" | "p
     });
 
     if (existing) {
-        await prisma.watchlistItem.delete({
+        await prisma.toWatch.delete({
             where: { id: existing.id },
         });
         revalidatePath("/watchlist");
@@ -54,11 +54,26 @@ export async function toggleWatchlist(mediaId: number, type: "movie" | "tv" | "p
         revalidatePath(`/tv/${mediaId}`);
         return { added: false };
     } else {
-        await prisma.watchlistItem.create({
+        // Remove from watched if it exists there (exclusive)
+        const watched = await prisma.watched.findUnique({
+            where: {
+                userId_mediaId: {
+                    userId: session.user.id,
+                    mediaId: media.id,
+                },
+            },
+        });
+
+        if (watched) {
+            await prisma.watched.delete({
+                where: { id: watched.id },
+            });
+        }
+
+        await prisma.toWatch.create({
             data: {
                 userId: session.user.id,
                 mediaId: media.id,
-                status: "PLAN_TO_WATCH",
             },
         });
         revalidatePath("/watchlist");
@@ -68,7 +83,7 @@ export async function toggleWatchlist(mediaId: number, type: "movie" | "tv" | "p
     }
 }
 
-export async function getWatchlistStatus(mediaId: number) {
+export async function getToWatchStatus(mediaId: number) {
     const session = await auth();
     if (!session?.user?.id) return false;
 
@@ -78,7 +93,7 @@ export async function getWatchlistStatus(mediaId: number) {
 
     if (!media) return false;
 
-    const item = await prisma.watchlistItem.findUnique({
+    const item = await prisma.toWatch.findUnique({
         where: {
             userId_mediaId: {
                 userId: session.user.id,
@@ -89,3 +104,5 @@ export async function getWatchlistStatus(mediaId: number) {
 
     return !!item;
 }
+
+

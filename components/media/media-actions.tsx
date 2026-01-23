@@ -2,12 +2,11 @@
 
 import { useTransition, useState } from "react";
 import { Plus, Check, Loader2, Eye } from "lucide-react";
-import { toggleWatchlist } from "@/lib/actions";
+import { toggleToWatch } from "@/lib/actions";
 import { toggleWatchedStatus } from "@/lib/activity-actions";
-import { rateMedia } from "@/lib/rating-actions";
 import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { RatingInput } from "./rating-input";
+import { WatchDetailsForm } from "./watch-details-form";
 
 type MediaActionsProps = {
     tmdbId: number;
@@ -22,7 +21,7 @@ type MediaActionsProps = {
 export function MediaActions({ tmdbId, type, title, posterPath, initialInWatchlist, initialStatus, initialRating }: MediaActionsProps) {
     const [inWatchlist, setInWatchlist] = useState(initialInWatchlist);
     const [isWatched, setIsWatched] = useState(initialStatus === "COMPLETED");
-    const [showRating, setShowRating] = useState(false);
+    const [showDetailsForm, setShowDetailsForm] = useState(false);
     const [userRating, setUserRating] = useState(initialRating || 0);
     const [isPending, startTransition] = useTransition();
     const router = useRouter();
@@ -30,7 +29,7 @@ export function MediaActions({ tmdbId, type, title, posterPath, initialInWatchli
     const handleToggleWatchlist = () => {
         setInWatchlist((prev) => !prev);
         startTransition(async () => {
-            const result = await toggleWatchlist(tmdbId, type, title, posterPath);
+            const result = await toggleToWatch(tmdbId, type, title, posterPath);
             if (result.error) router.push("/login");
         });
     };
@@ -41,10 +40,10 @@ export function MediaActions({ tmdbId, type, title, posterPath, initialInWatchli
         setIsWatched(newStatus);
 
         if (newStatus) {
-            setInWatchlist(true);
-            setShowRating(true);
+            setInWatchlist(false); // When watched, it's removed from to-watch
+            setShowDetailsForm(true);
         } else {
-            setShowRating(false);
+            setShowDetailsForm(false);
         }
 
         startTransition(async () => {
@@ -52,7 +51,7 @@ export function MediaActions({ tmdbId, type, title, posterPath, initialInWatchli
             if (result.error) {
                 // Revert on error
                 setIsWatched(!newStatus);
-                if (newStatus) setShowRating(false);
+                if (newStatus) setShowDetailsForm(false);
                 router.push("/login");
             } else if (result.success && typeof result.isWatched === 'boolean') {
                 // Sync with server result just in case
@@ -61,24 +60,19 @@ export function MediaActions({ tmdbId, type, title, posterPath, initialInWatchli
         });
     };
 
-    const handleRate = (rating: number) => {
-        setUserRating(rating);
-        startTransition(async () => {
-            await rateMedia(tmdbId, type, rating);
-        });
-    };
-
     return (
-        <div className="relative flex flex-col gap-4">
-            <div className="flex gap-3">
+        <div className="flex flex-col gap-4">
+            <div className="flex flex-wrap gap-3">
                 <button
                     onClick={handleToggleWatchlist}
-                    disabled={isPending}
+                    disabled={isPending || isWatched}
                     className={cn(
                         "flex items-center gap-2 px-6 py-3 font-bold rounded-xl transition-all shadow-lg active:scale-95",
                         inWatchlist
                             ? "bg-green-500 text-white hover:bg-green-600 shadow-green-500/25"
-                            : "bg-primary text-white hover:bg-primary/90 shadow-primary/25 hover:scale-105"
+                            : isWatched
+                                ? "bg-neutral-800 text-neutral-500 cursor-not-allowed"
+                                : "bg-primary text-white hover:bg-primary/90 shadow-primary/25 hover:scale-105"
                     )}
                 >
                     {isPending ? (
@@ -88,7 +82,7 @@ export function MediaActions({ tmdbId, type, title, posterPath, initialInWatchli
                     ) : (
                         <Plus className="w-5 h-5" />
                     )}
-                    {inWatchlist ? "Listede" : "Listeye Ekle"}
+                    {inWatchlist ? "Listede" : "İzlenecek"}
                 </button>
 
                 <button
@@ -97,19 +91,39 @@ export function MediaActions({ tmdbId, type, title, posterPath, initialInWatchli
                     className={cn(
                         "flex items-center gap-2 px-6 py-3 font-bold rounded-xl transition-all border",
                         isWatched
-                            ? "bg-purple-500/20 text-purple-400 border-purple-500/50 cursor-default"
+                            ? "bg-purple-500 text-white border-purple-500 shadow-lg shadow-purple-500/25"
                             : "bg-neutral-800 text-white hover:bg-neutral-700 border-white/5 hover:scale-105 active:scale-95"
                     )}
                 >
-                    <Eye className="w-5 h-5" />
-                    {isWatched ? "İzlendi" : "İzlendi İşaretle"}
+                    <Eye className={cn("w-5 h-5", isWatched && "fill-current")} />
+                    {isWatched ? "İzlendi" : "İzledim"}
                 </button>
+
+                {isWatched && (
+                    <button
+                        onClick={() => setShowDetailsForm(!showDetailsForm)}
+                        className={cn(
+                            "flex items-center gap-2 px-4 py-3 font-medium rounded-xl transition-all border text-sm",
+                            showDetailsForm ? "bg-white/10 border-white/20" : "bg-transparent border-white/5 hover:bg-white/5"
+                        )}
+                    >
+                        {showDetailsForm ? "Detayları Kapat" : "İzleme Detaylarını Düzenle"}
+                    </button>
+                )}
             </div>
 
-            {(showRating || userRating > 0) && (
-                <div className="absolute bottom-full left-0 mb-4 z-50 animate-in fade-in slide-in-from-bottom-2 origin-bottom">
-                    <RatingInput onRate={handleRate} initialRating={userRating} />
-                </div>
+            {showDetailsForm && (
+                <WatchDetailsForm
+                    tmdbId={tmdbId}
+                    type={type}
+                    title={title}
+                    posterPath={posterPath}
+                    initialRating={userRating}
+                    onClose={() => setShowDetailsForm(false)}
+                    onSaveSuccess={() => {
+                        // Success handling
+                    }}
+                />
             )}
         </div>
     );

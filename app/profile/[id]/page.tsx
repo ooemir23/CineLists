@@ -20,19 +20,20 @@ export default async function PublicProfilePage({ params }: { params: Promise<{ 
         include: {
             _count: {
                 select: {
-                    watchlistItems: true,
-                    activities: true,
+                    toWatch: true,
+                    watched: true,
                     followedBy: true,
                     following: true,
                 },
             },
-            watchlistItems: {
+            watched: {
                 take: 5,
-                orderBy: { addedAt: "desc" },
+                orderBy: { watchedAt: "desc" },
                 include: { media: true }
             }
         },
     });
+
 
     if (!user) return notFound();
 
@@ -83,34 +84,25 @@ export default async function PublicProfilePage({ params }: { params: Promise<{ 
                     <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                         <div className="bg-white/5 p-4 rounded-xl border border-white/10">
                             <Film className="w-6 h-6 text-primary mb-2" />
-                            <div className="text-2xl font-bold text-white">{(user as any)._count.activities}</div>
-                            <div className="text-xs text-neutral-400">İzlenen Film</div>
-                        </div>
-                        <div className="bg-white/5 p-4 rounded-xl border border-white/10">
-                            <Tv className="w-6 h-6 text-purple-400 mb-2" />
-                            <div className="text-2xl font-bold text-white">0</div>
-                            <div className="text-xs text-neutral-400">İzlenen Dizi</div>
+                            <div className="text-2xl font-bold text-white">{(user as any)._count.watched}</div>
+                            <div className="text-xs text-neutral-400">İzlenenler</div>
                         </div>
                         <div className="bg-white/5 p-4 rounded-xl border border-white/10">
                             <Heart className="w-6 h-6 text-pink-500 mb-2" />
-                            <div className="text-2xl font-bold text-white">{(user as any)._count.watchlistItems}</div>
+                            <div className="text-2xl font-bold text-white">{(user as any)._count.toWatch}</div>
                             <div className="text-xs text-neutral-400">İzlenecekler</div>
                         </div>
-                        <div className="bg-white/5 p-4 rounded-xl border border-white/10">
-                            <Users className="w-6 h-6 text-blue-400 mb-2" />
-                            <div className="text-2xl font-bold text-white">0</div>
-                            <div className="text-xs text-neutral-400">Arkadaş</div>
-                        </div>
+                        {/* More stats could go here */}
                     </div>
 
-                    {/* Watchlist Preview */}
+                    {/* Recently Watched Preview */}
                     <div>
                         <div className="flex items-center justify-between mb-4">
-                            <h2 className="text-xl font-bold text-white">Son Eklenenler</h2>
+                            <h2 className="text-xl font-bold text-white">Son İzledikleri</h2>
                         </div>
-                        {user.watchlistItems.length > 0 ? (
+                        {user.watched.length > 0 ? (
                             <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
-                                {user.watchlistItems.map((item) => (
+                                {user.watched.map((item) => (
                                     <MediaCard
                                         key={item.id}
                                         id={item.media.tmdbId}
@@ -123,11 +115,11 @@ export default async function PublicProfilePage({ params }: { params: Promise<{ 
                             </div>
                         ) : (
                             <div className="bg-white/5 p-6 rounded-xl border border-white/10 text-neutral-500 text-sm">
-                                Bu kullanıcı henüz bir şey eklemedi.
+                                Bu kullanıcı henüz bir şey izlemedi.
                             </div>
                         )}
-
                     </div>
+
                 </div>
             </div>
         </div>

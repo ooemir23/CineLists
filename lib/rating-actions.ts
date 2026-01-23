@@ -29,20 +29,28 @@ export async function rateMedia(tmdbId: number, type: "movie" | "tv", rating: nu
             where: { tmdbId },
         });
 
+        // If media doesn't exist, we should probably create it if we have at least tmdbId
+        // But rateMedia usually happens from a page where we have more info.
+        // For now, let's assume it should exist or be created elsewhere.
         if (!mediaItem) {
-            return { error: "Media not found in watchlist" };
+            return { error: "Medya bulunamadı." };
         }
 
-        // Update WatchlistItem with rating
-        await prisma.watchlistItem.update({
+        // Update/Create Watched entry with rating
+        await prisma.watched.upsert({
             where: {
                 userId_mediaId: {
                     userId: session.user.id,
                     mediaId: mediaItem.id,
                 },
             },
-            data: {
-                userRating: rating,
+            update: {
+                rating: rating,
+            },
+            create: {
+                userId: session.user.id,
+                mediaId: mediaItem.id,
+                rating: rating,
             },
         });
 
@@ -71,7 +79,7 @@ export async function rateMedia(tmdbId: number, type: "movie" | "tv", rating: nu
         return { success: true };
     } catch (error) {
         console.error("Rate media error:", error);
-        return { error: "Failed to rate media" };
+        return { error: "Puanlama işlemi başarısız oldu." };
     }
 }
 
@@ -85,14 +93,14 @@ export async function getUserRating(tmdbId: number, type: "movie" | "tv") {
         const mediaItem = await prisma.mediaItem.findUnique({
             where: { tmdbId },
             include: {
-                watchlistItems: {
+                watchedBy: {
                     where: { userId: session.user.id },
-                    select: { userRating: true },
+                    select: { rating: true },
                 },
             },
         });
 
-        return mediaItem?.watchlistItems[0]?.userRating ?? null;
+        return mediaItem?.watchedBy[0]?.rating ?? null;
     } catch (error) {
         console.error("Get user rating error:", error);
         return null;
@@ -120,12 +128,12 @@ export async function getFriendsRatings(tmdbId: number, type: "movie" | "tv") {
 
         const friendIds = following.map((f: { followingId: string }) => f.followingId);
 
-        // Get ratings from friends
-        const ratings = await prisma.watchlistItem.findMany({
+        // Get ratings from friends (Now from Watched table)
+        const ratings = await prisma.watched.findMany({
             where: {
                 mediaId: mediaItem.id,
                 userId: { in: friendIds },
-                userRating: { not: null },
+                rating: { not: null },
             },
             include: {
                 user: {
@@ -137,7 +145,7 @@ export async function getFriendsRatings(tmdbId: number, type: "movie" | "tv") {
                 },
             },
             orderBy: {
-                userRating: "desc",
+                rating: "desc",
             },
         });
 
@@ -145,7 +153,7 @@ export async function getFriendsRatings(tmdbId: number, type: "movie" | "tv") {
             userId: r.user.id,
             userName: r.user.name,
             userImage: r.user.image,
-            rating: r.userRating,
+            rating: r.rating,
         }));
     } catch (error) {
         console.error("Get friends ratings error:", error);
@@ -160,16 +168,16 @@ export async function getUserRatingsBulk(tmdbIds: number[]) {
     }
 
     try {
-        const ratings = await prisma.watchlistItem.findMany({
+        const ratings = await prisma.watched.findMany({
             where: {
                 userId: session.user.id,
                 media: {
                     tmdbId: { in: tmdbIds }
                 },
-                userRating: { not: null }
+                rating: { not: null }
             },
             select: {
-                userRating: true,
+                rating: true,
                 media: {
                     select: { tmdbId: true }
                 }
@@ -178,7 +186,7 @@ export async function getUserRatingsBulk(tmdbIds: number[]) {
 
         const ratingsMap: Record<number, number> = {};
         ratings.forEach(r => {
-            ratingsMap[r.media.tmdbId] = r.userRating!;
+            ratingsMap[r.media.tmdbId] = r.rating!;
         });
 
         return ratingsMap;
@@ -187,3 +195,4 @@ export async function getUserRatingsBulk(tmdbIds: number[]) {
         return {};
     }
 }
+

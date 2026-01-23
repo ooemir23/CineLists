@@ -3,7 +3,7 @@ import Image from "next/image";
 import { notFound } from "next/navigation";
 import { tmdb } from "@/lib/tmdb";
 import { prisma } from "@/lib/prisma";
-import { getWatchlistStatus } from "@/lib/actions";
+import { getToWatchStatus } from "@/lib/actions";
 import { getWatchStatus } from "@/lib/activity-actions";
 import { getWatchedEpisodes } from "@/lib/tv-actions";
 import { MediaRow } from "@/components/media/media-row";
@@ -32,7 +32,7 @@ export default async function DetailsPage(props: Props) {
 
     const [data, inWatchlist, watchStatus, watchedEpisodes, providersData, userRating, friendsRatings, dbMedia] = await Promise.all([
         tmdb.getDetails(type as "movie" | "tv", id).catch(() => null),
-        getWatchlistStatus(parseInt(id)),
+        getToWatchStatus(parseInt(id)),
         getWatchStatus(parseInt(id)),
         type === "tv" ? getWatchedEpisodes(parseInt(id)) : Promise.resolve([]),
         tmdb.getWatchProviders(type as "movie" | "tv", id).catch(() => null),

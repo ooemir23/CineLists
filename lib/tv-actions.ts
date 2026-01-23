@@ -79,16 +79,34 @@ export async function markEpisodeAsWatched(
         return { success: true, message: "Already watched" };
     }
 
-    // 4. Create Activity
-    await prisma.activity.create({
-        data: {
+    // 4. Create/Update Activity
+    await prisma.activity.upsert({
+        where: {
+            // This is tricky because the unique constraint doesn't include episodeId yet.
+            // If I update the schema unique constraint to include episodeId, it works.
+            // But for now, let's use a workaround if I can't update schema easily or just update it.
+            // I will update the schema in the next step.
+            id: (await prisma.activity.findFirst({
+                where: {
+                    userId: session.user.id,
+                    mediaId: media.id,
+                    episodeId: episode.id,
+                    type: "WATCHED"
+                }
+            }))?.id || "new-activity"
+        },
+        create: {
             userId: session.user.id,
             mediaId: media.id,
             episodeId: episode.id,
             type: "WATCHED",
             watchedAt: new Date(),
+        },
+        update: {
+            watchedAt: new Date(),
         }
     });
+
 
     revalidatePath(`/tv/${tmdbId}`);
     revalidatePath("/profile");

@@ -9,35 +9,25 @@ export async function getUserStats(userId?: string) {
 
     if (!targetUserId) return null;
 
-    // Counts
-    const watchedMovies = await prisma.activity.count({
+    // Counts from the new lists
+    const watchedMovies = await prisma.watched.count({
         where: {
             userId: targetUserId,
-            type: "WATCHED",
             media: { type: "MOVIE" }
         }
     });
 
-    const watchedShows = await prisma.activity.count({
+    const watchedShows = await prisma.watched.count({
         where: {
             userId: targetUserId,
-            type: "WATCHED",
-            media: { type: "TV" },
-            episodeId: null // Count shows (marked as completed generally) based on activity or should we use Watchlist Status?
-            // Activity is better for specific "Watched" action timestamp.
-            // But usually users mark whole show as watched OR episodes.
-            // Let's count Activity where type=TV and episodeId is null (show level watch)
+            media: { type: "TV" }
         }
     });
 
-    // Total episodes watched
-    // Count distinct episodes in WatchedEpisode
+    // Total episodes watched (still source of truth)
     const watchedEpisodes = await prisma.watchedEpisode.count({
         where: { userId: targetUserId }
     });
-
-    // Also count activities where episodeId is not null (legacy or alternative way)
-    // Actually WatchedEpisode is the source of truth for episodes.
 
     return {
         movieCount: watchedMovies,
@@ -45,6 +35,7 @@ export async function getUserStats(userId?: string) {
         episodeCount: watchedEpisodes
     };
 }
+
 
 export async function getLeaderboard() {
     const session = await auth();
@@ -69,16 +60,16 @@ export async function getLeaderboard() {
         _count: { episodeId: true }
     });
 
-    // 2. Movie Counts
-    const movieCounts = await prisma.activity.groupBy({
+    // 2. Movie Counts (Now from Watched table)
+    const movieCounts = await prisma.watched.groupBy({
         by: ['userId'],
         where: {
             userId: { in: userIds },
-            type: "WATCHED",
             media: { type: "MOVIE" }
         },
         _count: { mediaId: true }
     });
+
 
     // 3. User Details
     const users = await prisma.user.findMany({
@@ -88,8 +79,8 @@ export async function getLeaderboard() {
 
     // Merge
     const leaderboard = users.map(user => {
-        const epCount = episodeCounts.find(e => e.userId === user.id)?._count.episodeId || 0;
-        const movCount = movieCounts.find(m => m.userId === user.id)?._count.mediaId || 0;
+        const epCount = episodeCounts.find((e: any) => e.userId === user.id)?._count.episodeId || 0;
+        const movCount = movieCounts.find((m: any) => m.userId === user.id)?._count.mediaId || 0;
 
         // Score calculation? Simple sum for now. 1 Movie = 1 point, 1 Episode = 1 point?
         // Usually Movies are worth more, maybe 3x.
@@ -105,3 +96,4 @@ export async function getLeaderboard() {
 
     return leaderboard.sort((a, b) => b.score - a.score);
 }
+
