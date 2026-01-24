@@ -15,6 +15,19 @@ const PROVIDERS = [
     { id: "2235", name: "tabii", logo: "https://image.tmdb.org/t/p/original/uWVpt3iJ2pLKtFZ69rAKP0EDVVx.jpg" },
 ];
 
+const COUNTRIES = [
+    { code: "TR", name: "Türkiye", flag: "🇹🇷" },
+    { code: "US", name: "Amerika", flag: "🇺🇸" },
+    { code: "GB", name: "İngiltere", flag: "🇬🇧" },
+    { code: "FR", name: "Fransa", flag: "🇫🇷" },
+    { code: "DE", name: "Almanya", flag: "🇩🇪" },
+    { code: "JP", name: "Japonya", flag: "🇯🇵" },
+    { code: "KR", name: "Güney Kore", flag: "🇰🇷" },
+    { code: "IN", name: "Hindistan", flag: "🇮🇳" },
+    { code: "IT", name: "İtalya", flag: "🇮🇹" },
+    { code: "ES", name: "İspanya", flag: "🇪🇸" },
+];
+
 const YEARS = Array.from({ length: 30 }, (_, i) => (new Date().getFullYear() - i).toString());
 
 const MOVIE_GENRES = [
@@ -68,6 +81,7 @@ export function MediaFilter() {
     const [minRating, setMinRating] = useState(searchParams.get("rating") || "");
     const [provider, setProvider] = useState(searchParams.get("provider") || "");
     const [genre, setGenre] = useState(searchParams.get("genre") || "");
+    const [country, setCountry] = useState(searchParams.get("country") || "TR");
     const [isOpen, setIsOpen] = useState(false);
     const [isInitialRender, setIsInitialRender] = useState(true);
 
@@ -97,10 +111,13 @@ export function MediaFilter() {
         if (genre) params.set("genre", genre);
         else params.delete("genre");
 
+        if (country) params.set("country", country);
+        else params.delete("country");
+
         // If we are on home, we always stay on / with params
         // If we are on explore, we stay on the current category but update params
         router.push(`${pathname}?${params.toString()}`, { scroll: false });
-    }, [type, year, minRating, provider, genre, pathname, router, searchParams]);
+    }, [type, year, minRating, provider, genre, country, pathname, router, searchParams]);
 
     const hasActiveFilters = year || minRating || provider || genre || searchParams.get("type");
 
@@ -132,9 +149,29 @@ export function MediaFilter() {
                         </div>
 
                         <div className={cn(
-                            "w-full md:flex-1 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-4",
+                            "w-full md:flex-1 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-6 gap-4",
                             isOpen ? "flex" : "hidden md:grid"
                         )}>
+                                                        <div className="relative group">
+                                                            <div className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none">
+                                                                {COUNTRIES.find(c => c.code === country)?.flag ? (
+                                                                  <span className="text-lg">{COUNTRIES.find(c => c.code === country)?.flag}</span>
+                                                                ) : (
+                                                                  <span className="text-lg">🌍</span>
+                                                                )}
+                                                            </div>
+                                                            <select
+                                                                value={country}
+                                                                onChange={e => setCountry(e.target.value)}
+                                                                className="w-full bg-white/5 border border-white/5 rounded-xl py-2.5 pl-10 pr-4 text-xs font-medium text-white appearance-none focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all cursor-pointer"
+                                                            >
+                                                                {COUNTRIES.map(c => (
+                                                                    <option key={c.code} value={c.code} className="bg-neutral-900">
+                                                                      {c.flag} {c.name}
+                                                                    </option>
+                                                                ))}
+                                                            </select>
+                                                        </div>
                             <div className="flex bg-white/5 p-1 rounded-xl">
                                 <button
                                     onClick={() => setType("movie")}

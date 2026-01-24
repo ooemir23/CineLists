@@ -1,0 +1,63 @@
+{
+    "name": "WatchGo - Film ve Dizi Takip",
+    "short_name": "WatchGo",
+    "description": "Film ve dizileri takip et, arkadaşlarınla paylaş, puanla ve keşfet",
+    "start_url": "/",
+    "display": "standalone",
+    "background_color": "#020617",
+    "theme_color": "#020617",
+    "orientation": "portrait-primary",
+    "icons": [
+        {
+            "src": "/icon-192.png",
+            "sizes": "192x192",
+            "type": "image/png",
+            "purpose": "any maskable"
+        },
+        {
+            "src": "/icon-512.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "any maskable"
+        }
+    ],
+    "categories": [
+        "entertainment",
+        "lifestyle"
+    ],
+    "shortcuts": [
+        {
+            "name": "İzlenecekler",
+            "short_name": "İzlenecek",
+            "url": "/watchlist",
+            "icons": [
+                {
+                    "src": "/icon-192.png",
+                    "sizes": "192x192"
+                }
+            ]
+        },
+        {
+            "name": "İzlenenler",
+            "short_name": "İzlenen",
+            "url": "/watched",
+            "icons": [
+                {
+                    "src": "/icon-192.png",
+                    "sizes": "192x192"
+                }
+            ]
+        },
+        {
+            "name": "Keşfet",
+            "short_name": "Keşfet",
+            "url": "/search",
+            "icons": [
+                {
+                    "src": "/icon-192.png",
+                    "sizes": "192x192"
+                }
+            ]
+        }
+    ]
+}

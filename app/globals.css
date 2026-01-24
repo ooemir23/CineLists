@@ -24,46 +24,44 @@
 }
 
 :root {
-  /* WatchMeOn Inspired Color Palette */
+  /* WatchMeOn Color Palette */
 
-  /* Main Background: Slate 950 (#020617) */
-  --background: 222 47% 11%;
+  /* Main Background: #101624 (dark blue/gray) */
+  --background: 222 36% 10%;
   --foreground: 210 40% 98%;
 
-  /* Cards / Sidebar: Slate 900 (#0F172A) */
-  --card: 222 47% 11%;
+  /* Cards / Sidebar: #18213a */
+  --card: 222 36% 14%;
   --card-foreground: 210 40% 98%;
 
   /* Popovers */
-  --popover: 222 47% 11%;
+  --popover: 222 36% 14%;
   --popover-foreground: 210 40% 98%;
 
-  /* Primary Accent: Amber 500 (#F59E0B) */
-  --primary: 38 92% 50%;
-  --primary-foreground: 0 0% 9%;
-  /* Black text on amber */
+  /* Primary Accent: Amber/Yellow #FFD600 */
+  --primary: 48 100% 50%;
+  --primary-foreground: 222 36% 10%;
 
-  /* Secondary: Slate 800 (#1E293B) */
-  --secondary: 215 28% 17%;
+  /* Secondary: Blue #2563eb */
+  --secondary: 221 83% 53%;
   --secondary-foreground: 210 40% 98%;
 
   /* Muted: Slate 800 */
   --muted: 215 28% 17%;
   --muted-foreground: 215 20% 65%;
 
-  /* Accent: Hover states */
-  --accent: 215 28% 17%;
+  /* Accent: Pink #ec4899 */
+  --accent: 327 72% 58%;
   --accent-foreground: 210 40% 98%;
 
-  /* Destructive */
+  /* Destructive: Red */
   --destructive: 0 62.8% 30.6%;
   --destructive-foreground: 210 40% 98%;
 
   /* Border / Input / Ring */
-  --border: 215 28% 17%;
-  --input: 215 28% 17%;
-  --ring: 38 92% 50%;
-  /* Using Primary Amber */
+  --border: 221 83% 53%;
+  --input: 221 83% 53%;
+  --ring: 48 100% 50%;
 
   --radius: 0.75rem;
 }
@@ -90,6 +88,29 @@
   .text-gradient-primary {
     @apply bg-clip-text text-transparent bg-gradient-to-r from-primary to-purple-400;
   }
+
+  /* Touch-friendly minimum sizes */
+  .touch-target {
+    @apply min-h-[44px] min-w-[44px];
+  }
+
+  .touch-target-lg {
+    @apply min-h-[56px] min-w-[56px];
+  }
+
+  /* Safe area support for iOS */
+  .safe-area-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  .safe-area-top {
+    padding-top: env(safe-area-inset-top);
+  }
+
+  /* Disable tap highlight on mobile */
+  .no-tap-highlight {
+    -webkit-tap-highlight-color: transparent;
+  }
 }
 
 /* Custom Scrollbar */
@@ -111,11 +132,47 @@
   background: hsl(0 0% 100% / 0.2);
 }
 
-/* Base styles for smooth transitions */
-* {
-  transition-property: background-color, border-color, color, fill, stroke, opacity, box-shadow, transform;
-  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+/* Selective transitions for better mobile performance */
+button,
+a,
+[role="button"] {
+  transition-property: background-color, color, transform, opacity;
   transition-duration: 150ms;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Disable transitions on mobile scroll for better performance */
+@media (max-width: 768px) {
+  .scrolling * {
+    transition: none !important;
+  }
+}
+
+/* iOS Safari fixes */
+@supports (-webkit-touch-callout: none) {
+  body {
+    /* Fix for iOS Safari bounce scroll */
+    position: fixed;
+    overflow: hidden;
+    width: 100%;
+  }
+
+  #__next {
+    height: 100vh;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+/* Prevent zoom on input focus */
+@media screen and (max-width: 768px) {
+
+  input,
+  textarea,
+  select {
+    font-size: 16px !important;
+    /* iOS zooms if < 16px */
+  }
 }
 
 .no-transition * {

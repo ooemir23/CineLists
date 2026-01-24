@@ -28,15 +28,15 @@ export async function MediaRow({ title, items, type, href }: MediaRowProps) {
     const userRatingsMap = await getUserRatingsBulk(tmdbIds);
 
     return (
-        <div className="py-6 space-y-4">
-            <div className="flex items-center justify-between px-6 md:px-10">
+        <div className="py-0">
+            <div className="flex items-center justify-between px-6 md:px-10 mb-2">
                 {href ? (
                     <Link href={href} className="flex items-center gap-2 group">
-                        <h2 className="text-xl md:text-2xl font-bold text-white tracking-tight group-hover:text-primary transition-colors">{title}</h2>
+                        <h2 className="text-xl md:text-2xl font-bold text-amber-400 tracking-tight group-hover:text-primary transition-colors">{title}</h2>
                         <ArrowRight className="w-5 h-5 text-neutral-500 group-hover:text-primary transition-all group-hover:translate-x-1" />
                     </Link>
                 ) : (
-                    <h2 className="text-xl md:text-2xl font-bold text-white tracking-tight">{title}</h2>
+                    <h2 className="text-xl md:text-2xl font-bold text-amber-400 tracking-tight">{title}</h2>
                 )}
             </div>
 
