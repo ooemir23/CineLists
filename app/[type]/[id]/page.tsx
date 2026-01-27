@@ -13,6 +13,7 @@ import { WatchProviders } from "@/components/media/watch-providers";
 import { RatingDisplay } from "@/components/media/rating-display";
 import SeasonList from "@/components/media/season-list";
 import { CommentsSection } from "@/components/media/comments";
+import { GenreList } from "@/components/media/genre-list";
 import { Star, Calendar, Clock, Share2, MessageSquare, ArrowLeft, Play, Info, Tv } from "lucide-react";
 
 type Props = {
@@ -80,7 +81,7 @@ export default async function DetailsPage(props: Props) {
 
     const title = data.title || data.name;
     const releaseDate = data.release_date || data.first_air_date;
-    const runtime = data.runtime || (data.episode_run_time ? data.episode_run_time[0] : null);
+    const runtime = data.runtime || (data.episode_run_time && data.episode_run_time.length > 0 ? data.episode_run_time[0] : null);
     const backdrop = data.backdrop_path ? `https://image.tmdb.org/t/p/original${data.backdrop_path}` : null;
     const year = releaseDate ? new Date(releaseDate).getFullYear() : "";
 
@@ -158,22 +159,42 @@ export default async function DetailsPage(props: Props) {
                             {runtime && (
                                 <span className="flex items-center gap-1">
                                     <Clock className="w-4 h-4 text-neutral-500" />
-                                    {runtime} dk
+                                    {Math.floor(runtime / 60) > 0
+                                        ? `${Math.floor(runtime / 60)} sa ${runtime % 60} dk`
+                                        : `${runtime} dk`}
                                 </span>
                             )}
-                            <div className="flex items-center gap-1 text-yellow-500">
-                                <Star className="w-4 h-4 fill-current" />
-                                <span className="font-bold text-white ml-1">{data.vote_average.toFixed(1)}</span>
+                            <div className="flex items-center gap-1.5 bg-neutral-900 border border-white/10 px-3 py-1.5 rounded-xl shadow-lg group">
+                                <span className="flex items-center justify-center w-5 h-5 bg-blue-500/10 rounded-md">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5 text-blue-400">
+                                        <circle cx="12" cy="12" r="10"></circle>
+                                        <line x1="2" y1="12" x2="22" y2="12"></line>
+                                        <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+                                    </svg>
+                                </span>
+                                <span className="font-black text-white">{data.vote_average.toFixed(1)}</span>
                             </div>
+
+                            <RatingDisplay
+                                userRating={userRating}
+                                friendsRatings={friendsRatings}
+                                mediaTitle={title}
+                            />
+
+                            <RatingDisplay
+                                userRating={userRating}
+                                friendsRatings={friendsRatings}
+                                mediaTitle={title}
+                            />
                         </div>
 
-                        {/* Genres */}
-                        <div className="flex flex-wrap justify-center md:justify-start gap-2">
-                            {data.genres?.map((g: any) => (
-                                <span key={g.id} className="text-xs text-neutral-400 border border-white/10 px-2 py-1 rounded-full">
-                                    {g.name}
-                                </span>
-                            ))}
+                        {/* Feature Row (Platforms & Genres) */}
+                        <div className="flex flex-wrap items-center justify-center md:justify-start gap-3">
+                            <WatchProviders
+                                providers={trProviders}
+                                isGlobal={isGlobal}
+                            />
+                            <GenreList genres={data.genres} type={type as "movie" | "tv"} />
                         </div>
 
                         {/* Actions Row */}
@@ -216,52 +237,13 @@ export default async function DetailsPage(props: Props) {
             <div className="max-w-7xl mx-auto px-6 md:px-10 mt-12 space-y-16">
 
                 {/* Providers (Compact) */}
-                {trProviders && (trProviders.flatrate || trProviders.buy) && (
-                    <section className="bg-neutral-900/50 border border-white/5 rounded-2xl p-6">
-                        <h3 className="text-sm font-bold text-neutral-500 uppercase tracking-widest mb-4 flex items-center gap-2">
-                            <Tv className="w-4 h-4" />
-                            İzleme Seçenekleri
-                        </h3>
-                        <div className="flex flex-wrap gap-8">
-                            {trProviders.flatrate && (
-                                <div className="flex items-center gap-3">
-                                    <span className="text-sm font-medium text-white">Abone Ol:</span>
-                                    <div className="flex -space-x-2">
-                                        {trProviders.flatrate.map((p: any) => (
-                                            <div key={p.provider_id} className="relative w-10 h-10 rounded-lg overflow-hidden border-2 border-neutral-900 shadow-sm first:ml-0 hover:z-10 transition-all hover:scale-110" title={p.provider_name}>
-                                                <Image src={`https://image.tmdb.org/t/p/original${p.logo_path}`} alt={p.provider_name} fill className="object-cover" />
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
-                            )}
-                            {trProviders.buy && (
-                                <div className="flex items-center gap-3">
-                                    <span className="text-sm font-medium text-white">Kirala / Satın Al:</span>
-                                    <div className="flex -space-x-2">
-                                        {trProviders.buy.slice(0, 5).map((p: any) => (
-                                            <div key={p.provider_id} className="relative w-10 h-10 rounded-lg overflow-hidden border-2 border-neutral-900 shadow-sm first:ml-0 grayscale opacity-70 hover:grayscale-0 hover:opacity-100 hover:z-10 transition-all hover:scale-110" title={p.provider_name}>
-                                                <Image src={`https://image.tmdb.org/t/p/original${p.logo_path}`} alt={p.provider_name} fill className="object-cover" />
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
-                            )}
-                        </div>
-                    </section>
-                )}
 
                 {/* Seasons */}
-                {type === "tv" && data.seasons && (
-                    <section>
-                        <h3 className="text-2xl font-bold text-white mb-6">Sezonlar</h3>
-                        <SeasonList
-                            tmdbId={data.id}
-                            seasons={data.seasons}
-                            watchedEpisodes={watchedEpisodes}
-                        />
-                    </section>
-                )}
+                <SeasonList
+                    tmdbId={data.id}
+                    seasons={data.seasons}
+                    watchedEpisodes={watchedEpisodes}
+                />
 
                 {/* Cast */}
                 <section>
@@ -278,8 +260,8 @@ export default async function DetailsPage(props: Props) {
                 </section>
 
                 {/* Reviews & Ratings */}
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
-                    <div className="lg:col-span-2">
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-12" id="comments">
+                    <div className="lg:col-span-3">
                         <CommentsSection
                             mediaId={data.id}
                             type={type as "movie" | "tv"}
@@ -287,18 +269,6 @@ export default async function DetailsPage(props: Props) {
                             mediaTitle={title}
                             mediaPosterPath={data.poster_path}
                         />
-                    </div>
-                    <div>
-                        {userRating && (
-                            <div className="bg-neutral-900 border border-white/5 rounded-2xl p-6 sticky top-24">
-                                <h3 className="text-lg font-bold text-white mb-4">Puan Özeti</h3>
-                                <RatingDisplay
-                                    userRating={userRating}
-                                    friendsRatings={friendsRatings}
-                                    mediaTitle={title}
-                                />
-                            </div>
-                        )}
                     </div>
                 </div>
 

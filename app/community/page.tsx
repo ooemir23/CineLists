@@ -10,7 +10,7 @@ import { prisma } from "@/lib/prisma"; // Direct prisma access for initial load 
 export default async function CommunityPage(props: { searchParams: Promise<{ q?: string }> }) {
     const searchParams = await props.searchParams;
     const session = await auth();
-    const query = searchParams.q || "";
+    const query = searchParams?.q || "";
 
     // Verify session for follow status checks
     const currentUserId = session?.user?.id;

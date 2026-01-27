@@ -1,6 +1,7 @@
 // API route for TMDB multi search
 import { NextResponse } from "next/server";
 import { tmdb } from "@/lib/tmdb";
+import { searchUsers } from "@/lib/social-actions";
 
 import type { NextRequest } from "next/server";
 
@@ -27,5 +28,17 @@ export async function GET(req: NextRequest) {
       };
     }
   });
-  return NextResponse.json(results);
+  // Return mixed results
+  const userResults = await searchUsers(query);
+  const formattedUserResults = userResults.map((u: any) => ({
+    id: u.id,
+    name: u.name,
+    type: "user", // Custom type for users
+    image: u.image,
+  }));
+
+  // Combine: Users first, then TMDB results
+  const combined = [...formattedUserResults, ...results].slice(0, 10);
+
+  return NextResponse.json(combined);
 }

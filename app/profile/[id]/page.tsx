@@ -43,7 +43,7 @@ export default async function PublicProfilePage({ params }: { params: Promise<{ 
         <div className="container mx-auto px-6 py-10">
             <div className="flex flex-col md:flex-row gap-8 items-start">
                 {/* Profile Card */}
-                <div className="w-full md:w-1/3 bg-card border border-white/10 rounded-2xl p-6 shadow-xl sticky top-24">
+                <div className="w-full md:w-1/3 bg-[#101624]/80 backdrop-blur-xl border border-white/10 rounded-3xl p-6 shadow-2xl sticky top-24">
                     <div className="flex flex-col items-center">
                         <div className="w-32 h-32 rounded-full overflow-hidden mb-4 ring-4 ring-primary/20 relative">
                             {user.image ? (

@@ -48,7 +48,7 @@ export default async function Page(props: Props) {
         const initialData = await tmdb.discover(type as "movie" | "tv", discoverParams);
         return (
             <div className="max-w-7xl mx-auto px-6 md:px-10 lg:px-16 py-10 min-h-screen">
-                <h1 className="text-3xl md:text-5xl font-black text-white mb-10 tracking-tight">
+                <h1 className="text-3xl md:text-5xl font-black text-white mb-10 tracking-tight -mt-10 relative z-10">
                     {CATEGORY_NAMES[category as keyof typeof CATEGORY_NAMES] || ""} {TYPE_NAMES[type] || ""}
                 </h1>
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-8 mt-8">
@@ -96,7 +96,7 @@ export default async function Page(props: Props) {
             const data = await res.json();
             providers = (data.results || []).slice(0, 5);
         }
-    } catch {}
+    } catch { }
     const providerRows = await Promise.all(
         providers.map(async (provider) => {
             const data = await tmdb.discover(type as "movie" | "tv", {
@@ -116,7 +116,7 @@ export default async function Page(props: Props) {
 
     return (
         <div className="max-w-7xl mx-auto px-6 md:px-10 lg:px-16 py-10 min-h-screen">
-            <h1 className="text-3xl md:text-5xl font-black text-white mb-10 tracking-tight">
+            <h1 className="text-3xl md:text-5xl font-black text-white mb-10 tracking-tight md:-mt-10 relative z-10">
                 Keşfet: {TYPE_NAMES[type] || ""}
             </h1>
 

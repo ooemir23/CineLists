@@ -1,46 +1,41 @@
 "use client";
 
-import { useRef } from "react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { useState } from "react";
+import { ChevronRight as ArrowRight } from "lucide-react";
+import { MediaCard } from "./media-card";
+import { cn } from "@/lib/utils";
+
+type MediaItem = {
+    id: number;
+    title?: string;
+    original_title?: string;
+    name?: string; // TV shows use name
+    original_name?: string;
+    poster_path: string | null;
+    vote_average: number;
+    release_date?: string;
+    first_air_date?: string;
+    runtime?: number; // Added runtime support
+};
 
 type MediaRowClientProps = {
     children: React.ReactNode;
 };
 
 export function MediaRowClient({ children }: MediaRowClientProps) {
-    const rowRef = useRef<HTMLDivElement>(null);
-
-    const scroll = (direction: "left" | "right") => {
-        if (rowRef.current) {
-            const { scrollLeft, clientWidth } = rowRef.current;
-            const scrollTo = direction === "left" ? scrollLeft - clientWidth : scrollLeft + clientWidth;
-
-            rowRef.current.scrollTo({ left: scrollTo, behavior: "smooth" });
-        }
-    };
-
     return (
-        <div className="relative group/row">
-            <button
-                onClick={() => scroll("left")}
-                className="absolute left-2 top-1/2 -translate-y-1/2 z-20 p-2 rounded-full bg-black/60 backdrop-blur-md border border-white/10 hover:bg-black/80 transition-all opacity-0 group-hover/row:opacity-100 hidden md:block"
-            >
-                <ChevronLeft className="w-5 h-5 text-white" />
-            </button>
-            <button
-                onClick={() => scroll("right")}
-                className="absolute right-2 top-1/2 -translate-y-1/2 z-20 p-2 rounded-full bg-black/60 backdrop-blur-md border border-white/10 hover:bg-black/80 transition-all opacity-0 group-hover/row:opacity-100 hidden md:block"
-            >
-                <ChevronRight className="w-5 h-5 text-white" />
-            </button>
-
-            <div
-                ref={rowRef}
-                className="flex gap-4 overflow-x-auto px-6 md:px-10 pb-4 scrollbar-hide snap-x scroll-pl-10"
-                style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
-            >
+        <div className="relative group/slider">
+            <div className="flex gap-4 overflow-x-auto pb-6 -mx-4 px-4 md:mx-0 md:px-0 snap-x hide-scrollbar">
                 {children}
             </div>
+
+            {/* Fade gradients for overflow indication */}
+            <div className="absolute top-0 bottom-6 left-0 w-12 bg-gradient-to-r from-[#101624] to-transparent pointer-events-none md:hidden" />
+            <div className="absolute top-0 bottom-6 right-0 w-12 bg-gradient-to-l from-[#101624] to-transparent pointer-events-none md:hidden" />
         </div>
     );
 }
+
+// Re-export MediaCard and supporting types for easier imports if needed
+export { MediaCard };
+export type { MediaItem };

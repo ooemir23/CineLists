@@ -1,9 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { ChevronDown, ChevronUp } from "lucide-react";
+import { ChevronDown, ChevronUp, Loader2, Layers } from "lucide-react";
 import EpisodeItem from "./episode-item";
 import { cn } from "@/lib/utils";
+import { useEffect, useState as useEState } from 'react';
+import { fetchSeasonEpisodes } from "@/lib/client-actions";
 
 type Season = {
     air_date: string;
@@ -18,81 +20,112 @@ type Season = {
 type SeasonListProps = {
     tmdbId: number;
     seasons: Season[];
-    watchedEpisodes: { s: number; e: number }[]; // Array of {s: season, e: episode}
+    watchedEpisodes: { s: number; e: number }[];
 };
 
 export default function SeasonList({ tmdbId, seasons, watchedEpisodes }: SeasonListProps) {
-    // Sort seasons (specials usually 0, put them last or first? TMDB returns sorted usually).
-    // Filter out empty seasons if needed.
+    if (!seasons || seasons.length === 0) return null;
     const validSeasons = seasons.filter(s => s.episode_count > 0 && s.season_number > 0);
-
-    // Auto-expand first season or the one with unwatched episodes?
-    // Start with first season expanded.
+    const [isAllVisible, setIsAllVisible] = useState(false);
     const [expandedSeason, setExpandedSeason] = useState<number | null>(validSeasons[0]?.season_number || null);
 
     return (
-        <div className="space-y-4">
-            <h2 className="text-2xl font-bold text-white mb-6">Sezonlar</h2>
-            {validSeasons.map((season) => (
-                <div key={season.id} className="border border-white/10 rounded-xl overflow-hidden bg-white/5">
-                    <button
-                        onClick={() => setExpandedSeason(expandedSeason === season.season_number ? null : season.season_number)}
-                        className="w-full flex items-center justify-between p-4 hover:bg-white/5 transition-colors"
-                    >
-                        <div className="text-left">
-                            <h3 className="font-bold text-white text-lg">{season.name}</h3>
-                            <p className="text-sm text-neutral-400">{season.episode_count} Bölüm</p>
-                        </div>
-                        {expandedSeason === season.season_number ? <ChevronUp /> : <ChevronDown />}
-                    </button>
+        <div className="space-y-6">
+            {/* Main Toggle Header */}
+            <button
+                onClick={() => setIsAllVisible(!isAllVisible)}
+                className="w-full flex items-center justify-between group py-4 border-b border-white/5 hover:border-primary/30 transition-all"
+            >
+                <div className="flex items-center gap-4">
+                    <div className={cn(
+                        "p-2 rounded-xl transition-all",
+                        isAllVisible ? "bg-primary text-background" : "bg-white/5 text-neutral-400 group-hover:text-white"
+                    )}>
+                        <Layers className="w-5 h-5" />
+                    </div>
+                    <div className="text-left">
+                        <h3 className="text-2xl font-black text-white tracking-tight">Sezonlar</h3>
+                        <p className="text-sm font-bold text-neutral-500 mt-0.5">
+                            Toplam {validSeasons.length} Sezon
+                        </p>
+                    </div>
+                </div>
+                <div className={cn(
+                    "p-2 rounded-full border border-white/5 transition-all",
+                    isAllVisible ? "bg-white/10 text-white rotate-180" : "bg-transparent text-neutral-500 group-hover:text-white"
+                )}>
+                    <ChevronDown className="w-6 h-6" />
+                </div>
+            </button>
 
-                    {expandedSeason === season.season_number && (
-                        <div className="border-t border-white/10">
-                            <SeasonEpisodes
-                                tmdbId={tmdbId}
-                                seasonNumber={season.season_number}
-                                watchedEpisodes={watchedEpisodes.filter(w => w.s === season.season_number).map(w => w.e)}
-                            />
+            {/* Expandable Content Area */}
+            {isAllVisible && (
+                <div className="space-y-8 mt-6 animate-in fade-in slide-in-from-top-2 duration-300">
+                    {/* Season Tabs Row */}
+                    <div className="flex flex-wrap gap-2 md:gap-3">
+                        {validSeasons.map((season) => (
+                            <button
+                                key={season.id}
+                                onClick={() => setExpandedSeason(season.season_number)}
+                                className={cn(
+                                    "px-5 py-2.5 rounded-xl font-bold text-sm transition-all border active:scale-95",
+                                    expandedSeason === season.season_number
+                                        ? "bg-primary text-background border-primary shadow-lg shadow-primary/20"
+                                        : "bg-white/5 text-neutral-400 border-white/5 hover:bg-white/10 hover:text-white"
+                                )}
+                            >
+                                {season.name}
+                            </button>
+                        ))}
+                    </div>
+
+                    {/* Expanded Content View */}
+                    {expandedSeason !== null && (
+                        <div className="bg-neutral-900/40 backdrop-blur-md border border-white/5 rounded-[2rem] overflow-hidden shadow-2xl">
+                            <div className="p-6 md:p-8 bg-white/[0.02] border-b border-white/5 flex items-center justify-between">
+                                <div>
+                                    <h3 className="text-xl font-black text-white tracking-tight">
+                                        {validSeasons.find(s => s.season_number === expandedSeason)?.name}
+                                    </h3>
+                                    <p className="text-sm font-semibold text-neutral-500 mt-0.5">
+                                        {validSeasons.find(s => s.season_number === expandedSeason)?.episode_count} Bölüm Bulunuyor
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div className="max-h-[600px] overflow-y-auto custom-scrollbar">
+                                <SeasonEpisodes
+                                    tmdbId={tmdbId}
+                                    seasonNumber={expandedSeason}
+                                    watchedEpisodes={watchedEpisodes.filter(w => w.s === expandedSeason).map(w => w.e)}
+                                />
+                            </div>
                         </div>
                     )}
                 </div>
-            ))}
+            )}
         </div>
     );
 }
-
-// Sub-component to fetch and display episodes
-import { useEffect, useState as useEState } from 'react';
-import { Loader2 } from "lucide-react";
-import { tmdb } from "@/lib/tmdb"; // Wait, tmdb lib is server-side mostly due to API key security? 
-// Actually tmdb.ts uses env var, which is not exposed to client unless NEXT_PUBLIC.
-// We should use a server action to fetch episodes or existing wrapper if compatible.
-// But standard fetch in Client Comp needs API route or Server Action.
-// Let's create a Server Action or Route. 
-// OR simpler: Render episodes on server? 
-// If we render all episodes for all seasons, page becomes huge.
-// Better: Fetch on expand.
-// Since we are in a client component, we need to call an API.
-// Let's update `lib/tmdb.ts` to be server-only (which it is) and create a server action wrapper in `lib/actions.ts` or similar.
-// Or just creating a new file `components/media/season-episodes.tsx` that is a SERVER COMPONENT?
-// No, Suspense can't be triggered by click easily without navigation.
-// Let's use a Server Action to fetch season details.
-
-// We will implement `fetchSeason` in a server action file.
-import { fetchSeasonEpisodes } from "@/lib/client-actions"; // We'll create this.
 
 function SeasonEpisodes({ tmdbId, seasonNumber, watchedEpisodes }: { tmdbId: number, seasonNumber: number, watchedEpisodes: number[] }) {
     const [episodes, setEpisodes] = useEState<any[]>([]);
     const [loading, setLoading] = useEState(true);
 
     useEffect(() => {
+        setLoading(true);
         fetchSeasonEpisodes(tmdbId, seasonNumber).then(data => {
             setEpisodes(data.episodes || []);
             setLoading(false);
         });
     }, [tmdbId, seasonNumber]);
 
-    if (loading) return <div className="p-8 flex justify-center"><Loader2 className="animate-spin text-primary" /></div>;
+    if (loading) return (
+        <div className="py-20 flex flex-col items-center justify-center gap-4">
+            <Loader2 className="w-8 h-8 animate-spin text-primary opacity-50" />
+            <p className="text-xs font-bold text-neutral-600 uppercase tracking-widest">Bölümler Yükleniyor...</p>
+        </div>
+    );
 
     return (
         <div className="divide-y divide-white/5">

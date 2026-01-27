@@ -53,3 +53,54 @@ export async function getPersonComments(personId: number) {
         return [];
     }
 }
+
+export async function addActivityComment(activityId: string, content: string) {
+    const session = await auth();
+    if (!session?.user?.id) {
+        return { error: "Giriş yapmalısınız" };
+    }
+
+    if (!content.trim()) {
+        return { error: "Yorum boş olamaz" };
+    }
+
+    try {
+        await prisma.comment.create({
+            data: {
+                userId: session.user.id,
+                activityId,
+                content: content.trim(),
+            },
+        });
+
+        revalidatePath("/feed");
+        return { success: true };
+    } catch (error) {
+        console.error("Error adding activity comment:", error);
+        return { error: "Yorum eklenirken bir hata oluştu" };
+    }
+}
+
+export async function getActivityComments(activityId: string) {
+    try {
+        const comments = await prisma.comment.findMany({
+            where: { activityId },
+            include: {
+                user: {
+                    select: {
+                        id: true,
+                        name: true,
+                        image: true,
+                    },
+                },
+            },
+            orderBy: { createdAt: "asc" },
+        });
+
+        return comments;
+    } catch (error) {
+        console.error("Error fetching activity comments:", error);
+        return [];
+    }
+}
+

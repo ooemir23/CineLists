@@ -115,9 +115,9 @@ export function MediaFilter() {
     };
 
     return (
-        <div className="px-6 md:px-10 -mt-8 relative z-20">
+        <div className="px-6 md:px-10 relative z-20">
             <div className="max-w-7xl mx-auto">
-                <div className="bg-card/40 backdrop-blur-2xl border border-white/10 rounded-3xl p-4 md:p-6 shadow-2xl">
+                <div className="bg-[#101624]/80 backdrop-blur-md border border-white/5 rounded-3xl p-4 md:p-6 shadow-xl">
                     <div className="flex flex-col md:flex-row items-center gap-6">
                         <div className="flex items-center justify-between w-full md:w-auto shrink-0">
                             <div>

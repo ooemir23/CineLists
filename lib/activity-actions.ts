@@ -220,13 +220,14 @@ export async function saveWatchDetails(params: {
     watchedWith?: string[]; // Array of user IDs or names
     recommendedById?: string;
     recommendedByText?: string;
+    review?: string;
 }) {
     const session = await auth();
     if (!session?.user?.id) {
         return { error: "Giriş yapmalısınız" };
     }
 
-    const { tmdbId, type, title, posterPath, rating, watchedAt, watchedWith, recommendedById, recommendedByText } = params;
+    const { tmdbId, type, title, posterPath, rating, watchedAt, watchedWith, recommendedById, recommendedByText, review } = params;
 
     let media = await prisma.mediaItem.findUnique({
         where: { tmdbId },
@@ -282,6 +283,7 @@ export async function saveWatchDetails(params: {
             watchedWith: watchedWith ? JSON.stringify(watchedWith) : undefined,
             recommendedById: recommendedById || null,
             recommendedByText: recommendedByText || null,
+            review: review !== undefined ? review : undefined,
             createdAt: new Date(),
         },
         create: {
@@ -293,6 +295,7 @@ export async function saveWatchDetails(params: {
             watchedWith: watchedWith ? JSON.stringify(watchedWith) : null,
             recommendedById: recommendedById || null,
             recommendedByText: recommendedByText || null,
+            review: review || null,
         },
     });
 

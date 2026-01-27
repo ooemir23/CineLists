@@ -37,6 +37,7 @@ export function WatchDetailsForm({
     const [selectedPeople, setSelectedPeople] = useState<string[]>([]); // Can be IDs or names
     const [recommendedById, setRecommendedById] = useState<string>("");
     const [recommendedByText, setRecommendedByText] = useState<string>("");
+    const [review, setReview] = useState("");
     const [isPending, startTransition] = useTransition();
     const [isLoadingFriends, setIsLoadingFriends] = useState(true);
     const [customPerson, setCustomPerson] = useState("");
@@ -67,6 +68,7 @@ export function WatchDetailsForm({
                 watchedWith: selectedPeople.length > 0 ? selectedPeople : undefined,
                 recommendedById: recommendedById || undefined,
                 recommendedByText: recommendedByText || undefined,
+                review: review.trim() || undefined,
             });
 
             if (result.success) {
@@ -256,6 +258,20 @@ export function WatchDetailsForm({
                             </button>
                         </div>
                     </div>
+                </div>
+
+                {/* Review / Comment */}
+                <div className="space-y-4 md:col-span-2">
+                    <label className="text-xs font-bold text-neutral-400 uppercase tracking-[0.2em] flex items-center gap-2">
+                        <MessageSquare className="w-3.5 h-3.5 text-pink-400" /> İnceleme & Yorum
+                    </label>
+                    <textarea
+                        value={review}
+                        onChange={(e) => setReview(e.target.value)}
+                        placeholder="Bu içerik hakkında ne düşünüyorsun? (Bu yorum aktivite akışında görünecektir)"
+                        rows={4}
+                        className="w-full bg-white/5 border border-white/5 rounded-[1.5rem] px-6 py-4 text-sm font-medium text-white focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all hover:bg-white/[0.08] resize-none"
+                    />
                 </div>
             </div>
 

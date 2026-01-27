@@ -41,7 +41,7 @@ export default async function PersonPage(props: Props) {
             <div className="max-w-7xl mx-auto px-6 md:px-10 py-12">
                 <div className="flex flex-col md:flex-row gap-12 items-start">
                     {/* Left Column: Image and Social */}
-                    <div className="w-full md:w-80 shrink-0 space-y-8">
+                    <div className="w-full md:w-80 shrink-0 space-y-8 mx-auto md:mx-0">
                         <div className="relative aspect-[2/3] w-full rounded-2xl overflow-hidden shadow-2xl ring-1 ring-white/10">
                             {person.profile_path ? (
                                 <Image

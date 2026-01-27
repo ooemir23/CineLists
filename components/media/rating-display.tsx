@@ -18,11 +18,13 @@ type RatingDisplayProps = {
 export function RatingDisplay({ userRating, friendsRatings, mediaTitle }: RatingDisplayProps) {
     const [isModalOpen, setIsModalOpen] = useState(false);
 
-    if (!userRating) return null;
-
     return (
         <>
-            <UserRatingBadge rating={userRating} onClick={() => setIsModalOpen(true)} />
+            <UserRatingBadge
+                rating={userRating}
+                friendsCount={friendsRatings.length}
+                onClick={() => setIsModalOpen(true)}
+            />
             <FriendsRatingsModal
                 isOpen={isModalOpen}
                 onClose={() => setIsModalOpen(false)}

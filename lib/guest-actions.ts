@@ -13,13 +13,14 @@ export async function loginAsGuest() {
     await prisma.user.create({
         data: {
             email: guestEmail,
+            username: `guest_${randomId}`,
             name: guestName,
             image: null,
         },
     });
 
     // Sign in with these credentials - Auth.js will handle the redirect
-    await signIn("guest", {
+    await signIn("email", {
         email: guestEmail,
         redirectTo: "/profile",
     });

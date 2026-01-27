@@ -1,5 +1,5 @@
 generator client {
-  provider = "prisma-client-js"
+  provider   = "prisma-client-js"
   engineType = "library"
 }
 
@@ -8,22 +8,20 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// NextAuth Models
 model Account {
   id                String  @id @default(cuid())
   userId            String
   type              String
   provider          String
   providerAccountId String
-  refresh_token     String? @db.Text
-  access_token      String? @db.Text
+  refresh_token     String?
+  access_token      String?
   expires_at        Int?
   token_type        String?
   scope             String?
-  id_token          String? @db.Text
+  id_token          String?
   session_state     String?
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([provider, providerAccountId])
 }
@@ -37,49 +35,34 @@ model Session {
 }
 
 model User {
-  id            String    @id @default(cuid())
-  username      String   @unique
-  name          String?
-  email         String?   @unique
-  emailVerified DateTime?
-  image         String?
-  bio           String?   @db.Text
-  password      String?
-  
-  accounts      Account[]
-  sessions      Session[]
-  
-  // Social
-  followedBy    Follow[]  @relation("followedBy")
-  following     Follow[]  @relation("following")
-  
-  // App Data
-  activities    Activity[]
-  comments      Comment[]
-  sentRecommendations     Recommendation[] @relation("sentRecommendations")
+  id                      String           @id @default(cuid())
+  username                String           @unique
+  name                    String?
+  email                   String?          @unique
+  emailVerified           DateTime?
+  image                   String?
+  bio                     String?
+  password                String?
+  hasCompletedOnboarding  Boolean          @default(false)
+  favoriteGenres          String[]
+  platforms               String[]
+  accounts                Account[]
+  activityRecommendations Activity[]       @relation("ActivityRecommendations")
+  activities              Activity[]
+  comments                Comment[]
+  favoritePersons         FavoritePerson[]
+  following               Follow[]         @relation("following")
+  followedBy              Follow[]         @relation("followedBy")
+  notifications           Indicates[]
+  receivedMessages        Message[]        @relation("receivedMessages")
+  sentMessages            Message[]        @relation("sentMessages")
   receivedRecommendations Recommendation[] @relation("receivedRecommendations")
-  
-  // Lists
-  watched           Watched[]         @relation("UserWatched")
-  toWatch           ToWatch[]
-  watchedEpisodes   WatchedEpisode[]
-  watchedRecommendations Watched[]     @relation("WatchedRecommendations")
-  activityRecommendations Activity[]   @relation("ActivityRecommendations")
-
-  // Messaging
-  sentMessages     Message[] @relation("sentMessages")
-  receivedMessages Message[] @relation("receivedMessages")
-
-  // Onboarding & Preferences
-  hasCompletedOnboarding Boolean @default(false)
-  favoriteGenres        String[]
-  platforms             String[]
-  
-  // Notifications
-  notifications Indicates[]
-
-  // Favorites
-  favoritePersons FavoritePerson[]
+  sentRecommendations     Recommendation[] @relation("sentRecommendations")
+  sessions                Session[]
+  toWatch                 ToWatch[]
+  watchedRecommendations  Watched[]        @relation("WatchedRecommendations")
+  watched                 Watched[]        @relation("UserWatched")
+  watchedEpisodes         WatchedEpisode[]
 }
 
 model FavoritePerson {
@@ -89,17 +72,16 @@ model FavoritePerson {
   name        String
   profilePath String?
   addedAt     DateTime @default(now())
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, tmdbId])
 }
 
 model Follow {
-  followerId String
+  followerId  String
   followingId String
-  follower   User   @relation("following", fields: [followerId], references: [id], onDelete: Cascade)
-  following  User   @relation("followedBy", fields: [followingId], references: [id], onDelete: Cascade)
+  follower    User   @relation("following", fields: [followerId], references: [id], onDelete: Cascade)
+  following   User   @relation("followedBy", fields: [followingId], references: [id], onDelete: Cascade)
 
   @@id([followerId, followingId])
 }
@@ -112,171 +94,137 @@ model VerificationToken {
   @@unique([identifier, token])
 }
 
-// App Core Models
-
-enum MediaType {
-  MOVIE
-  TV
-  PERSON
-}
-
 model MediaItem {
-  id          String   @id @default(cuid())
-  tmdbId      Int      @unique
-  type        MediaType
-  title       String
-  posterPath  String?
-  backdropPath String?
-  overview    String?  @db.Text
-  releaseDate DateTime?
-  runtime     Int?     // Runtime in minutes
-  seasonCount Int?
-  episodeCount Int?
-  genres       String[]
-  voteAverage  Float?
-  
-  activities     Activity[]
-  watchedBy      Watched[]
-  toWatchBy      ToWatch[]
+  id              String           @id @default(cuid())
+  tmdbId          Int              @unique
+  type            MediaType
+  title           String
+  posterPath      String?
+  backdropPath    String?
+  overview        String?
+  releaseDate     DateTime?
+  runtime         Int?
+  seasonCount     Int?
+  episodeCount    Int?
+  genres          String[]
+  voteAverage     Float?
+  activities      Activity[]
+  episodes        Episode[]
   recommendations Recommendation[]
-  episodes       Episode[]
+  toWatchBy       ToWatch[]
+  watchedBy       Watched[]
 }
 
 model Watched {
-  id              String      @id @default(cuid())
-  userId          String
-  mediaId         String
-  rating          Float?      // User's rating 0-10
-  watchedAt       DateTime    @default(now())
-  recommendedById String?
+  id                String    @id @default(cuid())
+  userId            String
+  mediaId           String
+  rating            Float?
+  watchedAt         DateTime  @default(now())
+  recommendedById   String?
   recommendedByText String?
-  
-  user            User      @relation("UserWatched", fields: [userId], references: [id], onDelete: Cascade)
-  media           MediaItem @relation(fields: [mediaId], references: [id])
-  recommendedBy   User?     @relation("WatchedRecommendations", fields: [recommendedById], references: [id])
+  media             MediaItem @relation(fields: [mediaId], references: [id])
+  recommendedBy     User?     @relation("WatchedRecommendations", fields: [recommendedById], references: [id])
+  user              User      @relation("UserWatched", fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, mediaId])
 }
-
 
 model ToWatch {
-  id        String      @id @default(cuid())
-  userId    String
-  mediaId   String
-  addedAt   DateTime    @default(now())
-  
-  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  media     MediaItem @relation(fields: [mediaId], references: [id])
+  id      String    @id @default(cuid())
+  userId  String
+  mediaId String
+  addedAt DateTime  @default(now())
+  media   MediaItem @relation(fields: [mediaId], references: [id])
+  user    User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, mediaId])
 }
 
-
 model Activity {
-  id              String   @id @default(cuid())
-  userId          String
-  mediaId         String
-  type            ActivityType // WATCHED, RATED, REVIEWED
-  rating          Float?   // 0-10
-  review          String?  @db.Text
-  watchedAt       DateTime?
-  watchedWith     String?  // Store as JSON string [id1, id2] or names
-  recommendedById String?
+  id                String       @id @default(cuid())
+  userId            String
+  mediaId           String
+  type              ActivityType
+  rating            Float?
+  review            String?
+  watchedAt         DateTime?
+  watchedWith       String?
+  recommendedById   String?
   recommendedByText String?
-  platform        String?  // Netflix, Amazon, etc.
-  createdAt       DateTime @default(now())
-  
-  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  media           MediaItem @relation(fields: [mediaId], references: [id])
-  recommendedBy   User?     @relation("ActivityRecommendations", fields: [recommendedById], references: [id])
-  episodeId       String?
-  episode         Episode?  @relation(fields: [episodeId], references: [id])
-  comments        Comment[]
+  platform          String?
+  createdAt         DateTime     @default(now())
+  episodeId         String?
+  episode           Episode?     @relation(fields: [episodeId], references: [id])
+  media             MediaItem    @relation(fields: [mediaId], references: [id])
+  recommendedBy     User?        @relation("ActivityRecommendations", fields: [recommendedById], references: [id])
+  user              User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  comments          Comment[]
 
   @@unique([userId, mediaId, type], name: "userId_mediaId_type")
 }
 
-enum ActivityType {
-  WATCHED
-  RATED
-  REVIEWED
-  ADDED_TO_LIST
-}
-
 model Comment {
-  id         String   @id @default(cuid())
+  id         String    @id @default(cuid())
   userId     String
   activityId String?
   episodeId  String?
-  personId   Int?     // TMDB Person ID for comments on person pages
-  content    String   @db.Text
-  createdAt  DateTime @default(now())
-  
-  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  personId   Int?
+  content    String
+  createdAt  DateTime  @default(now())
   activity   Activity? @relation(fields: [activityId], references: [id], onDelete: Cascade)
   episode    Episode?  @relation(fields: [episodeId], references: [id], onDelete: Cascade)
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Recommendation {
-  id          String   @id @default(cuid())
-  senderId    String
-  receiverId  String
-  mediaId     String
-  message     String?  @db.Text
-  createdAt   DateTime @default(now())
-  isRead      Boolean  @default(false)
-  
-  sender      User      @relation("sentRecommendations", fields: [senderId], references: [id], onDelete: Cascade)
-  receiver    User      @relation("receivedRecommendations", fields: [receiverId], references: [id], onDelete: Cascade)
-  media       MediaItem @relation(fields: [mediaId], references: [id])
+  id         String    @id @default(cuid())
+  senderId   String
+  receiverId String
+  mediaId    String
+  message    String?
+  createdAt  DateTime  @default(now())
+  isRead     Boolean   @default(false)
+  media      MediaItem @relation(fields: [mediaId], references: [id])
+  receiver   User      @relation("receivedRecommendations", fields: [receiverId], references: [id], onDelete: Cascade)
+  sender     User      @relation("sentRecommendations", fields: [senderId], references: [id], onDelete: Cascade)
 }
 
 model Message {
-  id        String   @id @default(cuid())
-  senderId  String
+  id         String   @id @default(cuid())
+  senderId   String
   receiverId String
-  content   String   @db.Text
-  createdAt DateTime @default(now())
-  isRead    Boolean  @default(false)
-  
-  sender    User     @relation("sentMessages", fields: [senderId], references: [id], onDelete: Cascade)
-  receiver  User     @relation("receivedMessages", fields: [receiverId], references: [id], onDelete: Cascade)
+  content    String
+  createdAt  DateTime @default(now())
+  isRead     Boolean  @default(false)
+  receiver   User     @relation("receivedMessages", fields: [receiverId], references: [id], onDelete: Cascade)
+  sender     User     @relation("sentMessages", fields: [senderId], references: [id], onDelete: Cascade)
 }
 
-model Indicates { // Notification
-  id        String   @id @default(cuid())
+model Indicates {
+  id        String           @id @default(cuid())
   userId    String
   type      NotificationType
   message   String
-  link      String? // Link to activity or user
-  isRead    Boolean  @default(false)
-  createdAt DateTime @default(now())
-  
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-}
-
-enum NotificationType {
-  NEW_FOLLOWER
-  NEW_COMMENT
-  NEW_RECOMMENDATION
-  MENTION
-  FRIEND_ACTIVITY
+  link      String?
+  isRead    Boolean          @default(false)
+  createdAt DateTime         @default(now())
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Episode {
-  id           String   @id @default(cuid())
-  mediaId      String
-  seasonNumber Int
+  id            String           @id @default(cuid())
+  mediaId       String
+  seasonNumber  Int
   episodeNumber Int
-  title        String?
-  overview     String?  @db.Text
-  stillPath    String?
-  airDate      DateTime?
-  
-  media        MediaItem @relation(fields: [mediaId], references: [id], onDelete: Cascade)
-  watchedBy    WatchedEpisode[]
-  activities   Activity[]
-  comments     Comment[]
+  title         String?
+  overview      String?
+  stillPath     String?
+  airDate       DateTime?
+  activities    Activity[]
+  comments      Comment[]
+  media         MediaItem        @relation(fields: [mediaId], references: [id], onDelete: Cascade)
+  watchedBy     WatchedEpisode[]
 
   @@unique([mediaId, seasonNumber, episodeNumber])
 }
@@ -286,9 +234,29 @@ model WatchedEpisode {
   userId    String
   episodeId String
   watchedAt DateTime @default(now())
-
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   episode   Episode  @relation(fields: [episodeId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, episodeId])
+}
+
+enum MediaType {
+  MOVIE
+  TV
+  PERSON
+}
+
+enum ActivityType {
+  WATCHED
+  RATED
+  REVIEWED
+  ADDED_TO_LIST
+}
+
+enum NotificationType {
+  NEW_FOLLOWER
+  NEW_COMMENT
+  NEW_RECOMMENDATION
+  MENTION
+  FRIEND_ACTIVITY
 }

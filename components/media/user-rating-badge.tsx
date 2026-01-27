@@ -1,26 +1,32 @@
 "use client";
 
-import { Star } from "lucide-react";
+import { Star, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 type UserRatingBadgeProps = {
-    rating: number;
+    rating: number | null;
+    friendsCount: number;
     onClick: () => void;
 };
 
-export function UserRatingBadge({ rating, onClick }: UserRatingBadgeProps) {
+export function UserRatingBadge({ rating, friendsCount, onClick }: UserRatingBadgeProps) {
     return (
         <button
             onClick={onClick}
-            className="group flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-yellow-500/20 to-orange-500/20 border border-yellow-500/30 rounded-xl hover:border-yellow-500/50 transition-all hover:scale-105 active:scale-95"
+            className="group flex items-center gap-2.5 px-3 py-1.5 bg-primary/10 border border-primary/20 rounded-xl hover:bg-primary/20 hover:border-primary/40 transition-all hover:scale-105 active:scale-95 shadow-lg shadow-primary/5"
         >
-            <Star className="w-5 h-5 fill-yellow-400 text-yellow-400" />
-            <div className="flex flex-col items-start">
-                <span className="text-xs text-neutral-400 font-medium">Senin Puanın</span>
-                <span className="text-lg font-black text-yellow-400">{rating.toFixed(1)}</span>
+            <div className="flex items-center gap-1.5 border-r border-primary/20 pr-2.5">
+                <Star className="w-4 h-4 fill-primary text-primary" />
+                <span className="text-sm font-black text-white">{rating ? rating.toFixed(1) : "-"}</span>
             </div>
-            <div className="ml-2 text-xs text-neutral-500 group-hover:text-neutral-400 transition-colors">
-                Arkadaşların →
+
+            <div className="flex items-center gap-1.5">
+                <Users className="w-4 h-4 text-neutral-400 group-hover:text-primary transition-colors" />
+                {friendsCount > 0 && (
+                    <span className="text-[11px] font-bold text-neutral-300 group-hover:text-white transition-colors">
+                        {friendsCount}
+                    </span>
+                )}
             </div>
         </button>
     );

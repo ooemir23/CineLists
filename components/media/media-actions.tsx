@@ -89,13 +89,13 @@ export function MediaActions({ tmdbId, type, title, posterPath, initialInWatchli
                     onClick={handleMarkWatched}
                     disabled={isPending}
                     className={cn(
-                        "flex items-center gap-2 px-6 py-3 font-bold rounded-xl transition-all border",
+                        "flex items-center gap-2 px-6 py-3 font-bold rounded-xl transition-all active:scale-95 border-2",
                         isWatched
-                            ? "bg-purple-500 text-white border-purple-500 shadow-lg shadow-purple-500/25"
-                            : "bg-neutral-800 text-white hover:bg-neutral-700 border-white/5 hover:scale-105 active:scale-95"
+                            ? "bg-emerald-600 text-white border-emerald-600 shadow-[0_10px_20px_-10px_rgba(16,185,129,0.5)]"
+                            : "bg-neutral-800 text-white border-transparent hover:bg-neutral-700 hover:border-white/10"
                     )}
                 >
-                    <Eye className={cn("w-5 h-5", isWatched && "fill-current")} />
+                    <Check className={cn("w-5 h-5", isWatched && "scale-110")} />
                     {isWatched ? "İzlendi" : "İzledim"}
                 </button>
 

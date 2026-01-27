@@ -49,13 +49,15 @@ export function HomeSearchBar() {
       router.push(`/person/${s.id}`);
     } else if (s.type === "movie" || s.type === "tv") {
       router.push(`/${s.type}/${s.id}`);
+    } else if (s.type === "user") {
+      router.push(`/profile/${s.id}`);
     } else {
       router.push(`/search?q=${encodeURIComponent(s.name)}`);
     }
   }
 
   return (
-    <div className="relative w-full max-w-md ml-0 md:ml-8">
+    <div className="relative w-full">
       <form
         onSubmit={handleSubmit}
         autoComplete="off"
@@ -84,7 +86,9 @@ export function HomeSearchBar() {
             >
               {s.image && <img src={s.image} alt={s.name} className="w-8 h-8 rounded object-cover bg-neutral-800" />}
               <span className="font-medium">{s.name}</span>
-              <span className="ml-auto text-xs text-primary/80">{s.type === "movie" ? "Film" : s.type === "tv" ? "Dizi" : "Kişi"}</span>
+              <span className="ml-auto text-xs text-primary/80">
+                {s.type === "movie" ? "Film" : s.type === "tv" ? "Dizi" : s.type === "person" ? "Kişi" : "Kullanıcı"}
+              </span>
             </li>
           ))}
         </ul>
