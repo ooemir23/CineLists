@@ -2,6 +2,7 @@
 
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import { tmdb } from "@/lib/tmdb";
 import { revalidatePath } from "next/cache";
 
 export async function toggleToWatch(mediaId: number, type: "movie" | "tv" | "person", title: string, posterPath: string | null) {
@@ -25,12 +26,23 @@ export async function toggleToWatch(mediaId: number, type: "movie" | "tv" | "per
     });
 
     if (!media) {
+        let genres: string[] = [];
+        let details: any = null;
+        if (type !== "person") {
+            // Fetch genres from TMDB
+            details = await tmdb.getDetails(type, mediaId.toString());
+            genres = details.genres?.map((g: any) => g.name) || [];
+        }
+
         media = await prisma.mediaItem.create({
             data: {
                 tmdbId: mediaId,
                 type: type === "movie" ? "MOVIE" : type === "tv" ? "TV" : "PERSON",
                 title: title,
                 posterPath: posterPath,
+                genres: genres,
+                voteAverage: type !== "person" ? details?.vote_average || 0 : 0,
+                runtime: type === "movie" ? details?.runtime : null, // Only save runtime for movies
             },
         });
     }

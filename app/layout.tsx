@@ -6,6 +6,7 @@ import "./globals.css";
 import { TopNav } from "@/components/layout/top-nav";
 import { MobileDock } from "@/components/layout/mobile-dock";
 import { cn } from "@/lib/utils";
+import { ErrorBoundary } from "@/components/ui/error-boundary";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -69,7 +70,9 @@ export default async function RootLayout({
         <div className="flex flex-col min-h-screen max-w-[1920px] mx-auto shadow-2xl shadow-black/50">
           <TopNav user={session?.user} />
           <main className="flex-1 pb-24 md:pb-0 min-h-screen relative z-0">
-            {children}
+            <ErrorBoundary>
+              {children}
+            </ErrorBoundary>
           </main>
           <MobileDock />
         </div>

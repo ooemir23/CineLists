@@ -38,11 +38,13 @@ model Session {
 
 model User {
   id            String    @id @default(cuid())
+  username      String   @unique
   name          String?
   email         String?   @unique
   emailVerified DateTime?
   image         String?
   bio           String?   @db.Text
+  password      String?
   
   accounts      Account[]
   sessions      Session[]
@@ -127,8 +129,11 @@ model MediaItem {
   backdropPath String?
   overview    String?  @db.Text
   releaseDate DateTime?
+  runtime     Int?     // Runtime in minutes
   seasonCount Int?
   episodeCount Int?
+  genres       String[]
+  voteAverage  Float?
   
   activities     Activity[]
   watchedBy      Watched[]

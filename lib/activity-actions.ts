@@ -2,6 +2,7 @@
 
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import { tmdb } from "@/lib/tmdb";
 import { revalidatePath } from "next/cache";
 
 export async function toggleWatchedStatus(mediaId: number, type: "movie" | "tv", title: string, posterPath: string | null) {
@@ -23,12 +24,19 @@ export async function toggleWatchedStatus(mediaId: number, type: "movie" | "tv",
     });
 
     if (!media) {
+        // Fetch genres from TMDB
+        const details = await tmdb.getDetails(type, mediaId.toString());
+        const genres = details.genres?.map((g: any) => g.name) || [];
+
         media = await prisma.mediaItem.create({
             data: {
                 tmdbId: mediaId,
                 type: type === "movie" ? "MOVIE" : "TV",
                 title: title,
                 posterPath: posterPath,
+                genres: genres,
+                voteAverage: details.vote_average || 0,
+                runtime: type === "movie" ? details.runtime : null, // Only save runtime for movies
             },
         });
     }

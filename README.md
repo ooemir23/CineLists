@@ -1,36 +1,170 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# WatchGo - Film ve Dizi Takip Uygulaması
 
-## Getting Started
+WatchGo, kullanıcıların film ve dizileri takip edebileceği, arkadaşlarıyla paylaşabileceği, puanlayabileceği modern bir web uygulamasıdır.
 
-First, run the development server:
+## 🚀 Özellikler
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+- **Film ve Dizi Takibi**: TMDB API'si ile güncel film ve dizi bilgileri
+- **Kişiselleştirilmiş Öneriler**: İzleme geçmişine göre akıllı öneriler
+- **Sosyal Özellikler**: Arkadaşları takip etme, yorum yapma, öneri paylaşma
+- **Çoklu Giriş Yöntemi**: Email/Şifre, Google, Apple ile giriş
+- **Responsive Tasarım**: Mobil ve masaüstü için optimize edilmiş
+- **PWA Desteği**: Offline kullanım ve mobil uygulama deneyimi
+
+## 🛠️ Teknoloji Stack
+
+- **Frontend**: Next.js 16, React 19, TypeScript
+- **Styling**: Tailwind CSS 4, Framer Motion
+- **Database**: PostgreSQL, Prisma ORM
+- **Authentication**: NextAuth.js 5
+- **API**: TMDB API
+- **Deployment**: Vercel
+
+## 📦 Kurulum
+
+### Ön Gereksinimler
+
+- Node.js 18+
+- PostgreSQL
+- TMDB API Key
+
+### Adımlar
+
+1. **Repository'yi klonlayın:**
+   ```bash
+   git clone <repository-url>
+   cd watch-go
+   ```
+
+2. **Bağımlılıkları yükleyin:**
+   ```bash
+   npm install
+   ```
+
+3. **Environment değişkenlerini ayarlayın:**
+   ```bash
+   cp .env.example .env.local
+   ```
+
+   `.env.local` dosyasını düzenleyin:
+   ```env
+   DATABASE_URL="postgresql://username:password@localhost:5432/watchgo"
+   NEXTAUTH_SECRET="your-secret-key"
+   NEXTAUTH_URL="http://localhost:3000"
+   TMDB_API_KEY="your-tmdb-api-key"
+   AUTH_GOOGLE_ID="your-google-client-id"
+   AUTH_GOOGLE_SECRET="your-google-client-secret"
+   AUTH_APPLE_ID="your-apple-client-id"
+   AUTH_APPLE_SECRET="your-apple-client-secret"
+   ```
+
+4. **Veritabanını hazırlayın:**
+   ```bash
+   npm run db:push
+   npm run db:migrate
+   ```
+
+5. **Development server'ı başlatın:**
+   ```bash
+   npm run dev
+   ```
+
+   [http://localhost:3000](http://localhost:3000) adresinden uygulamaya erişebilirsiniz.
+
+## 📜 Scripts
+
+- `npm run dev` - Development server
+- `npm run build` - Production build
+- `npm run start` - Production server
+- `npm run lint` - ESLint kontrolü
+- `npm run lint:fix` - ESLint düzeltmeleri
+- `npm run format` - Prettier format
+- `npm run test` - Jest testleri
+- `npm run analyze` - Bundle analizörü
+- `npm run db:studio` - Prisma Studio
+- `npm run db:push` - Veritabanı şeması güncelleme
+
+## 🏗️ Proje Yapısı
+
+```
+watch-go/
+├── app/                    # Next.js App Router
+│   ├── api/               # API routes
+│   ├── login/             # Giriş sayfası
+│   ├── register/          # Kayıt sayfası
+│   └── ...                # Diğer sayfalar
+├── components/            # React bileşenleri
+│   ├── ui/               # UI bileşenleri
+│   ├── layout/           # Layout bileşenleri
+│   └── ...               # Özellik bileşenleri
+├── lib/                  # Utility fonksiyonları
+│   ├── auth.ts           # Authentication
+│   ├── prisma.ts         # Database client
+│   ├── tmdb.ts           # TMDB API client
+│   └── ...               # Diğer utilities
+├── prisma/               # Database şeması
+│   ├── schema.prisma     # Prisma şeması
+│   └── migrations/       # Database migrations
+└── public/               # Static assets
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## 🧪 Test
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+# Tüm testleri çalıştır
+npm run test
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+# Testleri watch modunda çalıştır
+npm run test:watch
 
-## Learn More
+# Coverage raporu
+npm run test:coverage
+```
 
-To learn more about Next.js, take a look at the following resources:
+## 📊 Performans Analizi
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Bundle boyutunu analiz etmek için:
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```bash
+npm run analyze
+```
 
-## Deploy on Vercel
+## 🔒 Güvenlik
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+- Rate limiting (API istekleri için)
+- Input validation (Zod ile)
+- Secure headers
+- Environment variable validation
+- Password hashing (bcryptjs)
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## 🚀 Deployment
+
+### Vercel
+
+1. [Vercel](https://vercel.com)'a bağlanın
+2. Repository'yi import edin
+3. Environment değişkenlerini ayarlayın
+4. Deploy edin
+
+### Diğer Platformlar
+
+```bash
+npm run build
+npm run start
+```
+
+## 🤝 Katkıda Bulunma
+
+1. Fork edin
+2. Feature branch oluşturun (`git checkout -b feature/amazing-feature`)
+3. Commit edin (`git commit -m 'Add amazing feature'`)
+4. Push edin (`git push origin feature/amazing-feature`)
+5. Pull Request oluşturun
+
+## 📄 Lisans
+
+Bu proje MIT lisansı altında lisanslanmıştır.
+
+## 📞 İletişim
+
+Sorularınız için issue açabilir veya [email] adresinden iletişime geçebilirsiniz.

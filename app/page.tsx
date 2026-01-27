@@ -22,7 +22,7 @@ export default async function Home({ searchParams }: HomeProps) {
 
   const { type = "movie", year, rating, provider, genre } = await searchParams;
   const isFiltering = year || rating || provider || genre;
-  let trendingMovies, trendingTV, popularMovies, upcomingMovies, popularTV, filterResults, personalizedMovies;
+  let trendingMovies, trendingTV, popularMovies, upcomingMovies, popularTV, filterResults, personalizedMovies: any;
   let userName = "";
   if (isFiltering) {
     const params: Record<string, string> = {
@@ -89,8 +89,9 @@ export default async function Home({ searchParams }: HomeProps) {
         </div>
       </div>
 
-      {/* Filter Section */}
-      <div className="max-w-7xl mx-auto px-6 md:px-10">
+
+      {/* Filter Section - Daha aşağıda */}
+      <div className="max-w-7xl mx-auto px-6 md:px-10 mt-12 md:mt-20">
         <MediaFilter />
       </div>
 
@@ -104,6 +105,41 @@ export default async function Home({ searchParams }: HomeProps) {
           />
         ) : (
           <>
+            {/* Ana Akım (Trend) Bölümü */}
+            <div className="mb-8">
+              <h2 className="text-2xl md:text-3xl font-bold text-amber-400 mb-4">Ana Akım</h2>
+              <MediaRow
+                title="Trend Filmler"
+                items={trendingMovies.results.slice(0, 6)}
+                type="movie"
+                href="/explore/movie/trending"
+              />
+              <MediaRow
+                title="Trend Diziler"
+                items={trendingTV.results.slice(0, 6)}
+                type="tv"
+                href="/explore/tv/trending"
+              />
+            </div>
+
+            {/* Popüler Olanlar Bölümü */}
+            <div className="mb-8">
+              <h2 className="text-2xl md:text-3xl font-bold text-amber-400 mb-4">Popüler Olanlar</h2>
+              <MediaRow
+                title="Popüler Filmler"
+                items={popularMovies.results.slice(0, 6)}
+                type="movie"
+                href="/explore/movie/popular"
+              />
+              <MediaRow
+                title="Popüler Diziler"
+                items={popularTV.results.slice(0, 6)}
+                type="tv"
+                href="/explore/tv/popular"
+              />
+            </div>
+
+            {/* Diğer bölümler */}
             {personalizedMovies?.results?.length > 0 && (
               <MediaRow
                 title="Sizin İçin Önerilenler"
@@ -112,34 +148,10 @@ export default async function Home({ searchParams }: HomeProps) {
               />
             )}
             <MediaRow
-              title="Trend Filmler"
-              items={trendingMovies.results.slice(0, 6)}
-              type="movie"
-              href="/explore/movie/trending"
-            />
-            <MediaRow
-              title="Popüler Filmler"
-              items={popularMovies.results.slice(0, 6)}
-              type="movie"
-              href="/explore/movie/popular"
-            />
-            <MediaRow
               title="Yakında Vizyona Girecekler"
               items={upcomingMovies.results.slice(0, 6)}
               type="movie"
               href="/explore/movie/upcoming"
-            />
-            <MediaRow
-              title="Popüler Diziler"
-              items={popularTV.results.slice(0, 6)}
-              type="tv"
-              href="/explore/tv/popular"
-            />
-            <MediaRow
-              title="Trend Diziler"
-              items={trendingTV.results.slice(0, 6)}
-              type="tv"
-              href="/explore/tv/trending"
             />
           </>
         )}

@@ -60,7 +60,35 @@ const TV_GENRES = [
     { id: 37, name: "Vahşi Batı" },
 ];
 
-export function ModernMediaFilter({ type, setType, year, setYear, minRating, setMinRating, provider, setProvider, genre, setGenre, country, setCountry, onClear }) {
+export function ModernMediaFilter({
+  type,
+  setType,
+  year,
+  setYear,
+  minRating,
+  setMinRating,
+  provider,
+  setProvider,
+  genre,
+  setGenre,
+  country,
+  setCountry,
+  onClear
+}: {
+  type: "movie" | "tv";
+  setType: (type: "movie" | "tv") => void;
+  year: string;
+  setYear: (year: string) => void;
+  minRating: string;
+  setMinRating: (rating: string) => void;
+  provider: string;
+  setProvider: (provider: string) => void;
+  genre: string;
+  setGenre: (genre: string) => void;
+  country: string;
+  setCountry: (country: string) => void;
+  onClear: () => void;
+}) {
   const genres = type === "movie" ? MOVIE_GENRES : TV_GENRES;
   const [providers, setProviders] = useState<any[]>([]);
 
@@ -68,7 +96,10 @@ export function ModernMediaFilter({ type, setType, year, setYear, minRating, set
     async function fetchProviders() {
       setProviders([]);
       const res = await fetch(`/api/watch-providers?type=${type}&country=${country}`);
-      if (res.ok) setProviders(await res.json());
+      if (res.ok) {
+        const data = await res.json();
+        setProviders(Array.isArray(data.results) ? data.results : []);
+      }
     }
     fetchProviders();
   }, [type, country]);
@@ -84,7 +115,7 @@ export function ModernMediaFilter({ type, setType, year, setYear, minRating, set
       </select>
       <select value={provider} onChange={e => setProvider(e.target.value)} className="bg-white/5 border border-white/10 rounded-xl py-2 px-4 text-xs font-medium text-white focus:outline-none focus:ring-2 focus:ring-primary/20 cursor-pointer">
         <option value="">İzleme Servisi</option>
-        {providers.map((p: any) => <option key={p.provider_id} value={p.provider_id}>{p.provider_name}</option>)}
+        {Array.isArray(providers) && providers.map((p: any) => <option key={p.provider_id} value={p.provider_id}>{p.provider_name}</option>)}
       </select>
       <select value={genre} onChange={e => setGenre(e.target.value)} className="bg-white/5 border border-white/10 rounded-xl py-2 px-4 text-xs font-medium text-white focus:outline-none focus:ring-2 focus:ring-primary/20 cursor-pointer">
         <option value="">Tür</option>

@@ -2,13 +2,15 @@
 import { NextResponse } from "next/server";
 import { tmdb } from "@/lib/tmdb";
 
-export async function GET(req) {
+import type { NextRequest } from "next/server";
+
+export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const query = searchParams.get("q");
   if (!query || query.length < 2) return NextResponse.json([]);
-  const data = await tmdb.searchMulti(query);
+  const data: any = await tmdb.searchMulti(query);
   // Only return first 7 results, with id, name/title, type, and poster/profile
-  const results = (data.results || []).slice(0, 7).map(item => {
+  const results = (data.results || []).slice(0, 7).map((item: any) => {
     if (item.media_type === "person") {
       return {
         id: item.id,

@@ -5,18 +5,33 @@ import { MediaCard } from "@/components/media/media-card";
 import { tmdb } from "@/lib/tmdb";
 import { Film } from "lucide-react";
 
-export default function ModernSearchPage({ searchParams }: { searchParams: { q?: string, type?: string, year?: string, rating?: string, provider?: string, genre?: string, country?: string } }) {
+import { use } from "react";
+import { HomeSearchBar } from "@/components/home/home-search-bar";
+
+export default function ModernSearchPage({ searchParams }: { searchParams: Promise<{ q?: string, type?: string, year?: string, rating?: string, provider?: string, genre?: string, country?: string }> }) {
+  const params = use(searchParams);
   const [results, setResults] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [filters, setFilters] = useState({
-    type: searchParams.type || "movie",
-    year: searchParams.year || "",
-    minRating: searchParams.rating || "",
-    provider: searchParams.provider || "",
-    genre: searchParams.genre || "",
-    country: searchParams.country || "TR",
+    type: params.type || "movie",
+    year: params.year || "",
+    minRating: params.rating || "",
+    provider: params.provider || "",
+    genre: params.genre || "",
+    country: params.country || "TR",
   });
-  const [query, setQuery] = useState(searchParams.q || "");
+  const [query, setQuery] = useState(params.q || "");
+
+  // Filtre veya arama değiştiğinde otomatik içerik getir
+  function handleFiltersChange(newFilters: any) {
+    setFilters(newFilters);
+    fetchResults(newFilters, query);
+  }
+
+  function handleSearch(newQuery: string) {
+    setQuery(newQuery);
+    fetchResults(filters, newQuery);
+  }
 
   async function fetchResults(newFilters: any, newQuery: string) {
     setLoading(true);
@@ -57,16 +72,11 @@ export default function ModernSearchPage({ searchParams }: { searchParams: { q?:
 
   return (
     <div className="max-w-7xl mx-auto px-4 md:px-8 py-8 min-h-screen">
-      <ModernSearchHeader
-        initialType={filters.type}
-        initialYear={filters.year}
-        initialRating={filters.minRating}
-        initialProvider={filters.provider}
-        initialGenre={filters.genre}
-        initialCountry={filters.country}
-        onChange={handleFilterChange}
-        onClear={handleClear}
-      />
+      <div className="flex flex-col items-center justify-center w-full mb-8">
+        <div className="w-full max-w-md">
+          <HomeSearchBar />
+        </div>
+      </div>
       {loading ? (
         <div className="flex flex-col items-center justify-center text-neutral-500 mt-20">
           <Film className="w-16 h-16 mb-4 animate-pulse opacity-20" />

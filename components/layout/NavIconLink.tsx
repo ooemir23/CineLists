@@ -3,7 +3,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import React from "react";
 
-export default function NavIconLink({ href, label, children }: { href: string; label: string; children: React.ReactNode }) {
+export default function NavIconLink({ href, label, children }: { href: string; label: string | React.ReactNode; children: React.ReactElement }) {
   const pathname = usePathname();
   const isActive = pathname === href;
   return (
@@ -14,10 +14,10 @@ export default function NavIconLink({ href, label, children }: { href: string; l
         group`}
       style={{ minWidth: 48 }}
     >
-      {children &&
-        React.cloneElement(children as React.ReactElement, {
+      {children && React.isValidElement(children) &&
+        React.cloneElement(children, {
           className: `w-6 h-6 md:w-7 md:h-7 ${isActive ? "text-primary" : "group-hover:text-primary text-inherit"}`,
-        })}
+        } as any)}
       <span className="hidden sm:block text-xs mt-0.5 font-medium tracking-tight">
         {label}
       </span>

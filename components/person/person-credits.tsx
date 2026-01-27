@@ -29,12 +29,25 @@ export function PersonCredits({ credits }: PersonCreditsProps) {
 
     const now = new Date();
 
+    // Remove duplicates based on media_type and id
+    const uniqueCredits = useMemo(() => {
+        const seen = new Set<string>();
+        return credits.filter((credit) => {
+            const key = `${credit.media_type}-${credit.id}`;
+            if (seen.has(key)) {
+                return false;
+            }
+            seen.add(key);
+            return true;
+        });
+    }, [credits]);
+
     // Separate upcoming and past credits
     const { upcomingCredits, pastCredits } = useMemo(() => {
         const upcoming: Credit[] = [];
         const past: Credit[] = [];
 
-        credits.forEach((credit) => {
+        uniqueCredits.forEach((credit) => {
             const dateStr = credit.release_date || credit.first_air_date;
             if (!dateStr) {
                 upcoming.push(credit);
@@ -49,7 +62,7 @@ export function PersonCredits({ credits }: PersonCreditsProps) {
         });
 
         return { upcomingCredits: upcoming, pastCredits: past };
-    }, [credits]);
+    }, [uniqueCredits]);
 
     // Get unique years from past credits
     const years = useMemo(() => {
