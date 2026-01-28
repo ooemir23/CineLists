@@ -2,8 +2,10 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { Star } from "lucide-react";
+import { Star, Send } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { RecommendModal } from "./recommend-modal";
+import { useState } from "react";
 
 type MediaCardProps = {
     id: number;
@@ -31,6 +33,8 @@ const formatRuntime = (minutes: number): string => {
 };
 
 export function MediaCard({ id, title, originalTitle, posterPath, voteAverage, userRating, runtime, releaseDate, type, fullWidth = false }: MediaCardProps) {
+    const [isRecommendOpen, setIsRecommendOpen] = useState(false);
+
     if (!posterPath && type !== "person") return null;
 
     return (
@@ -65,6 +69,19 @@ export function MediaCard({ id, title, originalTitle, posterPath, voteAverage, u
                         <span className="text-white font-black text-xs bg-primary px-4 py-2 rounded-full shadow-lg translate-y-4 group-hover:translate-y-0 transition-transform duration-500 uppercase tracking-wider">
                             İncele
                         </span>
+
+                        {/* Recommend Button */}
+                        <button
+                            onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                setIsRecommendOpen(true);
+                            }}
+                            className="absolute top-3 left-3 w-8 h-8 bg-white/10 backdrop-blur-md rounded-xl flex items-center justify-center border border-white/10 text-white opacity-0 group-hover:opacity-100 transition-all hover:bg-primary hover:border-primary active:scale-90"
+                            title="Tavsiye Et"
+                        >
+                            <Send className="w-4 h-4" />
+                        </button>
                     </div>
                 )}
 
@@ -118,6 +135,15 @@ export function MediaCard({ id, title, originalTitle, posterPath, voteAverage, u
                     </>
                 )}
             </div>
+            {isRecommendOpen && (
+                <RecommendModal
+                    mediaId={id}
+                    title={title}
+                    type={type === "person" ? "movie" : type}
+                    posterPath={posterPath}
+                    onClose={() => setIsRecommendOpen(false)}
+                />
+            )}
         </Link>
     );
 }

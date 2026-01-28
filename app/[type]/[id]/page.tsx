@@ -14,7 +14,36 @@ import { RatingDisplay } from "@/components/media/rating-display";
 import SeasonList from "@/components/media/season-list";
 import { CommentsSection } from "@/components/media/comments";
 import { GenreList } from "@/components/media/genre-list";
-import { Star, Calendar, Clock, Share2, MessageSquare, ArrowLeft, Play, Info, Tv } from "lucide-react";
+import { Star, Calendar, Clock, ArrowLeft, Play, Info, Tv } from "lucide-react";
+import { Metadata } from "next";
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+    const { type, id } = await params;
+    const data = await tmdb.getDetails(type as "movie" | "tv", id).catch(() => null);
+
+    if (!data) return { title: "İçerik Bulunamadı" };
+
+    const title = data.title || data.name;
+    const description = data.overview || `${title} içeriği hakkında detaylar, puanlar ve yorumlar.`;
+    const image = data.poster_path ? `https://image.tmdb.org/t/p/w500${data.poster_path}` : null;
+
+    return {
+        title,
+        description,
+        openGraph: {
+            title,
+            description,
+            images: image ? [{ url: image }] : [],
+            type: "video.movie",
+        },
+        twitter: {
+            card: "summary_large_image",
+            title,
+            description,
+            images: image ? [image] : [],
+        }
+    };
+}
 
 type Props = {
     params: Promise<{
@@ -203,17 +232,6 @@ export default async function DetailsPage(props: Props) {
                                 initialRating={userRating}
                             />
 
-                            <Link
-                                href="#comments"
-                                className="flex items-center gap-2 px-4 py-3 bg-neutral-800 hover:bg-neutral-700 rounded-xl transition-colors text-sm font-bold border border-white/5"
-                            >
-                                <MessageSquare className="w-4 h-4" />
-                                Yorum
-                            </Link>
-
-                            <button className="p-3 bg-neutral-800 hover:bg-neutral-700 rounded-xl transition-colors border border-white/5 text-neutral-400 hover:text-white">
-                                <Share2 className="w-4 h-4" />
-                            </button>
                         </div>
 
                         {/* Overview */}

@@ -1,7 +1,9 @@
 "use client";
 
 import { useTransition, useState, useEffect, useRef } from "react";
-import { Plus, Check, Loader2, Eye, ChevronDown, ChevronUp } from "lucide-react";
+import { Plus, Check, Loader2, Eye, ChevronDown, ChevronUp, MessageSquare, Share2 } from "lucide-react";
+import Link from "next/link";
+import { RecommendModal } from "./recommend-modal";
 import { toggleToWatch } from "@/lib/actions";
 import { toggleWatchedStatus } from "@/lib/activity-actions";
 import { useRouter } from "next/navigation";
@@ -22,6 +24,7 @@ export function MediaActions({ tmdbId, type, title, posterPath, initialInWatchli
     const [inWatchlist, setInWatchlist] = useState(initialInWatchlist);
     const [isWatched, setIsWatched] = useState(initialStatus === "COMPLETED");
     const [showDetailsForm, setShowDetailsForm] = useState(false);
+    const [isRecommendOpen, setIsRecommendOpen] = useState(false);
     const [userRating, setUserRating] = useState(initialRating || 0);
     const [isPending, startTransition] = useTransition();
     const router = useRouter();
@@ -118,7 +121,32 @@ export function MediaActions({ tmdbId, type, title, posterPath, initialInWatchli
                         {showDetailsForm ? "Detayları Kapat" : "İzleme Detayları"}
                     </button>
                 )}
+
+                <Link
+                    href="#comments"
+                    className="flex items-center gap-2 px-6 py-3 bg-neutral-800 hover:bg-neutral-700 rounded-xl transition-colors text-sm font-bold border border-white/5"
+                >
+                    <MessageSquare className="w-4 h-4 text-primary" />
+                    <span className="hidden sm:inline">Yorum</span>
+                </Link>
+
+                <button
+                    onClick={() => setIsRecommendOpen(true)}
+                    className="p-3 bg-neutral-800 hover:bg-neutral-700 rounded-xl transition-colors border border-white/5 text-neutral-400 hover:text-white"
+                >
+                    <Share2 className="w-5 h-5" />
+                </button>
             </div>
+
+            {isRecommendOpen && (
+                <RecommendModal
+                    mediaId={tmdbId}
+                    title={title}
+                    type={type}
+                    posterPath={posterPath}
+                    onClose={() => setIsRecommendOpen(false)}
+                />
+            )}
 
             {showDetailsForm && (
                 <div ref={formRef} className="animate-in fade-in slide-in-from-top-2 duration-300">
