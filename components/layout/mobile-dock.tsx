@@ -11,7 +11,8 @@ import {
   List,
   Check,
   Bookmark,
-  BarChart3
+  BarChart3,
+  Bell
 } from "lucide-react";
 
 const dockBg = 'bg-slate-900/90 backdrop-blur-xl border-t border-white/10';
