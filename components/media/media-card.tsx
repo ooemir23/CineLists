@@ -2,9 +2,10 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { Star, Send } from "lucide-react";
+import { Star, Send, ZoomIn } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { RecommendModal } from "./recommend-modal";
+import { ExpandableImage } from "@/components/ui/expandable-image";
 import { useState } from "react";
 
 type MediaCardProps = {
@@ -34,6 +35,7 @@ const formatRuntime = (minutes: number): string => {
 
 export function MediaCard({ id, title, originalTitle, posterPath, voteAverage, userRating, runtime, releaseDate, type, fullWidth = false }: MediaCardProps) {
     const [isRecommendOpen, setIsRecommendOpen] = useState(false);
+    const [isZoomOpen, setIsZoomOpen] = useState(false);
 
     if (!posterPath && type !== "person") return null;
 
@@ -71,17 +73,30 @@ export function MediaCard({ id, title, originalTitle, posterPath, voteAverage, u
                         </span>
 
                         {/* Recommend Button */}
-                        <button
-                            onClick={(e) => {
-                                e.preventDefault();
-                                e.stopPropagation();
-                                setIsRecommendOpen(true);
-                            }}
-                            className="absolute top-3 left-3 w-8 h-8 bg-white/10 backdrop-blur-md rounded-xl flex items-center justify-center border border-white/10 text-white opacity-0 group-hover:opacity-100 transition-all hover:bg-primary hover:border-primary active:scale-90"
-                            title="Tavsiye Et"
-                        >
-                            <Send className="w-4 h-4" />
-                        </button>
+                        <div className="absolute top-3 left-3 flex gap-2">
+                            <button
+                                onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    setIsRecommendOpen(true);
+                                }}
+                                className="w-8 h-8 bg-white/10 backdrop-blur-md rounded-xl flex items-center justify-center border border-white/10 text-white opacity-0 group-hover:opacity-100 transition-all hover:bg-primary hover:border-primary active:scale-90"
+                                title="Tavsiye Et"
+                            >
+                                <Send className="w-4 h-4" />
+                            </button>
+                            <button
+                                onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    setIsZoomOpen(true);
+                                }}
+                                className="w-8 h-8 bg-white/10 backdrop-blur-md rounded-xl flex items-center justify-center border border-white/10 text-white opacity-0 group-hover:opacity-100 transition-all hover:bg-amber-500 hover:border-amber-500 active:scale-90"
+                                title="Büyüt"
+                            >
+                                <ZoomIn className="w-4 h-4" />
+                            </button>
+                        </div>
                     </div>
                 )}
 
@@ -143,6 +158,32 @@ export function MediaCard({ id, title, originalTitle, posterPath, voteAverage, u
                     posterPath={posterPath}
                     onClose={() => setIsRecommendOpen(false)}
                 />
+            )}
+
+            {/* Custom Lightbox Modal for MediaCard */}
+            {isZoomOpen && posterPath && (
+                <div
+                    className="fixed inset-0 z-[200] flex items-center justify-center bg-black/95 backdrop-blur-sm animate-in fade-in duration-300"
+                    onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setIsZoomOpen(false);
+                    }}
+                >
+                    <div className="relative max-w-4xl max-h-[90vh] p-4 flex flex-col items-center gap-4 animate-in zoom-in-95 duration-500">
+                        <div className="relative aspect-[2/3] h-[70vh] md:h-[80vh] rounded-2xl overflow-hidden shadow-2xl ring-1 ring-white/10">
+                            <Image
+                                src={`https://image.tmdb.org/t/p/original${posterPath}`}
+                                alt={title}
+                                fill
+                                className="object-cover"
+                            />
+                        </div>
+                        <div className="px-6 py-3 bg-white/10 backdrop-blur-xl border border-white/10 rounded-full">
+                            <p className="text-white font-black tracking-tight text-lg italic uppercase">{title}</p>
+                        </div>
+                    </div>
+                </div>
             )}
         </Link>
     );

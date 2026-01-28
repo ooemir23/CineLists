@@ -15,6 +15,7 @@ import SeasonList from "@/components/media/season-list";
 import { CommentsSection } from "@/components/media/comments";
 import { GenreList } from "@/components/media/genre-list";
 import { Star, Calendar, Clock, ArrowLeft, Play, Info, Tv } from "lucide-react";
+import { ExpandableImage } from "@/components/ui/expandable-image";
 import { Metadata } from "next";
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
@@ -124,18 +125,19 @@ export default async function DetailsPage(props: Props) {
             </div>
 
             {/* Top Banner (Backdrop) - Reduced Height, strictly background */}
-            <div className="relative w-full h-[40vh] md:h-[50vh] bg-neutral-900 border-b border-white/5">
+            <div className="relative w-full h-[40vh] md:h-[50vh] bg-neutral-900 border-b border-white/5 group/backdrop cursor-zoom-in">
                 {backdrop ? (
-                    <>
-                        <Image
+                    <div className="absolute inset-0">
+                        <ExpandableImage
                             src={backdrop}
-                            alt=""
-                            fill
-                            className="object-cover opacity-30"
+                            alt={`${title} Kapak Fotoğrafı`}
+                            aspectRatio="video"
+                            className="w-full h-full opacity-40 transition-opacity group-hover/backdrop:opacity-60"
                             priority
+                            showZoomIcon={false}
                         />
-                        <div className="absolute inset-0 bg-gradient-to-t from-neutral-950 via-transparent to-transparent" />
-                    </>
+                        <div className="absolute inset-0 bg-gradient-to-t from-neutral-950 via-transparent to-transparent pointer-events-none" />
+                    </div>
                 ) : (
                     <div className="w-full h-full flex items-center justify-center bg-neutral-900 text-neutral-700">
                         <p>Resim Yok</p>
@@ -149,18 +151,15 @@ export default async function DetailsPage(props: Props) {
 
                     {/* Poster Column */}
                     <div className="shrink-0 w-40 md:w-64 lg:w-80 mx-auto md:mx-0">
-                        <div className="aspect-[2/3] rounded-xl overflow-hidden shadow-2xl ring-1 ring-white/10 bg-neutral-800">
+                        <div className="rounded-xl overflow-hidden shadow-2xl ring-1 ring-white/10 bg-neutral-800">
                             {data.poster_path ? (
-                                <Image
+                                <ExpandableImage
                                     src={`https://image.tmdb.org/t/p/w780${data.poster_path}`}
                                     alt={title}
-                                    width={780}
-                                    height={1170}
-                                    className="object-cover w-full h-full"
-                                    priority
+                                    priority={true}
                                 />
                             ) : (
-                                <div className="w-full h-full flex items-center justify-center text-neutral-500">Poster</div>
+                                <div className="aspect-[2/3] w-full h-full flex items-center justify-center text-neutral-500">Poster</div>
                             )}
                         </div>
                     </div>
@@ -270,6 +269,27 @@ export default async function DetailsPage(props: Props) {
                         <CastList cast={data.credits?.cast} />
                     </div>
                 </section>
+
+                {/* Additional Images Gallery */}
+                {data.images?.backdrops?.length > 0 && (
+                    <section>
+                        <div className="flex items-center justify-between mb-6 border-b border-white/5 pb-4">
+                            <h3 className="text-2xl font-bold text-white">Görseller</h3>
+                            <span className="text-xs font-bold text-neutral-500 uppercase tracking-widest">{data.images.backdrops.length} Resim</span>
+                        </div>
+                        <div className="flex gap-4 overflow-x-auto pb-4 -mx-6 md:-mx-10 px-6 md:px-10 no-scrollbar custom-scrollbar">
+                            {data.images.backdrops.slice(0, 10).map((img: any, idx: number) => (
+                                <div key={idx} className="flex-none w-64 md:w-80 rounded-xl overflow-hidden shadow-lg hover:shadow-primary/10 transition-shadow">
+                                    <ExpandableImage
+                                        src={`https://image.tmdb.org/t/p/w780${img.file_path}`}
+                                        alt={`${title} Görsel ${idx + 1}`}
+                                        aspectRatio="video"
+                                    />
+                                </div>
+                            ))}
+                        </div>
+                    </section>
+                )}
 
                 {/* Reviews & Ratings */}
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-12" id="comments">

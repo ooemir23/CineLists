@@ -8,7 +8,7 @@ import Image from "next/image";
 export function HomeSearchBar() {
   const [query, setQuery] = useState("");
   const [placeholder, setPlaceholder] = useState("");
-  const [suggestions, setSuggestions] = useState([]);
+  const [suggestions, setSuggestions] = useState<any[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const router = useRouter();
   const debounceRef = useRef<NodeJS.Timeout | null>(null);
@@ -25,10 +25,21 @@ export function HomeSearchBar() {
     }
     if (debounceRef.current) clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(async () => {
-      const res = await fetch(`/api/search-suggest?q=${encodeURIComponent(query)}`);
-      if (res.ok) {
-        setSuggestions(await res.json());
-        setShowSuggestions(true);
+      try {
+        const res = await fetch(`/api/search-suggest?q=${encodeURIComponent(query)}`);
+        if (res.ok) {
+          const content = await res.text();
+          try {
+            const data = JSON.parse(content);
+            // API artık doğrudan dizi döndürüyor
+            setSuggestions(Array.isArray(data) ? data : []);
+            setShowSuggestions(true);
+          } catch (jsonErr) {
+            console.error("Arama önerisi JSON hatası:", jsonErr, "İçerik:", content.substring(0, 100));
+          }
+        }
+      } catch (fetchErr) {
+        console.error("Arama önerisi fetch hatası:", fetchErr);
       }
     }, 300);
     return () => {

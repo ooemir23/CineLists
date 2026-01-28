@@ -4,6 +4,7 @@ import { useState } from "react";
 import { X, Calendar, Clock, ThumbsUp, ThumbsDown, Send, User, Check, Eye, Play } from "lucide-react";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
+import { ExpandableImage } from "@/components/ui/expandable-image";
 import { cn } from "@/lib/utils";
 
 type EpisodeDetailsModalProps = {
@@ -74,10 +75,10 @@ export function EpisodeDetailsModal({
                         <div className="md:w-3/5 overflow-y-auto custom-scrollbar">
                             <div className="relative aspect-video w-full">
                                 {episode.still_path ? (
-                                    <Image
+                                    <ExpandableImage
                                         src={`https://image.tmdb.org/t/p/original${episode.still_path}`}
                                         alt={episode.name}
-                                        fill
+                                        aspectRatio="video"
                                         className="object-cover"
                                     />
                                 ) : (
