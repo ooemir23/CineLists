@@ -81,6 +81,7 @@ export async function toggleWatchedStatus(mediaId: number, type: "movie" | "tv",
         }
 
         revalidatePath("/watchlist");
+        revalidatePath("/feed");
         revalidatePath("/profile");
         revalidatePath(`/${type}/${mediaId}`);
 
@@ -111,25 +112,33 @@ export async function toggleWatchedStatus(mediaId: number, type: "movie" | "tv",
             },
         });
 
-        await prisma.activity.upsert({
+        const existingActivity = await prisma.activity.findFirst({
             where: {
-                userId_mediaId_type: {
-                    userId: session.user.id,
-                    mediaId: media.id,
-                    type: "WATCHED",
-                },
-            },
-            update: {
-                watchedAt: new Date(),
-                createdAt: new Date(), // Reset creation time to show at top of feed
-            },
-            create: {
                 userId: session.user.id,
                 mediaId: media.id,
                 type: "WATCHED",
-                watchedAt: new Date(),
+                episodeId: null
             },
         });
+
+        if (existingActivity) {
+            await prisma.activity.update({
+                where: { id: existingActivity.id },
+                data: {
+                    watchedAt: new Date(),
+                    createdAt: new Date(),
+                }
+            });
+        } else {
+            await prisma.activity.create({
+                data: {
+                    userId: session.user.id,
+                    mediaId: media.id,
+                    type: "WATCHED",
+                    watchedAt: new Date(),
+                },
+            });
+        }
 
 
         revalidatePath("/watchlist");
@@ -269,35 +278,43 @@ export async function saveWatchDetails(params: {
     });
 
     // Update Activity
-    await prisma.activity.upsert({
+    const existingActivity = await prisma.activity.findFirst({
         where: {
-            userId_mediaId_type: {
-                userId: session.user.id,
-                mediaId: media.id,
-                type: "WATCHED",
-            },
-        },
-        update: {
-            rating: rating !== undefined ? rating : undefined,
-            watchedAt: watchedAt || new Date(),
-            watchedWith: watchedWith ? JSON.stringify(watchedWith) : undefined,
-            recommendedById: recommendedById || null,
-            recommendedByText: recommendedByText || null,
-            review: review !== undefined ? review : undefined,
-            createdAt: new Date(),
-        },
-        create: {
             userId: session.user.id,
             mediaId: media.id,
             type: "WATCHED",
-            rating: rating || null,
-            watchedAt: watchedAt || new Date(),
-            watchedWith: watchedWith ? JSON.stringify(watchedWith) : null,
-            recommendedById: recommendedById || null,
-            recommendedByText: recommendedByText || null,
-            review: review || null,
+            episodeId: null
         },
     });
+
+    if (existingActivity) {
+        await prisma.activity.update({
+            where: { id: existingActivity.id },
+            data: {
+                rating: rating !== undefined ? rating : undefined,
+                watchedAt: watchedAt || new Date(),
+                watchedWith: watchedWith ? JSON.stringify(watchedWith) : undefined,
+                recommendedById: recommendedById || null,
+                recommendedByText: recommendedByText || null,
+                review: review !== undefined ? review : undefined,
+                createdAt: new Date(),
+            }
+        });
+    } else {
+        await prisma.activity.create({
+            data: {
+                userId: session.user.id,
+                mediaId: media.id,
+                type: "WATCHED",
+                rating: rating || null,
+                watchedAt: watchedAt || new Date(),
+                watchedWith: watchedWith ? JSON.stringify(watchedWith) : null,
+                recommendedById: recommendedById || null,
+                recommendedByText: recommendedByText || null,
+                review: review || null,
+            }
+        });
+    }
 
     // Remove from toWatch if exists
     await prisma.toWatch.deleteMany({

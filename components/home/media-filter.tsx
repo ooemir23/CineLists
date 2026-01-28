@@ -1,80 +1,140 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
-import { Calendar, Star, Play, Filter, X, Tag } from "lucide-react";
+import { X, Sparkles, Check, Search, Film, Tv } from "lucide-react";
 import { cn } from "@/lib/utils";
+import Link from "next/link";
+import Image from "next/image";
 
-const PROVIDERS = [
-    { id: "8", name: "Netflix", logo: "https://image.tmdb.org/t/p/original/pbpMk2JmcoNnQwx5JGpXngfoWtp.jpg" },
-    { id: "337", name: "Disney+", logo: "https://image.tmdb.org/t/p/original/97yvRBw1GzX7fXprcF80er19ot.jpg" },
-    { id: "119", name: "Prime Video", logo: "https://image.tmdb.org/t/p/original/pvske1MyAoymrs5bguRfVqYiM9a.jpg" },
-    { id: "2", name: "Apple TV", logo: "https://image.tmdb.org/t/p/original/SPnB1qiCkYfirS2it3hZORwGVn.jpg" },
-    { id: "11", name: "MUBI", logo: "https://image.tmdb.org/t/p/original/x570VpH2C9EKDf1riP83rYc5dnL.jpg" },
-    { id: "1826", name: "TOD", logo: "https://image.tmdb.org/t/p/original/gaDNJ1xISHBBq9LQXwwe8PPSRHD.jpg" },
-    { id: "2235", name: "tabii", logo: "https://image.tmdb.org/t/p/original/uWVpt3iJ2pLKtFZ69rAKP0EDVVx.jpg" },
-];
+import { createPortal } from "react-dom";
 
+// Portal helper component
+const Portal = ({ children }: { children: React.ReactNode }) => {
+    const [mounted, setMounted] = useState(false);
 
+    useEffect(() => {
+        setMounted(true);
+        return () => setMounted(false);
+    }, []);
+
+    if (!mounted) return null;
+
+    return createPortal(children, document.body);
+};
 
 const YEARS = Array.from({ length: 30 }, (_, i) => (new Date().getFullYear() - i).toString());
 
-const MOVIE_GENRES = [
-    { id: 28, name: "Aksiyon" },
-    { id: 12, name: "Macera" },
-    { id: 16, name: "Animasyon" },
-    { id: 35, name: "Komedi" },
-    { id: 80, name: "Suç" },
-    { id: 99, name: "Belgesel" },
-    { id: 18, name: "Dram" },
-    { id: 10751, name: "Aile" },
-    { id: 14, name: "Fantastik" },
-    { id: 36, name: "Tarih" },
-    { id: 27, name: "Korku" },
-    { id: 10402, name: "Müzik" },
-    { id: 9648, name: "Gizem" },
-    { id: 10749, name: "Romantik" },
-    { id: 878, name: "Bilim Kurgu" },
-    { id: 10770, name: "TV Film" },
-    { id: 53, name: "Gerilim" },
-    { id: 10752, name: "Savaş" },
-    { id: 37, name: "Vahşi Batı" },
-];
-
-const TV_GENRES = [
-    { id: 10759, name: "Aksiyon & Macera" },
-    { id: 16, name: "Animasyon" },
-    { id: 35, name: "Komedi" },
-    { id: 80, name: "Suç" },
-    { id: 99, name: "Belgesel" },
-    { id: 18, name: "Dram" },
-    { id: 10751, name: "Aile" },
-    { id: 10762, name: "Çocuk" },
-    { id: 9648, name: "Gizem" },
-    { id: 10763, name: "Haber" },
-    { id: 10764, name: "Reality" },
-    { id: 10765, name: "Bilim Kurgu & Fantastik" },
-    { id: 10766, name: "Pembe Dizi" },
-    { id: 10767, name: "Talk Show" },
-    { id: 10768, name: "Savaş & Politika" },
-    { id: 37, name: "Vahşi Batı" },
+const COUNTRIES = [
+    { code: "TR", name: "Türkiye", flag: "🇹🇷" },
+    { code: "US", name: "Amerika", flag: "🇺🇸" },
+    { code: "GB", name: "İngiltere", flag: "🇬🇧" },
+    { code: "DE", name: "Almanya", flag: "🇩🇪" },
+    { code: "FR", name: "Fransa", flag: "🇫🇷" },
+    { code: "ES", name: "İspanya", flag: "🇪🇸" },
+    { code: "IT", name: "İtalya", flag: "🇮🇹" },
+    { code: "JP", name: "Japonya", flag: "🇯🇵" },
+    { code: "KR", name: "Güney Kore", flag: "🇰🇷" },
 ];
 
 export function MediaFilter() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const pathname = usePathname();
+    const searchInputRef = useRef<HTMLInputElement>(null);
 
-    const [type, setType] = useState(searchParams.get("type") || "movie");
+    const [type, setType] = useState(searchParams.get("type") || "");
     const [year, setYear] = useState(searchParams.get("year") || "");
     const [minRating, setMinRating] = useState(searchParams.get("rating") || "");
-    const [provider, setProvider] = useState(searchParams.get("provider") || "");
-    const [genre, setGenre] = useState(searchParams.get("genre") || "");
-    // ülke filtresi kaldırıldı
-    const [isOpen, setIsOpen] = useState(false);
+    const [query, setQuery] = useState(searchParams.get("q") || "");
+    const [country, setCountry] = useState(searchParams.get("country") || "TR");
+    const [selectedProviders, setSelectedProviders] = useState<string[]>(
+        searchParams.get("provider")?.split(",").filter(Boolean) || []
+    );
+    const [selectedGenres, setSelectedGenres] = useState<string[]>(
+        searchParams.get("genre")?.split(",").filter(Boolean) || []
+    );
     const [isInitialRender, setIsInitialRender] = useState(true);
+    const [showProviderDropdown, setShowProviderDropdown] = useState(false);
+    const [showGenreDropdown, setShowGenreDropdown] = useState(false);
+    const [showCountryDropdown, setShowCountryDropdown] = useState(false);
+    const [showAllProviders, setShowAllProviders] = useState(false);
 
-    const genres = type === "movie" ? MOVIE_GENRES : TV_GENRES;
+    // Search suggestions
+    const [suggestions, setSuggestions] = useState<any[]>([]);
+    const [showSuggestions, setShowSuggestions] = useState(false);
+    const [loadingSuggestions, setLoadingSuggestions] = useState(false);
+
+    // Dynamic data from TMDB
+    const [genres, setGenres] = useState<{ id: number; name: string }[]>([]);
+    const [providers, setProviders] = useState<{ id: string; name: string; logo: string }[]>([]);
+    const [loading, setLoading] = useState(true);
+
+    // Fetch search suggestions
+    useEffect(() => {
+        const fetchSuggestions = async () => {
+            if (!query || query.length < 2) {
+                setSuggestions([]);
+                setShowSuggestions(false);
+                return;
+            }
+
+            setLoadingSuggestions(true);
+            try {
+                const response = await fetch(`/api/search-suggest?q=${encodeURIComponent(query)}`);
+                const data = await response.json();
+                setSuggestions(data.results?.slice(0, 5) || []);
+                setShowSuggestions(true);
+            } catch (error) {
+                console.error("Error fetching suggestions:", error);
+                setSuggestions([]);
+            } finally {
+                setLoadingSuggestions(false);
+            }
+        };
+
+        const debounce = setTimeout(fetchSuggestions, 300);
+        return () => clearTimeout(debounce);
+    }, [query]);
+
+    // Close suggestions when clicking outside
+    useEffect(() => {
+        const handleClickOutside = (e: MouseEvent) => {
+            if (searchInputRef.current && !searchInputRef.current.contains(e.target as Node)) {
+                setShowSuggestions(false);
+            }
+        };
+
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => document.removeEventListener("mousedown", handleClickOutside);
+    }, []);
+
+    // Fetch genres and providers from TMDB
+    useEffect(() => {
+        const fetchFilterData = async () => {
+            try {
+                setLoading(true);
+
+                // If no type selected, use movie for fetching filters (will show combined results)
+                const genreType = type || "movie";
+                const genreResponse = await fetch(`/api/tmdb/genres?type=${genreType}`);
+                const genreData = await genreResponse.json();
+                setGenres(genreData.genres || []);
+
+                const providerResponse = await fetch(`/api/tmdb/providers?type=${genreType}&country=${country}`);
+                const providerData = await providerResponse.json();
+                setProviders(providerData.providers || []);
+                setShowAllProviders(false); // Reset show all state when filters change
+
+                setLoading(false);
+            } catch (error) {
+                console.error("Error fetching filter data:", error);
+                setLoading(false);
+            }
+        };
+
+        fetchFilterData();
+    }, [type, country]);
 
     // Live filtering: update URL when values change
     useEffect(() => {
@@ -94,136 +154,550 @@ export function MediaFilter() {
         if (minRating) params.set("rating", minRating);
         else params.delete("rating");
 
-        if (provider) params.set("provider", provider);
+        // Don't update query here - only on form submit
+        if (params.has("q") && !query) {
+            params.delete("q");
+        }
+
+        if (country && country !== "TR") params.set("country", country);
+        else params.delete("country");
+
+        if (selectedProviders.length > 0) params.set("provider", selectedProviders.join(","));
         else params.delete("provider");
 
-        if (genre) params.set("genre", genre);
+        if (selectedGenres.length > 0) params.set("genre", selectedGenres.join(","));
         else params.delete("genre");
 
         router.push(`${pathname}?${params.toString()}`, { scroll: false });
-    }, [type, year, minRating, provider, genre, pathname, router, searchParams]);
+    }, [type, year, minRating, country, selectedProviders, selectedGenres, pathname, router, searchParams, isInitialRender]);
 
-    const hasActiveFilters = year || minRating || provider || genre || searchParams.get("type");
+    const hasActiveFilters = year || minRating || query || (country && country !== "TR") || selectedProviders.length > 0 || selectedGenres.length > 0 || searchParams.get("type");
 
     const handleClear = () => {
-        setType("movie");
+        setType("");
         setYear("");
         setMinRating("");
-        setProvider("");
-        setGenre("");
+        setQuery("");
+        setCountry("TR");
+        setSelectedProviders([]);
+        setSelectedGenres([]);
         router.push(pathname);
     };
 
+    const toggleProvider = (providerId: string) => {
+        setSelectedProviders(prev =>
+            prev.includes(providerId)
+                ? prev.filter(id => id !== providerId)
+                : [...prev, providerId]
+        );
+    };
+
+    const toggleGenre = (genreId: string) => {
+        setSelectedGenres(prev =>
+            prev.includes(genreId)
+                ? prev.filter(id => id !== genreId)
+                : [...prev, genreId]
+        );
+    };
+
+    const handleSearch = (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!query.trim()) return;
+
+        // Build URL with all current filters
+        const params = new URLSearchParams();
+        params.set("q", query);
+        if (type) params.set("type", type);
+        if (year) params.set("year", year);
+        if (minRating) params.set("rating", minRating);
+        if (country && country !== "TR") params.set("country", country);
+        if (selectedProviders.length > 0) params.set("provider", selectedProviders.join(","));
+        if (selectedGenres.length > 0) params.set("genre", selectedGenres.join(","));
+
+        // Navigate to search page
+        router.push(`/search?${params.toString()}`);
+        setShowSuggestions(false);
+    };
+
+    const selectedCountry = COUNTRIES.find(c => c.code === country) || COUNTRIES[0];
+
     return (
-        <div className="px-6 md:px-10 relative z-20">
-            <div className="max-w-7xl mx-auto">
-                <div className="bg-[#101624]/80 backdrop-blur-md border border-white/5 rounded-3xl p-4 md:p-6 shadow-xl">
-                    <div className="flex flex-col md:flex-row items-center gap-6">
-                        <div className="flex items-center justify-between w-full md:w-auto shrink-0">
+        <div className="relative z-20">
+            <div className="bg-gradient-to-br from-white/10 via-white/5 to-transparent backdrop-blur-xl border border-white/10 rounded-[32px] p-6 md:p-8 shadow-2xl">
+                <div className="flex flex-col gap-6">
+                    {/* Header */}
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                            <div className="p-2.5 bg-primary/20 rounded-2xl border border-primary/30">
+                                <Sparkles className="w-5 h-5 text-primary" />
+                            </div>
                             <div>
-                                <h3 className="text-xl font-bold text-white tracking-tight">Ne İzlemek İstersin?</h3>
-                                <p className="text-xs text-neutral-400">Aradığın içeriği hemen bul</p>
-                            </div>
-                            <button
-                                onClick={() => setIsOpen(!isOpen)}
-                                className="md:hidden p-2 rounded-xl bg-white/5"
-                            >
-                                <Filter className="w-5 h-5 text-white" />
-                            </button>
-                        </div>
-
-                        <div className={cn(
-                            "w-full md:flex-1 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-6 gap-4",
-                            isOpen ? "flex" : "hidden md:grid"
-                        )}>
-
-                            <div className="flex bg-white/5 p-1 rounded-xl">
-                                <button
-                                    onClick={() => setType("movie")}
-                                    className={cn(
-                                        "flex-1 py-2 px-4 rounded-lg text-xs font-bold transition-all",
-                                        type === "movie" ? "bg-white text-black shadow-lg" : "text-neutral-400 hover:text-white"
-                                    )}
-                                >
-                                    Film
-                                </button>
-                                <button
-                                    onClick={() => setType("tv")}
-                                    className={cn(
-                                        "flex-1 py-2 px-4 rounded-lg text-xs font-bold transition-all",
-                                        type === "tv" ? "bg-white text-black shadow-lg" : "text-neutral-400 hover:text-white"
-                                    )}
-                                >
-                                    Dizi
-                                </button>
-                            </div>
-
-                            <div className="relative group">
-                                <div className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none">
-                                    <Play className="w-4 h-4 text-neutral-500 group-focus-within:text-primary transition-colors" />
-                                </div>
-                                <select
-                                    value={provider}
-                                    onChange={(e) => setProvider(e.target.value)}
-                                    className="w-full bg-white/5 border border-white/5 rounded-xl py-2.5 pl-10 pr-4 text-xs font-medium text-white appearance-none focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all cursor-pointer"
-                                >
-                                    <option value="" className="bg-neutral-900">Platform Seç</option>
-                                    {PROVIDERS.map(p => <option key={p.id} value={p.id} className="bg-neutral-900">{p.name}</option>)}
-                                </select>
-                            </div>
-
-                            <div className="relative group">
-                                <div className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none">
-                                    <Tag className="w-4 h-4 text-neutral-500 group-focus-within:text-primary transition-colors" />
-                                </div>
-                                <select
-                                    value={genre}
-                                    onChange={(e) => setGenre(e.target.value)}
-                                    className="w-full bg-white/5 border border-white/5 rounded-xl py-2.5 pl-10 pr-4 text-xs font-medium text-white appearance-none focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all cursor-pointer"
-                                >
-                                    <option value="" className="bg-neutral-900">Tür Seç</option>
-                                    {genres.map(g => <option key={g.id} value={g.id.toString()} className="bg-neutral-900">{g.name}</option>)}
-                                </select>
-                            </div>
-
-                            <div className="relative group">
-                                <div className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none">
-                                    <Calendar className="w-4 h-4 text-neutral-500 group-focus-within:text-primary transition-colors" />
-                                </div>
-                                <select
-                                    value={year}
-                                    onChange={(e) => setYear(e.target.value)}
-                                    className="w-full bg-white/5 border border-white/5 rounded-xl py-2.5 pl-10 pr-4 text-xs font-medium text-white appearance-none focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all cursor-pointer"
-                                >
-                                    <option value="" className="bg-neutral-900">Yıl Seç</option>
-                                    {YEARS.map(y => <option key={y} value={y} className="bg-neutral-900">{y}</option>)}
-                                </select>
-                            </div>
-
-                            <div className="relative group">
-                                <div className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none">
-                                    <Star className="w-4 h-4 text-neutral-500 group-focus-within:text-yellow-500 transition-colors" />
-                                </div>
-                                <select
-                                    value={minRating}
-                                    onChange={(e) => setMinRating(e.target.value)}
-                                    className="w-full bg-white/5 border border-white/5 rounded-xl py-2.5 pl-10 pr-4 text-xs font-medium text-white appearance-none focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all cursor-pointer"
-                                >
-                                    <option value="" className="bg-neutral-900">Puan (Min)</option>
-                                    {[9, 8, 7, 6, 5, 4, 3, 2, 1].map(r => <option key={r} value={r} className="bg-neutral-900">{r}+ Puan</option>)}
-                                </select>
+                                <h3 className="text-xl md:text-2xl font-black text-white tracking-tight uppercase italic">
+                                    Keşfet & Ara
+                                </h3>
+                                <p className="text-xs text-neutral-400 font-medium">İstediğin içeriği hemen bul</p>
                             </div>
                         </div>
 
                         {hasActiveFilters && (
                             <button
                                 onClick={handleClear}
-                                className="p-3 rounded-xl bg-red-500/10 text-red-500 hover:bg-red-500/20 transition-colors shrink-0"
+                                className="flex items-center gap-1.5 px-3 py-1.5 bg-red-500/10 hover:bg-red-500/20 text-red-500 rounded-xl transition-all border border-red-500/10 text-xs font-bold"
                             >
-                                <X className="w-5 h-5" />
+                                <X className="w-3.5 h-3.5" />
+                                Temizle
                             </button>
                         )}
                     </div>
+
+                    {/* Filters - All Equal and Minimal */}
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
+                        {/* Type Toggle - 3 States: Film, Dizi, or All */}
+                        <div className="flex bg-white/5 p-1 rounded-xl border border-white/5">
+                            <button
+                                onClick={() => setType(type === "movie" ? "" : "movie")}
+                                className={cn(
+                                    "flex-1 py-2 px-2 rounded-lg text-xs font-bold transition-all uppercase",
+                                    type === "movie"
+                                        ? "bg-primary text-white"
+                                        : "text-neutral-400 hover:text-white"
+                                )}
+                            >
+                                Film
+                            </button>
+                            <button
+                                onClick={() => setType(type === "tv" ? "" : "tv")}
+                                className={cn(
+                                    "flex-1 py-2 px-2 rounded-lg text-xs font-bold transition-all uppercase",
+                                    type === "tv"
+                                        ? "bg-primary text-white"
+                                        : "text-neutral-400 hover:text-white"
+                                )}
+                            >
+                                Dizi
+                            </button>
+                        </div>
+
+                        {/* Country - Only Flag */}
+                        <div className="relative">
+                            <button
+                                onClick={() => setShowCountryDropdown(!showCountryDropdown)}
+                                className="w-full h-full flex items-center justify-center bg-white/5 border border-white/10 rounded-xl hover:bg-white/10 transition-all"
+                            >
+                                <span className="text-xl">{selectedCountry.flag}</span>
+                            </button>
+
+                            {showCountryDropdown && (
+                                <Portal>
+                                    <div
+                                        className="fixed inset-0 z-[99998]"
+                                        onClick={() => setShowCountryDropdown(false)}
+                                    />
+                                    <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-sm bg-[#1A202C] border border-white/20 rounded-xl shadow-2xl z-[99999] max-h-[80vh] overflow-y-auto p-2">
+                                        <div className="flex items-center justify-between p-3 border-b border-white/10 mb-2">
+                                            <span className="font-bold text-white">Ülke Seç</span>
+                                            <button onClick={() => setShowCountryDropdown(false)} className="p-1 hover:bg-white/10 rounded-full">
+                                                <X className="w-4 h-4 text-white" />
+                                            </button>
+                                        </div>
+                                        {COUNTRIES.map(c => (
+                                            <button
+                                                key={c.code}
+                                                onClick={() => {
+                                                    setCountry(c.code);
+                                                    setSelectedProviders([]);
+                                                    setShowCountryDropdown(false);
+                                                }}
+                                                className="w-full flex items-center gap-3 px-4 py-3 hover:bg-white/5 transition-all rounded-lg"
+                                            >
+                                                <span className="text-2xl">{c.flag}</span>
+                                                <span className="text-sm font-medium text-white">{c.name}</span>
+                                                {country === c.code && (
+                                                    <Check className="w-4 h-4 text-primary ml-auto" />
+                                                )}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </Portal>
+                            )}
+                        </div>
+
+                        {/* Platform */}
+                        <div className="relative">
+                            <button
+                                onClick={() => setShowProviderDropdown(!showProviderDropdown)}
+                                disabled={loading}
+                                className="w-full h-full flex items-center justify-center bg-white/5 border border-white/10 rounded-xl hover:bg-white/10 transition-all disabled:opacity-50 text-xs font-bold text-white"
+                            >
+                                <span className="truncate px-2">
+                                    {selectedProviders.length > 0 ? `${selectedProviders.length} Platform` : "Platform"}
+                                </span>
+                            </button>
+
+                            {showProviderDropdown && (
+                                <Portal>
+                                    <div className="fixed inset-0 z-[99998] flex items-center justify-center p-4">
+                                        <div
+                                            className="absolute inset-0 bg-black/80 backdrop-blur-sm"
+                                            onClick={() => setShowProviderDropdown(false)}
+                                        />
+                                        <div className="relative w-full max-w-lg bg-[#1A202C] border border-white/10 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[80vh] animate-in fade-in zoom-in-95 duration-200 z-[99999]">
+                                            <div className="flex items-center justify-between p-4 border-b border-white/5 bg-white/5">
+                                                <h3 className="text-white font-bold text-lg">Platformlar</h3>
+                                                <button
+                                                    onClick={() => setShowProviderDropdown(false)}
+                                                    className="p-2 hover:bg-white/10 rounded-full transition-colors"
+                                                >
+                                                    <X className="w-5 h-5 text-neutral-400 hover:text-white" />
+                                                </button>
+                                            </div>
+
+                                            <div className="overflow-y-auto p-4 custom-scrollbar">
+                                                {providers.length === 0 ? (
+                                                    <div className="text-center py-8 text-neutral-500">
+                                                        {loading ? "Yükleniyor..." : "Bu ülkede platform bulunamadı"}
+                                                    </div>
+                                                ) : (
+                                                    <>
+                                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                                            {(showAllProviders ? providers : providers.slice(0, 8)).map(p => (
+                                                                <button
+                                                                    key={p.id}
+                                                                    onClick={() => toggleProvider(p.id)}
+                                                                    className={cn(
+                                                                        "flex items-center gap-3 px-4 py-3 rounded-xl transition-all border text-left",
+                                                                        selectedProviders.includes(p.id)
+                                                                            ? "bg-primary/10 border-primary/30"
+                                                                            : "bg-white/5 border-white/5 hover:bg-white/10"
+                                                                    )}
+                                                                >
+                                                                    <div className={cn(
+                                                                        "w-5 h-5 rounded border-2 flex items-center justify-center transition-all flex-shrink-0",
+                                                                        selectedProviders.includes(p.id)
+                                                                            ? "bg-primary border-primary"
+                                                                            : "border-white/20"
+                                                                    )}>
+                                                                        {selectedProviders.includes(p.id) && (
+                                                                            <Check className="w-3 h-3 text-white" />
+                                                                        )}
+                                                                    </div>
+                                                                    <span className={cn(
+                                                                        "text-sm font-medium",
+                                                                        selectedProviders.includes(p.id) ? "text-white" : "text-neutral-300"
+                                                                    )}>
+                                                                        {p.name}
+                                                                    </span>
+                                                                </button>
+                                                            ))}
+                                                        </div>
+
+                                                        {!showAllProviders && providers.length > 8 && (
+                                                            <button
+                                                                onClick={() => setShowAllProviders(true)}
+                                                                className="w-full mt-4 py-3 text-sm font-bold text-primary bg-primary/10 hover:bg-primary/20 rounded-xl transition-colors border border-primary/20"
+                                                            >
+                                                                Diğerlerini Göster ({providers.length - 8})
+                                                            </button>
+                                                        )}
+                                                    </>
+                                                )}
+                                            </div>
+
+                                            <div className="p-4 border-t border-white/5 bg-white/5">
+                                                <button
+                                                    onClick={() => setShowProviderDropdown(false)}
+                                                    className="w-full bg-primary hover:bg-primary/90 text-white font-bold py-3 rounded-xl transition-colors"
+                                                >
+                                                    Tamam ({selectedProviders.length})
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </Portal>
+                            )}
+                        </div>
+
+                        {/* Genre */}
+                        <div className="relative">
+                            <button
+                                onClick={() => setShowGenreDropdown(!showGenreDropdown)}
+                                disabled={loading}
+                                className="w-full h-full flex items-center justify-center bg-white/5 border border-white/10 rounded-xl hover:bg-white/10 transition-all disabled:opacity-50 text-xs font-bold text-white"
+                            >
+                                <span className="truncate px-2">
+                                    {selectedGenres.length > 0 ? `${selectedGenres.length} Tür` : "Tür"}
+                                </span>
+                            </button>
+
+                            {showGenreDropdown && (
+                                <Portal>
+                                    <div className="fixed inset-0 z-[99998] flex items-center justify-center p-4">
+                                        <div
+                                            className="absolute inset-0 bg-black/80 backdrop-blur-sm"
+                                            onClick={() => setShowGenreDropdown(false)}
+                                        />
+                                        <div className="relative w-full max-w-lg bg-[#1A202C] border border-white/10 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[80vh] animate-in fade-in zoom-in-95 duration-200 z-[99999]">
+                                            <div className="flex items-center justify-between p-4 border-b border-white/5 bg-white/5">
+                                                <h3 className="text-white font-bold text-lg">Türler</h3>
+                                                <button
+                                                    onClick={() => setShowGenreDropdown(false)}
+                                                    className="p-2 hover:bg-white/10 rounded-full transition-colors"
+                                                >
+                                                    <X className="w-5 h-5 text-neutral-400 hover:text-white" />
+                                                </button>
+                                            </div>
+
+                                            <div className="overflow-y-auto p-4 custom-scrollbar">
+                                                <div className="grid grid-cols-2 gap-2">
+                                                    {genres.map(g => (
+                                                        <button
+                                                            key={g.id}
+                                                            onClick={() => toggleGenre(g.id.toString())}
+                                                            className={cn(
+                                                                "flex items-center gap-3 px-4 py-3 rounded-xl transition-all border text-left",
+                                                                selectedGenres.includes(g.id.toString())
+                                                                    ? "bg-primary/10 border-primary/30"
+                                                                    : "bg-white/5 border-white/5 hover:bg-white/10"
+                                                            )}
+                                                        >
+                                                            <div className={cn(
+                                                                "w-5 h-5 rounded border-2 flex items-center justify-center transition-all flex-shrink-0",
+                                                                selectedGenres.includes(g.id.toString())
+                                                                    ? "bg-primary border-primary"
+                                                                    : "border-white/20"
+                                                            )}>
+                                                                {selectedGenres.includes(g.id.toString()) && (
+                                                                    <Check className="w-3 h-3 text-white" />
+                                                                )}
+                                                            </div>
+                                                            <span className={cn(
+                                                                "text-sm font-medium",
+                                                                selectedGenres.includes(g.id.toString()) ? "text-white" : "text-neutral-300"
+                                                            )}>
+                                                                {g.name}
+                                                            </span>
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                            </div>
+
+                                            <div className="p-4 border-t border-white/5 bg-white/5">
+                                                <button
+                                                    onClick={() => setShowGenreDropdown(false)}
+                                                    className="w-full bg-primary hover:bg-primary/90 text-white font-bold py-3 rounded-xl transition-colors"
+                                                >
+                                                    Tamam ({selectedGenres.length})
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </Portal>
+                            )}
+                        </div>
+
+                        {/* Year */}
+                        <div className="relative">
+                            <select
+                                value={year}
+                                onChange={(e) => setYear(e.target.value)}
+                                className="w-full h-full bg-white/5 border border-white/10 rounded-xl py-2 px-2 text-xs font-bold text-white appearance-none focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/50 transition-all cursor-pointer hover:bg-white/10 text-center"
+                            >
+                                <option value="" className="bg-neutral-900">Yıl</option>
+                                {YEARS.map(y => (
+                                    <option key={y} value={y} className="bg-neutral-900">{y}</option>
+                                ))}
+                            </select>
+                        </div>
+
+                        {/* Rating */}
+                        <div className="relative">
+                            <select
+                                value={minRating}
+                                onChange={(e) => setMinRating(e.target.value)}
+                                className="w-full h-full bg-white/5 border border-white/10 rounded-xl py-2 px-2 text-xs font-bold text-white appearance-none focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/50 transition-all cursor-pointer hover:bg-white/10 text-center"
+                            >
+                                <option value="" className="bg-neutral-900">Puan</option>
+                                {[9, 8, 7, 6, 5, 4, 3, 2, 1].map(r => (
+                                    <option key={r} value={r} className="bg-neutral-900">{r}+</option>
+                                ))}
+                            </select>
+                        </div>
+                    </div>
+
+                    {/* Search Bar */}
+                    <div className="relative" ref={searchInputRef}>
+                        <form onSubmit={handleSearch}>
+                            <div className="flex items-center gap-2 bg-white/5 border border-white/10 rounded-2xl px-5 py-3.5 focus-within:ring-2 focus-within:ring-primary/30 transition-all">
+                                <Search className="w-5 h-5 text-neutral-500" />
+                                <input
+                                    type="text"
+                                    value={query}
+                                    onChange={(e) => setQuery(e.target.value)}
+                                    onFocus={() => {
+                                        if (query.length >= 2 && suggestions.length > 0) setShowSuggestions(true);
+                                    }}
+                                    placeholder="Film, dizi veya kişi ara..."
+                                    className="flex-1 bg-transparent outline-none text-white placeholder:text-neutral-400 text-sm md:text-base font-medium"
+                                />
+                                {loadingSuggestions ? (
+                                    <div className="w-4 h-4 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
+                                ) : query && (
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            setQuery("");
+                                            setSuggestions([]);
+                                        }}
+                                        className="p-1.5 rounded-full hover:bg-white/10 transition-colors"
+                                    >
+                                        <X className="w-4 h-4 text-neutral-400" />
+                                    </button>
+                                )}
+                            </div>
+                        </form>
+
+                        {/* Search Suggestions Dropdown */}
+                        {showSuggestions && (query.length >= 2) && (
+                            <div className="absolute top-full left-0 right-0 mt-2 bg-[#1A202C] border border-white/10 rounded-2xl shadow-2xl overflow-hidden z-[100]">
+                                {suggestions.length > 0 ? (
+                                    <div className="py-2">
+                                        <div className="px-4 py-2 text-xs font-bold text-neutral-500 uppercase tracking-wider">
+                                            Önerilenler
+                                        </div>
+                                        {suggestions.map((item) => (
+                                            <Link
+                                                key={item.id}
+                                                href={`/${item.media_type}/${item.id}`}
+                                                className="flex items-center gap-4 px-4 py-3 hover:bg-white/5 transition-colors group"
+                                                onClick={() => setShowSuggestions(false)}
+                                            >
+                                                <div className="relative w-10 h-14 rounded overflow-hidden flex-shrink-0 bg-neutral-800">
+                                                    {item.poster_path ? (
+                                                        <Image
+                                                            src={`https://image.tmdb.org/t/p/w92${item.poster_path}`}
+                                                            alt={item.title || item.name}
+                                                            fill
+                                                            className="object-cover"
+                                                        />
+                                                    ) : (
+                                                        <div className="w-full h-full flex items-center justify-center">
+                                                            {item.media_type === "movie" ? (
+                                                                <Film className="w-5 h-5 text-neutral-600" />
+                                                            ) : (
+                                                                <Tv className="w-5 h-5 text-neutral-600" />
+                                                            )}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                                <div className="flex-1 min-w-0">
+                                                    <h4 className="text-sm font-medium text-white group-hover:text-primary transition-colors truncate">
+                                                        {item.title || item.name}
+                                                    </h4>
+                                                    <div className="flex items-center gap-2 text-xs text-neutral-400 mt-0.5">
+                                                        <span className="capitalize">
+                                                            {item.media_type === "movie" ? "Film" : "Dizi"}
+                                                        </span>
+                                                        <span>•</span>
+                                                        <span>
+                                                            {(item.release_date || item.first_air_date)?.split("-")[0] || "N/A"}
+                                                        </span>
+                                                        {item.vote_average > 0 && (
+                                                            <>
+                                                                <span>•</span>
+                                                                <div className="flex items-center gap-1 text-amber-400">
+                                                                    <span className="font-bold">{item.vote_average.toFixed(1)}</span>
+                                                                </div>
+                                                            </>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            </Link>
+                                        ))}
+                                        <button
+                                            onClick={(e) => handleSearch(e)}
+                                            className="w-full text-center py-3 text-sm font-medium text-primary hover:bg-primary/5 transition-colors border-t border-white/5"
+                                        >
+                                            Tüm sonuçları gör
+                                        </button>
+                                    </div>
+                                ) : (
+                                    <div className="p-4 text-center text-neutral-400 text-sm">
+                                        Sonuç bulunamadı
+                                    </div>
+                                )}
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Active Filters */}
+                    {hasActiveFilters && (
+                        <div className="flex flex-wrap gap-2 pt-2 border-t border-white/5">
+                            {query && (
+                                <button
+                                    onClick={() => setQuery("")}
+                                    className="group flex items-center gap-2 px-3 py-1.5 bg-green-500/10 text-green-400 text-xs font-bold rounded-lg border border-green-500/20 hover:bg-green-500/20 transition-all"
+                                >
+                                    <Search className="w-3 h-3" />
+                                    "{query}"
+                                    <X className="w-3 h-3 opacity-60 group-hover:opacity-100" />
+                                </button>
+                            )}
+                            {country && country !== "TR" && (
+                                <button
+                                    onClick={() => setCountry("TR")}
+                                    className="group flex items-center gap-2 px-3 py-1.5 bg-indigo-500/10 text-indigo-400 text-xs font-bold rounded-lg border border-indigo-500/20 hover:bg-indigo-500/20 transition-all"
+                                >
+                                    <span>{selectedCountry.flag}</span>
+                                    {selectedCountry.name}
+                                    <X className="w-3 h-3 opacity-60 group-hover:opacity-100" />
+                                </button>
+                            )}
+                            {selectedGenres.map(genreId => {
+                                const genre = genres.find(g => g.id.toString() === genreId);
+                                return genre ? (
+                                    <button
+                                        key={genreId}
+                                        onClick={() => toggleGenre(genreId)}
+                                        className="group flex items-center gap-2 px-3 py-1.5 bg-primary/10 text-primary text-xs font-bold rounded-lg border border-primary/20 hover:bg-primary/20 transition-all"
+                                    >
+                                        {genre.name}
+                                        <X className="w-3 h-3 opacity-60 group-hover:opacity-100" />
+                                    </button>
+                                ) : null;
+                            })}
+                            {selectedProviders.map(providerId => {
+                                const provider = providers.find(p => p.id === providerId);
+                                return provider ? (
+                                    <button
+                                        key={providerId}
+                                        onClick={() => toggleProvider(providerId)}
+                                        className="group flex items-center gap-2 px-3 py-1.5 bg-blue-500/10 text-blue-400 text-xs font-bold rounded-lg border border-blue-500/20 hover:bg-blue-500/20 transition-all"
+                                    >
+                                        {provider.name}
+                                        <X className="w-3 h-3 opacity-60 group-hover:opacity-100" />
+                                    </button>
+                                ) : null;
+                            })}
+                            {year && (
+                                <button
+                                    onClick={() => setYear("")}
+                                    className="group flex items-center gap-2 px-3 py-1.5 bg-purple-500/10 text-purple-400 text-xs font-bold rounded-lg border border-purple-500/20 hover:bg-purple-500/20 transition-all"
+                                >
+                                    {year}
+                                    <X className="w-3 h-3 opacity-60 group-hover:opacity-100" />
+                                </button>
+                            )}
+                            {minRating && (
+                                <button
+                                    onClick={() => setMinRating("")}
+                                    className="group flex items-center gap-2 px-3 py-1.5 bg-yellow-500/10 text-yellow-400 text-xs font-bold rounded-lg border border-yellow-500/20 hover:bg-yellow-500/20 transition-all"
+                                >
+                                    {minRating}+ Puan
+                                    <X className="w-3 h-3 opacity-60 group-hover:opacity-100" />
+                                </button>
+                            )}
+                        </div>
+                    )}
                 </div>
             </div>
         </div>

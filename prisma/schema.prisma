@@ -161,7 +161,7 @@ model Activity {
   user              User         @relation(fields: [userId], references: [id], onDelete: Cascade)
   comments          Comment[]
 
-  @@unique([userId, mediaId, type], name: "userId_mediaId_type")
+  @@unique([userId, mediaId, type, episodeId], name: "userId_mediaId_type_episode")
 }
 
 model Comment {

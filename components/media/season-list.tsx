@@ -1,11 +1,13 @@
 "use client";
 
-import { useState } from "react";
-import { ChevronDown, ChevronUp, Loader2, Layers } from "lucide-react";
+import { useState, useTransition } from "react";
+import { ChevronDown, Loader2, Layers, CheckCircle2 } from "lucide-react";
 import EpisodeItem from "./episode-item";
 import { cn } from "@/lib/utils";
 import { useEffect, useState as useEState } from 'react';
 import { fetchSeasonEpisodes } from "@/lib/client-actions";
+import { markSeasonAsWatched } from "@/lib/tv-actions";
+import { useRouter } from "next/navigation";
 
 type Season = {
     air_date: string;
@@ -23,18 +25,69 @@ type SeasonListProps = {
     watchedEpisodes: { s: number; e: number }[];
 };
 
-export default function SeasonList({ tmdbId, seasons, watchedEpisodes }: SeasonListProps) {
+export default function SeasonList({ tmdbId, seasons, watchedEpisodes: initialWatchedEpisodes }: SeasonListProps) {
     if (!seasons || seasons.length === 0) return null;
     const validSeasons = seasons.filter(s => s.episode_count > 0 && s.season_number > 0);
     const [isAllVisible, setIsAllVisible] = useState(false);
     const [expandedSeason, setExpandedSeason] = useState<number | null>(validSeasons[0]?.season_number || null);
+    const [isPending, startTransition] = useTransition();
+    const [watchedEpisodes, setWatchedEpisodes] = useState(initialWatchedEpisodes);
+    const router = useRouter();
+
+    const handleMarkSeasonWatched = async (seasonNumber: number) => {
+        // Get the season to find episode count
+        const season = validSeasons.find(s => s.season_number === seasonNumber);
+        if (!season) return;
+
+        // Check if all episodes are already watched
+        const seasonWatchedEpisodes = watchedEpisodes.filter(w => w.s === seasonNumber);
+        const allWatched = seasonWatchedEpisodes.length === season.episode_count;
+
+        // Optimistic update
+        if (allWatched) {
+            // Remove all watched episodes for this season
+            setWatchedEpisodes(prev => prev.filter(w => w.s !== seasonNumber));
+        } else {
+            // Mark all episodes as watched
+            const newWatchedEpisodes = Array.from({ length: season.episode_count }, (_, i) => ({
+                s: seasonNumber,
+                e: i + 1
+            }));
+            setWatchedEpisodes(prev => {
+                // Remove existing watched episodes for this season
+                const filtered = prev.filter(w => w.s !== seasonNumber);
+                // Add all episodes
+                return [...filtered, ...newWatchedEpisodes];
+            });
+        }
+
+        // Call server action in background
+        startTransition(async () => {
+            try {
+                const result = await markSeasonAsWatched(tmdbId, seasonNumber);
+                if (result && 'error' in result) {
+                    alert(result.error);
+                    // Revert optimistic update on error
+                    setWatchedEpisodes(initialWatchedEpisodes);
+                } else {
+                    // Refresh the page data without full reload
+                    router.refresh();
+                }
+            } catch (err) {
+                console.error("Client Error:", err);
+                alert("Bir hata oluştu. Lütfen tekrar deneyin.");
+                // Revert optimistic update on error
+                setWatchedEpisodes(initialWatchedEpisodes);
+            }
+        });
+    };
 
     return (
         <div className="space-y-6">
             {/* Main Toggle Header */}
             <button
                 onClick={() => setIsAllVisible(!isAllVisible)}
-                className="w-full flex items-center justify-between group py-4 border-b border-white/5 hover:border-primary/30 transition-all"
+                className="w-full flex items-center justify-between group py-4 border-b border-white/5 hover:border-primary/30 transition-all font-sans"
             >
                 <div className="flex items-center gap-4">
                     <div className={cn(
@@ -44,7 +97,7 @@ export default function SeasonList({ tmdbId, seasons, watchedEpisodes }: SeasonL
                         <Layers className="w-5 h-5" />
                     </div>
                     <div className="text-left">
-                        <h3 className="text-2xl font-black text-white tracking-tight">Sezonlar</h3>
+                        <h3 className="text-2xl font-black text-white tracking-tight uppercase italic">Sezonlar</h3>
                         <p className="text-sm font-bold text-neutral-500 mt-0.5">
                             Toplam {validSeasons.length} Sezon
                         </p>
@@ -68,7 +121,7 @@ export default function SeasonList({ tmdbId, seasons, watchedEpisodes }: SeasonL
                                 key={season.id}
                                 onClick={() => setExpandedSeason(season.season_number)}
                                 className={cn(
-                                    "px-5 py-2.5 rounded-xl font-bold text-sm transition-all border active:scale-95",
+                                    "px-5 py-2.5 rounded-xl font-black text-[11px] transition-all border active:scale-95 uppercase tracking-widest",
                                     expandedSeason === season.season_number
                                         ? "bg-primary text-background border-primary shadow-lg shadow-primary/20"
                                         : "bg-white/5 text-neutral-400 border-white/5 hover:bg-white/10 hover:text-white"
@@ -82,15 +135,31 @@ export default function SeasonList({ tmdbId, seasons, watchedEpisodes }: SeasonL
                     {/* Expanded Content View */}
                     {expandedSeason !== null && (
                         <div className="bg-neutral-900/40 backdrop-blur-md border border-white/5 rounded-[2rem] overflow-hidden shadow-2xl">
-                            <div className="p-6 md:p-8 bg-white/[0.02] border-b border-white/5 flex items-center justify-between">
+                            <div className="p-6 md:p-8 bg-white/[0.02] border-b border-white/5 flex flex-col sm:flex-row items-center justify-between gap-6">
                                 <div>
-                                    <h3 className="text-xl font-black text-white tracking-tight">
+                                    <h3 className="text-xl font-black text-white tracking-tight uppercase italic">
                                         {validSeasons.find(s => s.season_number === expandedSeason)?.name}
                                     </h3>
-                                    <p className="text-sm font-semibold text-neutral-500 mt-0.5">
+                                    <p className="text-sm font-bold text-neutral-500 mt-0.5">
                                         {validSeasons.find(s => s.season_number === expandedSeason)?.episode_count} Bölüm Bulunuyor
                                     </p>
                                 </div>
+
+                                <button
+                                    onClick={(e) => {
+                                        e.preventDefault();
+                                        handleMarkSeasonWatched(expandedSeason);
+                                    }}
+                                    disabled={isPending}
+                                    className="w-full sm:w-auto flex items-center justify-center gap-3 px-6 py-3 bg-white/5 hover:bg-green-500 hover:text-white border border-white/10 hover:border-green-400 rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all group/btn disabled:opacity-50"
+                                >
+                                    {isPending ? (
+                                        <Loader2 className="w-4 h-4 animate-spin" />
+                                    ) : (
+                                        <CheckCircle2 className="w-4 h-4 group-hover/btn:scale-110 transition-transform" />
+                                    )}
+                                    Sezonu Bitir (Tümünü İzle)
+                                </button>
                             </div>
 
                             <div className="max-h-[600px] overflow-y-auto custom-scrollbar">
@@ -123,7 +192,7 @@ function SeasonEpisodes({ tmdbId, seasonNumber, watchedEpisodes }: { tmdbId: num
     if (loading) return (
         <div className="py-20 flex flex-col items-center justify-center gap-4">
             <Loader2 className="w-8 h-8 animate-spin text-primary opacity-50" />
-            <p className="text-xs font-bold text-neutral-600 uppercase tracking-widest">Bölümler Yükleniyor...</p>
+            <p className="text-[10px] font-black text-neutral-600 uppercase tracking-[0.2em] italic">Bölümler Hazırlanıyor...</p>
         </div>
     );
 

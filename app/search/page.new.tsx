@@ -1,107 +1,171 @@
-"use client";
-import { useState } from "react";
-import { ModernSearchHeader } from "@/components/search/modern-search-header";
-import { MediaCard } from "@/components/media/media-card";
 import { tmdb } from "@/lib/tmdb";
-import { Film } from "lucide-react";
+import { MediaCard } from "@/components/media/media-card";
+import { Film, Search } from "lucide-react";
+import { MediaFilter } from "@/components/home/media-filter";
 
-import { use } from "react";
-import { HomeSearchBar } from "@/components/home/home-search-bar";
+type SearchPageProps = {
+  searchParams: Promise<{
+    q?: string;
+    type?: string;
+    year?: string;
+    rating?: string;
+    provider?: string;
+    genre?: string;
+  }>;
+};
 
-export default function ModernSearchPage({ searchParams }: { searchParams: Promise<{ q?: string, type?: string, year?: string, rating?: string, provider?: string, genre?: string, country?: string }> }) {
-  const params = use(searchParams);
-  const [results, setResults] = useState<any[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [filters, setFilters] = useState({
-    type: params.type || "movie",
-    year: params.year || "",
-    minRating: params.rating || "",
-    provider: params.provider || "",
-    genre: params.genre || "",
-    country: params.country || "TR",
-  });
-  const [query, setQuery] = useState(params.q || "");
+export default async function SearchPage({ searchParams }: SearchPageProps) {
+  const params = await searchParams;
+  const query = params.q || "";
+  const type = params.type || "";
+  const year = params.year;
+  const rating = params.rating;
+  const provider = params.provider;
+  const genre = params.genre;
 
-  // Filtre veya arama değiştiğinde otomatik içerik getir
-  function handleFiltersChange(newFilters: any) {
-    setFilters(newFilters);
-    fetchResults(newFilters, query);
-  }
+  let results: any[] = [];
+  let loading = false;
 
-  function handleSearch(newQuery: string) {
-    setQuery(newQuery);
-    fetchResults(filters, newQuery);
-  }
+  // If there's a search query or filters, fetch results
+  if (query || year || rating || provider || genre || type) {
+    const searchParams: Record<string, string> = {
+      language: "tr-TR",
+      watch_region: "TR",
+    };
 
-  async function fetchResults(newFilters: any, newQuery: string) {
-    setLoading(true);
-    const params: Record<string, string> = {};
-    if (newFilters.year) params["primary_release_year"] = newFilters.year;
-    if (newFilters.minRating) params["vote_average.gte"] = newFilters.minRating;
-    if (newFilters.provider) params["with_watch_providers"] = newFilters.provider;
-    if (newFilters.genre) params["with_genres"] = newFilters.genre;
-    if (newFilters.country) params["with_origin_country"] = newFilters.country;
-    params["language"] = "tr-TR";
-    params["sort_by"] = "popularity.desc";
-    params["watch_region"] = newFilters.country || "TR";
-    if (newQuery) params["query"] = newQuery;
-
-    let data;
-    if (Object.keys(params).length > 1) {
-      data = await tmdb.discover(newFilters.type as "movie" | "tv", params);
-      setResults(data.results || []);
-    } else if (newQuery) {
-      data = await tmdb.searchMulti(newQuery);
-      setResults((data.results || []).filter((item: any) => item.media_type === "movie" || item.media_type === "tv"));
+    // If there's a query, use search
+    if (query) {
+      const data = await tmdb.searchMulti(query);
+      // If type is specified, filter by type; otherwise show all
+      results = type
+        ? (data.results || []).filter((item: any) => item.media_type === type)
+        : (data.results || []);
     } else {
-      setResults([]);
+      // No query, use discover with filters
+      if (!type) {
+        // Fetch both movies and TV shows
+        if (year) searchParams["primary_release_year"] = year;
+        if (rating) searchParams["vote_average.gte"] = rating;
+        if (provider) {
+          searchParams["with_watch_providers"] = provider;
+          searchParams["watch_region"] = "TR";
+        }
+        if (genre) searchParams["with_genres"] = genre;
+        searchParams["sort_by"] = "popularity.desc";
+
+        const tvParams = { ...searchParams };
+        delete tvParams["primary_release_year"];
+        if (year) tvParams["first_air_date_year"] = year;
+
+        const [movieData, tvData] = await Promise.all([
+          tmdb.discover("movie", searchParams),
+          tmdb.discover("tv", tvParams),
+        ]);
+
+        results = [...movieData.results, ...tvData.results].sort((a, b) =>
+          (b.popularity || 0) - (a.popularity || 0)
+        );
+      } else {
+        // Single type discover
+        if (year) {
+          const yearKey = type === "movie" ? "primary_release_year" : "first_air_date_year";
+          searchParams[yearKey] = year;
+        }
+        if (rating) searchParams["vote_average.gte"] = rating;
+        if (provider) {
+          searchParams["with_watch_providers"] = provider;
+          searchParams["watch_region"] = "TR";
+        }
+        if (genre) searchParams["with_genres"] = genre;
+        searchParams["sort_by"] = "popularity.desc";
+        const data = await tmdb.discover(type as "movie" | "tv", searchParams);
+        results = data.results || [];
+      }
     }
-    setLoading(false);
-  }
-
-  function handleFilterChange(newFilters: any) {
-    setFilters(newFilters);
-    fetchResults(newFilters, query);
-  }
-
-  function handleClear() {
-    setFilters({ type: "movie", year: "", minRating: "", provider: "", genre: "", country: "TR" });
-    setQuery("");
-    setResults([]);
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 md:px-8 py-8 min-h-screen">
-      <div className="flex flex-col items-center justify-center w-full mb-8">
-        <div className="w-full max-w-md">
-          <HomeSearchBar />
+    <div className="min-h-screen bg-[#101624] pb-20">
+      {/* Header Section */}
+      <div className="relative pt-24 pb-12">
+        <div className="absolute inset-0 bg-gradient-to-b from-primary/5 via-transparent to-transparent" />
+        <div className="relative max-w-7xl mx-auto px-6">
+          <div className="text-center mb-8">
+            <div className="inline-flex items-center gap-2 px-4 py-2 bg-primary/20 rounded-full border border-primary/30 mb-4">
+              <Search className="w-4 h-4 text-primary" />
+              <span className="text-primary font-black text-xs uppercase tracking-widest">
+                Keşfet & Ara
+              </span>
+            </div>
+            <h1 className="text-4xl md:text-6xl font-black text-white tracking-tighter mb-4">
+              Ne Arıyorsun<span className="text-primary">?</span>
+            </h1>
+            <p className="text-neutral-400 text-sm md:text-base max-w-2xl mx-auto">
+              Milyonlarca film ve dizi arasından istediğini bul veya filtrelerle keşfet
+            </p>
+          </div>
         </div>
       </div>
-      {loading ? (
-        <div className="flex flex-col items-center justify-center text-neutral-500 mt-20">
-          <Film className="w-16 h-16 mb-4 animate-pulse opacity-20" />
-          <p className="text-lg">Yükleniyor...</p>
-        </div>
-      ) : results.length === 0 ? (
-        <div className="flex flex-col items-center justify-center text-neutral-500 mt-20">
-          <Film className="w-16 h-16 mb-4 opacity-20" />
-          <p className="text-lg">Aramaya başlamak için bir şeyler yazın veya filtreleri kullanın</p>
-        </div>
-      ) : (
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-8">
-          {results.map((item: any) => (
-            <MediaCard
-              key={item.id}
-              id={item.id}
-              title={item.title || item.name}
-              originalTitle={item.original_title || item.original_name}
-              posterPath={item.poster_path}
-              voteAverage={item.vote_average}
-              type={filters.type as "movie" | "tv"}
-            />
-          ))}
-        </div>
-      )}
+
+      {/* Filter Section */}
+      <div className="max-w-7xl mx-auto px-6 mb-12">
+        <MediaFilter />
+      </div>
+
+      {/* Results Section */}
+      <div className="max-w-7xl mx-auto px-6">
+        {!query && !year && !rating && !provider && !genre ? (
+          <div className="flex flex-col items-center justify-center py-32 text-center">
+            <div className="p-8 bg-white/5 rounded-full mb-6 border border-white/10">
+              <Search className="w-16 h-16 text-neutral-600" />
+            </div>
+            <h2 className="text-2xl font-bold text-white mb-3">
+              Aramaya Başla
+            </h2>
+            <p className="text-neutral-400 max-w-md">
+              Yukarıdaki arama kutusunu kullanarak film veya dizi ara, ya da filtreleri kullanarak keşfet
+            </p>
+          </div>
+        ) : results.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-32 text-center">
+            <div className="p-8 bg-white/5 rounded-full mb-6 border border-white/10">
+              <Film className="w-16 h-16 text-neutral-600" />
+            </div>
+            <h2 className="text-2xl font-bold text-white mb-3">
+              Sonuç Bulunamadı
+            </h2>
+            <p className="text-neutral-400 max-w-md">
+              Aradığınız kriterlere uygun içerik bulunamadı. Farklı filtreler deneyin
+            </p>
+          </div>
+        ) : (
+          <div>
+            <div className="mb-8 flex items-center justify-between">
+              <div>
+                <h2 className="text-2xl font-black text-white uppercase tracking-tight">
+                  Arama Sonuçları
+                </h2>
+                <p className="text-sm text-neutral-500 font-medium mt-1">
+                  {results.length} sonuç bulundu
+                </p>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+              {results.map((item: any) => (
+                <MediaCard
+                  key={item.id}
+                  id={item.id}
+                  title={item.title || item.name}
+                  originalTitle={item.original_title || item.original_name}
+                  posterPath={item.poster_path}
+                  voteAverage={item.vote_average}
+                  type={type as "movie" | "tv"}
+                />
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

@@ -3,6 +3,7 @@ import { ChevronRight as ArrowRight } from "lucide-react";
 import { MediaCard } from "./media-card";
 import { MediaRowClient } from "./media-row-client";
 import { getUserRatingsBulk } from "@/lib/rating-actions";
+import { cn } from "@/lib/utils";
 
 type MediaItem = {
     id: number;
@@ -29,10 +30,10 @@ export async function MediaRow({ title, items, type, href }: MediaRowProps) {
 
     return (
         <div className="py-0">
-            <div className="flex items-center justify-between px-6 md:px-10 mb-2">
+            <div className={cn("flex items-center justify-between mb-2", href ? "" : "px-6 md:px-10")}>
                 {href ? (
-                    <Link href={href} className="flex items-center gap-2 group">
-                        <h2 className="text-xl md:text-2xl font-bold text-amber-400 tracking-tight group-hover:text-primary transition-colors">{title}</h2>
+                    <Link href={href} className="flex items-center gap-2 group px-4">
+                        <h2 className="text-xl md:text-2xl font-bold text-amber-400 tracking-tight group-hover:text-amber-300 transition-colors">{title}</h2>
                         <ArrowRight className="w-5 h-5 text-neutral-500 group-hover:text-primary transition-all group-hover:translate-x-1" />
                     </Link>
                 ) : (

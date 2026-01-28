@@ -25,7 +25,7 @@ type MediaRowClientProps = {
 export function MediaRowClient({ children }: MediaRowClientProps) {
     return (
         <div className="relative group/slider">
-            <div className="flex gap-4 overflow-x-auto pb-6 -mx-4 px-4 md:mx-0 md:px-0 snap-x hide-scrollbar">
+            <div className="flex gap-4 lg:gap-6 overflow-x-auto pb-6 -mx-8 px-8 md:-mx-4 md:px-4 snap-x hide-scrollbar">
                 {children}
             </div>
 

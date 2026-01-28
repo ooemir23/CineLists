@@ -180,12 +180,6 @@ export default async function DetailsPage(props: Props) {
                                 friendsRatings={friendsRatings}
                                 mediaTitle={title}
                             />
-
-                            <RatingDisplay
-                                userRating={userRating}
-                                friendsRatings={friendsRatings}
-                                mediaTitle={title}
-                            />
                         </div>
 
                         {/* Feature Row (Platforms & Genres) */}

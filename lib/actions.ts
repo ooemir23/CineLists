@@ -61,7 +61,25 @@ export async function toggleToWatch(mediaId: number, type: "movie" | "tv" | "per
         await prisma.toWatch.delete({
             where: { id: existing.id },
         });
+
+        // Remove the ADDED_TO_LIST activity to keep feed clean
+        const lastActivity = await prisma.activity.findFirst({
+            where: {
+                userId: session.user.id,
+                mediaId: media.id,
+                type: "ADDED_TO_LIST",
+            },
+            orderBy: { createdAt: "desc" },
+        });
+
+        if (lastActivity) {
+            await prisma.activity.delete({
+                where: { id: lastActivity.id },
+            });
+        }
+
         revalidatePath("/watchlist");
+        revalidatePath("/feed");
         revalidatePath(`/movie/${mediaId}`);
         revalidatePath(`/tv/${mediaId}`);
         return { added: false };

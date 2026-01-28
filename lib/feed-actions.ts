@@ -22,6 +22,21 @@ export type FeedActivity = {
         backdropPath: string | null;
         type: "MOVIE" | "TV" | "PERSON";
     };
+    episode?: {
+        id: string;
+        seasonNumber: number;
+        episodeNumber: number;
+        title: string;
+    } | null;
+    episodeRange?: {
+        seasonNumber: number;
+        fromEpisode: number;
+        toEpisode: number;
+        count: number;
+    } | null;
+    _count: {
+        comments: number;
+    };
 };
 
 export async function getFriendsActivity(): Promise<FeedActivity[]> {
@@ -56,12 +71,92 @@ export async function getFriendsActivity(): Promise<FeedActivity[]> {
                 },
             },
             media: true,
+            episode: {
+                select: {
+                    id: true,
+                    seasonNumber: true,
+                    episodeNumber: true,
+                    title: true,
+                }
+            },
+            _count: {
+                select: { comments: true }
+            }
         },
         orderBy: {
             createdAt: "desc",
         },
-        take: 20,
+        take: 100, // Fetch more to group properly
     });
 
-    return activities as unknown as FeedActivity[];
+    // 3. Group consecutive episode watches
+    const groupedActivities: FeedActivity[] = [];
+    const processed = new Set<string>();
+
+    for (let i = 0; i < activities.length; i++) {
+        const activity = activities[i];
+
+        if (processed.has(activity.id)) continue;
+
+        // If this is not a TV episode watch, add it as-is
+        if (!activity.episode || activity.type !== "WATCHED") {
+            groupedActivities.push(activity as unknown as FeedActivity);
+            processed.add(activity.id);
+            continue;
+        }
+
+        // Find consecutive episodes from same user, same show, same season
+        const relatedEpisodes = [activity];
+        processed.add(activity.id);
+
+        // Look for episodes within 5 minutes of this one
+        const timeWindow = 5 * 60 * 1000; // 5 minutes
+        const activityTime = new Date(activity.createdAt).getTime();
+
+        for (let j = i + 1; j < activities.length; j++) {
+            const nextActivity = activities[j];
+
+            if (processed.has(nextActivity.id)) continue;
+
+            const nextTime = new Date(nextActivity.createdAt).getTime();
+            const timeDiff = Math.abs(activityTime - nextTime);
+
+            // Check if it's the same user, same media, same season, and within time window
+            if (
+                nextActivity.userId === activity.userId &&
+                nextActivity.mediaId === activity.mediaId &&
+                nextActivity.episode?.seasonNumber === activity.episode.seasonNumber &&
+                nextActivity.type === "WATCHED" &&
+                timeDiff <= timeWindow
+            ) {
+                relatedEpisodes.push(nextActivity);
+                processed.add(nextActivity.id);
+            }
+        }
+
+        // If we found multiple episodes, create a grouped activity
+        if (relatedEpisodes.length > 1) {
+            const episodeNumbers = relatedEpisodes
+                .map(a => a.episode!.episodeNumber)
+                .sort((a, b) => a - b);
+
+            const minEpisode = Math.min(...episodeNumbers);
+            const maxEpisode = Math.max(...episodeNumbers);
+
+            groupedActivities.push({
+                ...activity,
+                episodeRange: {
+                    seasonNumber: activity.episode.seasonNumber,
+                    fromEpisode: minEpisode,
+                    toEpisode: maxEpisode,
+                    count: relatedEpisodes.length
+                }
+            } as unknown as FeedActivity);
+        } else {
+            // Single episode
+            groupedActivities.push(activity as unknown as FeedActivity);
+        }
+    }
+
+    return groupedActivities.slice(0, 20);
 }

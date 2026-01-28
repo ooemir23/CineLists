@@ -7,10 +7,11 @@ import { createPortal } from "react-dom";
 
 type HeroActionsProps = {
     movieId: number;
-    trailerKey?: string; // We might pass this if we fetch it server-side, or fetch on click
+    mediaType?: "movie" | "tv"; // Added mediaType support
+    trailerKey?: string;
 };
 
-export function HeroActions({ movieId }: HeroActionsProps) {
+export function HeroActions({ movieId, mediaType = "movie" }: HeroActionsProps) {
     const [showTrailer, setShowTrailer] = useState(false);
     const [trailerKey, setTrailerKey] = useState<string | null>(null);
     const [loading, setLoading] = useState(false);
@@ -20,9 +21,8 @@ export function HeroActions({ movieId }: HeroActionsProps) {
         if (!trailerKey) {
             setLoading(true);
             try {
-                // Determine if it's movie or tv. The HeroSection currently defaults to movie trending.
-                // We'll assume movie for now as per HeroSection logic.
-                const res = await fetch(`https://api.themoviedb.org/3/movie/${movieId}/videos?api_key=${process.env.NEXT_PUBLIC_TMDB_API_KEY || 'bf8f936fe43431e6714917c0c9a172e5'}&language=en-US`);
+                // Use mediaType for fetching trailer
+                const res = await fetch(`https://api.themoviedb.org/3/${mediaType}/${movieId}/videos?api_key=${process.env.NEXT_PUBLIC_TMDB_API_KEY || 'bf8f936fe43431e6714917c0c9a172e5'}&language=en-US`);
                 const data = await res.json();
                 const trailer = data.results?.find((v: any) => v.type === "Trailer" && v.site === "YouTube");
                 if (trailer) {
@@ -38,22 +38,22 @@ export function HeroActions({ movieId }: HeroActionsProps) {
 
     return (
         <>
-            <div className="flex flex-wrap items-center gap-4 mt-4">
+            <div className="flex flex-wrap items-center gap-3 mt-2">
                 <Link
-                    href={`/movie/${movieId}`}
-                    className="group flex items-center gap-3 bg-primary hover:bg-primary/90 text-white px-8 py-4 rounded-2xl font-bold text-lg transition-all shadow-xl shadow-primary/20 hover:scale-105 active:scale-95"
+                    href={`/${mediaType}/${movieId}`}
+                    className="group flex items-center gap-2 bg-primary hover:bg-primary/90 text-white px-5 py-2.5 rounded-xl font-bold text-sm transition-all shadow-lg shadow-primary/20 hover:scale-105 active:scale-95"
                 >
-                    <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center group-hover:bg-white text-white group-hover:text-primary transition-colors">
-                        <Play className="w-4 h-4 fill-current ml-0.5" />
+                    <div className="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center group-hover:bg-white text-white group-hover:text-primary transition-colors">
+                        <Play className="w-3 h-3 fill-current ml-0.5" />
                     </div>
                     Detayları İncele
                 </Link>
 
                 <button
                     onClick={openTrailer}
-                    className="group flex items-center gap-3 bg-white/10 hover:bg-white/20 text-white border border-white/10 px-8 py-4 rounded-2xl font-bold text-lg backdrop-blur-md transition-all hover:scale-105 active:scale-95"
+                    className="group flex items-center gap-2 bg-white/10 hover:bg-white/20 text-white border border-white/10 px-5 py-2.5 rounded-xl font-bold text-sm backdrop-blur-md transition-all hover:scale-105 active:scale-95"
                 >
-                    <Info className="w-6 h-6" />
+                    <Info className="w-4 h-4" />
                     Fragman
                 </button>
             </div>
@@ -87,7 +87,8 @@ export function HeroActions({ movieId }: HeroActionsProps) {
                     </div>
                 </div>,
                 document.body
-            )}
+            )
+            }
         </>
     );
 }

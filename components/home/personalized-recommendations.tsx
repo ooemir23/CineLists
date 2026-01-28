@@ -1,8 +1,9 @@
 import { MediaCard } from "@/components/media/media-card";
 import { MediaRowClient } from "@/components/media/media-row-client";
 import { getUserRatingsBulk } from "@/lib/rating-actions";
-import { Sparkles, Tv, Monitor } from "lucide-react";
+import { Sparkles, Tv, Monitor, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
+import Link from "next/link";
 
 type PersonalizedRecommendationsProps = {
     results: any[];
@@ -27,9 +28,15 @@ export async function PersonalizedRecommendations({ results, reasons }: Personal
                             <Sparkles className="w-4 h-4 fill-primary/20" />
                             <span>Kişiselleştirilmiş</span>
                         </div>
-                        <h2 className="text-3xl md:text-4xl font-black text-white tracking-tight">
-                            Sizin İçin Seçtiklerimiz
-                        </h2>
+                        <Link
+                            href="/recommendations"
+                            className="group/title flex items-center gap-2 hover:gap-3 transition-all"
+                        >
+                            <h2 className="text-3xl md:text-4xl font-black text-white tracking-tight group-hover/title:text-primary transition-colors">
+                                Sizin İçin Seçtiklerimiz
+                            </h2>
+                            <ChevronRight className="w-8 h-8 text-primary opacity-0 group-hover/title:opacity-100 transition-opacity" />
+                        </Link>
                         <div className="flex flex-wrap gap-2 pt-2">
                             {reasons.genres.slice(0, 3).map((genre) => (
                                 <span

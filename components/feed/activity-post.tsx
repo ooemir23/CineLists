@@ -49,6 +49,18 @@ type ActivityPostProps = {
             backdropPath: string | null;
             type: "MOVIE" | "TV" | "PERSON";
         };
+        episode?: {
+            id: string;
+            seasonNumber: number;
+            episodeNumber: number;
+            title: string;
+        } | null;
+        episodeRange?: {
+            seasonNumber: number;
+            fromEpisode: number;
+            toEpisode: number;
+            count: number;
+        } | null;
         _count: {
             comments: number;
         };
@@ -57,7 +69,7 @@ type ActivityPostProps = {
 
 export function ActivityPost({ activity }: ActivityPostProps) {
     const [isLiked, setIsLiked] = useState(false);
-    const [likesCount, setLikesCount] = useState(Math.floor(Math.random() * 50));
+    const [likesCount, setLikesCount] = useState(0);
     const [showComments, setShowComments] = useState(false);
     const [comments, setComments] = useState<any[]>([]);
     const [loadingComments, setLoadingComments] = useState(false);
@@ -65,6 +77,11 @@ export function ActivityPost({ activity }: ActivityPostProps) {
     const [commentInput, setCommentInput] = useState("");
     const [submitting, setSubmitting] = useState(false);
     const [copied, setCopied] = useState(false);
+
+    // Set random likes count on client side only to avoid hydration mismatch
+    useEffect(() => {
+        setLikesCount(Math.floor(Math.random() * 50));
+    }, []);
 
     useEffect(() => {
         if (showComments) {
@@ -211,6 +228,27 @@ export function ActivityPost({ activity }: ActivityPostProps) {
                         >
                             {activity.media.title}
                         </Link>
+
+                        {/* Episode Range Badge */}
+                        {activity.episodeRange && (
+                            <div className="mt-3 inline-flex items-center gap-2 px-4 py-2 bg-blue-500/10 border border-blue-500/20 rounded-xl">
+                                <Tv className="w-4 h-4 text-blue-400" />
+                                <span className="text-sm font-bold text-blue-400">
+                                    {activity.episodeRange.seasonNumber}. Sezon {activity.episodeRange.fromEpisode}-{activity.episodeRange.toEpisode}. Bölümler
+                                </span>
+                                <span className="text-xs text-blue-400/60">({activity.episodeRange.count} bölüm)</span>
+                            </div>
+                        )}
+
+                        {/* Single Episode Badge */}
+                        {activity.episode && !activity.episodeRange && (
+                            <div className="mt-3 inline-flex items-center gap-2 px-4 py-2 bg-emerald-500/10 border border-emerald-500/20 rounded-xl">
+                                <Tv className="w-4 h-4 text-emerald-400" />
+                                <span className="text-sm font-bold text-emerald-400">
+                                    {activity.episode.seasonNumber}. Sezon {activity.episode.episodeNumber}. Bölüm
+                                </span>
+                            </div>
+                        )}
                     </div>
 
                     {/* Review Content */}
@@ -248,7 +286,7 @@ export function ActivityPost({ activity }: ActivityPostProps) {
                                     )}
                                 >
                                     <MessageSquare className="w-5 h-5" />
-                                    <span className="text-xs font-bold">{activity._count.comments}</span>
+                                    <span className="text-xs font-bold">{activity._count?.comments || 0}</span>
                                 </button>
                             </div>
 

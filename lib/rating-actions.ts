@@ -55,25 +55,33 @@ export async function rateMedia(tmdbId: number, type: "movie" | "tv", rating: nu
         });
 
         // Also create/update Activity for social feed
-        await prisma.activity.upsert({
+        const existingActivity = await prisma.activity.findFirst({
             where: {
-                userId_mediaId_type: {
-                    userId: session.user.id,
-                    mediaId: mediaItem.id,
-                    type: "RATED",
-                },
-            },
-            create: {
                 userId: session.user.id,
                 mediaId: mediaItem.id,
                 type: "RATED",
-                rating,
-            },
-            update: {
-                rating,
-                createdAt: new Date(), // Update timestamp when rating changes
+                episodeId: null
             },
         });
+
+        if (existingActivity) {
+            await prisma.activity.update({
+                where: { id: existingActivity.id },
+                data: {
+                    rating,
+                    createdAt: new Date(),
+                }
+            });
+        } else {
+            await prisma.activity.create({
+                data: {
+                    userId: session.user.id,
+                    mediaId: mediaItem.id,
+                    type: "RATED",
+                    rating,
+                }
+            });
+        }
 
         revalidatePath(`/${type}/${tmdbId}`);
         return { success: true };
