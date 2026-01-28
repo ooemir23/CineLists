@@ -363,12 +363,34 @@ export async function getPersonalInsights(userId: string): Promise<PersonalInsig
     const watchedWithCount: Record<string, number> = {};
     activities.forEach(a => {
         if (a.watchedWith) {
-            watchedWithCount[a.watchedWith] = (watchedWithCount[a.watchedWith] || 0) + 1;
+            try {
+                const parsed = JSON.parse(a.watchedWith);
+                const items = Array.isArray(parsed) ? parsed : [parsed];
+                items.forEach((item: string) => {
+                    watchedWithCount[item] = (watchedWithCount[item] || 0) + 1;
+                });
+            } catch (e) {
+                watchedWithCount[a.watchedWith] = (watchedWithCount[a.watchedWith] || 0) + 1;
+            }
         }
     });
-    const mostWatchedWithPerson = Object.keys(watchedWithCount).length > 0
-        ? Object.entries(watchedWithCount).reduce((max, curr) => curr[1] > max[1] ? curr : max)[0]
-        : 'Yalnız';
+
+    let mostWatchedWithPerson = 'Yalnız';
+    if (Object.keys(watchedWithCount).length > 0) {
+        const topEntry = Object.entries(watchedWithCount).reduce((max, curr) => curr[1] > max[1] ? curr : max);
+        const topPersonIdOrName = topEntry[0];
+
+        // Eğer bir CUID veya ID gibi görünüyorsa kullanıcı adını bulmaya çalış
+        if (topPersonIdOrName.length > 20) {
+            const user = await prisma.user.findUnique({
+                where: { id: topPersonIdOrName },
+                select: { name: true }
+            });
+            mostWatchedWithPerson = user?.name || topPersonIdOrName;
+        } else {
+            mostWatchedWithPerson = topPersonIdOrName;
+        }
+    }
 
     // Tavsiye eden analizi
     const recommendedByCount: Record<string, number> = {};
