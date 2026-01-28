@@ -18,17 +18,18 @@ const dockBg = 'bg-slate-900/90 backdrop-blur-xl border-t border-white/10';
 const activeColor = 'text-amber-400';
 const inactiveColor = 'text-slate-400 hover:text-white';
 
-const navItems = [
-  { href: "/", icon: Home, label: "Home", view: "home" },
-  { href: "/messages", icon: MessageCircle, label: "Mesaj", view: "messages" },
-  { href: "/explore", icon: Compass, label: "Keşfet", view: "explore" },
-  { href: "/profile", icon: User, label: "Profil", view: "profile" },
-];
+interface MobileDockProps {
+  user?: {
+    name?: string | null;
+    image?: string | null;
+  };
+}
 
-export function MobileDock() {
+export function MobileDock({ user }: MobileDockProps) {
   const pathname = usePathname();
   const [menuOpen, setMenuOpen] = React.useState(false);
   const [profileMenuOpen, setProfileMenuOpen] = React.useState(false);
+
   // Determine active view by pathname
   const getActiveView = () => {
     if (pathname.startsWith("/messages")) return "messages";
@@ -109,19 +110,57 @@ export function MobileDock() {
           <span className="text-[10px] mt-0.5 font-bold">Profilim</span>
         </button>
         {profileMenuOpen && (
-          <div className="absolute bottom-14 right-0 w-40 bg-slate-900/95 rounded-xl shadow-lg flex flex-col py-2 z-50 animate-fade-in-up border border-white/10">
-            <Link href="/profile" className="flex items-center gap-2 px-4 py-3 text-sm text-white hover:bg-primary/10 transition" onClick={() => setProfileMenuOpen(false)}>
-              <User size={20} /> Profil
-            </Link>
-            <Link href="/messages" className="flex items-center gap-2 px-4 py-3 text-sm text-white hover:bg-primary/10 transition" onClick={() => setProfileMenuOpen(false)}>
-              <MessageCircle size={20} /> Mesajlar
-            </Link>
-            <Link href="/community" className="flex items-center gap-2 px-4 py-3 text-sm text-white hover:bg-primary/10 transition" onClick={() => setProfileMenuOpen(false)}>
-              <Compass size={20} /> Topluluk
-            </Link>
-            <Link href="/notifications" className="flex items-center gap-2 px-4 py-3 text-sm text-white hover:bg-primary/10 transition" onClick={() => setProfileMenuOpen(false)}>
-              <List size={20} /> Bildirimler
-            </Link>
+          <div className="absolute bottom-14 right-0 w-44 bg-slate-900/95 rounded-2xl shadow-xl flex flex-col py-2 z-50 animate-fade-in-up border border-white/10 overflow-hidden">
+            {user ? (
+              <>
+                <Link href="/profile" className="flex items-center gap-3 px-4 py-3 text-sm text-white hover:bg-amber-400/10 transition" onClick={() => setProfileMenuOpen(false)}>
+                  <div className="w-8 h-8 rounded-lg bg-amber-400/10 flex items-center justify-center text-amber-400">
+                    <User size={18} />
+                  </div>
+                  <span className="font-bold">Profil</span>
+                </Link>
+                <Link href="/messages" className="flex items-center gap-3 px-4 py-3 text-sm text-white hover:bg-amber-400/10 transition" onClick={() => setProfileMenuOpen(false)}>
+                  <div className="w-8 h-8 rounded-lg bg-amber-400/10 flex items-center justify-center text-amber-400">
+                    <MessageCircle size={18} />
+                  </div>
+                  <span className="font-bold">Mesajlar</span>
+                </Link>
+                <Link href="/community" className="flex items-center gap-3 px-4 py-3 text-sm text-white hover:bg-amber-400/10 transition" onClick={() => setProfileMenuOpen(false)}>
+                  <div className="w-8 h-8 rounded-lg bg-amber-400/10 flex items-center justify-center text-amber-400">
+                    <Compass size={18} />
+                  </div>
+                  <span className="font-bold">Topluluk</span>
+                </Link>
+                <Link href="/notifications" className="flex items-center gap-3 px-4 py-3 text-sm text-white hover:bg-amber-400/10 transition" onClick={() => setProfileMenuOpen(false)}>
+                  <div className="w-8 h-8 rounded-lg bg-amber-400/10 flex items-center justify-center text-amber-400">
+                    <Bell size={18} />
+                  </div>
+                  <span className="font-bold">Bildirimler</span>
+                </Link>
+                <div className="h-[1px] bg-white/5 my-1" />
+                <Link href="/api/auth/signout" className="flex items-center gap-3 px-4 py-3 text-sm text-rose-400 hover:bg-rose-500/10 transition" onClick={() => setProfileMenuOpen(false)}>
+                  <div className="w-8 h-8 rounded-lg bg-rose-500/5 flex items-center justify-center">
+                    <List size={18} />
+                  </div>
+                  <span className="font-bold">Oturumu Kapat</span>
+                </Link>
+              </>
+            ) : (
+              <>
+                <Link href="/login" className="flex items-center gap-3 px-4 py-3 text-sm text-white hover:bg-amber-400/10 transition" onClick={() => setProfileMenuOpen(false)}>
+                  <div className="w-8 h-8 rounded-lg bg-amber-400/10 flex items-center justify-center text-amber-400">
+                    <User size={18} />
+                  </div>
+                  <span className="font-bold">Giriş Yap</span>
+                </Link>
+                <Link href="/register" className="flex items-center gap-3 px-4 py-3 text-sm text-amber-400 hover:bg-amber-400/20 transition" onClick={() => setProfileMenuOpen(false)}>
+                  <div className="w-8 h-8 rounded-lg bg-amber-400/20 flex items-center justify-center text-amber-400">
+                    <Compass size={18} />
+                  </div>
+                  <span className="font-black">Kayıt Ol</span>
+                </Link>
+              </>
+            )}
           </div>
         )}
       </div>

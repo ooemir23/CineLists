@@ -65,13 +65,32 @@ export async function addActivityComment(activityId: string, content: string) {
     }
 
     try {
-        await prisma.comment.create({
+        const comment = await prisma.comment.create({
             data: {
                 userId: session.user.id,
                 activityId,
                 content: content.trim(),
             },
+            include: {
+                activity: {
+                    select: {
+                        userId: true,
+                    }
+                }
+            }
         });
+
+        // Create notification for activity owner if it's not the same user
+        if (comment.activity && comment.activity.userId !== session.user.id) {
+            await prisma.indicates.create({
+                data: {
+                    userId: comment.activity.userId,
+                    type: "NEW_COMMENT",
+                    message: `${session.user.name || "Birisi"} paylaşımına yorum yaptı: "${content.substring(0, 30)}${content.length > 30 ? "..." : ""}"`,
+                    link: "/feed", // Or a link to specific activity if we have one
+                }
+            });
+        }
 
         revalidatePath("/feed");
         return { success: true };

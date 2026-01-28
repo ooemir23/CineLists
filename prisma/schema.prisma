@@ -46,6 +46,11 @@ model User {
   hasCompletedOnboarding  Boolean          @default(false)
   favoriteGenres          String[]
   platforms               String[]
+  isPrivate               Boolean          @default(false)
+  showActivities          Boolean          @default(true)
+  showStats               Boolean          @default(true)
+  isSuspended             Boolean          @default(false)
+  suspendedAt             DateTime?
   accounts                Account[]
   activityRecommendations Activity[]       @relation("ActivityRecommendations")
   activities              Activity[]

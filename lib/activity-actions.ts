@@ -316,13 +316,17 @@ export async function saveWatchDetails(params: {
         });
     }
 
-    // Remove from toWatch if exists
-    await prisma.toWatch.deleteMany({
-        where: {
-            userId: session.user.id,
-            mediaId: media.id,
-        },
-    });
+    // Create notification for the recommender if applicable
+    if (recommendedById && recommendedById !== session.user.id) {
+        await prisma.indicates.create({
+            data: {
+                userId: recommendedById,
+                type: "NEW_RECOMMENDATION",
+                message: `${session.user.name || "Birisi"} tavsiye ettiğin ${title} içeriğini izledi!`,
+                link: `/profile/${session.user.id}`,
+            }
+        });
+    }
 
     revalidatePath("/watchlist");
     revalidatePath("/watched");

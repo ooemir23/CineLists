@@ -102,11 +102,31 @@ export async function getPersonalizedRecommendations(userId: string) {
         ...tv.results.map((t: any) => ({ ...t, mediaType: "tv" })),
     ].sort((a, b) => b.popularity - a.popularity);
 
+    const ID_TO_PLATFORM_NAME: Record<string, string> = {
+        "8": "Netflix",
+        "337": "Disney+",
+        "119": "Prime Video",
+        "301": "BluTV",
+        "11": "MUBI",
+        "2": "Apple TV+",
+    };
+
+    const favoriteGenreList = (user.favoriteGenres || []).map(id => ({
+        id: Number(id),
+        name: genreIdToName[Number(id)] || "Bilinmiyor"
+    }));
+
+    const organicGenreList = Array.from(ratedGenres).map(genre => {
+        const id = genreNameToId[genre.toLowerCase()] || (isNaN(Number(genre)) ? null : Number(genre));
+        return id ? { id, name: genreIdToName[id] || genre } : null;
+    }).filter(Boolean);
+
     return {
         results: combinedResults.slice(0, 12),
         reasons: {
-            genres: finalGenreIds.map(id => ({ id, name: genreIdToName[id] || "Bilinmiyor" })),
-            providers: providerIds,
+            favorites: favoriteGenreList,
+            organic: organicGenreList as { id: number; name: string }[],
+            platforms: providerIds.map(id => ID_TO_PLATFORM_NAME[id] || "Bilinmiyor"),
         }
     };
 }

@@ -33,7 +33,7 @@ export default async function RecommendationsPage({ searchParams }: Recommendati
     const personalizedData = await getPersonalizedRecommendations(session.user.id);
 
     let results = personalizedData?.results || [];
-    const reasons = personalizedData?.reasons || { genres: [], providers: [] };
+    const reasons = personalizedData?.reasons || { favorites: [], organic: [], platforms: [] };
 
     // Apply filters if any are set
     if (year || rating || provider || genre || type) {
@@ -95,40 +95,58 @@ export default async function RecommendationsPage({ searchParams }: Recommendati
                         <div className="inline-flex items-center gap-2 px-4 py-2 bg-primary/20 rounded-full border border-primary/30 mb-4">
                             <Sparkles className="w-4 h-4 text-primary fill-primary/20" />
                             <span className="text-primary font-black text-xs uppercase tracking-widest">
-                                Kişiselleştirilmiş
+                                Yapay Zeka Destekli Analiz
                             </span>
                         </div>
                         <h1 className="text-4xl md:text-6xl font-black text-white tracking-tighter mb-4">
                             Sizin İçin <span className="text-primary">Seçtiklerimiz</span>
                         </h1>
-                        <p className="text-neutral-400 text-sm md:text-base max-w-2xl mx-auto">
+                        <p className="text-neutral-400 text-sm md:text-base max-w-2xl mx-auto mb-8">
                             İzleme alışkanlıklarınıza ve favori türlerinize göre hazırlanan size özel öneriler
                         </p>
-                    </div>
 
-                    {/* Reasons Display */}
-                    {reasons.genres.length > 0 && (
-                        <div className="flex flex-wrap items-center justify-center gap-3 mb-8">
-                            <div className="flex items-center gap-2 text-neutral-400 text-sm font-medium">
-                                <TrendingUp className="w-4 h-4" />
-                                <span>Tercihleriniz:</span>
-                            </div>
-                            {reasons.genres.slice(0, 5).map((genre) => (
-                                <span
-                                    key={genre.id}
-                                    className="px-4 py-2 bg-white/5 border border-white/10 rounded-xl text-xs font-bold text-white uppercase tracking-wider"
-                                >
-                                    {genre.name}
-                                </span>
-                            ))}
-                            {reasons.providers.length > 0 && (
-                                <span className="px-4 py-2 bg-primary/10 border border-primary/20 rounded-xl text-xs font-bold text-primary uppercase tracking-wider flex items-center gap-2">
-                                    <Monitor className="w-4 h-4" />
-                                    Platformlarınız
-                                </span>
+                        {/* Reasons Grid Display */}
+                        <div className="flex flex-col md:flex-row items-center justify-center gap-8 bg-white/5 border border-white/10 rounded-[2rem] p-8 backdrop-blur-sm max-w-5xl mx-auto">
+                            {reasons.platforms.length > 0 && (
+                                <div className="space-y-3 flex-1 text-center md:text-left">
+                                    <span className="text-[10px] font-black text-neutral-500 uppercase tracking-[0.2em] block">Platformlar</span>
+                                    <div className="flex flex-wrap items-center justify-center md:justify-start gap-2">
+                                        {reasons.platforms.map(p => (
+                                            <span key={p} className="px-3 py-1.5 bg-amber-400/10 text-amber-400 border border-amber-400/20 rounded-lg text-xs font-bold">
+                                                {p}
+                                            </span>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
+                            {reasons.favorites.length > 0 && (
+                                <div className="space-y-3 flex-1 text-center md:text-left">
+                                    <span className="text-[10px] font-black text-neutral-500 uppercase tracking-[0.2em] block">Favorileriniz</span>
+                                    <div className="flex flex-wrap items-center justify-center md:justify-start gap-2">
+                                        {reasons.favorites.slice(0, 4).map(g => (
+                                            <span key={g.id} className="px-3 py-1.5 bg-white/5 text-white/70 border border-white/10 rounded-lg text-xs font-bold">
+                                                {g.name}
+                                            </span>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
+                            {reasons.organic.length > 0 && (
+                                <div className="space-y-3 flex-1 text-center md:text-left">
+                                    <span className="text-[10px] font-black text-neutral-500 uppercase tracking-[0.2em] block">İlgi Alanlarınız</span>
+                                    <div className="flex flex-wrap items-center justify-center md:justify-start gap-2">
+                                        {reasons.organic.slice(0, 3).map(g => (
+                                            <span key={g.id} className="px-3 py-1.5 bg-purple-500/10 text-purple-400 border border-purple-500/20 rounded-lg text-xs font-bold">
+                                                {g.name}
+                                            </span>
+                                        ))}
+                                    </div>
+                                </div>
                             )}
                         </div>
-                    )}
+                    </div>
                 </div>
             </div>
 

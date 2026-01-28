@@ -19,19 +19,38 @@ export async function markEpisodeAsWatched(
         if (!session?.user?.id) return { error: "Giriş yapmalısınız" };
         const userId = session.user.id;
 
-        // 1. Ensure MediaItem exists
+        // 1. Ensure MediaItem exists and has correct info
         let media = await prisma.mediaItem.findUnique({
             where: { tmdbId },
         });
 
-        if (!media) {
-            media = await prisma.mediaItem.create({
-                data: {
-                    tmdbId,
-                    type: "TV",
-                    title: "TV Show",
-                }
-            });
+        if (!media || media.title === "TV Show") {
+            const tvDetails = await tmdb.getDetails("tv", String(tmdbId)).catch(() => null);
+
+            if (!media) {
+                media = await prisma.mediaItem.create({
+                    data: {
+                        tmdbId,
+                        type: "TV",
+                        title: tvDetails?.name || "TV Show",
+                        posterPath: tvDetails?.poster_path,
+                        backdropPath: tvDetails?.backdrop_path,
+                        overview: tvDetails?.overview,
+                        voteAverage: tvDetails?.vote_average,
+                    }
+                });
+            } else if (media.title === "TV Show" && tvDetails) {
+                media = await prisma.mediaItem.update({
+                    where: { id: media.id },
+                    data: {
+                        title: tvDetails.name,
+                        posterPath: tvDetails.poster_path,
+                        backdropPath: tvDetails.backdrop_path,
+                        overview: tvDetails.overview,
+                        voteAverage: tvDetails.vote_average,
+                    }
+                });
+            }
         }
 
         // 2. Ensure Episode exists
@@ -149,10 +168,32 @@ export async function markSeasonAsWatched(tmdbId: number, seasonNumber: number) 
 
         // Ensure MediaItem
         let media = await prisma.mediaItem.findUnique({ where: { tmdbId } });
-        if (!media) {
-            media = await prisma.mediaItem.create({
-                data: { tmdbId, type: "TV", title: seasonData.name || "Dizi" }
-            });
+        if (!media || media.title === "TV Show" || media.title === "Dizi") {
+            const tvDetails = await tmdb.getDetails("tv", String(tmdbId)).catch(() => null);
+            if (!media) {
+                media = await prisma.mediaItem.create({
+                    data: {
+                        tmdbId,
+                        type: "TV",
+                        title: tvDetails?.name || seasonData.name || "Dizi",
+                        posterPath: tvDetails?.poster_path,
+                        backdropPath: tvDetails?.backdrop_path,
+                        overview: tvDetails?.overview,
+                        voteAverage: tvDetails?.vote_average,
+                    }
+                });
+            } else if (tvDetails) {
+                media = await prisma.mediaItem.update({
+                    where: { id: media.id },
+                    data: {
+                        title: tvDetails.name,
+                        posterPath: tvDetails.poster_path,
+                        backdropPath: tvDetails.backdrop_path,
+                        overview: tvDetails.overview,
+                        voteAverage: tvDetails.vote_average,
+                    }
+                });
+            }
         }
 
         const mediaId = media.id;
@@ -385,10 +426,32 @@ export async function ensureEpisodeExists(params: {
     const { tmdbId, seasonNumber, episodeNumber, title, overview, stillPath, airDate } = params;
 
     let media = await prisma.mediaItem.findUnique({ where: { tmdbId } });
-    if (!media) {
-        media = await prisma.mediaItem.create({
-            data: { tmdbId, type: "TV", title: "TV Show" }
-        });
+    if (!media || media.title === "TV Show") {
+        const tvDetails = await tmdb.getDetails("tv", String(tmdbId)).catch(() => null);
+        if (!media) {
+            media = await prisma.mediaItem.create({
+                data: {
+                    tmdbId,
+                    type: "TV",
+                    title: tvDetails?.name || "TV Show",
+                    posterPath: tvDetails?.poster_path,
+                    backdropPath: tvDetails?.backdrop_path,
+                    overview: tvDetails?.overview,
+                    voteAverage: tvDetails?.vote_average,
+                }
+            });
+        } else if (tvDetails) {
+            media = await prisma.mediaItem.update({
+                where: { id: media.id },
+                data: {
+                    title: tvDetails.name,
+                    posterPath: tvDetails.poster_path,
+                    backdropPath: tvDetails.backdrop_path,
+                    overview: tvDetails.overview,
+                    voteAverage: tvDetails.vote_average,
+                }
+            });
+        }
     }
 
     let episode = await prisma.episode.findUnique({

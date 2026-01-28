@@ -74,7 +74,7 @@ export default async function RootLayout({
               {children}
             </ErrorBoundary>
           </main>
-          <MobileDock />
+          <MobileDock user={session?.user} />
         </div>
       </body>
     </html>

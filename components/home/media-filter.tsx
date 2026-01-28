@@ -2,10 +2,11 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
-import { X, Sparkles, Check, Search, Film, Tv } from "lucide-react";
+import { X, Sparkles, Check, Search, Film, Tv, Star } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
 import Image from "next/image";
+import { MediaCard } from "@/components/media/media-card";
 
 import { createPortal } from "react-dom";
 
@@ -42,6 +43,7 @@ export function MediaFilter() {
     const searchParams = useSearchParams();
     const pathname = usePathname();
     const searchInputRef = useRef<HTMLInputElement>(null);
+    const suggestionsRef = useRef<HTMLDivElement>(null);
 
     const [type, setType] = useState(searchParams.get("type") || "");
     const [year, setYear] = useState(searchParams.get("year") || "");
@@ -100,7 +102,12 @@ export function MediaFilter() {
     // Close suggestions when clicking outside
     useEffect(() => {
         const handleClickOutside = (e: MouseEvent) => {
-            if (searchInputRef.current && !searchInputRef.current.contains(e.target as Node)) {
+            if (
+                searchInputRef.current &&
+                !searchInputRef.current.contains(e.target as Node) &&
+                suggestionsRef.current &&
+                !suggestionsRef.current.contains(e.target as Node)
+            ) {
                 setShowSuggestions(false);
             }
         };
@@ -108,6 +115,13 @@ export function MediaFilter() {
         document.addEventListener("mousedown", handleClickOutside);
         return () => document.removeEventListener("mousedown", handleClickOutside);
     }, []);
+
+    // Auto-focus search input on page load (except for home page)
+    useEffect(() => {
+        if (searchInputRef.current && pathname !== "/") {
+            searchInputRef.current.focus();
+        }
+    }, [pathname]);
 
     // Fetch genres and providers from TMDB
     useEffect(() => {
@@ -525,11 +539,12 @@ export function MediaFilter() {
                     </div>
 
                     {/* Search Bar */}
-                    <div className="relative" ref={searchInputRef}>
+                    <div className="relative">
                         <form onSubmit={handleSearch}>
                             <div className="flex items-center gap-2 bg-white/5 border border-white/10 rounded-2xl px-5 py-3.5 focus-within:ring-2 focus-within:ring-primary/30 transition-all">
                                 <Search className="w-5 h-5 text-neutral-500" />
                                 <input
+                                    ref={searchInputRef}
                                     type="text"
                                     value={query}
                                     onChange={(e) => setQuery(e.target.value)}
@@ -558,70 +573,90 @@ export function MediaFilter() {
 
                         {/* Search Suggestions Dropdown */}
                         {showSuggestions && (query.length >= 2) && (
-                            <div className="absolute top-full left-0 right-0 mt-2 bg-[#1A202C] border border-white/10 rounded-2xl shadow-2xl overflow-hidden z-[100]">
+                            <div ref={suggestionsRef} className="absolute top-full left-0 right-0 mt-2 bg-[#1A202C]/95 backdrop-blur-2xl border border-white/10 rounded-[24px] shadow-2xl overflow-hidden z-[100] animate-in fade-in slide-in-from-top-2 duration-300">
                                 {suggestions.length > 0 ? (
-                                    <div className="py-2">
-                                        <div className="px-4 py-2 text-xs font-bold text-neutral-500 uppercase tracking-wider">
-                                            Önerilenler
-                                        </div>
-                                        {suggestions.map((item) => (
-                                            <Link
-                                                key={item.id}
-                                                href={`/${item.media_type}/${item.id}`}
-                                                className="flex items-center gap-4 px-4 py-3 hover:bg-white/5 transition-colors group"
-                                                onClick={() => setShowSuggestions(false)}
-                                            >
-                                                <div className="relative w-10 h-14 rounded overflow-hidden flex-shrink-0 bg-neutral-800">
-                                                    {item.poster_path ? (
-                                                        <Image
-                                                            src={`https://image.tmdb.org/t/p/w92${item.poster_path}`}
-                                                            alt={item.title || item.name}
-                                                            fill
-                                                            className="object-cover"
-                                                        />
-                                                    ) : (
-                                                        <div className="w-full h-full flex items-center justify-center">
-                                                            {item.media_type === "movie" ? (
-                                                                <Film className="w-5 h-5 text-neutral-600" />
-                                                            ) : (
-                                                                <Tv className="w-5 h-5 text-neutral-600" />
-                                                            )}
+                                    <div className="py-4">
+                                        {/* Separating People and Content */}
+                                        {(() => {
+                                            const people = suggestions.filter(item => item.media_type === "person");
+                                            const content = suggestions.filter(item => item.media_type !== "person");
+
+                                            return (
+                                                <>
+                                                    {people.length > 0 && (
+                                                        <div className="mb-4">
+                                                            <div className="px-5 py-2 text-[10px] font-black text-primary uppercase tracking-[0.2em] mb-2 flex items-center gap-2">
+                                                                <span className="w-1 h-3 bg-primary rounded-full" />
+                                                                Sanatçılar
+                                                            </div>
+                                                            <div className="grid grid-cols-3 sm:grid-cols-4 gap-4 px-4">
+                                                                {people.map((item) => (
+                                                                    <Link
+                                                                        key={item.id}
+                                                                        href={`/person/${item.id}`}
+                                                                        className="flex flex-col items-center gap-3 p-3 rounded-3xl hover:bg-white/5 transition-all group border border-transparent hover:border-white/10"
+                                                                        onClick={() => setShowSuggestions(false)}
+                                                                    >
+                                                                        <div className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-full overflow-hidden bg-neutral-800 border-2 border-white/5 group-hover:border-primary/50 transition-all shadow-xl ring-4 ring-transparent group-hover:ring-primary/10">
+                                                                            {item.profile_path ? (
+                                                                                <Image
+                                                                                    src={`https://image.tmdb.org/t/p/w185${item.profile_path}`}
+                                                                                    alt={item.name}
+                                                                                    fill
+                                                                                    className="object-cover transition-transform duration-500 group-hover:scale-110"
+                                                                                />
+                                                                            ) : (
+                                                                                <div className="w-full h-full flex items-center justify-center text-3xl">
+                                                                                    👤
+                                                                                </div>
+                                                                            )}
+                                                                        </div>
+                                                                        <span className="text-[11px] font-black text-white text-center line-clamp-2 leading-tight group-hover:text-primary transition-colors uppercase tracking-tight">
+                                                                            {item.name}
+                                                                        </span>
+                                                                    </Link>
+                                                                ))}
+                                                            </div>
                                                         </div>
                                                     )}
-                                                </div>
-                                                <div className="flex-1 min-w-0">
-                                                    <h4 className="text-sm font-medium text-white group-hover:text-primary transition-colors truncate">
-                                                        {item.title || item.name}
-                                                    </h4>
-                                                    <div className="flex items-center gap-2 text-xs text-neutral-400 mt-0.5">
-                                                        <span className="capitalize">
-                                                            {item.media_type === "movie" ? "Film" : "Dizi"}
-                                                        </span>
-                                                        <span>•</span>
-                                                        <span>
-                                                            {(item.release_date || item.first_air_date)?.split("-")[0] || "N/A"}
-                                                        </span>
-                                                        {item.vote_average > 0 && (
-                                                            <>
-                                                                <span>•</span>
-                                                                <div className="flex items-center gap-1 text-amber-400">
-                                                                    <span className="font-bold">{item.vote_average.toFixed(1)}</span>
-                                                                </div>
-                                                            </>
-                                                        )}
-                                                    </div>
-                                                </div>
-                                            </Link>
-                                        ))}
+
+                                                    {content.length > 0 && (
+                                                        <div>
+                                                            <div className="px-5 py-2 text-[10px] font-black text-neutral-500 uppercase tracking-[0.2em] mb-3 flex items-center gap-2">
+                                                                <span className="w-1 h-3 bg-neutral-700 rounded-full" />
+                                                                İçerikler
+                                                            </div>
+                                                            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3 px-4 pb-2">
+                                                                {content.map((item) => (
+                                                                    <div key={item.id} onClick={() => setShowSuggestions(false)} className="scale-90 origin-top">
+                                                                        <MediaCard
+                                                                            id={item.id}
+                                                                            title={item.title || item.name}
+                                                                            originalTitle={item.original_title || item.original_name}
+                                                                            posterPath={item.poster_path}
+                                                                            voteAverage={item.vote_average || 0}
+                                                                            releaseDate={item.release_date || item.first_air_date}
+                                                                            type={item.media_type as "movie" | "tv"}
+                                                                            fullWidth={true}
+                                                                        />
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+                                                        </div>
+                                                    )}
+                                                </>
+                                            );
+                                        })()}
                                         <button
                                             onClick={(e) => handleSearch(e)}
-                                            className="w-full text-center py-3 text-sm font-medium text-primary hover:bg-primary/5 transition-colors border-t border-white/5"
+                                            className="w-full text-center py-4 mt-2 text-xs font-black text-primary hover:bg-primary/5 transition-all border-t border-white/5 uppercase tracking-[0.2em]"
                                         >
-                                            Tüm sonuçları gör
+                                            Tüm Sonuçları Gör
                                         </button>
                                     </div>
                                 ) : (
-                                    <div className="p-4 text-center text-neutral-400 text-sm">
+                                    <div className="p-8 text-center text-neutral-500 text-sm font-medium">
+                                        <div className="mb-2 text-2xl">🔍</div>
                                         Sonuç bulunamadı
                                     </div>
                                 )}

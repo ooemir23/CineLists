@@ -126,6 +126,16 @@ export default async function Home({ searchParams }: HomeProps) {
         {!isFiltering && <HomeTopSection />}
       </div>
 
+      {/* Personalized Recommendations - Highlighted Placement */}
+      {!isFiltering && personalizedMovies?.results?.length > 0 && (
+        <div className="max-w-[1600px] mx-auto px-4 sm:px-6 md:px-8 lg:px-12 mb-12">
+          <PersonalizedRecommendations
+            results={personalizedMovies.results}
+            reasons={personalizedMovies.reasons}
+          />
+        </div>
+      )}
+
       {/* Filter Section - Compact & Sticky Support if needed */}
       <div className="relative z-30 max-w-[1600px] mx-auto px-4 sm:px-6 md:px-8 lg:px-12 mb-8 md:mb-12">
         <MediaFilter />
@@ -144,24 +154,16 @@ export default async function Home({ searchParams }: HomeProps) {
           </div>
         ) : (
           <>
-            {personalizedMovies?.results?.length > 0 && (
-              <PersonalizedRecommendations
-                results={personalizedMovies.results}
-                reasons={personalizedMovies.reasons}
-              />
-            )}
+            {/* Trend & Popular Sections */}
 
-            {/* Combined Trend & Popular Sections - Linear Layout */}
-
-            {/* Trend Movies */}
-            <section>
+            <section className="group">
               <div className="flex items-center justify-between mb-4 md:mb-6">
-                <div className="flex items-center gap-3">
+                <Link href="/explore/movie/trending" className="flex items-center gap-3">
                   <div className="w-1 md:w-1.5 h-6 md:h-8 bg-amber-400 rounded-full" />
-                  <h2 className="text-xl md:text-3xl font-bold text-white tracking-tight">
-                    Trend <span className="text-amber-400">Filmler</span>
+                  <h2 className="text-xl md:text-3xl font-bold text-white tracking-tight group-hover:text-amber-400 transition-colors">
+                    Trend <span className="text-amber-400 group-hover:text-white">Filmler</span>
                   </h2>
-                </div>
+                </Link>
                 <Link href="/explore/movie/trending" className="text-xs md:text-sm font-semibold text-white/50 hover:text-white transition-colors flex items-center gap-1">
                   Tümünü Gör <ChevronRight size={14} />
                 </Link>
@@ -176,15 +178,14 @@ export default async function Home({ searchParams }: HomeProps) {
               </div>
             </section>
 
-            {/* Popular TV Shows */}
-            <section>
+            <section className="group">
               <div className="flex items-center justify-between mb-4 md:mb-6">
-                <div className="flex items-center gap-3">
-                  <div className="w-1 md:w-1.5 h-6 md:h-8 bg-primary rounded-full" />
-                  <h2 className="text-xl md:text-3xl font-bold text-white tracking-tight">
-                    Popüler <span className="text-primary">Diziler</span>
+                <Link href="/explore/tv/popular" className="flex items-center gap-3">
+                  <div className="w-1 md:w-1.5 h-6 md:h-8 bg-primary rounded-full group-hover:bg-amber-400 transition-colors" />
+                  <h2 className="text-xl md:text-3xl font-bold text-white tracking-tight group-hover:text-primary transition-colors">
+                    Popüler <span className="text-primary group-hover:text-white">Diziler</span>
                   </h2>
-                </div>
+                </Link>
                 <Link href="/explore/tv/popular" className="text-xs md:text-sm font-semibold text-white/50 hover:text-white transition-colors flex items-center gap-1">
                   Tümünü Gör <ChevronRight size={14} />
                 </Link>
@@ -199,15 +200,14 @@ export default async function Home({ searchParams }: HomeProps) {
               </div>
             </section>
 
-            {/* Trend TV Shows */}
-            <section>
+            <section className="group">
               <div className="flex items-center justify-between mb-4 md:mb-6">
-                <div className="flex items-center gap-3">
+                <Link href="/explore/tv/trending" className="flex items-center gap-3">
                   <div className="w-1 md:w-1.5 h-6 md:h-8 bg-amber-400 rounded-full" />
-                  <h2 className="text-xl md:text-3xl font-bold text-white tracking-tight">
-                    Yükselen <span className="text-amber-400">Diziler</span>
+                  <h2 className="text-xl md:text-3xl font-bold text-white tracking-tight group-hover:text-amber-400 transition-colors">
+                    Yükselen <span className="text-amber-400 group-hover:text-white">Diziler</span>
                   </h2>
-                </div>
+                </Link>
                 <Link href="/explore/tv/trending" className="text-xs md:text-sm font-semibold text-white/50 hover:text-white transition-colors flex items-center gap-1">
                   Tümünü Gör <ChevronRight size={14} />
                 </Link>
@@ -222,15 +222,14 @@ export default async function Home({ searchParams }: HomeProps) {
               </div>
             </section>
 
-            {/* Popular Movies */}
-            <section>
+            <section className="group">
               <div className="flex items-center justify-between mb-4 md:mb-6">
-                <div className="flex items-center gap-3">
-                  <div className="w-1 md:w-1.5 h-6 md:h-8 bg-primary rounded-full" />
-                  <h2 className="text-xl md:text-3xl font-bold text-white tracking-tight">
-                    Tüm Zamanların <span className="text-primary">Favori Filmleri</span>
+                <Link href="/explore/movie/popular" className="flex items-center gap-3">
+                  <div className="w-1 md:w-1.5 h-6 md:h-8 bg-primary rounded-full group-hover:bg-amber-400 transition-colors" />
+                  <h2 className="text-xl md:text-3xl font-bold text-white tracking-tight group-hover:text-primary transition-colors">
+                    Tüm Zamanların <span className="text-primary group-hover:text-white">Favori Filmleri</span>
                   </h2>
-                </div>
+                </Link>
                 <Link href="/explore/movie/popular" className="text-xs md:text-sm font-semibold text-white/50 hover:text-white transition-colors flex items-center gap-1">
                   Tümünü Gör <ChevronRight size={14} />
                 </Link>
@@ -245,17 +244,16 @@ export default async function Home({ searchParams }: HomeProps) {
               </div>
             </section>
 
-            {/* Upcoming Movies - Special Visual Style */}
-            <section className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-blue-900/20 to-purple-900/20 border border-white/5 p-4 md:p-8">
+            <section className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-blue-900/20 to-purple-900/20 border border-white/5 p-4 md:p-8 group">
               <div className="flex items-center justify-between mb-6">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-blue-500/20 rounded-lg">
-                    <Play size={20} className="text-blue-400 fill-current" />
+                <Link href="/explore/movie/upcoming" className="flex items-center gap-3">
+                  <div className="p-2 bg-blue-500/20 rounded-lg group-hover:bg-blue-500 group-hover:text-black transition-all">
+                    <Play size={20} className="text-blue-400 fill-current group-hover:text-black" />
                   </div>
-                  <h2 className="text-xl md:text-3xl font-bold text-white tracking-tight">
-                    Yakında <span className="text-blue-400">Vizyonda</span>
+                  <h2 className="text-xl md:text-3xl font-bold text-white tracking-tight group-hover:text-blue-400 transition-colors">
+                    Yakında <span className="text-blue-400 group-hover:text-white">Vizyonda</span>
                   </h2>
-                </div>
+                </Link>
                 <Link href="/explore/movie/upcoming" className="text-xs md:text-sm font-semibold text-white/50 hover:text-white transition-colors flex items-center gap-1">
                   Tümünü Gör <ChevronRight size={14} />
                 </Link>

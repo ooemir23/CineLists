@@ -17,6 +17,23 @@ export async function getNotifications() {
     return notifications;
 }
 
+export async function markNotificationAsRead(id: string) {
+    const session = await auth();
+    if (!session?.user?.id) return { success: false };
+
+    try {
+        await prisma.indicates.update({
+            where: { id, userId: session.user.id },
+            data: { isRead: true },
+        });
+
+        revalidatePath("/notifications");
+        return { success: true };
+    } catch (error) {
+        return { success: false };
+    }
+}
+
 export async function getUnreadNotificationCount() {
     const session = await auth();
     if (!session?.user?.id) return 0;

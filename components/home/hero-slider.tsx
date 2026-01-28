@@ -66,7 +66,7 @@ export function HeroSlider({ items }: HeroSliderProps) {
                         const ItemIcon = itemConfig.icon;
                         return (
                             <button
-                                key={item.id}
+                                key={`${item.id}-${item.category}`}
                                 onClick={() => handleManualChange(index)}
                                 className={cn(
                                     "flex items-center gap-2 px-5 py-2.5 rounded-2xl border transition-all duration-300 whitespace-nowrap",
@@ -88,7 +88,7 @@ export function HeroSlider({ items }: HeroSliderProps) {
             <div className="w-full h-[450px] md:h-[500px] rounded-[40px] overflow-hidden shadow-2xl border border-white/10 relative group">
                 <AnimatePresence mode="wait">
                     <motion.div
-                        key={currentItem.id}
+                        key={`${currentItem.id}-${currentItem.category}`}
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}

@@ -140,29 +140,81 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
           </div>
         ) : (
           <div>
-            <div className="mb-8 flex items-center justify-between">
-              <div>
-                <h2 className="text-2xl font-black text-white uppercase tracking-tight">
-                  Arama Sonuçları
-                </h2>
-                <p className="text-sm text-neutral-500 font-medium mt-1">
-                  {results.length} sonuç bulundu
-                </p>
-              </div>
-            </div>
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
-              {results.map((item: any) => (
-                <MediaCard
-                  key={item.id}
-                  id={item.id}
-                  title={item.title || item.name}
-                  originalTitle={item.original_title || item.original_name}
-                  posterPath={item.poster_path}
-                  voteAverage={item.vote_average}
-                  type={type as "movie" | "tv"}
-                />
-              ))}
-            </div>
+            {(() => {
+              const people = results.filter((item: any) => (item.media_type || type) === "person");
+              const media = results.filter((item: any) => (item.media_type || type) !== "person");
+
+              return (
+                <>
+                  {people.length > 0 && (
+                    <div className="mb-16">
+                      <div className="mb-8 flex items-center gap-3">
+                        <div className="w-2 h-8 bg-primary rounded-full shadow-[0_0_15px_rgba(239,68,68,0.5)]" />
+                        <div>
+                          <h2 className="text-3xl font-black text-white uppercase tracking-tight">
+                            Sanatçılar
+                          </h2>
+                          <p className="text-sm text-neutral-500 font-medium">
+                            {people.length} sanatçı bulundu
+                          </p>
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-8">
+                        {people.map((item: any) => (
+                          <div key={item.id} className="transform hover:scale-105 transition-transform duration-300">
+                            <MediaCard
+                              id={item.id}
+                              title={item.title || item.name}
+                              originalTitle={item.original_title || item.original_name}
+                              posterPath={item.poster_path || item.profile_path}
+                              voteAverage={item.vote_average || 0}
+                              type="person"
+                              fullWidth={true}
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {media.length > 0 && (
+                    <div>
+                      <div className="mb-8 flex items-center gap-3">
+                        <div className="w-2 h-8 bg-white/20 rounded-full" />
+                        <div>
+                          <h2 className="text-3xl font-black text-white uppercase tracking-tight">
+                            İçerikler
+                          </h2>
+                          <p className="text-sm text-neutral-500 font-medium">
+                            {media.length} film ve dizi bulundu
+                          </p>
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6">
+                        {media.map((item: any) => (
+                          <MediaCard
+                            key={item.id}
+                            id={item.id}
+                            title={item.title || item.name}
+                            originalTitle={item.original_title || item.original_name}
+                            posterPath={item.poster_path || item.profile_path}
+                            voteAverage={item.vote_average || 0}
+                            type={(item.media_type || type) as "movie" | "tv"}
+                            fullWidth={true}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {people.length === 0 && media.length === 0 && (
+                    <div className="text-center py-20 text-neutral-500">
+                      Sonuç bulunamadı
+                    </div>
+                  )}
+                </>
+              );
+            })()}
           </div>
         )}
       </div>

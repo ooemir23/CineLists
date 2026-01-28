@@ -18,6 +18,7 @@ import {
   Users,
   Bell
 } from "lucide-react";
+import { NotificationBell } from "./notification-bell";
 
 interface TopNavProps {
   user?: {
@@ -50,6 +51,9 @@ export function TopNav({ user }: TopNavProps) {
     if (pathname.startsWith("/feed")) return "feed";
     if (pathname.startsWith("/explore")) return "explore";
     if (pathname.startsWith("/profile")) return "profile";
+    if (pathname.startsWith("/watched")) return "watched";
+    if (pathname.startsWith("/watchlist")) return "watchlist";
+    if (pathname.startsWith("/stats")) return "stats";
     return "";
   };
   const activeView = getActiveView();
@@ -84,56 +88,29 @@ export function TopNav({ user }: TopNavProps) {
         </div>
 
         {/* Navigation Middle Group */}
-        <div className="flex items-center justify-center gap-1 md:gap-4 lg:gap-6 relative h-full">
+        <div className="flex items-center justify-center gap-1 md:gap-2 lg:gap-4 relative h-full">
 
-          {/* Ekranım Menu */}
-          <div className="relative h-full flex items-center">
-            <button
-              className={`flex flex-col items-center justify-center h-full transition-all duration-200 px-3 group ${menuOpen ? 'text-amber-400' : inactiveColor}`}
-              onClick={() => {
-                setMenuOpen(!menuOpen);
-                setProfileMenuOpen(false);
-              }}
-            >
-              <div className={`p-1.5 rounded-xl transition-colors ${menuOpen ? 'bg-amber-400/10' : 'group-hover:bg-white/5'}`}>
-                <List size={22} />
-              </div>
-              <span className="text-[10px] mt-0.5 font-bold uppercase tracking-wider">Ekranım</span>
-            </button>
-            <AnimatePresence>
-              {menuOpen && (
-                <>
-                  <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[-1]" onClick={() => setMenuOpen(false)} />
-                  <motion.div
-                    initial={{ opacity: 0, y: -10, scale: 0.95 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: -10, scale: 0.95 }}
-                    className="absolute top-20 left-1/2 -translate-x-1/2 w-48 bg-slate-900/95 backdrop-blur-xl rounded-xl shadow-2xl flex flex-col py-2 z-50 border border-white/10 overflow-hidden"
-                  >
-                    <Link href="/watched" className="flex items-center gap-2 px-4 py-3 text-sm text-white hover:bg-amber-400/10 transition" onClick={() => setMenuOpen(false)}>
-                      <Check size={20} className="text-amber-400" /> İzlenenler
-                    </Link>
-                    <Link href="/watchlist" className="flex items-center gap-2 px-4 py-3 text-sm text-white hover:bg-amber-400/10 transition" onClick={() => setMenuOpen(false)}>
-                      <Bookmark size={20} className="text-amber-400" /> İzlenecekler
-                    </Link>
-                    <Link href="/stats" className="flex items-center gap-2 px-4 py-3 text-sm text-white hover:bg-amber-400/10 transition" onClick={() => setMenuOpen(false)}>
-                      <BarChart3 size={20} className="text-amber-400" /> İstatistikler
-                    </Link>
-                  </motion.div>
-                </>
-              )}
-            </AnimatePresence>
-          </div>
 
-          {/* Home Link */}
+          {/* New: İzlenenler */}
           <Link
-            href="/"
-            className={`flex flex-col items-center justify-center h-full transition-all duration-200 px-3 group ${activeView === 'home' ? activeColor : inactiveColor}`}
+            href="/watched"
+            className={`flex flex-col items-center justify-center h-full transition-all duration-200 px-3 group ${activeView === 'watched' ? activeColor : inactiveColor}`}
           >
-            <div className={`p-1.5 rounded-xl transition-colors ${activeView === 'home' ? 'bg-amber-400/10' : 'group-hover:bg-white/5'}`}>
-              <Home size={22} />
+            <div className={`p-1.5 rounded-xl transition-colors ${activeView === 'watched' ? 'bg-amber-400/10' : 'group-hover:bg-white/5'}`}>
+              <Check size={22} />
             </div>
-            <span className="text-[10px] mt-0.5 font-bold uppercase tracking-wider">Home</span>
+            <span className="text-[10px] mt-0.5 font-bold uppercase tracking-wider">İzlenenler</span>
+          </Link>
+
+          {/* New: İzlenecekler */}
+          <Link
+            href="/watchlist"
+            className={`flex flex-col items-center justify-center h-full transition-all duration-200 px-3 group ${activeView === 'watchlist' ? activeColor : inactiveColor}`}
+          >
+            <div className={`p-1.5 rounded-xl transition-colors ${activeView === 'watchlist' ? 'bg-amber-400/10' : 'group-hover:bg-white/5'}`}>
+              <Bookmark size={22} />
+            </div>
+            <span className="text-[10px] mt-0.5 font-bold uppercase tracking-wider">İzlenecek</span>
           </Link>
 
           {/* Central Search Button with CORRECTED CURVED TEXT */}
@@ -190,13 +167,24 @@ export function TopNav({ user }: TopNavProps) {
             <span className="text-[10px] mt-0.5 font-bold uppercase tracking-wider">Akış</span>
           </Link>
 
+          {/* New: İstatistikler */}
+          <Link
+            href="/stats"
+            className={`flex flex-col items-center justify-center h-full transition-all duration-200 px-3 group ${activeView === 'stats' ? activeColor : inactiveColor}`}
+          >
+            <div className={`p-1.5 rounded-xl transition-colors ${activeView === 'stats' ? 'bg-amber-400/10' : 'group-hover:bg-white/5'}`}>
+              <BarChart3 size={22} />
+            </div>
+            <span className="text-[10px] mt-0.5 font-bold uppercase tracking-wider">İstatistik</span>
+          </Link>
+
+
+
         </div>
 
         {/* Right Section - Profile and Utilities */}
         <div className="flex-1 flex justify-end items-center gap-2">
-          <Link href="/notifications" className="p-2.5 text-slate-400 hover:text-amber-400 hover:bg-white/5 rounded-xl transition-all">
-            <Bell size={22} />
-          </Link>
+          <NotificationBell />
           <Link href="/messages" className="p-2.5 text-slate-400 hover:text-amber-400 hover:bg-white/5 rounded-xl transition-all">
             <MessageCircle size={22} />
           </Link>
@@ -241,35 +229,58 @@ export function TopNav({ user }: TopNavProps) {
                     exit={{ opacity: 0, y: 10, scale: 0.95 }}
                     className="absolute top-16 right-0 w-56 bg-slate-900/98 backdrop-blur-2xl rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] flex flex-col py-2 z-50 border border-white/10 overflow-hidden"
                   >
-                    <div className="px-4 py-3 border-b border-white/5 mb-1 bg-white/5">
-                      <p className="text-[10px] text-amber-400 font-black uppercase tracking-widest mb-0.5">Aktif Hesap</p>
-                      <p className="text-xs text-white font-bold truncate">{user?.name || "Kullanıcı"}</p>
-                    </div>
-                    <Link href="/profile" className="flex items-center gap-3 px-4 py-3 text-sm text-slate-300 hover:text-white hover:bg-amber-400/10 transition group" onClick={() => setProfileMenuOpen(false)}>
-                      <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center group-hover:bg-amber-400/20 transition-colors">
-                        <User size={18} className="text-amber-400" />
-                      </div>
-                      <span className="font-bold">Profilini Gör</span>
-                    </Link>
-                    <Link href="/messages" className="flex items-center gap-3 px-4 py-3 text-sm text-slate-300 hover:text-white hover:bg-amber-400/10 transition group" onClick={() => setProfileMenuOpen(false)}>
-                      <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center group-hover:bg-amber-400/20 transition-colors">
-                        <MessageCircle size={18} className="text-amber-400" />
-                      </div>
-                      <span className="font-bold">Mesajlar</span>
-                    </Link>
-                    <Link href="/community" className="flex items-center gap-3 px-4 py-3 text-sm text-slate-300 hover:text-white hover:bg-amber-400/10 transition group" onClick={() => setProfileMenuOpen(false)}>
-                      <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center group-hover:bg-amber-400/20 transition-colors">
-                        <Users size={18} className="text-amber-400" />
-                      </div>
-                      <span className="font-bold">Topluluk</span>
-                    </Link>
-                    <div className="h-[1px] bg-white/5 my-1 mx-2" />
-                    <Link href="/api/auth/signout" className="flex items-center gap-3 px-4 py-3 text-sm text-rose-400 hover:bg-rose-500/10 transition group" onClick={() => setProfileMenuOpen(false)}>
-                      <div className="w-8 h-8 rounded-lg bg-rose-500/5 flex items-center justify-center group-hover:bg-rose-500/20 transition-colors">
-                        <List size={18} />
-                      </div>
-                      <span className="font-bold">Oturumu Kapat</span>
-                    </Link>
+                    {user ? (
+                      <>
+                        <div className="px-4 py-3 border-b border-white/5 mb-1 bg-white/5">
+                          <p className="text-[10px] text-amber-400 font-black uppercase tracking-widest mb-0.5">Aktif Hesap</p>
+                          <p className="text-xs text-white font-bold truncate">{user?.name || "Kullanıcı"}</p>
+                        </div>
+                        <Link href="/profile" className="flex items-center gap-3 px-4 py-3 text-sm text-slate-300 hover:text-white hover:bg-amber-400/10 transition group" onClick={() => setProfileMenuOpen(false)}>
+                          <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center group-hover:bg-amber-400/20 transition-colors">
+                            <User size={18} className="text-amber-400" />
+                          </div>
+                          <span className="font-bold">Profilini Gör</span>
+                        </Link>
+                        <Link href="/messages" className="flex items-center gap-3 px-4 py-3 text-sm text-slate-300 hover:text-white hover:bg-amber-400/10 transition group" onClick={() => setProfileMenuOpen(false)}>
+                          <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center group-hover:bg-amber-400/20 transition-colors">
+                            <MessageCircle size={18} className="text-amber-400" />
+                          </div>
+                          <span className="font-bold">Mesajlar</span>
+                        </Link>
+                        <Link href="/community" className="flex items-center gap-3 px-4 py-3 text-sm text-slate-300 hover:text-white hover:bg-amber-400/10 transition group" onClick={() => setProfileMenuOpen(false)}>
+                          <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center group-hover:bg-amber-400/20 transition-colors">
+                            <Users size={18} className="text-amber-400" />
+                          </div>
+                          <span className="font-bold">Topluluk</span>
+                        </Link>
+                        <div className="h-[1px] bg-white/5 my-1 mx-2" />
+                        <Link href="/api/auth/signout" className="flex items-center gap-3 px-4 py-3 text-sm text-rose-400 hover:bg-rose-500/10 transition group" onClick={() => setProfileMenuOpen(false)}>
+                          <div className="w-8 h-8 rounded-lg bg-rose-500/5 flex items-center justify-center group-hover:bg-rose-500/20 transition-colors">
+                            <List size={18} />
+                          </div>
+                          <span className="font-bold">Oturumu Kapat</span>
+                        </Link>
+                      </>
+                    ) : (
+                      <>
+                        <div className="px-4 py-3 border-b border-white/5 mb-1 bg-white/5">
+                          <p className="text-[10px] text-amber-400 font-black uppercase tracking-widest mb-0.5">Ziyaretçi</p>
+                          <p className="text-xs text-white font-bold truncate">Lütfen giriş yapın</p>
+                        </div>
+                        <Link href="/login" className="flex items-center gap-3 px-4 py-3 text-sm text-slate-300 hover:text-white hover:bg-amber-400/10 transition group" onClick={() => setProfileMenuOpen(false)}>
+                          <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center group-hover:bg-amber-400/20 transition-colors">
+                            <User size={18} className="text-amber-400" />
+                          </div>
+                          <span className="font-bold">Giriş Yap</span>
+                        </Link>
+                        <Link href="/register" className="flex items-center gap-3 px-4 py-3 text-sm text-amber-400 hover:bg-amber-400/20 transition group" onClick={() => setProfileMenuOpen(false)}>
+                          <div className="w-8 h-8 rounded-lg bg-amber-400/10 flex items-center justify-center group-hover:bg-amber-400/30 transition-colors">
+                            <Compass size={18} />
+                          </div>
+                          <span className="font-black">Kayıt Ol</span>
+                        </Link>
+                      </>
+                    )}
                   </motion.div>
                 </>
               )}
