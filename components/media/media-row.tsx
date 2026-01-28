@@ -15,6 +15,8 @@ type MediaItem = {
     vote_average: number;
     release_date?: string;
     first_air_date?: string;
+    runtime?: number;
+    media_type?: string;
 };
 
 type MediaRowProps = {
@@ -26,7 +28,13 @@ type MediaRowProps = {
 
 export async function MediaRow({ title, items, type, href }: MediaRowProps) {
     const tmdbIds = items.map(i => i.id);
-    const userRatingsMap = await getUserRatingsBulk(tmdbIds);
+    const [userRatingsMap, metadataMap] = await Promise.all([
+        getUserRatingsBulk(tmdbIds),
+        import("@/lib/activity-actions").then(m => m.getMediaMetadataBulk(items.map(i => ({
+            id: i.id,
+            type: (i.media_type === "tv" || i.media_type === "movie" ? i.media_type : type) as "movie" | "tv"
+        }))))
+    ]);
 
     return (
         <div className="py-0">
@@ -52,7 +60,8 @@ export async function MediaRow({ title, items, type, href }: MediaRowProps) {
                         voteAverage={item.vote_average}
                         userRating={userRatingsMap[item.id]}
                         releaseDate={item.release_date || item.first_air_date}
-                        type={type}
+                        runtime={item.runtime || metadataMap[item.id]?.runtime || undefined}
+                        type={(item.media_type === "tv" || item.media_type === "movie" ? item.media_type : type) as "movie" | "tv"}
                     />
                 ))}
             </MediaRowClient>

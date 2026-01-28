@@ -130,6 +130,7 @@ export default function WatchlistSearchBarWrapper({ watchlist }: { watchlist: an
                                 title={item.media.title}
                                 posterPath={item.media.posterPath}
                                 voteAverage={0}
+                                runtime={item.media.runtime || undefined}
                                 type={item.media.type === "MOVIE" ? "movie" : "tv"}
                             />
                         ))

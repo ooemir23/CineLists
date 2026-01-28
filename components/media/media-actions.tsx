@@ -1,7 +1,7 @@
 "use client";
 
-import { useTransition, useState } from "react";
-import { Plus, Check, Loader2, Eye } from "lucide-react";
+import { useTransition, useState, useEffect, useRef } from "react";
+import { Plus, Check, Loader2, Eye, ChevronDown, ChevronUp } from "lucide-react";
 import { toggleToWatch } from "@/lib/actions";
 import { toggleWatchedStatus } from "@/lib/activity-actions";
 import { useRouter } from "next/navigation";
@@ -25,6 +25,13 @@ export function MediaActions({ tmdbId, type, title, posterPath, initialInWatchli
     const [userRating, setUserRating] = useState(initialRating || 0);
     const [isPending, startTransition] = useTransition();
     const router = useRouter();
+    const formRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        if (showDetailsForm && formRef.current) {
+            formRef.current.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+    }, [showDetailsForm]);
 
     const handleToggleWatchlist = () => {
         setInWatchlist((prev) => !prev);
@@ -103,27 +110,30 @@ export function MediaActions({ tmdbId, type, title, posterPath, initialInWatchli
                     <button
                         onClick={() => setShowDetailsForm(!showDetailsForm)}
                         className={cn(
-                            "flex items-center gap-2 px-4 py-3 font-medium rounded-xl transition-all border text-sm",
+                            "flex items-center gap-2 px-4 py-3 font-medium rounded-xl transition-all border text-xs",
                             showDetailsForm ? "bg-white/10 border-white/20" : "bg-transparent border-white/5 hover:bg-white/5"
                         )}
                     >
-                        {showDetailsForm ? "Detayları Kapat" : "İzleme Detaylarını Düzenle"}
+                        {showDetailsForm ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                        {showDetailsForm ? "Detayları Kapat" : "İzleme Detayları"}
                     </button>
                 )}
             </div>
 
             {showDetailsForm && (
-                <WatchDetailsForm
-                    tmdbId={tmdbId}
-                    type={type}
-                    title={title}
-                    posterPath={posterPath}
-                    initialRating={userRating}
-                    onClose={() => setShowDetailsForm(false)}
-                    onSaveSuccess={() => {
-                        // Success handling
-                    }}
-                />
+                <div ref={formRef} className="animate-in fade-in slide-in-from-top-2 duration-300">
+                    <WatchDetailsForm
+                        tmdbId={tmdbId}
+                        type={type}
+                        title={title}
+                        posterPath={posterPath}
+                        initialRating={userRating}
+                        onClose={() => setShowDetailsForm(false)}
+                        onSaveSuccess={() => {
+                            // Success handling
+                        }}
+                    />
+                </div>
             )}
         </div>
     );

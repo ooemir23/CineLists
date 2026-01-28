@@ -18,7 +18,10 @@ export async function PersonalizedRecommendations({ results, reasons }: Personal
     if (!results || results.length === 0) return null;
 
     const tmdbIds = results.map(i => i.id);
-    const userRatingsMap = await getUserRatingsBulk(tmdbIds);
+    const [userRatingsMap, metadataMap] = await Promise.all([
+        getUserRatingsBulk(tmdbIds),
+        import("@/lib/activity-actions").then(m => m.getMediaMetadataBulk(results.map(r => ({ id: r.id, type: r.mediaType }))))
+    ]);
 
     return (
         <section className="relative mb-12 md:mb-16 group/section">
@@ -114,6 +117,7 @@ export async function PersonalizedRecommendations({ results, reasons }: Personal
                                 voteAverage={item.vote_average}
                                 userRating={userRatingsMap[item.id]}
                                 releaseDate={item.release_date || item.first_air_date}
+                                runtime={item.runtime || metadataMap[item.id]?.runtime || undefined}
                                 type={item.mediaType}
                             />
                         ))}

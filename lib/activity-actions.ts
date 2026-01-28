@@ -196,12 +196,21 @@ export async function addComment(mediaId: number, type: "movie" | "tv", content:
     });
 
     if (!media) {
+        // Fetch details from TMDB to get runtime and genres
+        const details = await tmdb.getDetails(type, mediaId.toString()).catch(() => null);
+        const genres = details?.genres?.map((g: any) => g.name) || [];
+        const runtime = type === "movie"
+            ? details?.runtime
+            : (details?.episode_run_time?.[0] || null);
+
         media = await prisma.mediaItem.create({
             data: {
                 tmdbId: mediaId,
                 type: type === "movie" ? "MOVIE" : "TV",
                 title: title,
                 posterPath: posterPath,
+                genres: genres,
+                runtime: runtime,
             },
         });
     }
@@ -243,12 +252,21 @@ export async function saveWatchDetails(params: {
     });
 
     if (!media) {
+        // Fetch details from TMDB to get runtime and genres
+        const details = await tmdb.getDetails(type, tmdbId.toString()).catch(() => null);
+        const genres = details?.genres?.map((g: any) => g.name) || [];
+        const runtime = type === "movie"
+            ? details?.runtime
+            : (details?.episode_run_time?.[0] || null);
+
         media = await prisma.mediaItem.create({
             data: {
                 tmdbId,
                 type: type === "movie" ? "MOVIE" : "TV",
                 title,
                 posterPath,
+                genres: genres,
+                runtime: runtime,
             },
         });
     }
@@ -334,4 +352,88 @@ export async function saveWatchDetails(params: {
     revalidatePath(`/${type}/${tmdbId}`);
 
     return { success: true };
+}
+
+export async function getMediaMetadataBulk(items: { id: number; type: "movie" | "tv" }[]) {
+    if (items.length === 0) return {};
+
+    const tmdbIds = items.map(i => i.id);
+
+    try {
+        // 1. Get existing data from DB
+        const mediaItems = await prisma.mediaItem.findMany({
+            where: {
+                tmdbId: { in: tmdbIds },
+                runtime: { not: null }
+            },
+            select: {
+                tmdbId: true,
+                runtime: true
+            }
+        });
+
+        const metadataMap: Record<number, { runtime?: number | null }> = {};
+        mediaItems.forEach(item => {
+            metadataMap[item.tmdbId] = { runtime: item.runtime };
+        });
+
+        // 2. Identify missing ones
+        const missingItems = items.filter(item => !metadataMap[item.id]);
+
+        if (missingItems.length > 0) {
+            // Fetch missing from TMDB in parallel
+            const fetchedResults = await Promise.all(
+                missingItems.map(async (item) => {
+                    try {
+                        const details = await tmdb.getDetails(item.type, item.id.toString());
+
+                        // Enhanced runtime logic
+                        let runtime = details.runtime; // Standard for movies
+
+                        if (item.type === "tv") {
+                            // Try multiple fields for TV runtime:
+                            // 1. Array of runtimes (first one)
+                            // 2. Last aired episode runtime
+                            // 3. Next aired episode runtime
+                            // 4. Default runtime field (sometimes present)
+                            runtime = (details.episode_run_time && details.episode_run_time.length > 0)
+                                ? details.episode_run_time[0]
+                                : (details.last_episode_to_air?.runtime || details.next_episode_to_air?.runtime || details.runtime || null);
+                        }
+
+                        // Ensure runtime is a valid number (> 0)
+                        const validRuntime = (typeof runtime === "number" && runtime > 0) ? runtime : null;
+
+                        // Save/Update in DB for future requests
+                        await prisma.mediaItem.upsert({
+                            where: { tmdbId: item.id },
+                            update: { runtime: validRuntime },
+                            create: {
+                                tmdbId: item.id,
+                                type: item.type === "movie" ? "MOVIE" : "TV",
+                                title: details.title || details.name || "Bilinmiyor",
+                                posterPath: details.poster_path,
+                                genres: details.genres?.map((g: any) => g.name) || [],
+                                runtime: validRuntime
+                            }
+                        });
+
+                        return { id: item.id, runtime: validRuntime };
+                    } catch (e) {
+                        console.error(`Failed to fetch runtime for ${item.type} ${item.id}:`, e);
+                        return { id: item.id, runtime: null };
+                    }
+                })
+            );
+
+            fetchedResults.forEach(res => {
+                metadataMap[res.id] = { runtime: res.runtime };
+            });
+        }
+
+        return metadataMap;
+    } catch (error) {
+        console.error("Get bulk media metadata error:", error);
+        return {};
+    }
 }

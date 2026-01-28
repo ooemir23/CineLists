@@ -2,6 +2,8 @@ import { tmdb } from "@/lib/tmdb";
 import { MediaCard } from "@/components/media/media-card";
 import { Film, Search } from "lucide-react";
 import { MediaFilter } from "@/components/home/media-filter";
+import { getUserRatingsBulk } from "@/lib/rating-actions";
+import { getMediaMetadataBulk } from "@/lib/activity-actions";
 
 type SearchPageProps = {
   searchParams: Promise<{
@@ -24,7 +26,6 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
   const genre = params.genre;
 
   let results: any[] = [];
-  let loading = false;
 
   // If there's a search query or filters, fetch results
   if (query || year || rating || provider || genre || type) {
@@ -84,6 +85,20 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
     }
   }
 
+  // Pre-fetch metadata and ratings for media items
+  const people = results.filter((item: any) => (item.media_type || type) === "person");
+  const mediaItems = results.filter((item: any) => (item.media_type || item.type || type) !== "person");
+
+  const mediaWithMeta = mediaItems.map(m => ({
+    id: m.id,
+    type: (m.media_type === "tv" || m.media_type === "movie") ? m.media_type : (type as "movie" | "tv")
+  }));
+
+  const [userRatingsMap, metadataMap] = await Promise.all([
+    getUserRatingsBulk(mediaItems.map(m => m.id)),
+    getMediaMetadataBulk(mediaWithMeta)
+  ]);
+
   return (
     <div className="min-h-screen bg-[#101624] pb-20">
       {/* Header Section */}
@@ -140,81 +155,68 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
           </div>
         ) : (
           <div>
-            {(() => {
-              const people = results.filter((item: any) => (item.media_type || type) === "person");
-              const media = results.filter((item: any) => (item.media_type || type) !== "person");
-
-              return (
-                <>
-                  {people.length > 0 && (
-                    <div className="mb-16">
-                      <div className="mb-8 flex items-center gap-3">
-                        <div className="w-2 h-8 bg-primary rounded-full shadow-[0_0_15px_rgba(239,68,68,0.5)]" />
-                        <div>
-                          <h2 className="text-3xl font-black text-white uppercase tracking-tight">
-                            Sanatçılar
-                          </h2>
-                          <p className="text-sm text-neutral-500 font-medium">
-                            {people.length} sanatçı bulundu
-                          </p>
-                        </div>
-                      </div>
-                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-8">
-                        {people.map((item: any) => (
-                          <div key={item.id} className="transform hover:scale-105 transition-transform duration-300">
-                            <MediaCard
-                              id={item.id}
-                              title={item.title || item.name}
-                              originalTitle={item.original_title || item.original_name}
-                              posterPath={item.poster_path || item.profile_path}
-                              voteAverage={item.vote_average || 0}
-                              type="person"
-                              fullWidth={true}
-                            />
-                          </div>
-                        ))}
-                      </div>
+            {people.length > 0 && (
+              <div className="mb-16">
+                <div className="mb-8 flex items-center gap-3">
+                  <div className="w-2 h-8 bg-primary rounded-full shadow-[0_0_15px_rgba(239,68,68,0.5)]" />
+                  <div>
+                    <h2 className="text-3xl font-black text-white uppercase tracking-tight">
+                      Sanatçılar
+                    </h2>
+                    <p className="text-sm text-neutral-500 font-medium">
+                      {people.length} sanatçı bulundu
+                    </p>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-8">
+                  {people.map((item: any) => (
+                    <div key={item.id} className="transform hover:scale-105 transition-transform duration-300">
+                      <MediaCard
+                        id={item.id}
+                        title={item.title || item.name}
+                        originalTitle={item.original_title || item.original_name}
+                        posterPath={item.poster_path || item.profile_path}
+                        voteAverage={item.vote_average || 0}
+                        type="person"
+                        fullWidth={true}
+                      />
                     </div>
-                  )}
+                  ))}
+                </div>
+              </div>
+            )}
 
-                  {media.length > 0 && (
-                    <div>
-                      <div className="mb-8 flex items-center gap-3">
-                        <div className="w-2 h-8 bg-white/20 rounded-full" />
-                        <div>
-                          <h2 className="text-3xl font-black text-white uppercase tracking-tight">
-                            İçerikler
-                          </h2>
-                          <p className="text-sm text-neutral-500 font-medium">
-                            {media.length} film ve dizi bulundu
-                          </p>
-                        </div>
-                      </div>
-                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6">
-                        {media.map((item: any) => (
-                          <MediaCard
-                            key={item.id}
-                            id={item.id}
-                            title={item.title || item.name}
-                            originalTitle={item.original_title || item.original_name}
-                            posterPath={item.poster_path || item.profile_path}
-                            voteAverage={item.vote_average || 0}
-                            type={(item.media_type || type) as "movie" | "tv"}
-                            fullWidth={true}
-                          />
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {people.length === 0 && media.length === 0 && (
-                    <div className="text-center py-20 text-neutral-500">
-                      Sonuç bulunamadı
-                    </div>
-                  )}
-                </>
-              );
-            })()}
+            {mediaItems.length > 0 && (
+              <div>
+                <div className="mb-8 flex items-center gap-3">
+                  <div className="w-2 h-8 bg-white/20 rounded-full" />
+                  <div>
+                    <h2 className="text-3xl font-black text-white uppercase tracking-tight">
+                      İçerikler
+                    </h2>
+                    <p className="text-sm text-neutral-500 font-medium">
+                      {mediaItems.length} film ve dizi bulundu
+                    </p>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6">
+                  {mediaItems.map((item: any) => (
+                    <MediaCard
+                      key={item.id}
+                      id={item.id}
+                      title={item.title || item.name}
+                      originalTitle={item.original_title || item.original_name}
+                      posterPath={item.poster_path || item.profile_path}
+                      voteAverage={item.vote_average || 0}
+                      userRating={userRatingsMap[item.id]}
+                      runtime={metadataMap[item.id]?.runtime || undefined}
+                      type={(item.media_type || type) as "movie" | "tv"}
+                      fullWidth={true}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>

@@ -41,6 +41,8 @@ export function WatchDetailsForm({
     const [isPending, startTransition] = useTransition();
     const [isLoadingFriends, setIsLoadingFriends] = useState(true);
     const [customPerson, setCustomPerson] = useState("");
+    const [selectedRecommenders, setSelectedRecommenders] = useState<string[]>([]);
+    const [customRecommender, setCustomRecommender] = useState("");
 
     useEffect(() => {
         async function loadFriends() {
@@ -58,6 +60,10 @@ export function WatchDetailsForm({
 
     const handleSave = () => {
         startTransition(async () => {
+            // Find first real friend ID for notifications
+            const firstFriend = selectedRecommenders.find(r => friends.find(f => f.name === r));
+            const firstFriendId = firstFriend ? friends.find(f => f.name === firstFriend)?.id : undefined;
+
             const result = await saveWatchDetails({
                 tmdbId,
                 type,
@@ -66,8 +72,8 @@ export function WatchDetailsForm({
                 rating: rating > 0 ? rating : undefined,
                 watchedAt: new Date(watchedAt),
                 watchedWith: selectedPeople.length > 0 ? selectedPeople : undefined,
-                recommendedById: recommendedById || undefined,
-                recommendedByText: recommendedByText || undefined,
+                recommendedById: firstFriendId || undefined,
+                recommendedByText: selectedRecommenders.length > 0 ? JSON.stringify(selectedRecommenders) : undefined,
                 review: review.trim() || undefined,
             });
 
@@ -85,46 +91,47 @@ export function WatchDetailsForm({
         }
     };
 
-    return (
-        <div className="bg-neutral-900/50 backdrop-blur-xl border border-white/10 rounded-[2rem] p-8 w-full mt-4 animate-in fade-in slide-in-from-top-4 duration-500 shadow-2xl relative overflow-hidden">
-            {/* Decoration */}
-            <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 blur-[100px] -z-10 rounded-full translate-x-1/2 -translate-y-1/2" />
-            <div className="absolute bottom-0 left-0 w-64 h-64 bg-purple-500/5 blur-[100px] -z-10 rounded-full -translate-x-1/2 translate-y-1/2" />
+    const addCustomRecommender = () => {
+        if (customRecommender.trim() && !selectedRecommenders.includes(customRecommender.trim())) {
+            setSelectedRecommenders([...selectedRecommenders, customRecommender.trim()]);
+            setCustomRecommender("");
+        }
+    };
 
-            <div className="flex justify-between items-center mb-8">
-                <div>
-                    <h3 className="text-xl font-black text-white flex items-center gap-2">
-                        <Check className="text-green-500 w-5 h-5" />
-                        İzleme Detayları
-                    </h3>
-                </div>
+    return (
+        <div className="bg-neutral-900/40 backdrop-blur-md border border-white/5 rounded-[1.5rem] p-5 w-full mt-3 shadow-xl relative overflow-hidden">
+            <div className="flex justify-between items-center mb-5">
+                <h3 className="text-sm font-black text-white flex items-center gap-2 uppercase tracking-widest">
+                    <Check className="text-primary w-4 h-4" />
+                    Detaylar
+                </h3>
                 <button
                     onClick={onClose}
-                    className="p-2 hover:bg-white/5 rounded-full transition-all hover:scale-110 active:scale-90"
+                    className="p-1.5 hover:bg-white/5 rounded-full transition-all text-neutral-500 hover:text-white"
                 >
-                    <X className="w-5 h-5 text-neutral-400" />
+                    <X className="w-4 h-4" />
                 </button>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pr-2">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5 pr-1">
                 {/* Rating */}
-                <div className="space-y-4">
-                    <label className="text-xs font-bold text-neutral-400 uppercase tracking-[0.2em] flex items-center gap-2">
-                        <Star className="w-3.5 h-3.5 text-yellow-500" /> Puanın
+                <div className="space-y-3">
+                    <label className="text-[10px] font-bold text-neutral-500 uppercase tracking-widest flex items-center gap-1.5">
+                        <Star className="w-3 h-3 text-amber-500" /> Puanın
                     </label>
-                    <div className="flex gap-1.5 bg-white/5 p-3 rounded-2xl border border-white/5">
+                    <div className="flex gap-1 bg-white/5 p-2 rounded-xl border border-white/5 w-fit">
                         {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((star) => (
                             <button
                                 key={star}
                                 onClick={() => setRating(star)}
                                 className={cn(
-                                    "transition-all hover:scale-125 active:scale-90",
-                                    star <= rating ? "text-yellow-500" : "text-neutral-700"
+                                    "transition-all hover:scale-110",
+                                    star <= rating ? "text-amber-500" : "text-neutral-700"
                                 )}
                             >
                                 <Star
                                     className={cn(
-                                        "w-6 h-6",
+                                        "w-4 h-4",
                                         star <= rating ? "fill-current" : ""
                                     )}
                                 />
@@ -134,170 +141,199 @@ export function WatchDetailsForm({
                 </div>
 
                 {/* Date */}
-                <div className="space-y-4">
-                    <label className="text-xs font-bold text-neutral-400 uppercase tracking-[0.2em] flex items-center gap-2">
-                        <Calendar className="w-3.5 h-3.5 text-primary" /> İzlenme Tarihi
+                <div className="space-y-3">
+                    <label className="text-[10px] font-bold text-neutral-500 uppercase tracking-widest flex items-center gap-1.5">
+                        <Calendar className="w-3 h-3 text-primary" /> Tarih
                     </label>
                     <input
                         type="date"
                         value={watchedAt}
                         onChange={(e) => setWatchedAt(e.target.value)}
-                        className="w-full bg-white/5 border border-white/5 rounded-2xl px-5 py-3.5 text-sm font-bold text-white focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all hover:bg-white/[0.08]"
+                        className="w-full bg-white/5 border border-white/5 rounded-xl px-4 py-2 text-xs font-bold text-white focus:outline-none focus:ring-1 focus:ring-primary/40 transition-all"
                     />
                 </div>
 
                 {/* Watched With */}
-                <div className="space-y-4 md:col-span-2">
-                    <label className="text-xs font-bold text-neutral-400 uppercase tracking-[0.2em] flex items-center gap-2">
-                        <Users className="w-3.5 h-3.5 text-blue-400" /> Kiminle İzledin?
-                    </label>
-                    <div className="space-y-3">
-                        <div className="flex flex-col sm:flex-row gap-2">
-                            <div className="relative flex-1 group">
-                                <select
-                                    className="w-full bg-white/5 border border-white/5 rounded-2xl px-5 py-3.5 text-sm font-bold text-white focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all appearance-none cursor-pointer"
-                                    value={""}
-                                    onChange={(e) => {
-                                        const val = e.target.value;
-                                        const friend = friends.find(f => f.id === val);
-                                        const nameToTrack = friend?.name || val;
-                                        if (val && !selectedPeople.includes(nameToTrack)) {
-                                            setSelectedPeople([...selectedPeople, nameToTrack]);
-                                        }
-                                    }}
-                                >
-                                    <option value="" disabled className="bg-neutral-900">Arkadaş seç...</option>
-                                    {friends.filter(f => !selectedPeople.includes(f.name || "")).map(friend => (
-                                        <option key={friend.id} value={friend.id} className="bg-neutral-900">{friend.name}</option>
-                                    ))}
-                                </select>
-                                <Plus className="absolute right-5 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-500 pointer-events-none group-hover:text-white transition-colors" />
-                            </div>
-                            <div className="relative flex-1 flex gap-2">
-                                <input
-                                    type="text"
-                                    placeholder="Veya isim yaz..."
-                                    value={customPerson}
-                                    onChange={(e) => setCustomPerson(e.target.value)}
-                                    onKeyDown={(e) => e.key === "Enter" && addCustomPerson()}
-                                    className="w-full bg-white/5 border border-white/5 rounded-2xl px-5 py-3.5 text-sm font-bold text-white focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all hover:bg-white/[0.08]"
-                                />
-                                <button
-                                    onClick={addCustomPerson}
-                                    className="px-4 bg-primary/10 hover:bg-primary/20 text-primary border border-primary/20 rounded-2xl transition-all active:scale-95"
-                                >
-                                    <UserPlus className="w-5 h-5" />
-                                </button>
-                            </div>
-                        </div>
-
-                        {selectedPeople.length > 0 && (
-                            <div className="flex flex-wrap gap-2 pt-2">
-                                {selectedPeople.map(idOrName => {
-                                    const friend = friends.find(f => f.id === idOrName);
-                                    const isFriend = !!friend;
-                                    return (
-                                        <div
-                                            key={idOrName}
-                                            className={cn(
-                                                "flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black border transition-all animate-in zoom-in-90",
-                                                isFriend
-                                                    ? "bg-blue-500/10 text-blue-400 border-blue-500/20"
-                                                    : "bg-neutral-800 text-neutral-300 border-white/5"
-                                            )}
-                                        >
-                                            {isFriend ? friend.name : idOrName}
-                                            <button
-                                                onClick={() => setSelectedPeople(selectedPeople.filter(sid => sid !== idOrName))}
-                                                className="hover:text-white transition-colors"
-                                            >
-                                                <X className="w-3.5 h-3.5" />
-                                            </button>
-                                        </div>
-                                    );
-                                })}
-                            </div>
-                        )}
-                    </div>
-                </div>
-
-                {/* Recommended By */}
-                <div className="space-y-4 md:col-span-2">
-                    <label className="text-xs font-bold text-neutral-400 uppercase tracking-[0.2em] flex items-center gap-2">
-                        <MessageSquare className="w-3.5 h-3.5 text-purple-400" /> Kim Tavsiye Etti?
+                <div className="space-y-3 md:col-span-2">
+                    <label className="text-[10px] font-bold text-neutral-500 uppercase tracking-widest flex items-center gap-1.5">
+                        <Users className="w-3 h-3 text-blue-400" /> Kiminle?
                     </label>
                     <div className="flex flex-col sm:flex-row gap-2">
-                        <div className="relative flex-1 group">
+                        <div className="relative flex-1">
                             <select
-                                className="w-full bg-white/5 border border-white/5 rounded-2xl px-5 py-3.5 text-sm font-bold text-white focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all appearance-none cursor-pointer"
-                                value={recommendedById}
+                                className="w-full bg-white/5 border border-white/5 rounded-xl px-4 py-2 text-xs font-bold text-white focus:outline-none focus:ring-1 focus:ring-primary/40 appearance-none cursor-pointer"
+                                value={""}
                                 onChange={(e) => {
-                                    setRecommendedById(e.target.value);
-                                    if (e.target.value) setRecommendedByText("");
+                                    const val = e.target.value;
+                                    const friend = friends.find(f => f.id === val);
+                                    const nameToTrack = friend?.name || val;
+                                    if (val && !selectedPeople.includes(nameToTrack)) {
+                                        setSelectedPeople([...selectedPeople, nameToTrack]);
+                                    }
                                 }}
                             >
-                                <option value="" className="bg-neutral-900">Arkadaş Seç (Opsiyonel)</option>
-                                {friends.map(friend => (
+                                <option value="" disabled className="bg-neutral-900">Arkadaş seç...</option>
+                                {friends.filter(f => !selectedPeople.includes(f.name || "")).map(friend => (
                                     <option key={friend.id} value={friend.id} className="bg-neutral-900">{friend.name}</option>
                                 ))}
                             </select>
-                            <Plus className="absolute right-5 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-500 pointer-events-none group-hover:text-white transition-colors" />
                         </div>
-
-                        <div className="relative flex-1 flex gap-2">
+                        <div className="flex-1 flex gap-2">
                             <input
                                 type="text"
-                                placeholder="Veya manuel isim yaz..."
-                                value={recommendedByText}
-                                onChange={(e) => {
-                                    setRecommendedByText(e.target.value);
-                                    if (e.target.value) setRecommendedById("");
-                                }}
-                                className="w-full bg-white/5 border border-white/5 rounded-2xl px-5 py-3.5 text-sm font-bold text-white focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all hover:bg-white/[0.08]"
+                                placeholder="Veya isim..."
+                                value={customPerson}
+                                onChange={(e) => setCustomPerson(e.target.value)}
+                                onKeyDown={(e) => e.key === "Enter" && addCustomPerson()}
+                                className="w-full bg-white/5 border border-white/5 rounded-xl px-4 py-2 text-xs font-bold text-white focus:outline-none focus:ring-1 focus:ring-primary/40"
                             />
-                            <button className="px-4 bg-primary/10 text-primary border border-primary/20 rounded-2xl flex items-center justify-center transition-all hover:bg-primary/20 active:scale-90">
-                                <UserPlus className="w-5 h-5" />
+                            <button
+                                onClick={addCustomPerson}
+                                type="button"
+                                className="p-2 bg-primary/10 text-primary border border-primary/20 rounded-xl hover:bg-primary/20 transition-all"
+                            >
+                                <UserPlus className="w-4 h-4" />
                             </button>
                         </div>
                     </div>
+
+                    {selectedPeople.length > 0 && (
+                        <div className="flex flex-wrap gap-1.5 pt-1">
+                            {selectedPeople.map(idOrName => {
+                                const friend = friends.find(f => f.id === idOrName);
+                                const isFriend = !!friend;
+                                return (
+                                    <div
+                                        key={idOrName}
+                                        className={cn(
+                                            "flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-bold border transition-all animate-in zoom-in-95",
+                                            isFriend
+                                                ? "bg-blue-500/10 text-blue-400 border-blue-500/20"
+                                                : "bg-neutral-800 text-neutral-400 border-white/5"
+                                        )}
+                                    >
+                                        {isFriend ? friend.name : idOrName}
+                                        <button
+                                            onClick={() => setSelectedPeople(selectedPeople.filter(sid => sid !== idOrName))}
+                                            className="hover:text-white transition-colors"
+                                        >
+                                            <X className="w-3 h-3" />
+                                        </button>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    )}
                 </div>
 
-                {/* Review / Comment */}
-                <div className="space-y-4 md:col-span-2">
-                    <label className="text-xs font-bold text-neutral-400 uppercase tracking-[0.2em] flex items-center gap-2">
-                        <MessageSquare className="w-3.5 h-3.5 text-pink-400" /> İnceleme & Yorum
+                {/* Recommended By */}
+                <div className="space-y-3 md:col-span-2">
+                    <label className="text-[10px] font-bold text-neutral-500 uppercase tracking-widest flex items-center gap-1.5">
+                        <MessageSquare className="w-3 h-3 text-purple-400" /> Tavsiye Eden?
+                    </label>
+                    <div className="flex flex-col sm:flex-row gap-2">
+                        <div className="relative flex-1">
+                            <select
+                                className="w-full bg-white/5 border border-white/5 rounded-xl px-4 py-2 text-xs font-bold text-white focus:outline-none focus:ring-1 focus:ring-primary/40 appearance-none cursor-pointer"
+                                value={""}
+                                onChange={(e) => {
+                                    const val = e.target.value;
+                                    const friend = friends.find(f => f.id === val);
+                                    const nameToTrack = friend?.name || val;
+                                    if (val && !selectedRecommenders.includes(nameToTrack)) {
+                                        setSelectedRecommenders([...selectedRecommenders, nameToTrack]);
+                                    }
+                                }}
+                            >
+                                <option value="" disabled className="bg-neutral-900">Arkadaş seç...</option>
+                                {friends.filter(f => !selectedRecommenders.includes(f.name || "")).map(friend => (
+                                    <option key={friend.id} value={friend.id} className="bg-neutral-900">{friend.name}</option>
+                                ))}
+                            </select>
+                        </div>
+                        <div className="flex-1 flex gap-2">
+                            <input
+                                type="text"
+                                placeholder="Veya isim..."
+                                value={customRecommender}
+                                onChange={(e) => setCustomRecommender(e.target.value)}
+                                onKeyDown={(e) => e.key === "Enter" && addCustomRecommender()}
+                                className="w-full bg-white/5 border border-white/5 rounded-xl px-4 py-2 text-xs font-bold text-white focus:outline-none focus:ring-1 focus:ring-primary/40"
+                            />
+                            <button
+                                onClick={addCustomRecommender}
+                                type="button"
+                                className="p-2 bg-purple-500/10 text-purple-400 border border-purple-500/20 rounded-xl hover:bg-purple-500/20 transition-all"
+                            >
+                                <UserPlus className="w-4 h-4" />
+                            </button>
+                        </div>
+                    </div>
+
+                    {selectedRecommenders.length > 0 && (
+                        <div className="flex flex-wrap gap-1.5 pt-1">
+                            {selectedRecommenders.map(name => {
+                                const isFriend = friends.some(f => f.name === name);
+                                return (
+                                    <div
+                                        key={name}
+                                        className={cn(
+                                            "flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-bold border transition-all animate-in zoom-in-95",
+                                            isFriend
+                                                ? "bg-purple-500/10 text-purple-400 border-purple-500/20"
+                                                : "bg-neutral-800 text-neutral-400 border-white/5"
+                                        )}
+                                    >
+                                        {name}
+                                        <button
+                                            onClick={() => setSelectedRecommenders(selectedRecommenders.filter(r => r !== name))}
+                                            className="hover:text-white transition-colors"
+                                        >
+                                            <X className="w-3 h-3" />
+                                        </button>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    )}
+                </div>
+
+                {/* Review */}
+                <div className="space-y-3 md:col-span-2">
+                    <label className="text-[10px] font-bold text-neutral-500 uppercase tracking-widest flex items-center gap-1.5">
+                        <MessageSquare className="w-3 h-3 text-pink-400" /> Yorum
                     </label>
                     <textarea
                         value={review}
                         onChange={(e) => setReview(e.target.value)}
-                        placeholder="Bu içerik hakkında ne düşünüyorsun? (Bu yorum aktivite akışında görünecektir)"
-                        rows={4}
-                        className="w-full bg-white/5 border border-white/5 rounded-[1.5rem] px-6 py-4 text-sm font-medium text-white focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all hover:bg-white/[0.08] resize-none"
+                        placeholder="Neler düşünüyorsun?"
+                        rows={2}
+                        className="w-full bg-white/5 border border-white/5 rounded-xl px-4 py-3 text-xs font-medium text-white focus:outline-none focus:ring-1 focus:ring-primary/40 resize-none hover:bg-white/[0.08]"
                     />
                 </div>
             </div>
 
-            <div className="mt-10 flex gap-4">
+            <div className="mt-6 flex gap-3">
                 <button
                     onClick={handleSave}
                     disabled={isPending}
-                    className="flex-[2] bg-white text-black font-black py-4 rounded-2xl hover:bg-neutral-200 transition-all shadow-[0_0_20px_-5px_rgba(255,255,255,0.1)] flex items-center justify-center gap-3 active:scale-95 disabled:opacity-50 group"
+                    className="flex-1 bg-primary text-white font-black py-3 rounded-xl hover:bg-primary/90 transition-all flex items-center justify-center gap-2 text-xs uppercase tracking-widest active:scale-95 disabled:opacity-50"
                 >
-                    {isPending ? <Loader2 className="w-5 h-5 animate-spin" /> : (
+                    {isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : (
                         <>
-                            <Check className="w-5 h-5 group-hover:scale-110 transition-transform" />
-                            Değişiklikleri Kaydet
+                            <Check className="w-4 h-4" />
+                            Kaydet
                         </>
                     )}
                 </button>
                 <button
                     onClick={onClose}
                     disabled={isPending}
-                    className="flex-1 bg-neutral-900 text-white font-bold rounded-2xl border border-white/5 hover:bg-neutral-800 transition-all active:scale-95 px-6"
+                    className="px-6 bg-neutral-800 text-neutral-400 font-bold rounded-xl border border-white/5 hover:bg-neutral-700 hover:text-white transition-all text-xs"
                 >
                     İptal
                 </button>
             </div>
-        </div>
+        </div >
     );
 }

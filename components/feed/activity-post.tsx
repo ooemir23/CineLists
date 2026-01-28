@@ -54,6 +54,7 @@ type ActivityPostProps = {
             posterPath: string | null;
             backdropPath: string | null;
             type: "MOVIE" | "TV" | "PERSON";
+            runtime?: number | null;
         };
         episode?: {
             id: string;
@@ -149,6 +150,13 @@ export function ActivityPost({ activity }: ActivityPostProps) {
         ADDED_TO_LIST: <PlusCircle className="w-4 h-4 text-blue-400" />,
     }[activity.type];
 
+    const formatRuntime = (minutes: number) => {
+        if (!minutes) return "";
+        const h = Math.floor(minutes / 60);
+        const m = minutes % 60;
+        return h > 0 ? (m > 0 ? `${h}s ${m}dk` : `${h}s`) : `${m}dk`;
+    };
+
     return (
         <div className="bg-[#1A202C]/60 backdrop-blur-xl border border-white/5 rounded-[2rem] overflow-hidden shadow-2xl transition-all hover:border-primary/20 group animate-fade-in mb-8">
             <div className="flex flex-col md:flex-row min-h-[300px]">
@@ -240,13 +248,19 @@ export function ActivityPost({ activity }: ActivityPostProps) {
                     </div>
 
                     {/* Media Title */}
-                    <div className="mb-4">
+                    <div className="mb-4 flex items-baseline gap-3 flex-wrap">
                         <Link
                             href={`/${activity.media.type === "MOVIE" ? "movie" : "tv"}/${activity.media.tmdbId}`}
                             className="text-2xl font-black text-white hover:text-primary transition-all tracking-tight leading-none"
                         >
                             {activity.media.title}
                         </Link>
+                        {activity.media.runtime && (
+                            <span className="inline-flex items-center gap-1.5 text-neutral-500 font-bold text-[11px] leading-none mb-1">
+                                <Clock className="w-3 h-3" />
+                                {formatRuntime(activity.media.runtime)}
+                            </span>
+                        )}
 
                         {/* Episode Range Badge */}
                         {activity.episodeRange && (
