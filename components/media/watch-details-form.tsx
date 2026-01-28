@@ -159,13 +159,15 @@ export function WatchDetailsForm({
                                     value={""}
                                     onChange={(e) => {
                                         const val = e.target.value;
-                                        if (val && !selectedPeople.includes(val)) {
-                                            setSelectedPeople([...selectedPeople, val]);
+                                        const friend = friends.find(f => f.id === val);
+                                        const nameToTrack = friend?.name || val;
+                                        if (val && !selectedPeople.includes(nameToTrack)) {
+                                            setSelectedPeople([...selectedPeople, nameToTrack]);
                                         }
                                     }}
                                 >
                                     <option value="" disabled className="bg-neutral-900">Arkadaş seç...</option>
-                                    {friends.filter(f => !selectedPeople.includes(f.id)).map(friend => (
+                                    {friends.filter(f => !selectedPeople.includes(f.name || "")).map(friend => (
                                         <option key={friend.id} value={friend.id} className="bg-neutral-900">{friend.name}</option>
                                     ))}
                                 </select>

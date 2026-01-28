@@ -22,7 +22,8 @@ import {
     Copy,
     MessageCircle,
     Users,
-    Loader2
+    Loader2,
+    Sparkles
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { tr } from "date-fns/locale";
@@ -37,6 +38,11 @@ type ActivityPostProps = {
         rating: number | null;
         review: string | null;
         watchedWith: string | null;
+        recommendedByText: string | null;
+        recommendedBy?: {
+            id: string;
+            name: string | null;
+        } | null;
         user: {
             id: string;
             name: string | null;
@@ -209,7 +215,20 @@ export function ActivityPost({ activity }: ActivityPostProps) {
                                     {activity.watchedWith && (
                                         <div className="flex items-center gap-1 px-2 py-0.5 bg-white/5 rounded-md text-[10px] font-medium text-blue-400 border border-white/5">
                                             <Users className="w-3 h-3" />
-                                            {activity.watchedWith} ile
+                                            {(() => {
+                                                try {
+                                                    const parsed = JSON.parse(activity.watchedWith);
+                                                    return Array.isArray(parsed) ? parsed.join(", ") : parsed;
+                                                } catch (e) {
+                                                    return activity.watchedWith;
+                                                }
+                                            })()} ile
+                                        </div>
+                                    )}
+                                    {(activity.recommendedBy || activity.recommendedByText) && (
+                                        <div className="flex items-center gap-1 px-2 py-0.5 bg-white/5 rounded-md text-[10px] font-medium text-purple-400 border border-white/5">
+                                            <Sparkles className="w-3 h-3" />
+                                            {activity.recommendedBy?.name || activity.recommendedByText} tavsiyesiyle
                                         </div>
                                     )}
                                 </div>

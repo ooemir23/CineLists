@@ -30,6 +30,12 @@ async function getGroupedFeedActivities(userId: string, followingIds: string[]) 
                     title: true,
                 }
             },
+            recommendedBy: {
+                select: {
+                    id: true,
+                    name: true,
+                }
+            },
             _count: {
                 select: { comments: true }
             }

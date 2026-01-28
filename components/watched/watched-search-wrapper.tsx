@@ -190,7 +190,17 @@ export default function WatchedSearchBarWrapper({ watched }: { watched: any[] })
                                             <span className="flex items-center gap-1"><User className="w-4 h-4" />{item.recommendedByText}</span>
                                         )}
                                         {item.watchedWith && (
-                                            <span className="flex items-center gap-1"><Users className="w-4 h-4" />{item.watchedWith}</span>
+                                            <span className="flex items-center gap-1">
+                                                <Users className="w-4 h-4" />
+                                                {(() => {
+                                                    try {
+                                                        const parsed = JSON.parse(item.watchedWith);
+                                                        return Array.isArray(parsed) ? parsed.join(", ") : parsed;
+                                                    } catch (e) {
+                                                        return item.watchedWith;
+                                                    }
+                                                })()}
+                                            </span>
                                         )}
                                     </div>
                                 </div>
