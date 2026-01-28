@@ -170,7 +170,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
                 </div>
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-8">
                   {people.map((item: any) => (
-                    <div key={item.id} className="transform hover:scale-105 transition-transform duration-300">
+                    <div key={item.id} className="transform hover:scale-105 transition-transform duration-300 hover:z-10">
                       <MediaCard
                         id={item.id}
                         title={item.title || item.name}
@@ -199,7 +199,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
                     </p>
                   </div>
                 </div>
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6">
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6 pt-6 pb-6">
                   {mediaItems.map((item: any) => (
                     <MediaCard
                       key={item.id}

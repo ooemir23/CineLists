@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { Star, Send, ZoomIn } from "lucide-react";
+import { Star, Send } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { RecommendModal } from "./recommend-modal";
 import { ExpandableImage } from "@/components/ui/expandable-image";
@@ -35,7 +35,6 @@ const formatRuntime = (minutes: number): string => {
 
 export function MediaCard({ id, title, originalTitle, posterPath, voteAverage, userRating, runtime, releaseDate, type, fullWidth = false }: MediaCardProps) {
     const [isRecommendOpen, setIsRecommendOpen] = useState(false);
-    const [isZoomOpen, setIsZoomOpen] = useState(false);
 
     if (!posterPath && type !== "person") return null;
 
@@ -43,7 +42,7 @@ export function MediaCard({ id, title, originalTitle, posterPath, voteAverage, u
         <Link
             href={`/${type}/${id}`}
             className={cn(
-                "group relative flex flex-col gap-3 transition-all duration-300 flex-none",
+                "group relative flex flex-col gap-3 transition-all duration-300 flex-none hover:z-10",
                 fullWidth ? "w-full" : "w-36 md:w-44 lg:w-48"
             )}
         >
@@ -73,7 +72,7 @@ export function MediaCard({ id, title, originalTitle, posterPath, voteAverage, u
                         </span>
 
                         {/* Recommend Button */}
-                        <div className="absolute top-3 left-3 flex gap-2">
+                        <div className="absolute top-3 left-3">
                             <button
                                 onClick={(e) => {
                                     e.preventDefault();
@@ -84,17 +83,6 @@ export function MediaCard({ id, title, originalTitle, posterPath, voteAverage, u
                                 title="Tavsiye Et"
                             >
                                 <Send className="w-4 h-4" />
-                            </button>
-                            <button
-                                onClick={(e) => {
-                                    e.preventDefault();
-                                    e.stopPropagation();
-                                    setIsZoomOpen(true);
-                                }}
-                                className="w-8 h-8 bg-white/10 backdrop-blur-md rounded-xl flex items-center justify-center border border-white/10 text-white opacity-0 group-hover:opacity-100 transition-all hover:bg-amber-500 hover:border-amber-500 active:scale-90"
-                                title="Büyüt"
-                            >
-                                <ZoomIn className="w-4 h-4" />
                             </button>
                         </div>
                     </div>
@@ -158,32 +146,6 @@ export function MediaCard({ id, title, originalTitle, posterPath, voteAverage, u
                     posterPath={posterPath}
                     onClose={() => setIsRecommendOpen(false)}
                 />
-            )}
-
-            {/* Custom Lightbox Modal for MediaCard */}
-            {isZoomOpen && posterPath && (
-                <div
-                    className="fixed inset-0 z-[200] flex items-center justify-center bg-black/95 backdrop-blur-sm animate-in fade-in duration-300"
-                    onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        setIsZoomOpen(false);
-                    }}
-                >
-                    <div className="relative max-w-4xl max-h-[90vh] p-4 flex flex-col items-center gap-4 animate-in zoom-in-95 duration-500">
-                        <div className="relative aspect-[2/3] h-[70vh] md:h-[80vh] rounded-2xl overflow-hidden shadow-2xl ring-1 ring-white/10">
-                            <Image
-                                src={`https://image.tmdb.org/t/p/original${posterPath}`}
-                                alt={title}
-                                fill
-                                className="object-cover"
-                            />
-                        </div>
-                        <div className="px-6 py-3 bg-white/10 backdrop-blur-xl border border-white/10 rounded-full">
-                            <p className="text-white font-black tracking-tight text-lg italic uppercase">{title}</p>
-                        </div>
-                    </div>
-                </div>
             )}
         </Link>
     );
