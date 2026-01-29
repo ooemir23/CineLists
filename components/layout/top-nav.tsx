@@ -16,9 +16,12 @@ import {
   Bookmark,
   BarChart3,
   Users,
-  Bell
+  Bell,
+  Search,
+  LogOut
 } from "lucide-react";
 import { NotificationBell } from "./notification-bell";
+import { handleSignOut } from "@/lib/auth-actions";
 
 interface TopNavProps {
   user?: {
@@ -123,10 +126,10 @@ export function TopNav({ user }: TopNavProps) {
               <div className="absolute inset-0 bg-amber-400 rounded-full blur-md opacity-20 group-hover:opacity-40 transition-all duration-500" />
 
               <div
-                className="relative flex items-center justify-center rounded-2xl border-4 border-slate-950 transition-all duration-500 bg-amber-400 text-slate-950 shadow-xl group-hover:scale-110 group-hover:rotate-3 active:scale-95 z-20"
+                className="relative flex items-center justify-center rounded-full border-4 border-slate-950 transition-all duration-500 bg-amber-400 text-slate-950 shadow-xl group-hover:scale-110 group-hover:rotate-3 active:scale-95 z-20"
                 style={{ width: 66, height: 66 }}
               >
-                <Film size={34} strokeWidth={2.5} />
+                <Search size={32} strokeWidth={3} />
               </div>
 
               {/* CURVED TEXT - FIXED TRUNCATION */}
@@ -254,12 +257,14 @@ export function TopNav({ user }: TopNavProps) {
                           <span className="font-bold">Topluluk</span>
                         </Link>
                         <div className="h-[1px] bg-white/5 my-1 mx-2" />
-                        <Link href="/api/auth/signout" className="flex items-center gap-3 px-4 py-3 text-sm text-rose-400 hover:bg-rose-500/10 transition group" onClick={() => setProfileMenuOpen(false)}>
-                          <div className="w-8 h-8 rounded-lg bg-rose-500/5 flex items-center justify-center group-hover:bg-rose-500/20 transition-colors">
-                            <List size={18} />
-                          </div>
-                          <span className="font-bold">Oturumu Kapat</span>
-                        </Link>
+                        <form action={handleSignOut}>
+                          <button type="submit" className="w-full flex items-center gap-3 px-4 py-3 text-sm text-rose-400 hover:bg-rose-500/10 transition group text-left">
+                            <div className="w-8 h-8 rounded-lg bg-rose-500/5 flex items-center justify-center group-hover:bg-rose-500/20 transition-colors">
+                              <LogOut size={18} />
+                            </div>
+                            <span className="font-bold">Oturumu Kapat</span>
+                          </button>
+                        </form>
                       </>
                     ) : (
                       <>

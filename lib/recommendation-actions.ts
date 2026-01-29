@@ -58,3 +58,30 @@ export async function recommendMedia(params: {
     revalidatePath("/feed");
     return { success: true, recommendation };
 }
+
+export async function getReceivedRecommendation(tmdbId: number) {
+    const session = await auth();
+    if (!session?.user?.id) return null;
+
+    const recommendation = await prisma.recommendation.findFirst({
+        where: {
+            receiverId: session.user.id,
+            media: {
+                tmdbId: tmdbId
+            }
+        },
+        include: {
+            sender: {
+                select: {
+                    id: true,
+                    name: true
+                }
+            }
+        },
+        orderBy: {
+            createdAt: "desc"
+        }
+    });
+
+    return recommendation;
+}

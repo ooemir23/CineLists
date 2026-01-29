@@ -18,14 +18,30 @@ type MediaActionsProps = {
     initialInWatchlist: boolean;
     initialStatus?: string | null;
     initialRating?: number | null;
+    initialRecommendation?: {
+        id: string;
+        name: string;
+    } | null;
+    isGuest?: boolean;
 };
 
-export function MediaActions({ tmdbId, type, title, posterPath, initialInWatchlist, initialStatus, initialRating }: MediaActionsProps) {
+export function MediaActions({
+    tmdbId,
+    type,
+    title,
+    posterPath,
+    initialInWatchlist,
+    initialStatus,
+    initialRating,
+    initialRecommendation,
+    isGuest
+}: MediaActionsProps) {
     const [inWatchlist, setInWatchlist] = useState(initialInWatchlist);
     const [isWatched, setIsWatched] = useState(initialStatus === "COMPLETED");
     const [showDetailsForm, setShowDetailsForm] = useState(false);
     const [isRecommendOpen, setIsRecommendOpen] = useState(false);
     const [userRating, setUserRating] = useState(initialRating || 0);
+    const [guestWarning, setGuestWarning] = useState<string | null>(null);
     const [isPending, startTransition] = useTransition();
     const router = useRouter();
     const formRef = useRef<HTMLDivElement>(null);
@@ -37,6 +53,11 @@ export function MediaActions({ tmdbId, type, title, posterPath, initialInWatchli
     }, [showDetailsForm]);
 
     const handleToggleWatchlist = () => {
+        if (isGuest) {
+            setGuestWarning("Listeye eklemek için kayıt olmalısın!");
+            setTimeout(() => setGuestWarning(null), 3000);
+            return;
+        }
         setInWatchlist((prev) => !prev);
         startTransition(async () => {
             const result = await toggleToWatch(tmdbId, type, title, posterPath);
@@ -45,6 +66,11 @@ export function MediaActions({ tmdbId, type, title, posterPath, initialInWatchli
     };
 
     const handleMarkWatched = () => {
+        if (isGuest) {
+            setGuestWarning("İzlendi işaretlemek için kayıt olmalısın!");
+            setTimeout(() => setGuestWarning(null), 3000);
+            return;
+        }
         // Optimistic update
         const newStatus = !isWatched;
         setIsWatched(newStatus);
@@ -131,12 +157,29 @@ export function MediaActions({ tmdbId, type, title, posterPath, initialInWatchli
                 </Link>
 
                 <button
-                    onClick={() => setIsRecommendOpen(true)}
+                    onClick={() => {
+                        if (isGuest) {
+                            setGuestWarning("Tavsiye etmek için kayıt olmalısın!");
+                            setTimeout(() => setGuestWarning(null), 3000);
+                            return;
+                        }
+                        setIsRecommendOpen(true);
+                    }}
                     className="p-3 bg-neutral-800 hover:bg-neutral-700 rounded-xl transition-colors border border-white/5 text-neutral-400 hover:text-white"
                 >
                     <Share2 className="w-5 h-5" />
                 </button>
             </div>
+
+            {guestWarning && (
+                <div className="bg-primary/10 border border-primary/20 text-primary px-4 py-2 rounded-xl text-xs font-bold animate-in slide-in-from-top-1 duration-300 flex items-center justify-between">
+                    <span>{guestWarning}</span>
+                    <div className="flex gap-2 ml-2">
+                        <Link href="/login" className="bg-white/10 text-white px-2 py-1 rounded-md hover:bg-white/20 transition-all scale-90 border border-white/10">Giriş Yap</Link>
+                        <Link href="/register" className="bg-primary text-white px-2 py-1 rounded-md hover:bg-primary/90 transition-all scale-90 shadow-lg shadow-primary/20">Kayıt Ol</Link>
+                    </div>
+                </div>
+            )}
 
             {isRecommendOpen && (
                 <RecommendModal
@@ -156,6 +199,8 @@ export function MediaActions({ tmdbId, type, title, posterPath, initialInWatchli
                         title={title}
                         posterPath={posterPath}
                         initialRating={userRating}
+                        initialRecommendation={initialRecommendation}
+                        isGuest={isGuest}
                         onClose={() => setShowDetailsForm(false)}
                         onSaveSuccess={() => {
                             // Success handling

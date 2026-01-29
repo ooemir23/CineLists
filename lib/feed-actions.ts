@@ -28,6 +28,13 @@ export type FeedActivity = {
         episodeNumber: number;
         title: string;
     } | null;
+    watchedWith?: string | null;
+    recommendedByText?: string | null;
+    recommendedBy?: {
+        id: string;
+        name: string | null;
+    } | null;
+    platform?: string | null;
     episodeRange?: {
         seasonNumber: number;
         fromEpisode: number;
@@ -77,6 +84,12 @@ export async function getFriendsActivity(): Promise<FeedActivity[]> {
                     seasonNumber: true,
                     episodeNumber: true,
                     title: true,
+                }
+            },
+            recommendedBy: {
+                select: {
+                    id: true,
+                    name: true,
                 }
             },
             _count: {

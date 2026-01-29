@@ -17,6 +17,41 @@ export default async function ProfilePage() {
         redirect("/login");
     }
 
+    const isGuest = (session.user as any).isGuest;
+
+    if (isGuest) {
+        return (
+            <div className="container mx-auto px-6 py-20 min-h-[70vh] flex items-center justify-center">
+                <div className="max-w-md w-full bg-neutral-900/50 backdrop-blur-xl border border-white/10 p-10 rounded-[3rem] text-center space-y-8 shadow-2xl">
+                    <div className="flex justify-center">
+                        <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center group">
+                            <Lock className="w-10 h-10 text-primary animate-bounce shadow-lg" />
+                        </div>
+                    </div>
+                    <div className="space-y-3">
+                        <h1 className="text-3xl font-black text-white tracking-tight">Profiline Eriş</h1>
+                        <p className="text-neutral-400 font-medium">Kendi profilini oluşturmak, izleme listeni yönetmek ve arkadaşlarınla etkileşime geçmek için hemen giriş yap!</p>
+                    </div>
+                    <div className="flex flex-col gap-4 pt-4">
+                        <Link
+                            href="/login"
+                            className="w-full bg-primary text-white font-black py-4 rounded-2xl hover:bg-primary/90 transition-all active:scale-95 shadow-xl shadow-primary/20 flex items-center justify-center gap-2"
+                        >
+                            Giriş Yap
+                        </Link>
+                        <Link
+                            href="/register"
+                            className="w-full bg-white/5 text-white font-black py-4 rounded-2xl hover:bg-white/10 transition-all active:scale-95 border border-white/10 flex items-center justify-center gap-2"
+                        >
+                            Kayıt Ol
+                        </Link>
+                    </div>
+                    <p className="text-[10px] font-bold text-neutral-600 uppercase tracking-[0.2em]">Misafir modu ile içerikleri keşfetmeye devam edebilirsin.</p>
+                </div>
+            </div>
+        );
+    }
+
     // Fetch user stats & data
     const [user, stats, movieGenres, tvGenres] = await Promise.all([
         prisma.user.findUnique({

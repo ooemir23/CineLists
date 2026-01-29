@@ -1,4 +1,5 @@
 import { tmdb } from "@/lib/tmdb";
+import Link from "next/link";
 import { Activity } from "lucide-react";
 import { FriendsActivity } from "./friends-activity";
 import { HeroSlider } from "./hero-slider";
@@ -48,15 +49,15 @@ export async function HomeTopSection() {
             {/* Right Column: Friends Activity (Designed for Home Page) */}
             <div className="lg:w-[40%] xl:w-[35%] flex flex-col gap-6">
                 <div className="flex items-center justify-center px-2">
-                    <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-primary/20 rounded-2xl flex items-center justify-center border border-primary/20">
-                            <Activity className="w-6 h-6 text-primary" />
+                    <Link href="/feed" className="flex items-center gap-3 group/title cursor-pointer transition-transform hover:scale-105">
+                        <div className="w-10 h-10 bg-primary/20 rounded-2xl flex items-center justify-center border border-primary/20 group-hover/title:bg-primary group-hover/title:text-black transition-colors">
+                            <Activity className="w-6 h-6 text-primary group-hover/title:text-black transition-colors" />
                         </div>
                         <div>
-                            <h3 className="text-xl font-black text-white tracking-tight uppercase">Akış</h3>
-                            <p className="text-xs text-neutral-500 font-bold tracking-tight">Arkadaşların neler izliyor?</p>
+                            <h3 className="text-xl font-black text-white tracking-tight uppercase group-hover/title:text-primary transition-colors">Akış</h3>
+                            <p className="text-xs text-neutral-500 font-bold tracking-tight group-hover/title:text-neutral-400">Arkadaşların neler izliyor?</p>
                         </div>
-                    </div>
+                    </Link>
                 </div>
 
                 {/* Integrated Vertical Friends Feed */}

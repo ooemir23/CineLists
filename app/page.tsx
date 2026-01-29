@@ -1,9 +1,7 @@
 import Link from "next/link";
 import { tmdb } from "@/lib/tmdb";
 import { MediaRow } from "@/components/media/media-row";
-import { MediaFilter } from "@/components/home/media-filter";
 import { Play, Info, ChevronRight } from "lucide-react";
-import { HomeSearchBar } from "@/components/home/home-search-bar";
 import { PersonalizedRecommendations } from "@/components/home/personalized-recommendations";
 import { getPersonalizedRecommendations } from "@/lib/recommendations";
 import { FriendsActivity } from "@/components/home/friends-activity";
@@ -77,7 +75,10 @@ export default async function Home({ searchParams }: HomeProps) {
 
         // Combine and sort by popularity
         filterResults = {
-          results: [...movieResults.results, ...tvResults.results].sort((a, b) =>
+          results: [
+            ...movieResults.results.map((m: any) => ({ ...m, media_type: "movie" })),
+            ...tvResults.results.map((t: any) => ({ ...t, media_type: "tv" }))
+          ].sort((a, b) =>
             (b.popularity || 0) - (a.popularity || 0)
           ),
           total_pages: Math.max(movieResults.total_pages, tvResults.total_pages),
@@ -95,7 +96,11 @@ export default async function Home({ searchParams }: HomeProps) {
           params["watch_region"] = "TR";
         }
         if (genre) params["with_genres"] = genre;
-        filterResults = await tmdb.discover(type as "movie" | "tv", params);
+        const data = await tmdb.discover(type as "movie" | "tv", params);
+        filterResults = {
+          ...data,
+          results: data.results.map((item: any) => ({ ...item, media_type: type }))
+        };
       }
     }
   } else {
@@ -136,16 +141,12 @@ export default async function Home({ searchParams }: HomeProps) {
         </div>
       )}
 
-      {/* Filter Section - Compact & Sticky Support if needed */}
-      <div className="relative z-30 max-w-[1600px] mx-auto px-4 sm:px-6 md:px-8 lg:px-12 mb-8 md:mb-12">
-        <MediaFilter />
-      </div>
 
       {/* Main Content Area */}
       <div className="max-w-[1600px] mx-auto px-4 sm:px-6 md:px-8 lg:px-12 space-y-12 md:space-y-16">
 
         {isFiltering ? (
-          <div className="bg-white/5 rounded-3xl p-6 border border-white/10">
+          <div id="search-results" className="bg-white/5 rounded-3xl p-6 border border-white/10 scroll-mt-24">
             <MediaRow
               title={q ? `"${q}" için Arama Sonuçları` : "Arama Sonuçları"}
               items={(filterResults?.results || []).slice(0, 20)}

@@ -2,7 +2,7 @@ import Link from "next/link";
 import { ChevronRight as ArrowRight } from "lucide-react";
 import { MediaCard } from "./media-card";
 import { MediaRowClient } from "./media-row-client";
-import { getUserRatingsBulk } from "@/lib/rating-actions";
+import { getUserRatingsBulk, getCommunityRatingsBulk } from "@/lib/rating-actions";
 import { cn } from "@/lib/utils";
 
 type MediaItem = {
@@ -28,8 +28,9 @@ type MediaRowProps = {
 
 export async function MediaRow({ title, items, type, href }: MediaRowProps) {
     const tmdbIds = items.map(i => i.id);
-    const [userRatingsMap, metadataMap] = await Promise.all([
+    const [userRatingsMap, communityRatingsMap, metadataMap] = await Promise.all([
         getUserRatingsBulk(tmdbIds),
+        getCommunityRatingsBulk(tmdbIds),
         import("@/lib/activity-actions").then(m => m.getMediaMetadataBulk(items.map(i => ({
             id: i.id,
             type: (i.media_type === "tv" || i.media_type === "movie" ? i.media_type : type) as "movie" | "tv"
@@ -59,6 +60,7 @@ export async function MediaRow({ title, items, type, href }: MediaRowProps) {
                         posterPath={item.poster_path}
                         voteAverage={item.vote_average}
                         userRating={userRatingsMap[item.id]}
+                        communityRating={communityRatingsMap[item.id]}
                         releaseDate={item.release_date || item.first_air_date}
                         runtime={item.runtime || metadataMap[item.id]?.runtime || undefined}
                         type={(item.media_type === "tv" || item.media_type === "movie" ? item.media_type : type) as "movie" | "tv"}

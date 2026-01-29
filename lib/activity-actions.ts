@@ -11,6 +11,10 @@ export async function toggleWatchedStatus(mediaId: number, type: "movie" | "tv",
         return { error: "Giriş yapmalısınız" };
     }
 
+    if ((session.user as any).isGuest) {
+        return { success: true, isWatched: true };
+    }
+
     const dbUser = await prisma.user.findUnique({
         where: { id: session.user.id },
     });
@@ -64,21 +68,15 @@ export async function toggleWatchedStatus(mediaId: number, type: "movie" | "tv",
             },
         });
 
-        // Optional: Remove the last 'WATCHED' activity to keep feed clean
-        const lastActivity = await prisma.activity.findFirst({
+        // Remove major WATCHED activities (where episodeId is null) to keep feed clean
+        await prisma.activity.deleteMany({
             where: {
                 userId: session.user.id,
                 mediaId: media.id,
                 type: "WATCHED",
+                episodeId: null
             },
-            orderBy: { createdAt: "desc" },
         });
-
-        if (lastActivity) {
-            await prisma.activity.delete({
-                where: { id: lastActivity.id },
-            });
-        }
 
         revalidatePath("/watchlist");
         revalidatePath("/feed");
@@ -191,6 +189,10 @@ export async function addComment(mediaId: number, type: "movie" | "tv", content:
         return { error: "Giriş yapmalısınız" };
     }
 
+    if ((session.user as any).isGuest) {
+        return { success: true };
+    }
+
     let media = await prisma.mediaItem.findUnique({
         where: { tmdbId: mediaId },
     });
@@ -243,6 +245,10 @@ export async function saveWatchDetails(params: {
     const session = await auth();
     if (!session?.user?.id) {
         return { error: "Giriş yapmalısınız" };
+    }
+
+    if ((session.user as any).isGuest) {
+        return { success: true };
     }
 
     const { tmdbId, type, title, posterPath, rating, watchedAt, watchedWith, recommendedById, recommendedByText, review } = params;

@@ -1,3 +1,4 @@
+import { auth } from "@/auth";
 import Link from "next/link";
 import Image from "next/image";
 import { notFound } from "next/navigation";
@@ -14,6 +15,7 @@ import { RatingDisplay } from "@/components/media/rating-display";
 import SeasonList from "@/components/media/season-list";
 import { CommentsSection } from "@/components/media/comments";
 import { GenreList } from "@/components/media/genre-list";
+import { getReceivedRecommendation } from "@/lib/recommendation-actions";
 import { Star, Calendar, Clock, ArrowLeft, Play, Info, Tv } from "lucide-react";
 import { ExpandableImage } from "@/components/ui/expandable-image";
 import { Metadata } from "next";
@@ -56,12 +58,24 @@ type Props = {
 export default async function DetailsPage(props: Props) {
     const params = await props.params;
     const { type, id } = params;
+    const session = await auth();
+    const isGuest = (session?.user as any)?.isGuest;
 
     if (type !== "movie" && type !== "tv") {
         notFound();
     }
 
-    const [data, inWatchlist, watchStatus, watchedEpisodes, providersData, userRating, friendsRatings, dbMedia] = await Promise.all([
+    const [
+        data,
+        inWatchlist,
+        watchStatus,
+        watchedEpisodes,
+        providersData,
+        userRating,
+        friendsRatings,
+        activeRecommendation,
+        dbMedia
+    ] = await Promise.all([
         tmdb.getDetails(type as "movie" | "tv", id).catch(() => null),
         getToWatchStatus(parseInt(id)),
         getWatchStatus(parseInt(id)),
@@ -75,6 +89,7 @@ export default async function DetailsPage(props: Props) {
             const { getFriendsRatings } = await import("@/lib/rating-actions");
             return getFriendsRatings(parseInt(id), type as "movie" | "tv");
         })(),
+        getReceivedRecommendation(parseInt(id)),
         prisma.mediaItem.findUnique({
             where: { tmdbId: parseInt(id) },
             include: {
@@ -85,11 +100,11 @@ export default async function DetailsPage(props: Props) {
                 }
             }
         })
-    ]);
+    ]) as [any, boolean, any, any, any, number | null, any[], any, any];
 
     if (!data) notFound();
 
-    const comments = dbMedia?.activities.map(a => ({
+    const comments = dbMedia?.activities.map((a: any) => ({
         id: a.id,
         content: a.review || "",
         createdAt: a.createdAt,
@@ -215,6 +230,7 @@ export default async function DetailsPage(props: Props) {
                             <WatchProviders
                                 providers={trProviders}
                                 isGlobal={isGlobal}
+                                isGuest={isGuest}
                             />
                             <GenreList genres={data.genres} type={type as "movie" | "tv"} />
                         </div>
@@ -229,6 +245,11 @@ export default async function DetailsPage(props: Props) {
                                 initialInWatchlist={inWatchlist}
                                 initialStatus={watchStatus}
                                 initialRating={userRating}
+                                initialRecommendation={activeRecommendation?.sender ? {
+                                    id: activeRecommendation.sender.id,
+                                    name: activeRecommendation.sender.name || "Bilinmiyor"
+                                } : undefined}
+                                isGuest={isGuest}
                             />
 
                         </div>

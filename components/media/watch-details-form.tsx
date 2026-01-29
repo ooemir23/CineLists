@@ -18,6 +18,11 @@ type WatchDetailsFormProps = {
     title: string;
     posterPath: string | null;
     initialRating?: number | null;
+    initialRecommendation?: {
+        id: string;
+        name: string;
+    } | null;
+    isGuest?: boolean;
     onClose: () => void;
     onSaveSuccess: () => void;
 };
@@ -28,6 +33,8 @@ export function WatchDetailsForm({
     title,
     posterPath,
     initialRating,
+    initialRecommendation,
+    isGuest,
     onClose,
     onSaveSuccess
 }: WatchDetailsFormProps) {
@@ -41,7 +48,9 @@ export function WatchDetailsForm({
     const [isPending, startTransition] = useTransition();
     const [isLoadingFriends, setIsLoadingFriends] = useState(true);
     const [customPerson, setCustomPerson] = useState("");
-    const [selectedRecommenders, setSelectedRecommenders] = useState<string[]>([]);
+    const [selectedRecommenders, setSelectedRecommenders] = useState<string[]>(
+        initialRecommendation ? [initialRecommendation.name] : []
+    );
     const [customRecommender, setCustomRecommender] = useState("");
 
     useEffect(() => {
@@ -59,10 +68,24 @@ export function WatchDetailsForm({
     }, []);
 
     const handleSave = () => {
+        if (isGuest) {
+            alert("Detayları kaydetmek için lütfen giriş yapın veya kayıt olun.");
+            return;
+        }
         startTransition(async () => {
             // Find first real friend ID for notifications
-            const firstFriend = selectedRecommenders.find(r => friends.find(f => f.name === r));
-            const firstFriendId = firstFriend ? friends.find(f => f.name === firstFriend)?.id : undefined;
+            const firstFriendName = selectedRecommenders[0];
+            const firstFriend = friends.find(f => f.name === firstFriendName);
+
+            // Priority:
+            // 1. A friend from the list
+            // 2. The initial recommendation sender
+            // 3. Fallback to undefined
+            let firstFriendId = firstFriend?.id;
+
+            if (!firstFriendId && initialRecommendation && initialRecommendation.name === firstFriendName) {
+                firstFriendId = initialRecommendation.id;
+            }
 
             const result = await saveWatchDetails({
                 tmdbId,

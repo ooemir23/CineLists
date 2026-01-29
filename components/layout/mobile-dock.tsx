@@ -12,8 +12,11 @@ import {
   Check,
   Bookmark,
   BarChart3,
-  Bell
+  Bell,
+  Search,
+  LogOut
 } from "lucide-react";
+import { handleSignOut } from "@/lib/auth-actions";
 
 const dockBg = 'bg-slate-900/90 backdrop-blur-xl border-t border-white/10';
 const activeColor = 'text-amber-400';
@@ -87,7 +90,7 @@ export function MobileDock({ user }: MobileDockProps) {
             className={`flex items-center justify-center rounded-full border-4 border-slate-900 transition-all duration-200 bg-amber-400 text-slate-950 shadow-lg hover:scale-110 shadow-lg`}
             style={{ width: 64, height: 64, marginTop: -28 }}
           >
-            <Film size={32} />
+            <Search size={30} strokeWidth={3} />
           </Link>
         </div>
 
@@ -139,12 +142,14 @@ export function MobileDock({ user }: MobileDockProps) {
                   <span className="font-bold">Bildirimler</span>
                 </Link>
                 <div className="h-[1px] bg-white/5 my-1" />
-                <Link href="/api/auth/signout" className="flex items-center gap-3 px-4 py-3 text-sm text-rose-400 hover:bg-rose-500/10 transition" onClick={() => setProfileMenuOpen(false)}>
-                  <div className="w-8 h-8 rounded-lg bg-rose-500/5 flex items-center justify-center">
-                    <List size={18} />
-                  </div>
-                  <span className="font-bold">Oturumu Kapat</span>
-                </Link>
+                <form action={handleSignOut}>
+                  <button type="submit" className="w-full flex items-center gap-3 px-4 py-3 text-sm text-rose-400 hover:bg-rose-500/10 transition">
+                    <div className="w-8 h-8 rounded-lg bg-rose-500/5 flex items-center justify-center">
+                      <List size={18} />
+                    </div>
+                    <span className="font-bold">Oturumu Kapat</span>
+                  </button>
+                </form>
               </>
             ) : (
               <>

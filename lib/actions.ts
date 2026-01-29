@@ -11,6 +11,10 @@ export async function toggleToWatch(mediaId: number, type: "movie" | "tv" | "per
         return { error: "Giriş yapmalısınız" };
     }
 
+    if ((session.user as any).isGuest) {
+        return { success: true, inWatchlist: true };
+    }
+
     // Verify user exists in DB
     const dbUser = await prisma.user.findUnique({
         where: { id: session.user.id },
@@ -97,6 +101,16 @@ export async function toggleToWatch(mediaId: number, type: "movie" | "tv" | "per
         if (watched) {
             await prisma.watched.delete({
                 where: { id: watched.id },
+            });
+
+            // Also remove WATCHED activities for this show/movie
+            await prisma.activity.deleteMany({
+                where: {
+                    userId: session.user.id,
+                    mediaId: media.id,
+                    type: "WATCHED",
+                    episodeId: null
+                }
             });
         }
 

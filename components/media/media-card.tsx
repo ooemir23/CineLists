@@ -2,11 +2,12 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { Star, Send } from "lucide-react";
+import { Star, Send, Globe, X, User } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { RecommendModal } from "./recommend-modal";
-import { ExpandableImage } from "@/components/ui/expandable-image";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { getAllMediaRatings } from "@/lib/rating-actions";
+import { createPortal } from "react-dom";
 
 type MediaCardProps = {
     id: number;
@@ -15,6 +16,7 @@ type MediaCardProps = {
     posterPath: string | null;
     voteAverage: number;
     userRating?: number;
+    communityRating?: { average: number; count: number };
     runtime?: number;
     releaseDate?: string;
     type: "movie" | "tv" | "person";
@@ -33,111 +35,173 @@ const formatRuntime = (minutes: number): string => {
     return `${mins}dk`;
 };
 
-export function MediaCard({ id, title, originalTitle, posterPath, voteAverage, userRating, runtime, releaseDate, type, fullWidth = false }: MediaCardProps) {
+// Portal for the popup
+const RatingPortal = ({ children }: { children: React.ReactNode }) => {
+    const [mounted, setMounted] = useState(false);
+    useEffect(() => {
+        setMounted(true);
+        return () => setMounted(false);
+    }, []);
+    if (!mounted) return null;
+    return createPortal(children, document.body);
+};
+
+export function MediaCard({
+    id,
+    title,
+    originalTitle,
+    posterPath,
+    voteAverage,
+    userRating,
+    communityRating,
+    runtime,
+    releaseDate,
+    type,
+    fullWidth = false
+}: MediaCardProps) {
     const [isRecommendOpen, setIsRecommendOpen] = useState(false);
+    const [isRatingsPopupOpen, setIsRatingsPopupOpen] = useState(false);
+    const [detailedRatings, setDetailedRatings] = useState<any[]>([]);
+    const [loadingRatings, setLoadingRatings] = useState(false);
+
+    const handleCommunityClick = async (e: React.MouseEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+
+        setIsRatingsPopupOpen(true);
+        if (detailedRatings.length === 0) {
+            setLoadingRatings(true);
+            const ratings = await getAllMediaRatings(id);
+            setDetailedRatings(ratings);
+            setLoadingRatings(false);
+        }
+    };
 
     if (!posterPath && type !== "person") return null;
 
     return (
-        <Link
-            href={`/${type}/${id}`}
-            className={cn(
-                "group relative flex flex-col gap-3 transition-all duration-300 flex-none hover:z-10",
-                fullWidth ? "w-full" : "w-36 md:w-44 lg:w-48"
-            )}
-        >
-            <div className={cn(
-                "relative aspect-[2/3] rounded-2xl overflow-hidden bg-slate-800 shadow-xl transition-all duration-500 group-hover:scale-[1.03] group-hover:shadow-2xl group-hover:shadow-primary/20 group-hover:ring-1 group-hover:ring-primary/50",
-                type === "person" && "aspect-square rounded-full border-4 border-white/5 group-hover:border-primary/50"
-            )}>
-                {posterPath ? (
-                    <Image
-                        src={`${IMAGE_BASE_URL}${posterPath}`}
-                        alt={title}
-                        fill
-                        className="object-cover transition-all duration-500 group-hover:scale-110 group-hover:rotate-1"
-                        sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 20vw"
-                    />
-                ) : (
-                    <div className="w-full h-full flex items-center justify-center bg-slate-900">
-                        <span className="text-4xl">👤</span>
-                    </div>
+        <>
+            <Link
+                href={`/${type}/${id}`}
+                className={cn(
+                    "group relative flex flex-col gap-3 transition-all duration-500 ease-out flex-none hover:z-40 hover:scale-110",
+                    fullWidth ? "w-full" : "w-36 md:w-44 lg:w-48"
                 )}
-
-                {/* Overlay Gradient on Hover */}
-                {type !== "person" && (
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex items-end p-4">
-                        <span className="text-white font-black text-xs bg-primary px-4 py-2 rounded-full shadow-lg translate-y-4 group-hover:translate-y-0 transition-transform duration-500 uppercase tracking-wider">
-                            İncele
-                        </span>
-
-                        {/* Recommend Button */}
-                        <div className="absolute top-3 left-3">
-                            <button
-                                onClick={(e) => {
-                                    e.preventDefault();
-                                    e.stopPropagation();
-                                    setIsRecommendOpen(true);
-                                }}
-                                className="w-8 h-8 bg-white/10 backdrop-blur-md rounded-xl flex items-center justify-center border border-white/10 text-white opacity-0 group-hover:opacity-100 transition-all hover:bg-primary hover:border-primary active:scale-90"
-                                title="Tavsiye Et"
-                            >
-                                <Send className="w-4 h-4" />
-                            </button>
-                        </div>
-                    </div>
-                )}
-
-                {/* Rating Overlay */}
-                {type !== "person" && (
-                    <div className="absolute top-3 right-3 flex flex-col gap-2">
-                        {voteAverage !== undefined && voteAverage > 0 && (
-                            <div className="bg-black/80 backdrop-blur-xl px-2 py-1 rounded-xl flex items-center gap-1.5 text-xs font-black text-yellow-500 border border-white/10 group-hover:scale-110 transition-transform">
-                                <Star className="w-3.5 h-3.5 fill-current" />
-                                {voteAverage.toFixed(1)}
+            >
+                <div className={cn(
+                    "relative aspect-[2/3] rounded-2xl bg-slate-800 shadow-xl transition-all duration-500 group-hover:scale-[1.03] group-hover:shadow-2xl",
+                    type === "movie"
+                        ? "group-hover:ring-2 group-hover:ring-amber-500/50 group-hover:shadow-amber-500/20"
+                        : type === "tv"
+                            ? "group-hover:ring-2 group-hover:ring-blue-500/50 group-hover:shadow-blue-500/20"
+                            : "group-hover:ring-2 group-hover:ring-primary/50",
+                    type === "person" && "aspect-square rounded-full border-4 border-white/5 group-hover:border-primary/50"
+                )}>
+                    {/* Visual Content Wrapper with overflow-hidden */}
+                    <div className="absolute inset-0 rounded-2xl overflow-hidden z-0">
+                        {posterPath ? (
+                            <Image
+                                src={`${IMAGE_BASE_URL}${posterPath}`}
+                                alt={title}
+                                fill
+                                className="object-cover transition-all duration-500 group-hover:scale-110 group-hover:rotate-1"
+                                sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 20vw"
+                            />
+                        ) : (
+                            <div className="w-full h-full flex items-center justify-center bg-slate-900">
+                                <span className="text-4xl">👤</span>
                             </div>
                         )}
-                        {userRating && (
-                            <div className="bg-primary/90 backdrop-blur-xl px-2 py-1 rounded-xl flex items-center gap-1.5 text-xs font-black text-white border border-white/20 group-hover:scale-110 transition-transform">
-                                <Star className="w-3.5 h-3.5 fill-current" />
-                                {userRating}
+
+                        {/* Overlay Gradient on Hover */}
+                        {type !== "person" && (
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex items-end p-4 z-10">
+                                {/* Recommend Button */}
+                                <div className="absolute top-3 left-3">
+                                    <button
+                                        onClick={(e) => {
+                                            e.preventDefault();
+                                            e.stopPropagation();
+                                            setIsRecommendOpen(true);
+                                        }}
+                                        className="w-8 h-8 bg-white/10 backdrop-blur-md rounded-xl flex items-center justify-center border border-white/10 text-white opacity-0 group-hover:opacity-100 transition-all hover:bg-primary hover:border-primary active:scale-90"
+                                        title="Tavsiye Et"
+                                    >
+                                        <Send className="w-4 h-4" />
+                                    </button>
+                                </div>
                             </div>
                         )}
                     </div>
-                )}
-            </div>
+                </div>
 
-            <div className={cn(
-                "flex flex-col gap-1 px-1",
-                type === "person" && "items-center text-center"
-            )}>
-                <h3 className="font-black text-base text-white truncate group-hover:text-primary transition-colors tracking-tight">
-                    {title}
-                </h3>
-                {type === "person" ? (
-                    <span className="text-xs text-primary/80 font-bold uppercase tracking-widest">Sanatçı</span>
-                ) : (
-                    <>
-                        {originalTitle && originalTitle !== title && (
-                            <span className="text-[11px] text-neutral-500 truncate italic font-medium">
-                                {originalTitle}
+                <div className={cn(
+                    "flex flex-col gap-1 px-1",
+                    type === "person" && "items-center text-center"
+                )}>
+                    {/* Label and Ratings Row */}
+                    {type !== "person" && (
+                        <div className="flex items-center justify-between gap-2 overflow-hidden">
+                            <span className={cn(
+                                "text-[9px] font-black uppercase tracking-[0.15em] shrink-0",
+                                type === "movie" ? "text-amber-500" : "text-blue-500"
+                            )}>
+                                {type === "movie" ? "Film" : "Dizi"}
                             </span>
-                        )}
-                        <div className="flex items-center gap-2 mt-1">
+
+                            <div className="flex items-center gap-2 flex-1 justify-end min-w-0">
+                                {/* TMDB Global Rating */}
+                                <div className="flex items-center gap-1 bg-white/5 px-1.5 py-0.5 rounded-md border border-white/5 shrink-0" title="Dünya Geneli Puanı (TMDB)">
+                                    <Globe className="w-2.5 h-2.5 text-blue-400" />
+                                    <span className="text-[10px] font-black text-white">{voteAverage?.toFixed(1) || "0"}</span>
+                                </div>
+
+                                {/* Community Rating */}
+                                <button
+                                    onClick={handleCommunityClick}
+                                    className={cn(
+                                        "flex items-center gap-1 px-1.5 py-0.5 rounded-md border transition-all shrink-0 hover:scale-110 active:scale-95",
+                                        communityRating && communityRating.count > 0
+                                            ? "bg-primary/20 border-primary/30 text-primary"
+                                            : "bg-white/5 border-white/5 text-neutral-500"
+                                    )}
+                                    title="Topluluk Puanı"
+                                >
+                                    <Star className={cn("w-2.5 h-2.5", communityRating && communityRating.count > 0 ? "fill-current" : "text-neutral-500")} />
+                                    <span className="text-[10px] font-black">
+                                        {communityRating?.average || "0"}
+                                    </span>
+                                </button>
+                            </div>
+                        </div>
+                    )}
+
+                    <h3 className={cn(
+                        "font-black text-white truncate group-hover:text-primary transition-colors tracking-tight",
+                        type === "person" ? "text-[10px] md:text-xs" : "text-base"
+                    )}>
+                        {title}
+                    </h3>
+                    {type === "person" ? (
+                        <span className="text-xs text-primary/80 font-bold uppercase tracking-widest">Sanatçı</span>
+                    ) : (
+                        <div className="flex items-center gap-2 mt-0.5">
                             {releaseDate && (
-                                <span className="text-xs font-bold text-neutral-400">
+                                <span className="text-[11px] font-bold text-neutral-500">
                                     {new Date(releaseDate).getFullYear()}
                                 </span>
                             )}
                             {runtime && (
-                                <span className="text-xs font-medium text-neutral-500">
+                                <span className="text-[11px] font-medium text-neutral-500">
                                     • {formatRuntime(runtime)}
                                 </span>
                             )}
                         </div>
-                    </>
-                )}
-            </div>
+                    )}
+                </div>
+            </Link>
+
+            {/* Recommend Modal */}
             {isRecommendOpen && (
                 <RecommendModal
                     mediaId={id}
@@ -147,6 +211,98 @@ export function MediaCard({ id, title, originalTitle, posterPath, voteAverage, u
                     onClose={() => setIsRecommendOpen(false)}
                 />
             )}
-        </Link>
+
+            {/* Ratings View Popup */}
+            {isRatingsPopupOpen && (
+                <RatingPortal>
+                    <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
+                        <div
+                            className="absolute inset-0 bg-black/80 backdrop-blur-sm animate-in fade-in duration-300"
+                            onClick={() => setIsRatingsPopupOpen(false)}
+                        />
+                        <div className="relative w-full max-w-sm bg-[#1A202C] border border-white/10 rounded-3xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+                            {/* Header */}
+                            <div className="p-5 border-b border-white/5 bg-white/5 flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-10 h-10 bg-primary/20 rounded-2xl flex items-center justify-center border border-primary/20">
+                                        <Star className="w-5 h-5 text-primary fill-current" />
+                                    </div>
+                                    <div>
+                                        <h3 className="text-lg font-black text-white uppercase tracking-tight">Puanlar</h3>
+                                        <p className="text-[10px] text-neutral-500 font-bold uppercase tracking-wider">{title}</p>
+                                    </div>
+                                </div>
+                                <button
+                                    onClick={() => setIsRatingsPopupOpen(false)}
+                                    className="p-2 hover:bg-white/10 rounded-xl transition-colors"
+                                >
+                                    <X className="w-5 h-5 text-neutral-400" />
+                                </button>
+                            </div>
+
+                            {/* Ratings List */}
+                            <div className="p-4 max-h-[60vh] overflow-y-auto custom-scrollbar">
+                                {loadingRatings ? (
+                                    <div className="flex flex-col items-center justify-center py-10 gap-4">
+                                        <div className="w-8 h-8 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
+                                        <p className="text-xs font-bold text-neutral-500 uppercase tracking-widest">Yükleniyor...</p>
+                                    </div>
+                                ) : detailedRatings.length > 0 ? (
+                                    <div className="space-y-3">
+                                        {detailedRatings.map((r) => (
+                                            <Link
+                                                key={r.userId}
+                                                href={`/profile/${r.username || r.userId}`}
+                                                className="flex items-center justify-between p-3 rounded-2xl bg-white/5 border border-white/5 hover:bg-white/10 hover:border-white/10 transition-all group"
+                                                onClick={() => setIsRatingsPopupOpen(false)}
+                                            >
+                                                <div className="flex items-center gap-3">
+                                                    <div className="relative w-10 h-10 rounded-xl overflow-hidden bg-neutral-800 border border-white/10 group-hover:border-primary/50 transition-colors">
+                                                        {r.userImage ? (
+                                                            <Image src={r.userImage} alt={r.userName} fill className="object-cover" />
+                                                        ) : (
+                                                            <div className="w-full h-full flex items-center justify-center text-neutral-600">
+                                                                <User className="w-5 h-5" />
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                    <div>
+                                                        <p className="text-sm font-black text-white group-hover:text-primary transition-colors truncate max-w-[150px]">
+                                                            {r.userName}
+                                                        </p>
+                                                        <p className="text-[10px] text-neutral-500 font-bold">@{r.username || "user"}</p>
+                                                    </div>
+                                                </div>
+                                                <div className="bg-primary px-3 py-1.5 rounded-xl flex items-center gap-1.5 shadow-lg shadow-primary/20">
+                                                    <Star className="w-3.5 h-3.5 text-white fill-current" />
+                                                    <span className="text-sm font-black text-white">{r.rating}</span>
+                                                </div>
+                                            </Link>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <div className="flex flex-col items-center justify-center py-10 text-center gap-4">
+                                        <div className="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center border border-white/10">
+                                            <Star className="w-8 h-8 text-neutral-700" />
+                                        </div>
+                                        <p className="text-sm font-bold text-neutral-500 uppercase tracking-wider">Henüz puan verilmemiş</p>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Footer Information */}
+                            {detailedRatings.length > 0 && (
+                                <div className="p-4 bg-white/5 border-t border-white/5">
+                                    <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-widest text-neutral-500 px-1">
+                                        <span>Toplam Değerlendirme</span>
+                                        <span className="text-primary">{detailedRatings.length}</span>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </RatingPortal>
+            )}
+        </>
     );
 }

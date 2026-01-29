@@ -14,9 +14,13 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    const data: any = await tmdb.searchMulti(query);
-    // Filter to include only movies, tv shows, and people
-    const results = (data.results || []).filter((item: any) =>
+    const [tmdbData, users]: [any, any[]] = await Promise.all([
+      tmdb.searchMulti(query),
+      searchUsers(query)
+    ]);
+
+    // Format TMDB results
+    const tmdbResults = (tmdbData.results || []).filter((item: any) =>
       ["movie", "tv", "person"].includes(item.media_type)
     ).map((item: any) => ({
       id: item.id,
@@ -28,7 +32,19 @@ export async function GET(req: NextRequest) {
       year: (item.release_date || item.first_air_date)?.split("-")[0] || ""
     }));
 
-    return NextResponse.json(results);
+    // Format User results
+    const userResults = users.map(user => ({
+      id: user.id,
+      name: user.name || "Kullanıcı",
+      type: "user",
+      image: user.image,
+      year: user.followersCount ? `${user.followersCount} Takipçi` : ""
+    }));
+
+    // Combine results
+    const combinedResults = [...tmdbResults, ...userResults];
+
+    return NextResponse.json(combinedResults);
   } catch (error) {
     console.error("Search API Error:", error);
     return NextResponse.json([]);

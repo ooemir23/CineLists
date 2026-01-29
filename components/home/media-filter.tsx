@@ -61,60 +61,15 @@ export function MediaFilter() {
     const [showGenreDropdown, setShowGenreDropdown] = useState(false);
     const [showCountryDropdown, setShowCountryDropdown] = useState(false);
     const [showAllProviders, setShowAllProviders] = useState(false);
+    const [lastFilterTime, setLastFilterTime] = useState(0);
 
-    // Search suggestions
-    const [suggestions, setSuggestions] = useState<any[]>([]);
-    const [showSuggestions, setShowSuggestions] = useState(false);
-    const [loadingSuggestions, setLoadingSuggestions] = useState(false);
 
     // Dynamic data from TMDB
     const [genres, setGenres] = useState<{ id: number; name: string }[]>([]);
     const [providers, setProviders] = useState<{ id: string; name: string; logo: string }[]>([]);
     const [loading, setLoading] = useState(true);
 
-    // Fetch search suggestions
-    useEffect(() => {
-        const fetchSuggestions = async () => {
-            if (!query || query.length < 2) {
-                setSuggestions([]);
-                setShowSuggestions(false);
-                return;
-            }
 
-            setLoadingSuggestions(true);
-            try {
-                const response = await fetch(`/api/search-suggest?q=${encodeURIComponent(query)}`);
-                const data = await response.json();
-                setSuggestions(data.results?.slice(0, 5) || []);
-                setShowSuggestions(true);
-            } catch (error) {
-                console.error("Error fetching suggestions:", error);
-                setSuggestions([]);
-            } finally {
-                setLoadingSuggestions(false);
-            }
-        };
-
-        const debounce = setTimeout(fetchSuggestions, 300);
-        return () => clearTimeout(debounce);
-    }, [query]);
-
-    // Close suggestions when clicking outside
-    useEffect(() => {
-        const handleClickOutside = (e: MouseEvent) => {
-            if (
-                searchInputRef.current &&
-                !searchInputRef.current.contains(e.target as Node) &&
-                suggestionsRef.current &&
-                !suggestionsRef.current.contains(e.target as Node)
-            ) {
-                setShowSuggestions(false);
-            }
-        };
-
-        document.addEventListener("mousedown", handleClickOutside);
-        return () => document.removeEventListener("mousedown", handleClickOutside);
-    }, []);
 
     // Auto-focus search input on page load (except for home page)
     useEffect(() => {
@@ -157,33 +112,53 @@ export function MediaFilter() {
             return;
         }
 
-        const params = new URLSearchParams(searchParams.toString());
+        const timeoutId = setTimeout(() => {
+            const params = new URLSearchParams(searchParams.toString());
 
-        if (type) params.set("type", type);
-        else params.delete("type");
+            if (type) params.set("type", type);
+            else params.delete("type");
 
-        if (year) params.set("year", year);
-        else params.delete("year");
+            if (year) params.set("year", year);
+            else params.delete("year");
 
-        if (minRating) params.set("rating", minRating);
-        else params.delete("rating");
+            if (minRating) params.set("rating", minRating);
+            else params.delete("rating");
 
-        // Don't update query here - only on form submit
-        if (params.has("q") && !query) {
-            params.delete("q");
+            // Update query live
+            if (query && query.length >= 2) {
+                params.set("q", query);
+            } else {
+                params.delete("q");
+            }
+
+            if (country && country !== "TR") params.set("country", country);
+            else params.delete("country");
+
+            if (selectedProviders.length > 0) params.set("provider", selectedProviders.join(","));
+            else params.delete("provider");
+
+            if (selectedGenres.length > 0) params.set("genre", selectedGenres.join(","));
+            else params.delete("genre");
+
+            const newUrl = `${pathname}?${params.toString()}`;
+            if (newUrl !== `${pathname}?${searchParams.toString()}`) {
+                router.push(newUrl, { scroll: false });
+                setLastFilterTime(Date.now());
+            }
+        }, 500); // 500ms debounce for live search
+
+        return () => clearTimeout(timeoutId);
+    }, [type, year, minRating, country, selectedProviders, selectedGenres, query, pathname, router, searchParams, isInitialRender]);
+
+    // Scroll to results when filters are applied
+    useEffect(() => {
+        if (lastFilterTime > 0) {
+            const resultsElement = document.getElementById("search-results");
+            if (resultsElement) {
+                resultsElement.scrollIntoView({ behavior: "smooth", block: "start" });
+            }
         }
-
-        if (country && country !== "TR") params.set("country", country);
-        else params.delete("country");
-
-        if (selectedProviders.length > 0) params.set("provider", selectedProviders.join(","));
-        else params.delete("provider");
-
-        if (selectedGenres.length > 0) params.set("genre", selectedGenres.join(","));
-        else params.delete("genre");
-
-        router.push(`${pathname}?${params.toString()}`, { scroll: false });
-    }, [type, year, minRating, country, selectedProviders, selectedGenres, pathname, router, searchParams, isInitialRender]);
+    }, [lastFilterTime]);
 
     const hasActiveFilters = year || minRating || query || (country && country !== "TR") || selectedProviders.length > 0 || selectedGenres.length > 0 || searchParams.get("type");
 
@@ -230,48 +205,41 @@ export function MediaFilter() {
 
         // Navigate to search page
         router.push(`/search?${params.toString()}`);
-        setShowSuggestions(false);
     };
 
     const selectedCountry = COUNTRIES.find(c => c.code === country) || COUNTRIES[0];
 
     return (
-        <div className="relative z-20">
-            <div className="bg-gradient-to-br from-white/10 via-white/5 to-transparent backdrop-blur-xl border border-white/10 rounded-[32px] p-6 md:p-8 shadow-2xl">
-                <div className="flex flex-col gap-6">
-                    {/* Header */}
+        <div className="relative">
+            <div className="bg-gradient-to-br from-white/10 via-white/5 to-transparent backdrop-blur-xl border border-white/10 rounded-2xl p-3 md:p-4 shadow-2xl">
+                <div className="flex flex-col gap-3">
+                    {/* Header - Compact Line */}
                     <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                            <div className="p-2.5 bg-primary/20 rounded-2xl border border-primary/30">
-                                <Sparkles className="w-5 h-5 text-primary" />
-                            </div>
-                            <div>
-                                <h3 className="text-xl md:text-2xl font-black text-white tracking-tight uppercase italic">
-                                    Keşfet & Ara
-                                </h3>
-                                <p className="text-xs text-neutral-400 font-medium">İstediğin içeriği hemen bul</p>
-                            </div>
+                        <div className="flex items-center gap-2">
+                            <h3 className="text-sm md:text-base font-black text-white uppercase tracking-tight italic">
+                                Keşfet
+                            </h3>
                         </div>
 
                         {hasActiveFilters && (
                             <button
                                 onClick={handleClear}
-                                className="flex items-center gap-1.5 px-3 py-1.5 bg-red-500/10 hover:bg-red-500/20 text-red-500 rounded-xl transition-all border border-red-500/10 text-xs font-bold"
+                                className="flex items-center gap-1 px-2 py-1 bg-red-500/10 hover:bg-red-500/20 text-red-500 rounded-lg transition-all border border-red-500/10 text-[10px] font-black uppercase"
                             >
-                                <X className="w-3.5 h-3.5" />
+                                <X className="w-3 h-3" />
                                 Temizle
                             </button>
                         )}
                     </div>
 
-                    {/* Filters - All Equal and Minimal */}
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
+                    {/* Filters - Ultra Compact */}
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2">
                         {/* Type Toggle - 3 States: Film, Dizi, or All */}
-                        <div className="flex bg-white/5 p-1 rounded-xl border border-white/5">
+                        <div className="flex bg-white/5 p-0.5 rounded-lg border border-white/5">
                             <button
                                 onClick={() => setType(type === "movie" ? "" : "movie")}
                                 className={cn(
-                                    "flex-1 py-2 px-2 rounded-lg text-xs font-bold transition-all uppercase",
+                                    "flex-1 py-1 px-1.5 rounded-md text-[10px] font-black transition-all uppercase",
                                     type === "movie"
                                         ? "bg-primary text-white"
                                         : "text-neutral-400 hover:text-white"
@@ -282,7 +250,7 @@ export function MediaFilter() {
                             <button
                                 onClick={() => setType(type === "tv" ? "" : "tv")}
                                 className={cn(
-                                    "flex-1 py-2 px-2 rounded-lg text-xs font-bold transition-all uppercase",
+                                    "flex-1 py-1 px-1.5 rounded-md text-[10px] font-black transition-all uppercase",
                                     type === "tv"
                                         ? "bg-primary text-white"
                                         : "text-neutral-400 hover:text-white"
@@ -296,9 +264,9 @@ export function MediaFilter() {
                         <div className="relative">
                             <button
                                 onClick={() => setShowCountryDropdown(!showCountryDropdown)}
-                                className="w-full h-full flex items-center justify-center bg-white/5 border border-white/10 rounded-xl hover:bg-white/10 transition-all"
+                                className="w-full h-full min-h-[28px] flex items-center justify-center bg-white/5 border border-white/10 rounded-lg hover:bg-white/10 transition-all"
                             >
-                                <span className="text-xl">{selectedCountry.flag}</span>
+                                <span className="text-base">{selectedCountry.flag}</span>
                             </button>
 
                             {showCountryDropdown && (
@@ -341,10 +309,17 @@ export function MediaFilter() {
                             <button
                                 onClick={() => setShowProviderDropdown(!showProviderDropdown)}
                                 disabled={loading}
-                                className="w-full h-full flex items-center justify-center bg-white/5 border border-white/10 rounded-xl hover:bg-white/10 transition-all disabled:opacity-50 text-xs font-bold text-white"
+                                className="w-full h-full min-h-[28px] flex items-center justify-center bg-white/5 border border-white/10 rounded-lg hover:bg-white/10 transition-all disabled:opacity-50 text-[10px] font-black text-white"
                             >
-                                <span className="truncate px-2">
-                                    {selectedProviders.length > 0 ? `${selectedProviders.length} Platform` : "Platform"}
+                                <span className="truncate px-1 flex items-center gap-1">
+                                    {selectedProviders.length > 0 ? (
+                                        <>
+                                            <span className="text-primary">{selectedProviders.length}</span>
+                                            <span>Platform</span>
+                                        </>
+                                    ) : (
+                                        "Platform"
+                                    )}
                                 </span>
                             </button>
 
@@ -436,10 +411,17 @@ export function MediaFilter() {
                             <button
                                 onClick={() => setShowGenreDropdown(!showGenreDropdown)}
                                 disabled={loading}
-                                className="w-full h-full flex items-center justify-center bg-white/5 border border-white/10 rounded-xl hover:bg-white/10 transition-all disabled:opacity-50 text-xs font-bold text-white"
+                                className="w-full h-full min-h-[28px] flex items-center justify-center bg-white/5 border border-white/10 rounded-lg hover:bg-white/10 transition-all disabled:opacity-50 text-[10px] font-black text-white"
                             >
-                                <span className="truncate px-2">
-                                    {selectedGenres.length > 0 ? `${selectedGenres.length} Tür` : "Tür"}
+                                <span className="truncate px-1 flex items-center gap-1">
+                                    {selectedGenres.length > 0 ? (
+                                        <>
+                                            <span className="text-primary">{selectedGenres.length}</span>
+                                            <span>Tür</span>
+                                        </>
+                                    ) : (
+                                        "Tür"
+                                    )}
                                 </span>
                             </button>
 
@@ -514,7 +496,7 @@ export function MediaFilter() {
                             <select
                                 value={year}
                                 onChange={(e) => setYear(e.target.value)}
-                                className="w-full h-full bg-white/5 border border-white/10 rounded-xl py-2 px-2 text-xs font-bold text-white appearance-none focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/50 transition-all cursor-pointer hover:bg-white/10 text-center"
+                                className="w-full h-full min-h-[28px] bg-white/5 border border-white/10 rounded-lg py-1 px-1 text-[10px] font-black text-white appearance-none focus:outline-none transition-all cursor-pointer hover:bg-white/10 text-center"
                             >
                                 <option value="" className="bg-neutral-900">Yıl</option>
                                 {YEARS.map(y => (
@@ -528,7 +510,7 @@ export function MediaFilter() {
                             <select
                                 value={minRating}
                                 onChange={(e) => setMinRating(e.target.value)}
-                                className="w-full h-full bg-white/5 border border-white/10 rounded-xl py-2 px-2 text-xs font-bold text-white appearance-none focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/50 transition-all cursor-pointer hover:bg-white/10 text-center"
+                                className="w-full h-full min-h-[28px] bg-white/5 border border-white/10 rounded-lg py-1 px-1 text-[10px] font-black text-white appearance-none focus:outline-none transition-all cursor-pointer hover:bg-white/10 text-center"
                             >
                                 <option value="" className="bg-neutral-900">Puan</option>
                                 {[9, 8, 7, 6, 5, 4, 3, 2, 1].map(r => (
@@ -538,30 +520,24 @@ export function MediaFilter() {
                         </div>
                     </div>
 
-                    {/* Search Bar */}
+                    {/* Search Bar - Main Focus */}
                     <div className="relative">
                         <form onSubmit={handleSearch}>
-                            <div className="flex items-center gap-2 bg-white/5 border border-white/10 rounded-2xl px-5 py-3.5 focus-within:ring-2 focus-within:ring-primary/30 transition-all">
-                                <Search className="w-5 h-5 text-neutral-500" />
+                            <div className="flex items-center gap-3 bg-white/10 border border-white/20 rounded-xl px-5 py-3.5 focus-within:ring-2 focus-within:ring-primary/50 transition-all shadow-inner">
+                                <Search className="w-5 h-5 text-neutral-400" />
                                 <input
                                     ref={searchInputRef}
                                     type="text"
                                     value={query}
                                     onChange={(e) => setQuery(e.target.value)}
-                                    onFocus={() => {
-                                        if (query.length >= 2 && suggestions.length > 0) setShowSuggestions(true);
-                                    }}
                                     placeholder="Film, dizi veya kişi ara..."
-                                    className="flex-1 bg-transparent outline-none text-white placeholder:text-neutral-400 text-sm md:text-base font-medium"
+                                    className="flex-1 bg-transparent outline-none text-white placeholder:text-neutral-500 text-sm md:text-base font-bold"
                                 />
-                                {loadingSuggestions ? (
-                                    <div className="w-4 h-4 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
-                                ) : query && (
+                                {query && (
                                     <button
                                         type="button"
                                         onClick={() => {
                                             setQuery("");
-                                            setSuggestions([]);
                                         }}
                                         className="p-1.5 rounded-full hover:bg-white/10 transition-colors"
                                     >
@@ -571,97 +547,6 @@ export function MediaFilter() {
                             </div>
                         </form>
 
-                        {/* Search Suggestions Dropdown */}
-                        {showSuggestions && (query.length >= 2) && (
-                            <div ref={suggestionsRef} className="absolute top-full left-0 right-0 mt-2 bg-[#1A202C]/95 backdrop-blur-2xl border border-white/10 rounded-[24px] shadow-2xl overflow-hidden z-[100] animate-in fade-in slide-in-from-top-2 duration-300">
-                                {suggestions.length > 0 ? (
-                                    <div className="py-4">
-                                        {/* Separating People and Content */}
-                                        {(() => {
-                                            const people = suggestions.filter(item => item.media_type === "person");
-                                            const content = suggestions.filter(item => item.media_type !== "person");
-
-                                            return (
-                                                <>
-                                                    {people.length > 0 && (
-                                                        <div className="mb-4">
-                                                            <div className="px-5 py-2 text-[10px] font-black text-primary uppercase tracking-[0.2em] mb-2 flex items-center gap-2">
-                                                                <span className="w-1 h-3 bg-primary rounded-full" />
-                                                                Sanatçılar
-                                                            </div>
-                                                            <div className="grid grid-cols-3 sm:grid-cols-4 gap-4 px-4">
-                                                                {people.map((item) => (
-                                                                    <Link
-                                                                        key={item.id}
-                                                                        href={`/person/${item.id}`}
-                                                                        className="flex flex-col items-center gap-3 p-3 rounded-3xl hover:bg-white/5 transition-all group border border-transparent hover:border-white/10"
-                                                                        onClick={() => setShowSuggestions(false)}
-                                                                    >
-                                                                        <div className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-full overflow-hidden bg-neutral-800 border-2 border-white/5 group-hover:border-primary/50 transition-all shadow-xl ring-4 ring-transparent group-hover:ring-primary/10">
-                                                                            {item.profile_path ? (
-                                                                                <Image
-                                                                                    src={`https://image.tmdb.org/t/p/w185${item.profile_path}`}
-                                                                                    alt={item.name}
-                                                                                    fill
-                                                                                    className="object-cover transition-transform duration-500 group-hover:scale-110"
-                                                                                />
-                                                                            ) : (
-                                                                                <div className="w-full h-full flex items-center justify-center text-3xl">
-                                                                                    👤
-                                                                                </div>
-                                                                            )}
-                                                                        </div>
-                                                                        <span className="text-[11px] font-black text-white text-center line-clamp-2 leading-tight group-hover:text-primary transition-colors uppercase tracking-tight">
-                                                                            {item.name}
-                                                                        </span>
-                                                                    </Link>
-                                                                ))}
-                                                            </div>
-                                                        </div>
-                                                    )}
-
-                                                    {content.length > 0 && (
-                                                        <div>
-                                                            <div className="px-5 py-2 text-[10px] font-black text-neutral-500 uppercase tracking-[0.2em] mb-3 flex items-center gap-2">
-                                                                <span className="w-1 h-3 bg-neutral-700 rounded-full" />
-                                                                İçerikler
-                                                            </div>
-                                                            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3 px-4 pb-2">
-                                                                {content.map((item) => (
-                                                                    <div key={item.id} onClick={() => setShowSuggestions(false)} className="scale-90 origin-top">
-                                                                        <MediaCard
-                                                                            id={item.id}
-                                                                            title={item.title || item.name}
-                                                                            originalTitle={item.original_title || item.original_name}
-                                                                            posterPath={item.poster_path}
-                                                                            voteAverage={item.vote_average || 0}
-                                                                            releaseDate={item.release_date || item.first_air_date}
-                                                                            type={item.media_type as "movie" | "tv"}
-                                                                            fullWidth={true}
-                                                                        />
-                                                                    </div>
-                                                                ))}
-                                                            </div>
-                                                        </div>
-                                                    )}
-                                                </>
-                                            );
-                                        })()}
-                                        <button
-                                            onClick={(e) => handleSearch(e)}
-                                            className="w-full text-center py-4 mt-2 text-xs font-black text-primary hover:bg-primary/5 transition-all border-t border-white/5 uppercase tracking-[0.2em]"
-                                        >
-                                            Tüm Sonuçları Gör
-                                        </button>
-                                    </div>
-                                ) : (
-                                    <div className="p-8 text-center text-neutral-500 text-sm font-medium">
-                                        <div className="mb-2 text-2xl">🔍</div>
-                                        Sonuç bulunamadı
-                                    </div>
-                                )}
-                            </div>
-                        )}
                     </div>
 
                     {/* Active Filters */}

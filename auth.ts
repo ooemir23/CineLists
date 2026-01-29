@@ -38,6 +38,18 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
                 });
 
                 if (!user) {
+                    // IF GUEST: Don't create in DB
+                    if (email.endsWith("@guest.watchgo.local")) {
+                        return {
+                            id: "guest_" + Math.random().toString(36).slice(-8),
+                            email: email,
+                            name: "Misafir",
+                            username: "guest_" + Math.random().toString(36).slice(-4),
+                            hasCompletedOnboarding: true, // Guests skip onboarding
+                            isGuest: true
+                        } as any;
+                    }
+
                     const username = email.split("@")[0] + "_" + Math.random().toString(36).slice(-4);
                     user = await prisma.user.create({
                         data: {
@@ -58,6 +70,13 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
             if (token.sub && session.user) {
                 session.user.id = token.sub;
 
+                // If guest (id starts with guest_), don't check DB
+                if (token.sub.startsWith("guest_") || (token as any).isGuest) {
+                    (session.user as any).isGuest = true;
+                    (session.user as any).hasCompletedOnboarding = true;
+                    return session;
+                }
+
                 const dbUser = await prisma.user.findUnique({
                     where: { id: token.sub },
                     select: { hasCompletedOnboarding: true }
@@ -69,7 +88,10 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
             }
             return session;
         },
-        async jwt({ token }) {
+        async jwt({ token, user }) {
+            if (user) {
+                (token as any).isGuest = (user as any).isGuest;
+            }
             return token;
         },
     },

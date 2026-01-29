@@ -3,24 +3,24 @@
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
+import { tmdb } from "@/lib/tmdb";
 
-export async function rateMedia(tmdbId: number, type: "movie" | "tv", rating: number) {
+export async function rateMedia(tmdbId: number, type: "movie" | "tv", rating: number, title?: string, posterPath?: string | null) {
     const session = await auth();
     if (!session?.user?.id) {
-        return { error: "Unauthorized" };
+        return { success: false, error: "Giriş yapmalısınız" };
     }
 
-    // Verify user exists in DB
     const dbUser = await prisma.user.findUnique({
         where: { id: session.user.id },
     });
 
     if (!dbUser) {
-        return { error: "Oturum geçersiz, lütfen tekrar giriş yapın." };
+        return { success: false, error: "Oturum geçersiz, lütfen tekrar giriş yapın." };
     }
 
     if (rating < 0 || rating > 10) {
-        return { error: "Rating must be between 0 and 10" };
+        return { success: false, error: "Puan 0 ile 10 arasında olmalıdır." };
     }
 
     try {
@@ -29,11 +29,37 @@ export async function rateMedia(tmdbId: number, type: "movie" | "tv", rating: nu
             where: { tmdbId },
         });
 
-        // If media doesn't exist, we should probably create it if we have at least tmdbId
-        // But rateMedia usually happens from a page where we have more info.
-        // For now, let's assume it should exist or be created elsewhere.
         if (!mediaItem) {
-            return { error: "Medya bulunamadı." };
+            // If movie/tv title wasn't provided, fetch it
+            let finalTitle = title;
+            let finalPoster = posterPath;
+            let genres: string[] = [];
+            let runtime: number | null = null;
+
+            if (!finalTitle) {
+                const details = await tmdb.getDetails(type, tmdbId.toString()).catch(() => null);
+                if (details) {
+                    finalTitle = details.title || details.name;
+                    finalPoster = details.poster_path;
+                    genres = details.genres?.map((g: any) => g.name) || [];
+                    runtime = type === "movie" ? details.runtime : (details.episode_run_time?.[0] || null);
+                }
+            }
+
+            if (!finalTitle) {
+                return { success: false, error: "Medya bilgileri alınamadı." };
+            }
+
+            mediaItem = await prisma.mediaItem.create({
+                data: {
+                    tmdbId,
+                    type: type === "movie" ? "MOVIE" : "TV",
+                    title: finalTitle,
+                    posterPath: finalPoster,
+                    genres: genres,
+                    runtime: runtime,
+                },
+            });
         }
 
         // Update/Create Watched entry with rating
@@ -84,10 +110,13 @@ export async function rateMedia(tmdbId: number, type: "movie" | "tv", rating: nu
         }
 
         revalidatePath(`/${type}/${tmdbId}`);
+        revalidatePath("/profile");
+        revalidatePath("/stats");
+
         return { success: true };
     } catch (error) {
         console.error("Rate media error:", error);
-        return { error: "Puanlama işlemi başarısız oldu." };
+        return { success: false, error: "Puanlama işlemi başarısız oldu." };
     }
 }
 
@@ -204,3 +233,81 @@ export async function getUserRatingsBulk(tmdbIds: number[]) {
     }
 }
 
+export async function getCommunityRatingsBulk(tmdbIds: number[]) {
+    if (tmdbIds.length === 0) return {};
+
+    try {
+        const ratings = await prisma.watched.findMany({
+            where: {
+                media: { tmdbId: { in: tmdbIds } },
+                rating: { not: null }
+            },
+            select: {
+                rating: true,
+                media: { select: { tmdbId: true } }
+            }
+        });
+
+        const statsMap: Record<number, { average: number; count: number }> = {};
+
+        ratings.forEach(r => {
+            const id = r.media.tmdbId;
+            if (!statsMap[id]) {
+                statsMap[id] = { average: 0, count: 0 };
+            }
+            statsMap[id].count++;
+            statsMap[id].average += r.rating!;
+        });
+
+        Object.keys(statsMap).forEach(key => {
+            const id = Number(key);
+            statsMap[id].average = Number((statsMap[id].average / statsMap[id].count).toFixed(1));
+        });
+
+        return statsMap;
+    } catch (error) {
+        console.error("Get bulk community ratings error:", error);
+        return {};
+    }
+}
+
+export async function getAllMediaRatings(tmdbId: number) {
+    try {
+        const mediaItem = await prisma.mediaItem.findUnique({
+            where: { tmdbId },
+        });
+
+        if (!mediaItem) return [];
+
+        const ratings = await prisma.watched.findMany({
+            where: {
+                mediaId: mediaItem.id,
+                rating: { not: null },
+            },
+            include: {
+                user: {
+                    select: {
+                        id: true,
+                        name: true,
+                        image: true,
+                        username: true
+                    },
+                },
+            },
+            orderBy: {
+                rating: "desc",
+            },
+        });
+
+        return ratings.map(r => ({
+            userId: r.user.id,
+            userName: r.user.name,
+            username: r.user.username,
+            userImage: r.user.image,
+            rating: r.rating,
+        }));
+    } catch (error) {
+        console.error("Get all media ratings error:", error);
+        return [];
+    }
+}

@@ -25,6 +25,7 @@ export const tmdb = {
         });
 
         if (!res.ok) {
+            console.error(`TMDB API Error: ${res.status} ${res.statusText} at ${endpoint}`);
             throw new Error(`TMDB Error: ${res.status} ${res.statusText}`);
         }
 
@@ -37,6 +38,10 @@ export const tmdb = {
 
     async getTrendingTV() {
         return this.fetch("/trending/tv/day");
+    },
+
+    async getTrending(type: "movie" | "tv", timeWindow: "day" | "week") {
+        return this.fetch(`/trending/${type}/${timeWindow}`);
     },
 
     async searchMulti(query: string) {
