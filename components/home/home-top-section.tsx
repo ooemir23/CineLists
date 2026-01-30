@@ -1,6 +1,6 @@
 import { tmdb } from "@/lib/tmdb";
 import Link from "next/link";
-import { Activity } from "lucide-react";
+import { Activity, ArrowRight, Rss } from "lucide-react";
 import { FriendsActivity } from "./friends-activity";
 import { HeroSlider } from "./hero-slider";
 
@@ -47,25 +47,39 @@ export async function HomeTopSection() {
             </div>
 
             {/* Right Column: Friends Activity (Designed for Home Page) */}
-            <div className="lg:w-[40%] xl:w-[35%] flex flex-col gap-6">
-                <div className="flex items-center justify-center px-2">
-                    <Link href="/feed" className="flex items-center gap-3 group/title cursor-pointer transition-transform hover:scale-105">
-                        <div className="w-10 h-10 bg-primary/20 rounded-2xl flex items-center justify-center border border-primary/20 group-hover/title:bg-primary group-hover/title:text-black transition-colors">
-                            <Activity className="w-6 h-6 text-primary group-hover/title:text-black transition-colors" />
-                        </div>
-                        <div>
-                            <h3 className="text-xl font-black text-white tracking-tight uppercase group-hover/title:text-primary transition-colors">Akış</h3>
-                            <p className="text-xs text-neutral-500 font-bold tracking-tight group-hover/title:text-neutral-400">Arkadaşların neler izliyor?</p>
-                        </div>
-                    </Link>
-                </div>
+            <div className="lg:w-[40%] xl:w-[35%] flex flex-col h-full gap-4">
+                {/* Unified Panel */}
+                <div className="bg-[#1A202C]/60 backdrop-blur-xl rounded-[2.5rem] border border-white/5 overflow-hidden flex flex-col h-[500px] lg:h-full lg:max-h-[500px]">
 
-                {/* Integrated Vertical Friends Feed */}
-                <div className="flex-1 bg-white/5 rounded-[40px] border border-white/10 p-6 backdrop-blur-sm overflow-hidden relative">
-                    <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-[#101624]/80 pointer-events-none z-10" />
+                    {/* Header */}
+                    <div className="p-6 border-b border-white/5 bg-white/5 flex items-center justify-between shrink-0">
+                        <Link href="/feed" className="flex items-center gap-3 group">
+                            <div className="w-10 h-10 bg-primary/20 rounded-xl flex items-center justify-center border border-primary/20 group-hover:bg-primary group-hover:text-black transition-all">
+                                <Rss className="w-5 h-5 text-primary group-hover:text-black transition-colors" />
+                            </div>
+                            <div>
+                                <h3 className="text-lg font-black text-white tracking-tight uppercase group-hover:text-primary transition-colors">Akış</h3>
+                                <p className="text-[10px] text-neutral-500 font-bold tracking-widest uppercase">Arkadaşların</p>
+                            </div>
+                        </Link>
 
-                    <div className="space-y-6 max-h-[400px] md:max-h-[700px] lg:max-h-[380px] xl:max-h-[420px] overflow-y-auto pr-2 custom-scrollbar">
-                        <FriendsActivity compact={true} />
+                        <Link
+                            href="/feed"
+                            className="w-8 h-8 flex items-center justify-center rounded-full bg-white/5 hover:bg-white/10 text-neutral-400 hover:text-white transition-all hover:scale-110"
+                            title="Tümünü Gör"
+                        >
+                            <ArrowRight className="w-4 h-4" />
+                        </Link>
+                    </div>
+
+                    {/* Integrated Vertical Friends Feed */}
+                    <div className="flex-1 overflow-hidden relative">
+                        <div className="absolute inset-x-0 top-0 h-4 bg-gradient-to-b from-[#1A202C]/40 to-transparent z-10 pointer-events-none" />
+                        <div className="absolute inset-x-0 bottom-0 h-12 bg-gradient-to-t from-[#1A202C] to-transparent z-10 pointer-events-none" />
+
+                        <div className="h-full overflow-y-auto custom-scrollbar p-4 space-y-4">
+                            <FriendsActivity compact={true} />
+                        </div>
                     </div>
                 </div>
             </div>

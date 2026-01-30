@@ -68,8 +68,9 @@ export function HeroSlider({ items }: HeroSliderProps) {
     return (
         <div className="flex flex-col gap-6">
             {/* Top Navigation Tabs - External Header */}
-            <div className="flex items-center justify-start sm:justify-center px-2">
-                <div className="flex items-center gap-3 overflow-x-auto max-w-full pb-2 md:pb-0 no-scrollbar mask-gradient-r p-1">
+            {/* Top Navigation Tabs - External Header - Minimal Design */}
+            <div className="w-full px-2">
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4 w-full">
                     {items.map((item, index) => {
                         const itemConfig = CATEGORY_CONFIG[item.category];
                         const isActive = index === currentIndex;
@@ -79,20 +80,42 @@ export function HeroSlider({ items }: HeroSliderProps) {
                                 key={`${item.id}-${item.category}`}
                                 onClick={() => handleManualChange(index)}
                                 className={cn(
-                                    "flex flex-col items-center gap-1.5 transition-all duration-500 group/tab shrink-0",
+                                    "group relative flex items-center justify-center gap-2 py-3 rounded-xl transition-all duration-500 w-full outline-none",
                                     isActive ? "opacity-100" : "opacity-40 hover:opacity-70"
                                 )}
                             >
+                                {/* Minimal Background Highlight for Active */}
+                                {isActive && (
+                                    <motion.div
+                                        layoutId="nav-bg"
+                                        className="absolute inset-0 bg-white/[0.03] rounded-xl"
+                                        transition={{ duration: 0.3 }}
+                                    />
+                                )}
+
+                                <ItemIcon
+                                    size={16}
+                                    className={cn(
+                                        "relative z-10 transition-all duration-300",
+                                        isActive ? itemConfig.color : "text-white"
+                                    )}
+                                />
+
                                 <span className={cn(
-                                    "text-[10px] font-black uppercase tracking-[0.2em] transition-colors",
-                                    isActive ? itemConfig.color : "text-white"
+                                    "relative z-10 text-[10px] sm:text-xs font-black uppercase tracking-[0.1em] transition-all duration-300 truncate",
+                                    isActive ? "text-white" : "text-white"
                                 )}>
                                     {itemConfig.label}
                                 </span>
-                                <div className={cn(
-                                    "h-[1.5px] rounded-full transition-all duration-500",
-                                    isActive ? cn("w-8", itemConfig.bgColor) : "w-0 bg-white"
-                                )} />
+
+                                {/* Active Line Indicator */}
+                                {isActive && (
+                                    <motion.div
+                                        layoutId="nav-indicator"
+                                        className={cn("absolute bottom-0 left-0 right-0 h-[2px] rounded-full w-12 mx-auto", itemConfig.bgColor)}
+                                        transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                                    />
+                                )}
                             </button>
                         );
                     })}
