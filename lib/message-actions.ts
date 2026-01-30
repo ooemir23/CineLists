@@ -8,6 +8,10 @@ export async function sendMessage(receiverId: string, content: string) {
     const session = await auth();
     if (!session?.user?.id) return { error: "Giriş yapmalısınız" };
 
+    if ((session.user as any).isGuest || session.user.id.startsWith("guest_")) {
+        return { error: "Mesaj göndermek için giriş yapmalısınız" };
+    }
+
     if (!content.trim()) return { error: "Mesaj boş olamaz" };
 
     await prisma.message.create({

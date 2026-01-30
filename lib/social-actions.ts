@@ -12,6 +12,10 @@ export async function toggleFollow(targetUserId: string) {
 
     const currentUserId = session.user.id;
 
+    if ((session.user as any).isGuest || currentUserId.startsWith("guest_")) {
+        return { error: "Takip etmek için giriş yapmalısınız (Misafirler takip edemez)" };
+    }
+
     if (currentUserId === targetUserId) {
         return { error: "Kendinizi takip edemezsiniz" };
     }

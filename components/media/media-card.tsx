@@ -84,7 +84,7 @@ export function MediaCard({
             <Link
                 href={`/${type}/${id}`}
                 className={cn(
-                    "group relative flex flex-col gap-3 transition-all duration-500 ease-out flex-none hover:z-40 hover:scale-110",
+                    "group relative flex flex-col gap-3 transition-all duration-500 ease-out flex-none hover:z-40 hover:scale-110 snap-start",
                     fullWidth ? "w-full" : "w-36 md:w-44 lg:w-48"
                 )}
             >

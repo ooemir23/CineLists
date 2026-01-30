@@ -26,9 +26,15 @@ export default async function StatsPage() {
     return (
         <div className="max-w-7xl mx-auto px-6 md:px-10 lg:px-16 py-10 min-h-screen">
             {/* Header */}
-            <div className="flex items-center gap-3 mb-10">
-                <BarChart3 className="w-10 h-10 text-primary" />
-                <h1 className="text-3xl md:text-4xl font-black text-white tracking-tight">İstatistikler</h1>
+            {/* Header */}
+            <div className="flex flex-col md:flex-row md:items-end gap-2 md:gap-4 mb-6 md:mb-10">
+                <div className="flex items-center gap-3">
+                    <BarChart3 className="w-8 h-8 md:w-10 md:h-10 text-primary" />
+                    <h1 className="text-2xl md:text-4xl font-black text-white tracking-tight">İstatistikler</h1>
+                </div>
+                <p className="text-neutral-500 text-xs md:text-sm font-medium pb-1 md:pb-1.5">
+                    İzleme alışkanlıklarını ve detaylı analizlerini incele.
+                </p>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">

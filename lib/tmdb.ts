@@ -53,7 +53,7 @@ export const tmdb = {
 
     async getDetails(type: "movie" | "tv", id: string) {
         return this.fetch(`/${type}/${id}`, {
-            params: { append_to_response: "credits,recommendations,similar,images" }
+            params: { append_to_response: "credits,recommendations,similar,images,videos" }
         });
     },
 

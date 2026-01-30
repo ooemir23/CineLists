@@ -19,6 +19,10 @@ export async function markEpisodeAsWatched(
         if (!session?.user?.id) return { error: "Giriş yapmalısınız" };
         const userId = session.user.id;
 
+        if ((session.user as any).isGuest || userId.startsWith("guest_")) {
+            return { success: true };
+        }
+
         // 1. Ensure MediaItem exists and has correct info
         let media = await prisma.mediaItem.findUnique({
             where: { tmdbId },
@@ -161,6 +165,10 @@ export async function markSeasonAsWatched(tmdbId: number, seasonNumber: number) 
         const session = await auth();
         if (!session?.user?.id) return { error: "Giriş yapmalısınız" };
         const userId = session.user.id;
+
+        if ((session.user as any).isGuest || userId.startsWith("guest_")) {
+            return { success: true };
+        }
 
         // Get season data from TMDB
         const seasonData = await tmdb.getSeasonDetails(String(tmdbId), seasonNumber);
@@ -359,6 +367,10 @@ export async function removeEpisodeWatch(tmdbId: number, seasonNumber: number, e
         if (!session?.user?.id) return { error: "Giriş yapmalısınız" };
         const userId = session.user.id;
 
+        if ((session.user as any).isGuest || userId.startsWith("guest_")) {
+            return { success: true };
+        }
+
         const media = await prisma.mediaItem.findUnique({ where: { tmdbId } });
         if (!media) return { error: "Medya bulunamadı" };
 
@@ -494,6 +506,10 @@ export async function rateEpisode(params: {
         const session = await auth();
         if (!session?.user?.id) return { error: "Giriş yapmalısınız" };
         const userId = session.user.id;
+
+        if ((session.user as any).isGuest || userId.startsWith("guest_")) {
+            return { success: true };
+        }
 
         const episode = await ensureEpisodeExists(params);
 

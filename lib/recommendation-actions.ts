@@ -15,6 +15,10 @@ export async function recommendMedia(params: {
     const session = await auth();
     if (!session?.user?.id) return { error: "Giriş yapmalısınız" };
 
+    if ((session.user as any).isGuest || session.user.id.startsWith("guest_")) {
+        return { error: "Tavsiye göndermek için giriş yapmalısınız" };
+    }
+
     const { receiverId, mediaId, mediaType, title, posterPath, message } = params;
 
     // 1. Ensure MediaItem exists in DB

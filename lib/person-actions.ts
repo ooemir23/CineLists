@@ -10,6 +10,10 @@ export async function toggleFavoritePerson(personId: number, name: string, profi
         return { error: "Giriş yapmalısınız" };
     }
 
+    if ((session.user as any).isGuest || session.user.id.startsWith("guest_")) {
+        return { error: "Favorilere eklemek için giriş yapmalısınız" };
+    }
+
     const existing = await prisma.favoritePerson.findUnique({
         where: {
             userId_tmdbId: {

@@ -137,34 +137,21 @@ export default async function FeedPage() {
 
     return (
         <div className="min-h-screen bg-[#101624] text-neutral-100 pb-20">
-            {/* Header / Intro */}
-            <div className="relative h-[40vh] flex items-center justify-center overflow-hidden">
-                <div className="absolute inset-0 bg-gradient-to-b from-primary/10 via-[#101624] to-[#101624]" />
-                <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-primary/5 via-transparent to-transparent" />
-
-                {/* Floating Glows */}
-                <div className="absolute top-1/4 left-1/4 w-64 h-64 bg-primary/10 blur-[100px] rounded-full animate-pulse" />
-                <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-blue-500/5 blur-[120px] rounded-full animate-pulse delay-700" />
-
-                <div className="relative z-10 text-center space-y-4 px-6">
-                    <div className="inline-flex items-center gap-2 px-3 py-1 bg-primary/20 rounded-full border border-primary/30 text-primary text-xs font-bold uppercase tracking-widest animate-fade-in">
-                        <Sparkles className="w-3 h-3" />
-                        Aktivite Akışı
+            <div className="max-w-7xl mx-auto px-2 md:px-10 py-8 md:py-10">
+                {/* Minimal Header */}
+                <div className="flex flex-col md:flex-row md:items-end gap-2 md:gap-4 mb-6 md:mb-10 pl-2 md:pl-0">
+                    <div className="flex items-center gap-3">
+                        <Sparkles className="w-8 h-8 md:w-10 md:h-10 text-primary" />
+                        <h1 className="text-2xl md:text-4xl font-black text-white tracking-tight">Aktivite Akışı</h1>
                     </div>
-                    <h1 className="text-4xl md:text-6xl font-black text-white tracking-tighter drop-shadow-2xl">
-                        Neler İzleniyor<span className="text-primary">?</span>
-                    </h1>
-                    <p className="text-neutral-400 max-w-lg mx-auto text-sm md:text-base font-medium">
-                        Arkadaşlarının ne izlediğini, ne kadar puan verdiğini ve neler düşündüğünü burada keşfet.
+                    <p className="text-neutral-500 text-xs md:text-sm font-medium pb-1 md:pb-1.5">
+                        Arkadaşlarının neler izlediğini keşfet.
                     </p>
                 </div>
-            </div>
-
-            <div className="max-w-7xl mx-auto px-6 md:px-10 -mt-10 relative z-20">
                 <div className="flex flex-col lg:flex-row gap-8 items-start">
 
                     {/* Main Feed Column */}
-                    <div className="flex-1 w-full space-y-12 mb-20 max-w-2xl mx-auto lg:mx-0">
+                    <div className="flex-1 w-full space-y-4 md:space-y-12 mb-20 max-w-2xl mx-auto lg:mx-0">
                         {allActivities.length === 0 ? (
                             <div className="flex flex-col items-center justify-center py-32 bg-white/5 backdrop-blur-md rounded-[2.5rem] border border-white/5 text-center px-10 shadow-2xl">
                                 <div className="p-6 bg-primary/10 rounded-full mb-6">
@@ -183,7 +170,7 @@ export default async function FeedPage() {
                                 </Link>
                             </div>
                         ) : (
-                            <div className="space-y-12">
+                            <div className="space-y-4 md:space-y-12">
                                 {allActivities.map(activity => (
                                     <ActivityPost key={activity.id} activity={activity as any} />
                                 ))}

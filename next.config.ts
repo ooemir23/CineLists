@@ -23,22 +23,6 @@ const nextConfig: NextConfig = {
     optimizePackageImports: ['lucide-react', '@prisma/client'],
   },
 
-  // Bundle analysis (only in development)
-  ...(process.env.ANALYZE === 'true' && {
-    webpack: (config: any) => {
-      if (process.env.NODE_ENV === 'development') {
-        const { BundleAnalyzerPlugin } = require('webpack-bundle-analyzer')
-        config.plugins.push(
-          new BundleAnalyzerPlugin({
-            analyzerMode: 'server',
-            openAnalyzer: true,
-          })
-        )
-      }
-      return config
-    },
-  }),
-
   // Security headers
   async headers() {
     return [

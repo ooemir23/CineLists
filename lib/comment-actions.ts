@@ -10,6 +10,10 @@ export async function addPersonComment(personId: number, content: string) {
         return { error: "Giriş yapmalısınız" };
     }
 
+    if ((session.user as any).isGuest || session.user.id.startsWith("guest_")) {
+        return { error: "Yorum yapmak için giriş yapmalısınız" };
+    }
+
     if (!content.trim()) {
         return { error: "Yorum boş olamaz" };
     }
@@ -58,6 +62,10 @@ export async function addActivityComment(activityId: string, content: string) {
     const session = await auth();
     if (!session?.user?.id) {
         return { error: "Giriş yapmalısınız" };
+    }
+
+    if ((session.user as any).isGuest || session.user.id.startsWith("guest_")) {
+        return { error: "Yorum yapmak için giriş yapmalısınız" };
     }
 
     if (!content.trim()) {
@@ -127,6 +135,10 @@ export async function getActivityComments(activityId: string) {
 export async function addEpisodeComment(episodeId: string, content: string, path: string) {
     const session = await auth();
     if (!session?.user?.id) return { error: "Giriş yapmalısınız" };
+
+    if ((session.user as any).isGuest || session.user.id.startsWith("guest_")) {
+        return { error: "Yorum yapmak için giriş yapmalısınız" };
+    }
 
     if (!content.trim()) return { error: "Yorum boş olamaz" };
 

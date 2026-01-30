@@ -153,11 +153,11 @@ export function ActivityPost({ activity }: ActivityPostProps) {
     };
 
     return (
-        <div className="bg-[#1A202C]/60 backdrop-blur-xl border border-white/5 rounded-[2.5rem] overflow-hidden shadow-2xl transition-all hover:border-primary/20 group animate-fade-in mb-10">
-            <div className="flex flex-col md:flex-row min-h-[340px]">
+        <div className="bg-[#1A202C]/60 backdrop-blur-xl border border-white/5 rounded-3xl md:rounded-[2.5rem] overflow-hidden shadow-2xl transition-all hover:border-primary/20 group animate-fade-in mb-4 md:mb-10">
+            <div className="flex flex-row min-h-[160px] md:min-h-[340px]">
 
                 {/* Left Side: Media Image (Poster) */}
-                <div className="relative w-full md:w-[260px] shrink-0 bg-neutral-900 group/poster overflow-hidden">
+                <div className="relative w-[110px] md:w-[260px] shrink-0 bg-neutral-900 group/poster overflow-hidden">
                     {activity.media.posterPath ? (
                         <Image
                             src={`https://image.tmdb.org/t/p/w500${activity.media.posterPath}`}
@@ -170,108 +170,114 @@ export function ActivityPost({ activity }: ActivityPostProps) {
                     )}
 
                     {/* Media Type Badge */}
-                    <div className="absolute top-4 left-4 flex items-center gap-1.5 px-3 py-1.5 bg-black/60 backdrop-blur-md rounded-xl border border-white/10 shadow-lg">
-                        {activity.media.type === "MOVIE" ? <Film className="w-3.5 h-3.5 text-primary" /> : <Tv className="w-3.5 h-3.5 text-primary" />}
-                        <span className="text-[10px] font-black text-white uppercase tracking-widest">{activity.media.type === "MOVIE" ? "Film" : "Dizi"}</span>
+                    <div className="absolute top-2 left-2 md:top-4 md:left-4 flex items-center gap-1 md:gap-1.5 px-1.5 py-1 md:px-3 md:py-1.5 bg-black/60 backdrop-blur-md rounded-lg md:rounded-xl border border-white/10 shadow-lg">
+                        {activity.media.type === "MOVIE" ? <Film className="w-2.5 h-2.5 md:w-3.5 md:h-3.5 text-primary" /> : <Tv className="w-2.5 h-2.5 md:w-3.5 md:h-3.5 text-primary" />}
+                        <span className="text-[8px] md:text-[10px] font-black text-white uppercase tracking-widest hidden md:inline">{activity.media.type === "MOVIE" ? "Film" : "Dizi"}</span>
                     </div>
 
                     {/* Rating Overlay on Poster */}
                     {activity.rating && (
-                        <div className="absolute bottom-6 left-6 flex items-center gap-2">
-                            <div className="bg-primary px-4 py-2 rounded-2xl shadow-2xl border border-white/20 flex items-center gap-2 transform -rotate-3 hover:rotate-0 transition-transform cursor-default">
-                                <Star className="w-4 h-4 fill-background text-background" />
-                                <span className="text-lg font-black text-background">{activity.rating}</span>
+                        <div className="absolute bottom-2 left-2 md:bottom-6 md:left-6 flex items-center gap-2">
+                            <div className="bg-primary px-2 py-1 md:px-4 md:py-2 rounded-lg md:rounded-2xl shadow-2xl border border-white/20 flex items-center gap-1 md:gap-2 transform -rotate-3 hover:rotate-0 transition-transform cursor-default">
+                                <Star className="w-3 h-3 md:w-4 md:h-4 fill-background text-background" />
+                                <span className="text-xs md:text-lg font-black text-background">{activity.rating}</span>
                             </div>
                         </div>
                     )}
                 </div>
 
                 {/* Right Side: Content Area */}
-                <div className="flex-1 flex flex-col p-6 md:p-10 bg-gradient-to-br from-white/[0.02] to-transparent">
+                <div className="flex-1 flex flex-col p-3 md:p-10 bg-gradient-to-br from-white/[0.02] to-transparent relative">
 
                     {/* User Header */}
-                    <div className="flex items-start justify-between mb-8">
-                        <div className="flex items-center gap-4">
-                            <Link href={`/profile/${activity.user.id}`} className="relative w-12 h-12 rounded-2xl overflow-hidden ring-2 ring-white/5 group-hover:ring-primary/40 transition-all shadow-xl">
+                    <div className="flex items-start justify-between mb-2 md:mb-8">
+                        <div className="flex items-center gap-2 md:gap-4">
+                            <Link href={`/profile/${activity.user.id}`} className="relative w-8 h-8 md:w-12 md:h-12 rounded-xl md:rounded-2xl overflow-hidden ring-1 md:ring-2 ring-white/5 group-hover:ring-primary/40 transition-all shadow-xl">
                                 {activity.user.image ? (
                                     <Image src={activity.user.image} alt={activity.user.name || "User"} fill className="object-cover" />
                                 ) : (
                                     <div className="w-full h-full bg-neutral-800 flex items-center justify-center text-neutral-500">
-                                        <User className="w-6 h-6" />
+                                        <User className="w-4 h-4 md:w-6 md:h-6" />
                                     </div>
                                 )}
                             </Link>
-                            <div>
-                                <div className="flex items-center gap-2 flex-wrap">
-                                    <Link href={`/profile/${activity.user.id}`} className="text-base font-black text-white hover:text-primary transition-colors tracking-tight">
+                            <div className="min-w-0">
+                                <div className="flex items-center gap-1.5 md:gap-2 flex-wrap">
+                                    <Link href={`/profile/${activity.user.id}`} className="text-sm md:text-base font-black text-white hover:text-primary transition-colors tracking-tight truncate max-w-[100px] md:max-w-none">
                                         {activity.user.name}
                                     </Link>
-                                    <span className="text-xs font-bold text-neutral-500 bg-white/5 px-2 py-0.5 rounded-lg border border-white/5 uppercase tracking-wider">
+                                    <span className="text-[10px] md:text-xs font-bold text-neutral-500 bg-white/5 px-1.5 py-0.5 md:px-2 md:py-0.5 rounded-md md:rounded-lg border border-white/5 uppercase tracking-wider whitespace-nowrap">
                                         {actionText}
                                     </span>
                                 </div>
-                                <div className="flex items-center gap-4 mt-1.5">
-                                    <p className="text-[11px] text-neutral-500 flex items-center gap-1.5 font-bold uppercase tracking-wider">
-                                        <Clock className="w-3.5 h-3.5" />
+                                <div className="flex items-center gap-2 md:gap-4 mt-0.5 md:mt-1.5">
+                                    <p className="text-[9px] md:text-[11px] text-neutral-500 flex items-center gap-1 md:gap-1.5 font-bold uppercase tracking-wider whitespace-nowrap">
+                                        <Clock className="w-3 h-3 md:w-3.5 md:h-3.5" />
                                         {formatDistanceToNow(new Date(activity.createdAt), { addSuffix: true, locale: tr })}
                                     </p>
-                                    {activity.platform && (
-                                        <p className="text-[11px] text-neutral-500 flex items-center gap-1.5 font-bold uppercase tracking-wider">
-                                            <MapPin className="w-3.5 h-3.5" />
-                                            {activity.platform}
-                                        </p>
-                                    )}
                                 </div>
                             </div>
                         </div>
-                        <button className="p-2.5 text-neutral-600 hover:text-white hover:bg-white/5 rounded-xl transition-all">
-                            <MoreHorizontal className="w-5 h-5" />
+                        <button className="p-1 md:p-2.5 text-neutral-600 hover:text-white hover:bg-white/5 rounded-lg md:rounded-xl transition-all">
+                            <MoreHorizontal className="w-4 h-4 md:w-5 md:h-5" />
                         </button>
                     </div>
 
                     {/* Media Details Section */}
-                    <div className="mb-6 space-y-4">
-                        <div className="flex items-baseline gap-4 flex-wrap">
+                    <div className="mb-2 md:mb-6 space-y-1 md:space-y-4">
+                        <div className="flex flex-col md:flex-row md:items-baseline gap-1 md:gap-4 flex-wrap">
                             <Link
                                 href={`/${activity.media.type === "MOVIE" ? "movie" : "tv"}/${activity.media.tmdbId}`}
-                                className="text-3xl font-black text-white hover:text-primary transition-all tracking-tighter leading-tight"
+                                className="text-lg md:text-3xl font-black text-white hover:text-primary transition-all tracking-tighter leading-tight line-clamp-1"
                             >
                                 {activity.media.title}
                             </Link>
                             {activity.media.runtime && (
-                                <span className="inline-flex items-center gap-1.5 text-neutral-500 font-bold text-xs uppercase tracking-widest">
-                                    <Clock className="w-3.5 h-3.5" />
+                                <span className="inline-flex items-center gap-1 md:gap-1.5 text-neutral-500 font-bold text-[10px] md:text-xs uppercase tracking-widest">
+                                    <Clock className="w-3 h-3 md:w-3.5 md:h-3.5" />
                                     {formatRuntime(activity.media.runtime)}
                                 </span>
                             )}
                         </div>
 
-                        {/* Special Badges (Episode/Season) */}
-                        <div className="flex flex-wrap gap-3">
+                        {/* Special Badges (Episode/Season) - Compact for Mobile */}
+                        <div className="flex flex-wrap gap-2 md:gap-3">
                             {activity.episodeRange && (
-                                <div className="inline-flex items-center gap-2 px-4 py-2 bg-blue-500/10 border border-blue-500/20 rounded-2xl shadow-inner">
-                                    <Tv className="w-4 h-4 text-blue-400" />
-                                    <span className="text-sm font-black text-blue-400">
-                                        {activity.episodeRange.seasonNumber}. Sezon {activity.episodeRange.fromEpisode}-{activity.episodeRange.toEpisode}. Bölümler
+                                <div className="inline-flex items-center gap-1.5 md:gap-2 px-2 py-1 md:px-4 md:py-2 bg-blue-500/10 border border-blue-500/20 rounded-lg md:rounded-2xl shadow-inner">
+                                    <Tv className="w-3 h-3 md:w-4 md:h-4 text-blue-400" />
+                                    <span className="text-xs md:text-sm font-black text-blue-400">
+                                        S{activity.episodeRange.seasonNumber} E{activity.episodeRange.fromEpisode}-{activity.episodeRange.toEpisode}
                                     </span>
-                                    <span className="text-xs text-blue-300/50 font-bold px-1.5 py-0.5 bg-blue-400/10 rounded-lg">{activity.episodeRange.count} BÖLÜM</span>
                                 </div>
                             )}
 
                             {activity.episode && !activity.episodeRange && (
-                                <div className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl shadow-inner">
-                                    <Tv className="w-4 h-4 text-emerald-400" />
-                                    <span className="text-sm font-black text-emerald-400">
-                                        {activity.episode.seasonNumber}. Sezon {activity.episode.episodeNumber}. Bölüm
+                                <div className="inline-flex items-center gap-1.5 md:gap-2 px-2 py-1 md:px-4 md:py-2 bg-emerald-500/10 border border-emerald-500/20 rounded-lg md:rounded-2xl shadow-inner">
+                                    <Tv className="w-3 h-3 md:w-4 md:h-4 text-emerald-400" />
+                                    <span className="text-xs md:text-sm font-black text-emerald-400">
+                                        S{activity.episode.seasonNumber} E{activity.episode.episodeNumber}
                                     </span>
                                 </div>
                             )}
                         </div>
                     </div>
 
-                    {/* Meta Details: Watched With & Recommended By */}
+                    {/* Review content with better styling */}
+                    <div className="flex-1 mb-2 md:mb-8">
+                        {activity.review ? (
+                            <div className="relative p-3 md:p-6 bg-white/[0.03] border-l-2 md:border-l-4 border-primary rounded-r-xl md:rounded-r-[2rem] shadow-inner group/review overflow-hidden">
+                                <p className="relative z-10 text-xs md:text-[15px] text-neutral-300 md:text-neutral-200 leading-relaxed font-medium line-clamp-3 md:line-clamp-none">
+                                    {activity.review}
+                                </p>
+                            </div>
+                        ) : (
+                            <div className="h-px w-full bg-gradient-to-r from-white/5 to-transparent my-2" />
+                        )}
+                    </div>
+
+                    {/* Meta/Tags (Hidden on extremely small screens if review is long, or just smaller) */}
                     {(activity.watchedWith || activity.recommendedBy || activity.recommendedByText) && (
-                        <div className="flex flex-wrap gap-4 mb-6">
+                        <div className="hidden md:flex flex-wrap gap-4 mb-6">
                             {activity.watchedWith && (
                                 <div className="flex items-center gap-3 px-4 py-2.5 bg-blue-500/5 rounded-[1.25rem] border border-blue-500/10 group/meta transition-all hover:bg-blue-500/10">
                                     <div className="w-8 h-8 bg-blue-500/20 rounded-xl flex items-center justify-center">
@@ -309,50 +315,37 @@ export function ActivityPost({ activity }: ActivityPostProps) {
                         </div>
                     )}
 
-                    {/* Review content with better styling */}
-                    <div className="flex-1 mb-8">
-                        {activity.review ? (
-                            <div className="relative p-6 bg-white/[0.03] border-l-4 border-primary rounded-r-[2rem] shadow-inner group/review overflow-hidden">
-                                <Quote className="absolute -top-2 -right-2 w-16 h-16 text-white/5 -rotate-12 group-hover/review:rotate-0 transition-transform duration-700" />
-                                <p className="relative z-10 text-[15px] text-neutral-200 leading-relaxed font-medium">
-                                    {activity.review}
-                                </p>
-                            </div>
-                        ) : (
-                            <div className="h-px w-full bg-gradient-to-r from-white/5 to-transparent" />
-                        )}
-                    </div>
 
                     {/* Bottom: Interactions */}
-                    <div className="pt-6 border-t border-white/5 flex items-center justify-between">
-                        <div className="flex items-center gap-8">
+                    <div className="mt-auto px-0 md:pt-6 md:border-t border-white/5 flex items-center justify-between">
+                        <div className="flex items-center gap-4 md:gap-8">
                             <button
                                 onClick={handleLike}
                                 className={cn(
-                                    "flex items-center gap-2.5 transition-all hover:scale-110",
+                                    "flex items-center gap-1.5 md:gap-2.5 transition-all hover:scale-110",
                                     isLiked ? "text-pink-500" : "text-neutral-400 hover:text-pink-500"
                                 )}
                             >
-                                <Heart className={cn("w-6 h-6", isLiked && "fill-current")} />
-                                <span className="text-sm font-black">{likesCount}</span>
+                                <Heart className={cn("w-4 h-4 md:w-6 md:h-6", isLiked && "fill-current")} />
+                                <span className="text-xs md:text-sm font-black">{likesCount}</span>
                             </button>
                             <button
                                 onClick={() => setShowComments(!showComments)}
                                 className={cn(
-                                    "flex items-center gap-2.5 transition-all hover:scale-110",
+                                    "flex items-center gap-1.5 md:gap-2.5 transition-all hover:scale-110",
                                     showComments ? "text-primary" : "text-neutral-400 hover:text-primary"
                                 )}
                             >
-                                <MessageSquare className="w-6 h-6" />
-                                <span className="text-sm font-black">{activity._count?.comments || 0}</span>
+                                <MessageSquare className="w-4 h-4 md:w-6 md:h-6" />
+                                <span className="text-xs md:text-sm font-black">{activity._count?.comments || 0}</span>
                             </button>
                         </div>
 
                         <button
                             onClick={() => setShowShare(!showShare)}
-                            className="p-3 text-neutral-400 hover:text-white bg-white/5 hover:bg-white/10 rounded-2xl transition-all border border-transparent hover:border-white/10"
+                            className="p-1.5 md:p-3 text-neutral-400 hover:text-white bg-white/5 hover:bg-white/10 rounded-lg md:rounded-2xl transition-all border border-transparent hover:border-white/10"
                         >
-                            <Share2 className="w-5 h-5" />
+                            <Share2 className="w-4 h-4 md:w-5 md:h-5" />
                         </button>
                     </div>
                 </div>
@@ -360,24 +353,22 @@ export function ActivityPost({ activity }: ActivityPostProps) {
 
             {/* Comments Section */}
             {showComments && (
-                <div className="border-t border-white/5 bg-white/[0.02] p-8 space-y-8 animate-in slide-in-from-top-4 duration-500">
-                    <form onSubmit={handleCommentSubmit} className="flex gap-4">
-                        <div className="relative w-10 h-10 rounded-2xl overflow-hidden shrink-0 border border-white/10 bg-neutral-900 shadow-lg">
-                            <User className="w-full h-full text-neutral-500 p-2" />
-                        </div>
-                        <div className="flex-1 flex gap-3">
+                <div className="border-t border-white/5 bg-white/[0.02] p-3 md:p-8 space-y-4 md:space-y-8 animate-in slide-in-from-top-4 duration-500">
+                    <form onSubmit={handleCommentSubmit} className="flex gap-2 md:gap-4">
+
+                        <div className="flex-1 flex gap-2 md:gap-3">
                             <input
                                 type="text"
                                 value={commentInput}
                                 onChange={(e) => setCommentInput(e.target.value)}
                                 placeholder="Yorumun nedir?"
-                                className="flex-1 bg-white/5 border border-white/10 rounded-2xl px-6 py-3 text-sm text-white focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all outline-none placeholder:text-neutral-600 font-medium"
+                                className="flex-1 bg-white/5 border border-white/10 rounded-xl md:rounded-2xl px-3 py-2 md:px-4 md:py-3 text-xs md:text-sm text-white focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all outline-none placeholder:text-neutral-600 font-medium"
                             />
                             <button
                                 disabled={submitting || !commentInput.trim()}
-                                className="px-6 py-3 bg-primary text-background font-black rounded-2xl text-[10px] uppercase tracking-widest hover:bg-primary/90 transition-all disabled:opacity-50 shadow-lg shadow-primary/20 flex items-center gap-2"
+                                className="px-3 py-2 md:px-4 md:py-3 bg-primary text-background font-black rounded-xl md:rounded-2xl text-[9px] md:text-[10px] uppercase tracking-widest hover:bg-primary/90 transition-all disabled:opacity-50 shadow-lg shadow-primary/20 flex items-center justify-center gap-1 md:gap-2"
                             >
-                                {submitting ? <Loader2 className="w-4 h-4 animate-spin text-background" /> : <>GÖNDER <Send className="w-3 h-3" /></>}
+                                {submitting ? <Loader2 className="w-3 h-3 md:w-4 md:h-4 animate-spin text-background" /> : <><span className="hidden md:inline">GÖNDER</span> <Send className="w-3 h-3 md:w-3 md:h-3" /></>}
                             </button>
                         </div>
                     </form>
@@ -388,32 +379,27 @@ export function ActivityPost({ activity }: ActivityPostProps) {
                                 <Loader2 className="w-8 h-8 text-primary/50 animate-spin" />
                                 <span className="text-[10px] font-black text-neutral-600 uppercase tracking-widest">Yorumlar yükleniyor</span>
                             </div>
-                        ) : comments.length === 0 ? (
-                            <div className="text-center py-12 px-10 border-2 border-dashed border-white/5 rounded-[2rem]">
-                                <MessageCircle className="w-10 h-10 text-neutral-800 mx-auto mb-3" />
-                                <p className="text-neutral-500 text-sm font-bold uppercase tracking-tight">İlk yorumu sen yap!</p>
-                            </div>
-                        ) : (
+                        ) : comments.length === 0 ? null : (
                             <div className="space-y-4">
                                 {comments.map((c) => (
-                                    <div key={c.id} className="flex gap-4 animate-in fade-in slide-in-from-left-2 duration-300">
-                                        <Link href={`/profile/${c.user.id}`} className="relative w-10 h-10 rounded-2xl overflow-hidden shrink-0 ring-1 ring-white/10 shadow-lg">
+                                    <div key={c.id} className="flex gap-3 md:gap-4 animate-in fade-in slide-in-from-left-2 duration-300">
+                                        <Link href={`/profile/${c.user.id}`} className="relative w-8 h-8 md:w-10 md:h-10 rounded-xl md:rounded-2xl overflow-hidden shrink-0 ring-1 ring-white/10 shadow-lg">
                                             {c.user.image ? (
                                                 <Image src={c.user.image} alt={c.user.name} fill className="object-cover" />
                                             ) : (
-                                                <div className="w-full h-full bg-neutral-800 flex items-center justify-center text-neutral-500"><User className="w-5 h-5" /></div>
+                                                <div className="w-full h-full bg-neutral-800 flex items-center justify-center text-neutral-500"><User className="w-4 h-4 md:w-5 md:h-5" /></div>
                                             )}
                                         </Link>
-                                        <div className="bg-white/5 rounded-[1.5rem] px-5 py-4 flex-1 border border-white/5 shadow-sm hover:shadow-md transition-shadow">
-                                            <div className="flex items-center justify-between mb-1.5">
-                                                <Link href={`/profile/${c.user.id}`} className="text-sm font-black text-white hover:text-primary transition-colors tracking-tight">
+                                        <div className="bg-white/5 rounded-2xl md:rounded-[1.5rem] px-4 py-3 md:px-5 md:py-4 flex-1 border border-white/5 shadow-sm hover:shadow-md transition-shadow">
+                                            <div className="flex items-center justify-between mb-1 md:mb-1.5">
+                                                <Link href={`/profile/${c.user.id}`} className="text-xs md:text-sm font-black text-white hover:text-primary transition-colors tracking-tight">
                                                     {c.user.name}
                                                 </Link>
-                                                <span className="text-[10px] text-neutral-500 font-bold uppercase tracking-tighter italic">
+                                                <span className="text-[9px] md:text-[10px] text-neutral-500 font-bold uppercase tracking-tighter italic">
                                                     {formatDistanceToNow(new Date(c.createdAt), { addSuffix: true, locale: tr })}
                                                 </span>
                                             </div>
-                                            <p className="text-sm text-neutral-300 leading-relaxed font-medium">
+                                            <p className="text-xs md:text-sm text-neutral-300 leading-relaxed font-medium">
                                                 {c.content}
                                             </p>
                                         </div>

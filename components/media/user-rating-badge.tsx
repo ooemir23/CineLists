@@ -13,7 +13,7 @@ export function UserRatingBadge({ rating, friendsCount, onClick }: UserRatingBad
     return (
         <button
             onClick={onClick}
-            className="group flex items-center gap-2.5 px-3 py-1.5 bg-primary/10 border border-primary/20 rounded-xl hover:bg-primary/20 hover:border-primary/40 transition-all hover:scale-105 active:scale-95 shadow-lg shadow-primary/5"
+            className="group flex items-center gap-2.5 px-4 py-2.5 bg-primary/10 border border-primary/20 rounded-xl hover:bg-primary/20 hover:border-primary/40 transition-all hover:scale-105 active:scale-95 shadow-lg shadow-primary/5"
         >
             <div className="flex items-center gap-1.5 border-r border-primary/20 pr-2.5">
                 <Star className="w-4 h-4 fill-primary text-primary" />

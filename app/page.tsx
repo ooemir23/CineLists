@@ -158,15 +158,15 @@ export default async function Home({ searchParams }: HomeProps) {
             {/* Trend & Popular Sections */}
 
             <section className="group">
-              <div className="flex items-center justify-between mb-4 md:mb-6">
-                <Link href="/explore/movie/trending" className="flex items-center gap-3">
-                  <div className="w-1 md:w-1.5 h-6 md:h-8 bg-amber-400 rounded-full" />
-                  <h2 className="text-xl md:text-3xl font-bold text-white tracking-tight group-hover:text-amber-400 transition-colors">
-                    Trend <span className="text-amber-400 group-hover:text-white">Filmler</span>
+              <div className="flex items-end justify-between mb-8">
+                <Link href="/explore/movie/trending" className="group/title">
+                  <span className="text-[10px] font-black text-amber-500 uppercase tracking-[0.3em] mb-2 block">Keşfedin</span>
+                  <h2 className="text-2xl md:text-3xl font-black text-white tracking-tight group-hover/title:text-amber-400 transition-colors">
+                    Trend <span className="text-neutral-500 group-hover/title:text-white transition-colors">Filmler</span>
                   </h2>
                 </Link>
-                <Link href="/explore/movie/trending" className="text-xs md:text-sm font-semibold text-white/50 hover:text-white transition-colors flex items-center gap-1">
-                  Tümünü Gör <ChevronRight size={14} />
+                <Link href="/explore/movie/trending" className="text-[10px] font-black text-neutral-500 hover:text-white uppercase tracking-widest transition-all pb-1 border-b border-transparent hover:border-white">
+                  Tümünü Gör
                 </Link>
               </div>
               <div className="-mx-4 md:mx-0">
@@ -180,15 +180,15 @@ export default async function Home({ searchParams }: HomeProps) {
             </section>
 
             <section className="group">
-              <div className="flex items-center justify-between mb-4 md:mb-6">
-                <Link href="/explore/tv/popular" className="flex items-center gap-3">
-                  <div className="w-1 md:w-1.5 h-6 md:h-8 bg-primary rounded-full group-hover:bg-amber-400 transition-colors" />
-                  <h2 className="text-xl md:text-3xl font-bold text-white tracking-tight group-hover:text-primary transition-colors">
-                    Popüler <span className="text-primary group-hover:text-white">Diziler</span>
+              <div className="flex items-end justify-between mb-8">
+                <Link href="/explore/tv/popular" className="group/title">
+                  <span className="text-[10px] font-black text-primary uppercase tracking-[0.3em] mb-2 block">Öne Çıkan</span>
+                  <h2 className="text-2xl md:text-3xl font-black text-white tracking-tight group-hover/title:text-primary transition-colors">
+                    Popüler <span className="text-neutral-500 group-hover/title:text-white transition-colors">Diziler</span>
                   </h2>
                 </Link>
-                <Link href="/explore/tv/popular" className="text-xs md:text-sm font-semibold text-white/50 hover:text-white transition-colors flex items-center gap-1">
-                  Tümünü Gör <ChevronRight size={14} />
+                <Link href="/explore/tv/popular" className="text-[10px] font-black text-neutral-500 hover:text-white uppercase tracking-widest transition-all pb-1 border-b border-transparent hover:border-white">
+                  Tümünü Gör
                 </Link>
               </div>
               <div className="-mx-4 md:mx-0">
@@ -202,15 +202,15 @@ export default async function Home({ searchParams }: HomeProps) {
             </section>
 
             <section className="group">
-              <div className="flex items-center justify-between mb-4 md:mb-6">
-                <Link href="/explore/tv/trending" className="flex items-center gap-3">
-                  <div className="w-1 md:w-1.5 h-6 md:h-8 bg-amber-400 rounded-full" />
-                  <h2 className="text-xl md:text-3xl font-bold text-white tracking-tight group-hover:text-amber-400 transition-colors">
-                    Yükselen <span className="text-amber-400 group-hover:text-white">Diziler</span>
+              <div className="flex items-end justify-between mb-8">
+                <Link href="/explore/tv/trending" className="group/title">
+                  <span className="text-[10px] font-black text-amber-500 uppercase tracking-[0.3em] mb-2 block">İlgi Gören</span>
+                  <h2 className="text-2xl md:text-3xl font-black text-white tracking-tight group-hover/title:text-amber-400 transition-colors">
+                    Yükselen <span className="text-neutral-500 group-hover/title:text-white transition-colors">Diziler</span>
                   </h2>
                 </Link>
-                <Link href="/explore/tv/trending" className="text-xs md:text-sm font-semibold text-white/50 hover:text-white transition-colors flex items-center gap-1">
-                  Tümünü Gör <ChevronRight size={14} />
+                <Link href="/explore/tv/trending" className="text-[10px] font-black text-neutral-500 hover:text-white uppercase tracking-widest transition-all pb-1 border-b border-transparent hover:border-white">
+                  Tümünü Gör
                 </Link>
               </div>
               <div className="-mx-4 md:mx-0">
@@ -224,15 +224,15 @@ export default async function Home({ searchParams }: HomeProps) {
             </section>
 
             <section className="group">
-              <div className="flex items-center justify-between mb-4 md:mb-6">
-                <Link href="/explore/movie/popular" className="flex items-center gap-3">
-                  <div className="w-1 md:w-1.5 h-6 md:h-8 bg-primary rounded-full group-hover:bg-amber-400 transition-colors" />
-                  <h2 className="text-xl md:text-3xl font-bold text-white tracking-tight group-hover:text-primary transition-colors">
-                    Tüm Zamanların <span className="text-primary group-hover:text-white">Favori Filmleri</span>
+              <div className="flex items-end justify-between mb-8">
+                <Link href="/explore/movie/popular" className="group/title">
+                  <span className="text-[10px] font-black text-primary uppercase tracking-[0.3em] mb-2 block">Koleksiyon</span>
+                  <h2 className="text-2xl md:text-3xl font-black text-white tracking-tight group-hover/title:text-primary transition-colors">
+                    Favori <span className="text-neutral-500 group-hover/title:text-white transition-colors">Filmler</span>
                   </h2>
                 </Link>
-                <Link href="/explore/movie/popular" className="text-xs md:text-sm font-semibold text-white/50 hover:text-white transition-colors flex items-center gap-1">
-                  Tümünü Gör <ChevronRight size={14} />
+                <Link href="/explore/movie/popular" className="text-[10px] font-black text-neutral-500 hover:text-white uppercase tracking-widest transition-all pb-1 border-b border-transparent hover:border-white">
+                  Tümünü Gör
                 </Link>
               </div>
               <div className="-mx-4 md:mx-0">
@@ -245,18 +245,17 @@ export default async function Home({ searchParams }: HomeProps) {
               </div>
             </section>
 
-            <section className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-blue-900/20 to-purple-900/20 border border-white/5 p-4 md:p-8 group">
-              <div className="flex items-center justify-between mb-6">
-                <Link href="/explore/movie/upcoming" className="flex items-center gap-3">
-                  <div className="p-2 bg-blue-500/20 rounded-lg group-hover:bg-blue-500 group-hover:text-black transition-all">
-                    <Play size={20} className="text-blue-400 fill-current group-hover:text-black" />
-                  </div>
-                  <h2 className="text-xl md:text-3xl font-bold text-white tracking-tight group-hover:text-blue-400 transition-colors">
-                    Yakında <span className="text-blue-400 group-hover:text-white">Vizyonda</span>
+            <section className="relative overflow-hidden rounded-[3rem] bg-gradient-to-br from-blue-900/10 via-transparent to-transparent border border-white/5 p-8 md:p-12 group">
+              <div className="flex items-end justify-between mb-10">
+                <Link href="/explore/movie/upcoming" className="group/title">
+                  <span className="text-[10px] font-black text-blue-500 uppercase tracking-[0.3em] mb-2 block">Gelecek</span>
+                  <h2 className="text-3xl md:text-4xl font-black text-white tracking-tight group-hover/title:text-blue-400 transition-colors italic uppercase">
+                    Yakında <br />
+                    <span className="text-blue-400 group-hover/title:text-white transition-colors">Vizyonda</span>
                   </h2>
                 </Link>
-                <Link href="/explore/movie/upcoming" className="text-xs md:text-sm font-semibold text-white/50 hover:text-white transition-colors flex items-center gap-1">
-                  Tümünü Gör <ChevronRight size={14} />
+                <Link href="/explore/movie/upcoming" className="text-[10px] font-black text-neutral-500 hover:text-white uppercase tracking-widest transition-all pb-1 border-b border-transparent hover:border-white">
+                  Tüm Listeyi Gör
                 </Link>
               </div>
               <div className="-mx-4 md:mx-0">
