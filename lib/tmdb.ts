@@ -10,9 +10,14 @@ type FetchOptions = {
 
 export const tmdb = {
     async fetch(endpoint: string, { params, cache = "force-cache" }: FetchOptions = {}): Promise<any> {
+        if (!API_KEY) {
+            console.error("TMDB_API_KEY is not defined in environment variables");
+            throw new Error("TMDB_API_KEY is missing");
+        }
+
         const url = new URL(`${TMDB_BASE_URL}${endpoint}`);
-        url.searchParams.append("api_key", API_KEY || "");
-        url.searchParams.append("language", "tr-TR"); // Türkçe içerik istendi
+        url.searchParams.append("api_key", API_KEY);
+        url.searchParams.append("language", "tr-TR");
 
         if (params) {
             Object.entries(params).forEach(([key, value]) => {
@@ -20,16 +25,29 @@ export const tmdb = {
             });
         }
 
-        const res = await fetch(url.toString(), {
-            next: { revalidate: 3600 }, // 1 saat önbellek
-        });
+        try {
+            const res = await fetch(url.toString(), {
+                next: { revalidate: 3600 },
+            });
 
-        if (!res.ok) {
-            console.error(`TMDB API Error: ${res.status} ${res.statusText} at ${endpoint}`);
-            throw new Error(`TMDB Error: ${res.status} ${res.statusText}`);
+            if (!res.ok) {
+                console.error(`TMDB API Error: ${res.status} ${res.statusText} at ${endpoint}`);
+                // Return empty results instead of throwing to prevent page crash
+                if (endpoint.includes("trending") || endpoint.includes("popular") || endpoint.includes("discover") || endpoint.includes("search") || endpoint.includes("genre")) {
+                    return { results: [], genres: [], total_pages: 0, total_results: 0 };
+                }
+                throw new Error(`TMDB Error: ${res.status} ${res.statusText}`);
+            }
+
+            return res.json();
+        } catch (error) {
+            console.error(`Network error fetching from TMDB (${endpoint}):`, error);
+            // If it's a results-based endpoint, return empty results to allow UI to render
+            if (endpoint.includes("trending") || endpoint.includes("popular") || endpoint.includes("discover") || endpoint.includes("search") || endpoint.includes("genre")) {
+                return { results: [], genres: [], total_pages: 0, total_results: 0 };
+            }
+            throw error;
         }
-
-        return res.json();
     },
 
     async getTrendingMovies() {

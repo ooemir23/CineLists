@@ -6,6 +6,7 @@ import { PersonalizedRecommendations } from "@/components/home/personalized-reco
 import { getPersonalizedRecommendations } from "@/lib/recommendations";
 import { FriendsActivity } from "@/components/home/friends-activity";
 import { HomeTopSection } from "@/components/home/home-top-section";
+import { SectionTabs } from "@/components/home/section-tabs";
 
 export const revalidate = 3600; // Revalidate every hour
 
@@ -17,12 +18,15 @@ type HomeProps = {
     provider?: string;
     genre?: string;
     q?: string;
+    trType?: string;
+    poType?: string;
   }>;
 };
 
 export default async function Home({ searchParams }: HomeProps) {
 
-  const { type = "", year, rating, provider, genre, q } = await searchParams;
+  const params = await searchParams;
+  const { type = "", year, rating, provider, genre, q, trType = "all", poType = "all" } = params;
   const isFiltering = year || rating || provider || genre || type || q;
   let trendingMovies, trendingTV, popularMovies, upcomingMovies, popularTV, filterResults, personalizedMovies: any;
   let userName = "";
@@ -155,118 +159,82 @@ export default async function Home({ searchParams }: HomeProps) {
           </div>
         ) : (
           <>
-            {/* Trend & Popular Sections */}
+            {/* Consolidated Sections: Trendler & Popüler */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 md:gap-12 lg:gap-8">
+              {/* Trendler Section with Amber Frame */}
+              <section className="group relative p-6 md:p-8 rounded-[3rem] border border-amber-500/10 bg-amber-500/[0.02] hover:bg-amber-500/[0.04] hover:border-amber-500/20 transition-all duration-500 overflow-hidden">
+                <div className="absolute top-0 right-0 w-48 h-48 bg-amber-500/5 blur-[100px] -mr-24 -mt-24 pointer-events-none group-hover:bg-amber-500/10 transition-colors duration-500" />
 
-            <section className="group">
-              <div className="flex items-end justify-between mb-8">
-                <Link href="/explore/movie/trending" className="group/title">
-                  <span className="text-[10px] font-black text-amber-500 uppercase tracking-[0.3em] mb-2 block">Keşfedin</span>
-                  <h2 className="text-2xl md:text-3xl font-black text-white tracking-tight group-hover/title:text-amber-400 transition-colors">
-                    Trend <span className="text-neutral-500 group-hover/title:text-white transition-colors">Filmler</span>
-                  </h2>
-                </Link>
-                <Link href="/explore/movie/trending" className="text-[10px] font-black text-neutral-500 hover:text-white uppercase tracking-widest transition-all pb-1 border-b border-transparent hover:border-white">
-                  Tümünü Gör
-                </Link>
-              </div>
-              <div className="-mx-4 md:mx-0">
-                <MediaRow
-                  title=""
-                  items={trendingMovies.results.slice(0, 15)}
-                  type="movie"
-                  href="/explore/movie/trending"
-                />
-              </div>
-            </section>
+                <div className="flex items-center justify-between mb-8 relative z-10 gap-4">
+                  <Link
+                    href={trType === "tv" ? "/explore/tv/trending" : "/explore/movie/trending"}
+                    className="group/title flex items-center gap-3 overflow-hidden"
+                  >
+                    <div className="shrink-0">
+                      <span className="text-[10px] font-black text-amber-500 uppercase tracking-[0.3em] mb-2 block">Keşfedin</span>
+                      <h2 className="text-2xl md:text-3xl font-black text-white tracking-tight group-hover/title:text-amber-400 transition-colors truncate">
+                        Trendler
+                      </h2>
+                    </div>
+                    <div className="w-10 h-10 rounded-2xl bg-white/5 flex items-center justify-center border border-white/5 group-hover/title:bg-amber-400 group-hover/title:text-black transition-all group-hover/title:translate-x-1 shrink-0">
+                      <ChevronRight className="w-5 h-5" />
+                    </div>
+                  </Link>
 
-            <section className="group">
-              <div className="flex items-end justify-between mb-8">
-                <Link href="/explore/tv/popular" className="group/title">
-                  <span className="text-[10px] font-black text-primary uppercase tracking-[0.3em] mb-2 block">Öne Çıkan</span>
-                  <h2 className="text-2xl md:text-3xl font-black text-white tracking-tight group-hover/title:text-primary transition-colors">
-                    Popüler <span className="text-neutral-500 group-hover/title:text-white transition-colors">Diziler</span>
-                  </h2>
-                </Link>
-                <Link href="/explore/tv/popular" className="text-[10px] font-black text-neutral-500 hover:text-white uppercase tracking-widest transition-all pb-1 border-b border-transparent hover:border-white">
-                  Tümünü Gör
-                </Link>
-              </div>
-              <div className="-mx-4 md:mx-0">
-                <MediaRow
-                  title=""
-                  items={popularTV.results.slice(0, 15)}
-                  type="tv"
-                  href="/explore/tv/popular"
-                />
-              </div>
-            </section>
+                  <div className="shrink-0">
+                    <SectionTabs paramName="trType" activeValue={trType} themeColor="amber" />
+                  </div>
+                </div>
 
-            <section className="group">
-              <div className="flex items-end justify-between mb-8">
-                <Link href="/explore/tv/trending" className="group/title">
-                  <span className="text-[10px] font-black text-amber-500 uppercase tracking-[0.3em] mb-2 block">İlgi Gören</span>
-                  <h2 className="text-2xl md:text-3xl font-black text-white tracking-tight group-hover/title:text-amber-400 transition-colors">
-                    Yükselen <span className="text-neutral-500 group-hover/title:text-white transition-colors">Diziler</span>
-                  </h2>
-                </Link>
-                <Link href="/explore/tv/trending" className="text-[10px] font-black text-neutral-500 hover:text-white uppercase tracking-widest transition-all pb-1 border-b border-transparent hover:border-white">
-                  Tümünü Gör
-                </Link>
-              </div>
-              <div className="-mx-4 md:mx-0">
-                <MediaRow
-                  title=""
-                  items={trendingTV.results.slice(0, 15)}
-                  type="tv"
-                  href="/explore/tv/trending"
-                />
-              </div>
-            </section>
+                <div className="-mx-4 md:mx-0 relative z-10">
+                  <MediaRow
+                    title=""
+                    items={[
+                      ...(trType === "all" || trType === "movie" ? (trendingMovies?.results || []).map((m: any) => ({ ...m, media_type: "movie" })) : []),
+                      ...(trType === "all" || trType === "tv" ? (trendingTV?.results || []).map((t: any) => ({ ...t, media_type: "tv" })) : [])
+                    ].sort((a: any, b: any) => (b.popularity || 0) - (a.popularity || 0)).slice(0, 20)}
+                    type="movie"
+                  />
+                </div>
+              </section>
 
-            <section className="group">
-              <div className="flex items-end justify-between mb-8">
-                <Link href="/explore/movie/popular" className="group/title">
-                  <span className="text-[10px] font-black text-primary uppercase tracking-[0.3em] mb-2 block">Koleksiyon</span>
-                  <h2 className="text-2xl md:text-3xl font-black text-white tracking-tight group-hover/title:text-primary transition-colors">
-                    Favori <span className="text-neutral-500 group-hover/title:text-white transition-colors">Filmler</span>
-                  </h2>
-                </Link>
-                <Link href="/explore/movie/popular" className="text-[10px] font-black text-neutral-500 hover:text-white uppercase tracking-widest transition-all pb-1 border-b border-transparent hover:border-white">
-                  Tümünü Gör
-                </Link>
-              </div>
-              <div className="-mx-4 md:mx-0">
-                <MediaRow
-                  title=""
-                  items={popularMovies.results.slice(0, 15)}
-                  type="movie"
-                  href="/explore/movie/popular"
-                />
-              </div>
-            </section>
+              {/* Popüler Section with Blue Frame */}
+              <section className="group relative p-6 md:p-8 rounded-[3rem] border border-blue-500/10 bg-blue-500/[0.02] hover:bg-blue-500/[0.04] hover:border-blue-500/20 transition-all duration-500 overflow-hidden">
+                <div className="absolute top-0 right-0 w-48 h-48 bg-blue-500/5 blur-[100px] -mr-24 -mt-24 pointer-events-none group-hover:bg-blue-500/10 transition-colors duration-500" />
 
-            <section className="relative overflow-hidden rounded-[3rem] bg-gradient-to-br from-blue-900/10 via-transparent to-transparent border border-white/5 p-8 md:p-12 group">
-              <div className="flex items-end justify-between mb-10">
-                <Link href="/explore/movie/upcoming" className="group/title">
-                  <span className="text-[10px] font-black text-blue-500 uppercase tracking-[0.3em] mb-2 block">Gelecek</span>
-                  <h2 className="text-3xl md:text-4xl font-black text-white tracking-tight group-hover/title:text-blue-400 transition-colors italic uppercase">
-                    Yakında <br />
-                    <span className="text-blue-400 group-hover/title:text-white transition-colors">Vizyonda</span>
-                  </h2>
-                </Link>
-                <Link href="/explore/movie/upcoming" className="text-[10px] font-black text-neutral-500 hover:text-white uppercase tracking-widest transition-all pb-1 border-b border-transparent hover:border-white">
-                  Tüm Listeyi Gör
-                </Link>
-              </div>
-              <div className="-mx-4 md:mx-0">
-                <MediaRow
-                  title=""
-                  items={upcomingMovies.results.slice(0, 15)}
-                  type="movie"
-                  href="/explore/movie/upcoming"
-                />
-              </div>
-            </section>
+                <div className="flex items-center justify-between mb-8 relative z-10 gap-4">
+                  <Link
+                    href={poType === "tv" ? "/explore/tv/popular" : "/explore/movie/popular"}
+                    className="group/title flex items-center gap-3 overflow-hidden"
+                  >
+                    <div className="shrink-0">
+                      <span className="text-[10px] font-black text-blue-500 uppercase tracking-[0.3em] mb-2 block">Öne Çıkan</span>
+                      <h2 className="text-2xl md:text-3xl font-black text-white tracking-tight group-hover/title:text-blue-400 transition-colors truncate">
+                        Popüler
+                      </h2>
+                    </div>
+                    <div className="w-10 h-10 rounded-2xl bg-white/5 flex items-center justify-center border border-white/5 group-hover/title:bg-blue-400 group-hover/title:text-black transition-all group-hover/title:translate-x-1 shrink-0">
+                      <ChevronRight className="w-5 h-5" />
+                    </div>
+                  </Link>
+
+                  <div className="shrink-0">
+                    <SectionTabs paramName="poType" activeValue={poType} themeColor="blue" />
+                  </div>
+                </div>
+
+                <div className="-mx-4 md:mx-0 relative z-10">
+                  <MediaRow
+                    title=""
+                    items={[
+                      ...(poType === "all" || poType === "movie" ? (popularMovies?.results || []).map((m: any) => ({ ...m, media_type: "movie" })) : []),
+                      ...(poType === "all" || poType === "tv" ? (popularTV?.results || []).map((t: any) => ({ ...t, media_type: "tv" })) : [])
+                    ].sort((a: any, b: any) => (b.popularity || 0) - (a.popularity || 0)).slice(0, 20)}
+                    type="movie"
+                  />
+                </div>
+              </section>
+            </div>
           </>
         )}
       </div>

@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { Star, Send, Globe, X, User } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { AutoScrollText } from "@/components/ui/auto-scroll-text";
 import { RecommendModal } from "./recommend-modal";
 import { useState, useEffect } from "react";
 import { getAllMediaRatings } from "@/lib/rating-actions";
@@ -176,12 +177,12 @@ export function MediaCard({
                         </div>
                     )}
 
-                    <h3 className={cn(
-                        "font-black text-white truncate group-hover:text-primary transition-colors tracking-tight",
+                    <div className={cn(
+                        "font-black text-white transition-colors tracking-tight group-hover:text-primary",
                         type === "person" ? "text-[10px] md:text-xs" : "text-base"
                     )}>
-                        {title}
-                    </h3>
+                        <AutoScrollText text={title} />
+                    </div>
                     {type === "person" ? (
                         <span className="text-xs text-primary/80 font-bold uppercase tracking-widest">Sanatçı</span>
                     ) : (
