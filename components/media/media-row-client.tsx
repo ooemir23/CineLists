@@ -60,10 +60,6 @@ export function MediaRowClient({ children }: MediaRowClientProps) {
             >
                 {children}
             </div>
-
-            {/* Fade gradients for overflow indication */}
-            <div className="absolute top-0 bottom-6 left-0 w-24 bg-gradient-to-r from-[#101624] via-[#101624]/40 to-transparent pointer-events-none z-10" />
-            <div className="absolute top-0 bottom-6 right-0 w-24 bg-gradient-to-l from-[#101624] via-[#101624]/40 to-transparent pointer-events-none z-10" />
         </div>
     );
 }
