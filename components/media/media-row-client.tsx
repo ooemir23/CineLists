@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useEffect } from "react";
+import { useRef, useEffect, useState } from "react";
 import { ChevronRight as ArrowRight } from "lucide-react";
 import { MediaCard } from "./media-card";
 import { cn } from "@/lib/utils";
@@ -20,32 +20,67 @@ type MediaItem = {
 
 type MediaRowClientProps = {
     children: React.ReactNode;
+    autoScroll?: boolean; // Auto-scroll toggle
 };
 
-export function MediaRowClient({ children }: MediaRowClientProps) {
+export function MediaRowClient({ children, autoScroll = true }: MediaRowClientProps) {
     const scrollRef = useRef<HTMLDivElement>(null);
     const isPaused = useRef(false);
+    const [mounted, setMounted] = useState(false);
+
+    useEffect(() => {
+        setMounted(true);
+    }, []);
 
     useEffect(() => {
         const slider = scrollRef.current;
-        if (!slider) return;
+        if (!slider || !mounted || !autoScroll) return;
 
-        const autoScroll = setInterval(() => {
-            if (isPaused.current) return;
+        let animationFrameId: number;
+        let lastTimestamp = 0;
 
-            const scrollAmount = 1; // Pixels per interval for smooth movement
-            const maxScroll = slider.scrollWidth - slider.clientWidth;
+        // Even slower, premium speed: ~30 pixels per second
+        const pixelsPerSecond = 30;
 
-            if (slider.scrollLeft >= maxScroll - 1) {
-                // Smoothly reset to beginning
-                slider.scrollTo({ left: 0, behavior: 'smooth' });
-            } else {
-                slider.scrollLeft += scrollAmount;
+        const animateScroll = (timestamp: number) => {
+            if (isPaused.current) {
+                lastTimestamp = timestamp;
+                animationFrameId = requestAnimationFrame(animateScroll);
+                return;
             }
-        }, 30); // Interval in ms
 
-        return () => clearInterval(autoScroll);
-    }, []);
+            if (lastTimestamp === 0) {
+                lastTimestamp = timestamp;
+            }
+
+            const deltaTime = timestamp - lastTimestamp;
+            lastTimestamp = timestamp;
+
+            const scrollAmount = (pixelsPerSecond * deltaTime) / 1000;
+            const maxScroll = slider.scrollWidth / 2; // Half because content is duplicated
+
+            slider.scrollLeft += scrollAmount;
+
+            // Seamless infinite loop - reset when reaching halfway point
+            if (slider.scrollLeft >= maxScroll) {
+                slider.scrollLeft = slider.scrollLeft - maxScroll;
+            }
+
+            animationFrameId = requestAnimationFrame(animateScroll);
+        };
+
+        animationFrameId = requestAnimationFrame(animateScroll);
+
+        return () => cancelAnimationFrame(animationFrameId);
+    }, [mounted, autoScroll]);
+
+    // Duplicate children for infinite loop effect
+    const duplicatedChildren = (
+        <>
+            {children}
+            {children}
+        </>
+    );
 
     return (
         <div
@@ -55,10 +90,10 @@ export function MediaRowClient({ children }: MediaRowClientProps) {
         >
             <div
                 ref={scrollRef}
-                className="flex gap-4 lg:gap-6 overflow-x-auto pt-10 pb-12 -mx-8 px-8 md:-mx-4 md:px-4 snap-x hide-scrollbar"
-                style={{ scrollBehavior: 'auto' }} // Keep manual scrolling responsive
+                className="flex gap-4 lg:gap-6 overflow-x-auto pt-4 pb-4 -mx-8 px-8 md:-mx-4 md:px-4 hide-scrollbar"
+                style={{ scrollBehavior: 'auto' }}
             >
-                {children}
+                {duplicatedChildren}
             </div>
         </div>
     );

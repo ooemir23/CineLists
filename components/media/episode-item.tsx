@@ -3,26 +3,44 @@
 import Image from "next/image";
 import { Eye, Check, MessageSquare, ThumbsUp, ThumbsDown, ChevronRight, Play } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useState, useTransition } from "react";
+import { useState, useTransition, useEffect } from "react";
 import { markEpisodeAsWatched, removeEpisodeWatch, rateEpisode, ensureEpisodeExists } from "@/lib/tv-actions";
 import { addEpisodeComment } from "@/lib/comment-actions";
 import { EpisodeDetailsModal } from "./episode-details-modal";
+import { useRouter } from "next/navigation";
 
 type EpisodeItemProps = {
     tmdbId: number;
     seasonNumber: number;
     episode: any;
     isWatched: boolean;
+    onRefresh?: () => void;
 };
 
-export default function EpisodeItem({ tmdbId, seasonNumber, episode, isWatched: initialIsWatched }: EpisodeItemProps) {
+export default function EpisodeItem({
+    tmdbId,
+    seasonNumber,
+    episode,
+    isWatched: initialIsWatched,
+    onRefresh
+}: EpisodeItemProps) {
     const [isWatched, setIsWatched] = useState(initialIsWatched);
     const [isPending, startTransition] = useTransition();
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const router = useRouter();
+
+    useEffect(() => {
+        setIsWatched(initialIsWatched);
+    }, [initialIsWatched]);
 
     // Internal state for comments and ratings to keep UI snappy
     const [comments, setComments] = useState(episode.comments || []);
     const [internalEpisode, setInternalEpisode] = useState(episode);
+
+    useEffect(() => {
+        setComments(episode.comments || []);
+        setInternalEpisode(episode);
+    }, [episode]);
 
     const handleToggleWatch = async () => {
         const newState = !isWatched;
@@ -42,6 +60,7 @@ export default function EpisodeItem({ tmdbId, seasonNumber, episode, isWatched: 
             } else {
                 await removeEpisodeWatch(tmdbId, seasonNumber, episode.episode_number);
             }
+            onRefresh?.();
         });
     };
 
@@ -66,10 +85,12 @@ export default function EpisodeItem({ tmdbId, seasonNumber, episode, isWatched: 
                 stillPath: episode.still_path,
                 airDate: episode.air_date
             });
+            onRefresh?.();
+            router.refresh();
         });
     };
 
-    const handleAddComment = async (text: string) => {
+    const handleAddComment = async (text: string, isSpoiler: boolean = false) => {
         if (!text.trim()) return;
 
         startTransition(async () => {
@@ -83,14 +104,19 @@ export default function EpisodeItem({ tmdbId, seasonNumber, episode, isWatched: 
                 airDate: episode.air_date
             });
 
-            const result = await addEpisodeComment(dbEp.id, text, `/tv/${tmdbId}`);
+            const result = await addEpisodeComment(dbEp.id, text, `/tv/${tmdbId}`, isSpoiler);
             if (result.success) {
-                setComments([{
+                const newComment = {
                     id: Math.random().toString(),
                     content: text,
+                    isSpoiler,
                     createdAt: new Date(),
                     user: { name: "Siz", image: null }
-                }, ...comments]);
+                };
+                setComments((prev: any[]) => [newComment, ...prev]);
+                onRefresh?.();
+            } else if (result.error) {
+                alert(result.error);
             }
         });
     };
@@ -103,7 +129,7 @@ export default function EpisodeItem({ tmdbId, seasonNumber, episode, isWatched: 
                 onClick={() => setIsModalOpen(true)}
                 className="group border-b border-white/5 last:border-0 hover:bg-white/[0.02] transition-all cursor-pointer relative"
             >
-                <div className="flex flex-col md:flex-row gap-4 p-4 md:p-6">
+                <div className="flex flex-col md:flex-row gap-2 md:gap-4 p-2.5 md:p-6">
                     {/* Image Section */}
                     <div className="shrink-0 w-full md:w-48 aspect-video bg-neutral-800 rounded-xl relative overflow-hidden ring-1 ring-white/5">
                         {episode.still_path ? (
@@ -129,7 +155,7 @@ export default function EpisodeItem({ tmdbId, seasonNumber, episode, isWatched: 
                             </div>
                         )}
 
-                        <div className="absolute bottom-2 left-2 px-2 py-1 bg-black/60 backdrop-blur-md rounded-lg text-[9px] font-black text-white border border-white/10 uppercase tracking-tighter">
+                        <div className="absolute bottom-1.5 left-1.5 px-1.5 py-0.5 md:px-2 md:py-1 bg-black/60 backdrop-blur-md rounded-lg text-[7px] md:text-[9px] font-black text-white border border-white/10 uppercase tracking-tighter">
                             Bölüm {episode.episode_number}
                         </div>
                     </div>
@@ -139,12 +165,12 @@ export default function EpisodeItem({ tmdbId, seasonNumber, episode, isWatched: 
                         <div className="flex items-start justify-between gap-4">
                             <div className="space-y-1">
                                 <h4 className={cn(
-                                    "font-black text-lg leading-tight tracking-tight transition-colors",
+                                    "font-black text-[12px] md:text-lg leading-tight tracking-tight transition-colors line-clamp-1",
                                     isWatched ? "text-green-400" : "text-white group-hover:text-amber-400"
                                 )}>
                                     {episode.name}
                                 </h4>
-                                <div className="flex items-center gap-2 text-[10px] font-black text-neutral-500 uppercase tracking-widest italic">
+                                <div className="hidden md:flex items-center gap-2 text-[10px] font-black text-neutral-500 uppercase tracking-widest italic">
                                     <span>{episode.air_date?.split("-")[0]}</span>
                                     {episode.runtime && (
                                         <>
@@ -182,22 +208,22 @@ export default function EpisodeItem({ tmdbId, seasonNumber, episode, isWatched: 
                                     }}
                                     disabled={isPending}
                                     className={cn(
-                                        "p-2.5 rounded-xl transition-all active:scale-90",
+                                        "p-2 md:p-2.5 rounded-xl transition-all active:scale-90",
                                         isWatched
                                             ? "text-green-500 bg-green-500/10 border border-green-500/20 shadow-lg shadow-green-500/10"
                                             : "text-neutral-500 bg-white/5 border border-white/5 hover:border-white/10 hover:text-white"
                                     )}
                                 >
-                                    <Eye className={cn("w-5 h-5", isWatched && "fill-current")} />
+                                    <Eye className={cn("w-4 h-4 md:w-5 md:h-5", isWatched && "fill-current")} />
                                 </button>
 
-                                <div className="p-2 text-neutral-600 group-hover:text-amber-400 transition-colors">
+                                <div className="hidden md:block p-2 text-neutral-600 group-hover:text-amber-400 transition-colors">
                                     <ChevronRight size={20} />
                                 </div>
                             </div>
                         </div>
 
-                        <p className="text-sm text-neutral-500 mt-2 line-clamp-2 leading-relaxed font-medium group-hover:text-neutral-400 transition-colors">
+                        <p className="hidden md:line-clamp-2 text-sm text-neutral-500 mt-2 leading-relaxed font-medium group-hover:text-neutral-400 transition-colors">
                             {episode.overview || "Bu bölüm için henüz bir özet girilmemiş. Detaylar için tıklayın."}
                         </p>
                     </div>

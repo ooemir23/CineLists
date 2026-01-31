@@ -29,10 +29,15 @@ export default function SeasonList({ tmdbId, seasons, watchedEpisodes: initialWa
     if (!seasons || seasons.length === 0) return null;
     const validSeasons = seasons.filter(s => s.episode_count > 0 && s.season_number > 0);
     const [isAllVisible, setIsAllVisible] = useState(false);
+    const [showMoreSeasons, setShowMoreSeasons] = useState(false);
     const [expandedSeason, setExpandedSeason] = useState<number | null>(validSeasons[0]?.season_number || null);
     const [isPending, startTransition] = useTransition();
     const [watchedEpisodes, setWatchedEpisodes] = useState(initialWatchedEpisodes);
     const router = useRouter();
+
+    useEffect(() => {
+        setWatchedEpisodes(initialWatchedEpisodes);
+    }, [initialWatchedEpisodes]);
 
     const handleMarkSeasonWatched = async (seasonNumber: number) => {
         // Get the season to find episode count
@@ -115,21 +120,32 @@ export default function SeasonList({ tmdbId, seasons, watchedEpisodes: initialWa
             {isAllVisible && (
                 <div className="space-y-8 mt-6 animate-in fade-in slide-in-from-top-2 duration-300">
                     {/* Season Tabs Row */}
-                    <div className="flex flex-wrap gap-2 md:gap-3">
-                        {validSeasons.map((season) => (
+                    <div className="space-y-4">
+                        <div className="grid grid-cols-2 md:flex md:flex-wrap gap-2 md:gap-3">
+                            {(showMoreSeasons ? validSeasons : validSeasons.slice(0, 4)).map((season) => (
+                                <button
+                                    key={season.id}
+                                    onClick={() => setExpandedSeason(season.season_number)}
+                                    className={cn(
+                                        "px-2 md:px-5 py-2.5 rounded-xl font-black text-[10px] md:text-[11px] transition-all border active:scale-95 uppercase tracking-widest truncate",
+                                        expandedSeason === season.season_number
+                                            ? "bg-primary text-background border-primary shadow-lg shadow-primary/20"
+                                            : "bg-white/5 text-neutral-400 border-white/5 hover:bg-white/10 hover:text-white"
+                                    )}
+                                >
+                                    {season.name}
+                                </button>
+                            ))}
+                        </div>
+
+                        {validSeasons.length > 4 && !showMoreSeasons && (
                             <button
-                                key={season.id}
-                                onClick={() => setExpandedSeason(season.season_number)}
-                                className={cn(
-                                    "px-5 py-2.5 rounded-xl font-black text-[11px] transition-all border active:scale-95 uppercase tracking-widest",
-                                    expandedSeason === season.season_number
-                                        ? "bg-primary text-background border-primary shadow-lg shadow-primary/20"
-                                        : "bg-white/5 text-neutral-400 border-white/5 hover:bg-white/10 hover:text-white"
-                                )}
+                                onClick={() => setShowMoreSeasons(true)}
+                                className="w-full md:w-auto px-6 py-2 bg-white/5 hover:bg-white/10 text-neutral-500 hover:text-white rounded-lg text-[9px] font-black uppercase tracking-[0.2em] transition-all border border-white/5"
                             >
-                                {season.name}
+                                + {validSeasons.length - 4} SEZON DAHA
                             </button>
-                        ))}
+                        )}
                     </div>
 
                     {/* Expanded Content View */}
@@ -150,14 +166,10 @@ export default function SeasonList({ tmdbId, seasons, watchedEpisodes: initialWa
                                         e.preventDefault();
                                         handleMarkSeasonWatched(expandedSeason);
                                     }}
-                                    disabled={isPending}
-                                    className="w-full sm:w-auto flex items-center justify-center gap-3 px-6 py-3 bg-white/5 hover:bg-green-500 hover:text-white border border-white/10 hover:border-green-400 rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all group/btn disabled:opacity-50"
+                                    disabled={false}
+                                    className="w-full sm:w-auto flex items-center justify-center gap-3 px-6 py-3 bg-white/5 hover:bg-green-500 hover:text-white border border-white/10 hover:border-green-400 rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all group/btn active:scale-95"
                                 >
-                                    {isPending ? (
-                                        <Loader2 className="w-4 h-4 animate-spin" />
-                                    ) : (
-                                        <CheckCircle2 className="w-4 h-4 group-hover/btn:scale-110 transition-transform" />
-                                    )}
+                                    <CheckCircle2 className="w-4 h-4 group-hover/btn:scale-110 transition-transform" />
                                     Sezonu Bitir (Tümünü İzle)
                                 </button>
                             </div>
@@ -180,33 +192,54 @@ export default function SeasonList({ tmdbId, seasons, watchedEpisodes: initialWa
 function SeasonEpisodes({ tmdbId, seasonNumber, watchedEpisodes }: { tmdbId: number, seasonNumber: number, watchedEpisodes: number[] }) {
     const [episodes, setEpisodes] = useEState<any[]>([]);
     const [loading, setLoading] = useEState(true);
+    const [showAll, setShowAll] = useEState(false);
+
+    const [refreshKey, setRefreshKey] = useEState(0);
+    const refresh = () => setRefreshKey(prev => prev + 1);
 
     useEffect(() => {
-        setLoading(true);
+        if (episodes.length === 0) setLoading(true);
         fetchSeasonEpisodes(tmdbId, seasonNumber).then(data => {
             setEpisodes(data.episodes || []);
             setLoading(false);
         });
-    }, [tmdbId, seasonNumber]);
+    }, [tmdbId, seasonNumber, refreshKey]);
 
-    if (loading) return (
-        <div className="py-20 flex flex-col items-center justify-center gap-4">
+    if (loading && episodes.length === 0) return (
+        <div className="py-10 md:py-20 flex flex-col items-center justify-center gap-4">
             <Loader2 className="w-8 h-8 animate-spin text-primary opacity-50" />
             <p className="text-[10px] font-black text-neutral-600 uppercase tracking-[0.2em] italic">Bölümler Hazırlanıyor...</p>
         </div>
     );
 
+    const displayedEpisodes = showAll ? episodes : episodes.slice(0, 4);
+
     return (
-        <div className="divide-y divide-white/5">
-            {episodes.map((episode: any) => (
-                <EpisodeItem
-                    key={episode.id}
-                    tmdbId={tmdbId}
-                    seasonNumber={seasonNumber}
-                    episode={episode}
-                    isWatched={watchedEpisodes.includes(episode.episode_number)}
-                />
-            ))}
+        <div className="flex flex-col">
+            <div className="grid grid-cols-2 md:grid-cols-1 gap-1 md:gap-0">
+                {displayedEpisodes.map((episode: any) => (
+                    <EpisodeItem
+                        key={episode.id}
+                        tmdbId={tmdbId}
+                        seasonNumber={seasonNumber}
+                        episode={episode}
+                        isWatched={watchedEpisodes.includes(episode.episode_number)}
+                        onRefresh={refresh}
+                    />
+                ))}
+            </div>
+
+            {episodes.length > 4 && !showAll && (
+                <div className="p-4 flex justify-center border-t border-white/5 bg-white/[0.01]">
+                    <button
+                        onClick={() => setShowAll(true)}
+                        className="flex items-center gap-2 px-6 py-2.5 bg-white/5 hover:bg-white/10 text-neutral-400 hover:text-white rounded-xl text-[10px] font-black uppercase tracking-widest transition-all active:scale-95"
+                    >
+                        Devamını Göster ({episodes.length - 4} Bölüm Daha)
+                        <ChevronDown className="w-3 h-3" />
+                    </button>
+                </div>
+            )}
         </div>
     );
 }

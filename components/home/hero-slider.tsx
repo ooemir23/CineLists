@@ -122,7 +122,7 @@ export function HeroSlider({ items }: HeroSliderProps) {
                 </div>
             </div>
 
-            <div className="w-full h-[65svh] md:h-[500px] rounded-[32px] md:rounded-[40px] overflow-hidden shadow-2xl border border-white/10 relative group">
+            <div className="w-full h-[65svh] md:h-[450px] rounded-[32px] md:rounded-[40px] overflow-hidden shadow-2xl border border-white/10 relative group">
                 <AnimatePresence mode="wait">
                     <motion.div
                         key={`${currentItem.id}-${currentItem.category}`}

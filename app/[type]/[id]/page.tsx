@@ -16,7 +16,7 @@ import SeasonList from "@/components/media/season-list";
 import { CommentsSection } from "@/components/media/comments";
 import { GenreList } from "@/components/media/genre-list";
 import { getReceivedRecommendation } from "@/lib/recommendation-actions";
-import { Star, Calendar, Clock, ArrowLeft, Play, Info, Tv } from "lucide-react";
+import { Star, Calendar, Clock, ArrowLeft, Play, Info, Tv, Globe } from "lucide-react";
 import { ExpandableImage } from "@/components/ui/expandable-image";
 import { TrailerButton } from "@/components/media/trailer-button";
 import { Metadata } from "next";
@@ -127,7 +127,13 @@ export default async function DetailsPage(props: Props) {
 
     const title = data.title || data.name;
     const releaseDate = data.release_date || data.first_air_date;
-    const runtime = data.runtime || (data.episode_run_time && data.episode_run_time.length > 0 ? data.episode_run_time[0] : null);
+
+    // Improved runtime logic for both movies and TV shows
+    const runtime = data.runtime ||
+        (data.episode_run_time && data.episode_run_time.length > 0 ? data.episode_run_time[0] : null) ||
+        (data.last_episode_to_air?.runtime) ||
+        null;
+
     const backdrop = data.backdrop_path ? `https://image.tmdb.org/t/p/original${data.backdrop_path}` : null;
     const year = releaseDate ? new Date(releaseDate).getFullYear() : "";
 
@@ -140,35 +146,57 @@ export default async function DetailsPage(props: Props) {
                 </Link>
             </div>
 
-            {/* Hero Section (TMDB Style) */}
-            <div className="relative w-full overflow-hidden border-b border-white/5 min-h-[80vh] md:min-h-[600px] flex items-center py-12 md:py-20">
-                {/* Backdrop Background */}
-                {backdrop && (
-                    <div className="absolute inset-0 z-0">
+            {/* Hero Section (Responsive Redesign) */}
+            <div className="relative w-full overflow-hidden border-b border-white/5 md:min-h-[600px] md:flex md:items-center pb-8 pt-0 md:py-20">
+
+                {/* Mobile Background (Poster) - Takes up space now */}
+                <div className="relative z-0 md:hidden w-full h-[55vh]">
+                    {data.poster_path ? (
                         <Image
-                            src={backdrop}
+                            src={`https://image.tmdb.org/t/p/original${data.poster_path}`}
                             alt=""
                             fill
-                            className="object-cover object-top opacity-50"
+                            className="object-cover object-top opacity-100"
                             priority
                         />
-                        {/* TMDB-like Gradient Overlay - Balanced for visibility and readability */}
-                        <div
-                            className="absolute inset-0"
-                            style={{
-                                background: `linear-gradient(to right, rgba(10, 10, 10, 1) 20%, rgba(10, 10, 10, 0.7) 50%, rgba(10, 10, 10, 0.4) 100%)`
-                            }}
-                        />
-                        <div className="absolute inset-0 bg-gradient-to-t from-neutral-950 via-neutral-950/40 to-transparent" />
-                    </div>
-                )}
+                    ) : (
+                        <div className="w-full h-full bg-neutral-900" />
+                    )}
+                    {/* Shadow overlay for text readability */}
+                    <div className="absolute inset-0 bg-gradient-to-t from-neutral-950 via-transparent to-transparent opacity-80" />
+
+                    {/* Sharp Transition Gradient */}
+                    <div className="absolute inset-x-0 bottom-0 h-48 bg-gradient-to-t from-neutral-950 via-neutral-950/90 to-transparent" />
+                </div>
+
+                {/* Desktop Background (Backdrop) */}
+                <div className="absolute inset-0 z-0 hidden md:block">
+                    {backdrop && (
+                        <>
+                            <Image
+                                src={backdrop}
+                                alt=""
+                                fill
+                                className="object-cover object-top opacity-50"
+                                priority
+                            />
+                            <div
+                                className="absolute inset-0"
+                                style={{
+                                    background: `linear-gradient(to right, rgba(10, 10, 10, 1) 20%, rgba(10, 10, 10, 0.7) 50%, rgba(10, 10, 10, 0.4) 100%)`
+                                }}
+                            />
+                            <div className="absolute inset-0 bg-gradient-to-t from-neutral-950 via-neutral-950/40 to-transparent" />
+                        </>
+                    )}
+                </div>
 
                 {/* Content Container */}
-                <div className="relative z-10 max-w-7xl mx-auto px-6 md:px-10 w-full">
-                    <div className="flex flex-col md:flex-row gap-10 lg:gap-16 items-center md:items-start text-center md:text-left">
+                <div className="relative z-10 max-w-7xl mx-auto px-6 md:px-10 w-full flex flex-col justify-end h-full -mt-32 md:mt-0">
+                    <div className="flex flex-col md:flex-row gap-6 md:gap-10 lg:gap-16 items-center md:items-start text-center md:text-left">
 
-                        {/* Poster Column */}
-                        <div className="shrink-0 w-52 md:w-72 lg:w-80">
+                        {/* Poster Column (Hidden on Mobile) */}
+                        <div className="shrink-0 w-52 md:w-72 lg:w-80 hidden md:block">
                             <div className="shadow-2xl rounded-2xl overflow-hidden ring-1 ring-white/10 group/poster relative aspect-[2/3]">
                                 {data.poster_path ? (
                                     <ExpandableImage
@@ -188,26 +216,27 @@ export default async function DetailsPage(props: Props) {
                         </div>
 
                         {/* Info Column */}
-                        <div className="flex-1 space-y-8 pt-2">
-                            <div className="space-y-3">
-                                <h1 className="text-4xl md:text-6xl font-black text-white tracking-tighter leading-[1.1]">
-                                    {title} <span className="text-neutral-500 font-light ml-2">({year})</span>
+                        <div className="flex-1 space-y-4 md:space-y-8 pt-2 w-full">
+                            <div className="space-y-2 md:space-y-3">
+                                <h1 className="text-3xl md:text-6xl font-black text-white tracking-tighter leading-[1.1] drop-shadow-2xl">
+                                    {title} <span className="text-neutral-400 md:text-neutral-500 font-light ml-2 text-xl md:text-6xl">({year})</span>
                                 </h1>
                                 {(data.original_title || data.original_name) && (data.original_title || data.original_name) !== title && (
-                                    <p className="text-neutral-400 text-xl font-medium tracking-tight italic">
+                                    <p className="text-neutral-400 md:text-neutral-400 text-sm md:text-xl font-medium tracking-tight italic drop-shadow-md">
                                         {data.original_title || data.original_name}
                                     </p>
                                 )}
                             </div>
 
                             {/* Meta Data Row */}
-                            <div className="flex flex-wrap items-center justify-center md:justify-start gap-5 text-sm font-bold text-neutral-300">
-                                <div className="flex items-center gap-2 bg-white/5 px-3 py-1.5 rounded-lg border border-white/10">
+                            <div className="flex flex-wrap items-center justify-center md:justify-start gap-3 md:gap-5 text-sm font-bold text-neutral-200 md:text-neutral-300">
+                                {/* Rating Block */}
+                                <div className="flex items-center gap-1.5 md:gap-2 bg-white/5 px-2 py-1 md:px-3 md:py-1.5 rounded-lg border border-white/10">
                                     <div className="flex items-center gap-1.5">
-                                        <Star size={16} className="text-amber-400 fill-amber-400" />
-                                        <span className="text-lg text-white font-black">{data.vote_average.toFixed(1)}</span>
+                                        <Globe className="w-3.5 h-3.5 md:w-4 md:h-4 text-sky-400" />
+                                        <span className="text-base md:text-lg text-white font-black">{data.vote_average.toFixed(1)}</span>
                                     </div>
-                                    <div className="w-[1px] h-4 bg-white/20 mx-1" />
+                                    <div className="w-[1px] h-3 md:h-4 bg-white/20 mx-1" />
                                     <RatingDisplay
                                         userRating={userRating}
                                         friendsRatings={friendsRatings}
@@ -215,14 +244,12 @@ export default async function DetailsPage(props: Props) {
                                     />
                                 </div>
 
-                                {runtime && (
-                                    <span className="flex items-center gap-2">
-                                        <Clock className="w-4 h-4 text-neutral-500" />
-                                        {Math.floor(runtime / 60) > 0
-                                            ? `${Math.floor(runtime / 60)} sa ${runtime % 60} dk`
-                                            : `${runtime} dk`}
-                                    </span>
-                                )}
+                                <span className="flex items-center gap-2 bg-transparent px-2 py-1 rounded-lg">
+                                    <Clock className="w-4 h-4 text-neutral-500" />
+                                    {runtime && (Math.floor(runtime / 60) > 0
+                                        ? `${Math.floor(runtime / 60)}s ${runtime % 60}dk`
+                                        : `${runtime}dk`)}
+                                </span>
                             </div>
 
                             {/* Feature Row (Platforms & Genres) */}
@@ -232,30 +259,49 @@ export default async function DetailsPage(props: Props) {
                                     isGlobal={isGlobal}
                                     isGuest={isGuest}
                                 />
-                                <div className="hidden md:block w-1.5 h-1.5 bg-neutral-700 rounded-full" />
                                 <GenreList genres={data.genres} type={type as "movie" | "tv"} />
                             </div>
 
                             {/* Actions Row */}
-                            <div className="flex flex-wrap items-center justify-center md:justify-start gap-4">
-                                <MediaActions
-                                    tmdbId={data.id}
-                                    type={type as "movie" | "tv"}
-                                    title={title}
-                                    posterPath={data.poster_path}
-                                    initialInWatchlist={inWatchlist}
-                                    initialStatus={watchStatus}
-                                    initialRating={userRating}
-                                    initialRecommendation={activeRecommendation?.sender ? {
-                                        id: activeRecommendation.sender.id,
-                                        name: activeRecommendation.sender.name || "Bilinmiyor"
-                                    } : undefined}
-                                    isGuest={isGuest}
-                                />
+                            <div className="flex flex-wrap items-center justify-center md:justify-start gap-4 pb-4 md:pb-0 w-full md:w-auto">
+                                <div className="md:hidden w-full">
+                                    <MediaActions
+                                        tmdbId={data.id}
+                                        type={type as "movie" | "tv"}
+                                        title={title}
+                                        posterPath={data.poster_path}
+                                        initialInWatchlist={inWatchlist}
+                                        initialStatus={watchStatus}
+                                        initialRating={userRating}
+                                        initialRecommendation={activeRecommendation?.sender ? {
+                                            id: activeRecommendation.sender.id,
+                                            name: activeRecommendation.sender.name || "Bilinmiyor"
+                                        } : undefined}
+                                        isGuest={isGuest}
+                                        variant="minimal"
+                                    />
+                                </div>
+                                <div className="hidden md:block">
+                                    <MediaActions
+                                        tmdbId={data.id}
+                                        type={type as "movie" | "tv"}
+                                        title={title}
+                                        posterPath={data.poster_path}
+                                        initialInWatchlist={inWatchlist}
+                                        initialStatus={watchStatus}
+                                        initialRating={userRating}
+                                        initialRecommendation={activeRecommendation?.sender ? {
+                                            id: activeRecommendation.sender.id,
+                                            name: activeRecommendation.sender.name || "Bilinmiyor"
+                                        } : undefined}
+                                        isGuest={isGuest}
+                                        variant="standard"
+                                    />
+                                </div>
                             </div>
 
-                            {/* Overview */}
-                            <div className="max-w-3xl space-y-3">
+                            {/* Overview (Desktop Only in Hero, Mobile moved below) */}
+                            <div className="hidden md:block max-w-3xl space-y-3">
                                 <h3 className="text-lg font-black text-amber-500 uppercase tracking-widest italic opacity-80 underline decoration-amber-500/20 underline-offset-8 decoration-2">Özet</h3>
                                 <p className="text-neutral-200 leading-relaxed text-lg font-medium drop-shadow-sm">
                                     {data.overview || "Özet bulunmuyor."}
@@ -267,7 +313,15 @@ export default async function DetailsPage(props: Props) {
             </div>
 
             {/* Extra Details Body */}
-            <div className="max-w-7xl mx-auto px-6 md:px-10 mt-12 space-y-16">
+            <div className="max-w-7xl mx-auto px-6 md:px-10 mt-6 md:mt-12 space-y-12 md:space-y-16">
+
+                {/* Mobile Overview (Moved from Hero) */}
+                <div className="md:hidden space-y-3">
+                    <h3 className="text-sm font-black text-amber-500 uppercase tracking-widest italic opacity-80 underline decoration-amber-500/20 underline-offset-8 decoration-2">Özet</h3>
+                    <p className="text-neutral-300 leading-relaxed text-base font-medium">
+                        {data.overview || "Özet bulunmuyor."}
+                    </p>
+                </div>
 
                 {/* Providers (Compact) */}
 

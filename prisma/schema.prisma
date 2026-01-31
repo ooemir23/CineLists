@@ -176,6 +176,7 @@ model Comment {
   episodeId  String?
   personId   Int?
   content    String
+  isSpoiler  Boolean   @default(false)
   createdAt  DateTime  @default(now())
   activity   Activity? @relation(fields: [activityId], references: [id], onDelete: Cascade)
   episode    Episode?  @relation(fields: [episodeId], references: [id], onDelete: Cascade)

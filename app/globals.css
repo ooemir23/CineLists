@@ -111,6 +111,16 @@
   .no-tap-highlight {
     -webkit-tap-highlight-color: transparent;
   }
+
+  /* Hide scrollbar for infinite scroll */
+  .hide-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .hide-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
 }
 
 /* Custom Scrollbar */

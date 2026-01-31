@@ -24,6 +24,7 @@ export async function addPersonComment(personId: number, content: string) {
                 userId: session.user.id,
                 personId,
                 content: content.trim(),
+                isSpoiler: false, // Default for now
             },
         });
 
@@ -78,6 +79,7 @@ export async function addActivityComment(activityId: string, content: string) {
                 userId: session.user.id,
                 activityId,
                 content: content.trim(),
+                isSpoiler: false,
             },
             include: {
                 activity: {
@@ -132,7 +134,7 @@ export async function getActivityComments(activityId: string) {
 }
 
 
-export async function addEpisodeComment(episodeId: string, content: string, path: string) {
+export async function addEpisodeComment(episodeId: string, content: string, path: string, isSpoiler: boolean = false) {
     const session = await auth();
     if (!session?.user?.id) return { error: "Giriş yapmalısınız" };
 
@@ -148,14 +150,15 @@ export async function addEpisodeComment(episodeId: string, content: string, path
                 userId: session.user.id,
                 episodeId,
                 content: content.trim(),
+                isSpoiler,
             },
         });
 
         revalidatePath(path);
         return { success: true };
-    } catch (error) {
+    } catch (error: any) {
         console.error("Error adding episode comment:", error);
-        return { error: "Yorum eklenirken bir hata oluştu" };
+        return { error: error.message || "Yorum eklenirken bir hata oluştu" };
     }
 }
 

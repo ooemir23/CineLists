@@ -40,14 +40,14 @@ export async function HomeTopSection() {
     ].filter(item => item && item.backdrop_path); // Filter out incomplete items
 
     return (
-        <section className="flex flex-col lg:flex-row gap-8 w-full">
+        <section className="flex flex-col lg:flex-row gap-4 w-full">
             {/* Left Column: Hero Slider */}
             <div className="lg:w-[60%] xl:w-[65%] relative group">
                 <HeroSlider items={items} />
             </div>
 
             {/* Right Column: Friends Activity (Designed for Home Page) */}
-            <div className="lg:w-[40%] xl:w-[35%] flex flex-col h-full gap-4">
+            <div className="hidden lg:flex lg:w-[40%] xl:w-[35%] flex-col h-full gap-4">
                 {/* Unified Panel */}
                 <div className="bg-[#1A202C]/60 backdrop-blur-xl rounded-[2.5rem] border border-white/5 overflow-hidden flex flex-col h-[500px] lg:h-full lg:max-h-[500px]">
 
