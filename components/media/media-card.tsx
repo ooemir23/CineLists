@@ -270,7 +270,7 @@ export function MediaCard({
                                                 <div className="flex items-center gap-3">
                                                     <div className="relative w-10 h-10 rounded-xl overflow-hidden bg-neutral-800 border border-white/10 group-hover:border-primary/50 transition-colors">
                                                         {r.userImage ? (
-                                                            <Image src={r.userImage} alt={r.userName} fill className="object-cover" />
+                                                            <Image src={r.userImage!} alt={r.userName} fill className="object-cover" />
                                                         ) : (
                                                             <div className="w-full h-full flex items-center justify-center text-neutral-600">
                                                                 <User className="w-5 h-5" />
