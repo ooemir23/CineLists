@@ -1,9 +1,22 @@
 import { signIn } from "@/auth";
 import { loginAsGuest } from "@/lib/guest-actions";
+import { loginUser } from "@/lib/auth-actions";
 import { Film } from "lucide-react";
 import Link from "next/link";
 
-export default function LoginPage() {
+type LoginPageProps = {
+    searchParams: Promise<{ error?: string }>;
+};
+
+export default async function LoginPage({ searchParams }: LoginPageProps) {
+    const params = await searchParams;
+    const errorMessage =
+        params.error === "invalid"
+            ? "E-posta veya şifre hatalı."
+            : params.error === "missing"
+                ? "E-posta ve şifre zorunludur."
+                : null;
+
     return (
         <div className="min-h-screen flex items-center justify-center bg-background px-4">
             <div className="w-full max-w-sm space-y-8 bg-card p-8 rounded-2xl border border-white/10 shadow-2xl">
@@ -15,18 +28,17 @@ export default function LoginPage() {
                     </div>
                     <h2 className="text-2xl font-bold text-white tracking-tight">Giriş Yap</h2>
                     <p className="mt-2 text-sm text-neutral-400">
-                        WatchGo hesabınıza erişmek için devam edin.
+                        cinelists hesabınıza erişmek için devam edin.
                     </p>
                 </div>
 
-                <form
-                    action={async (formData) => {
-                        "use server";
-                        const email = formData.get("email") as string;
-                        await signIn("email", { email, redirectTo: "/onboarding" });
-                    }}
-                    className="space-y-4"
-                >
+                {errorMessage && (
+                    <div className="rounded-xl border border-red-400/30 bg-red-500/10 text-red-200 text-sm font-medium px-4 py-3">
+                        {errorMessage}
+                    </div>
+                )}
+
+                <form action={loginUser} className="space-y-4">
                     <div className="space-y-2">
                         <label htmlFor="email" className="text-sm font-medium text-neutral-400 ml-1">
                             E-posta
@@ -40,11 +52,25 @@ export default function LoginPage() {
                             className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all"
                         />
                     </div>
+                    <div className="space-y-2">
+                        <label htmlFor="password" className="text-sm font-medium text-neutral-400 ml-1">
+                            Şifre
+                        </label>
+                        <input
+                            id="password"
+                            name="password"
+                            type="password"
+                            placeholder="Şifren"
+                            required
+                            minLength={6}
+                            className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all"
+                        />
+                    </div>
                     <button
                         type="submit"
                         className="w-full bg-primary text-white font-bold py-3 rounded-xl hover:bg-primary/90 transition-all active:scale-[0.98]"
                     >
-                        E-posta ile Giriş Yap
+                        Giriş Yap
                     </button>
                 </form>
 

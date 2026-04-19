@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 import { AutoScrollText } from "@/components/ui/auto-scroll-text";
 import { RecommendModal } from "./recommend-modal";
 import { useState, useEffect } from "react";
-import { getAllMediaRatings } from "@/lib/rating-actions";
+import { getFriendsRatings } from "@/lib/rating-actions";
 import { createPortal } from "react-dom";
 
 type MediaCardProps = {
@@ -60,21 +60,31 @@ export function MediaCard({
     type,
     fullWidth = false
 }: MediaCardProps) {
+    type FriendRating = {
+        userId: string;
+        userName: string | null;
+        userImage: string | null;
+        rating: number | null;
+    };
+
     const [isRecommendOpen, setIsRecommendOpen] = useState(false);
     const [isRatingsPopupOpen, setIsRatingsPopupOpen] = useState(false);
-    const [detailedRatings, setDetailedRatings] = useState<any[]>([]);
+    const [friendsRatings, setFriendsRatings] = useState<FriendRating[]>([]);
     const [loadingRatings, setLoadingRatings] = useState(false);
 
-    const handleCommunityClick = async (e: React.MouseEvent) => {
+    const handleFriendsRatingsClick = async (e: React.MouseEvent) => {
         e.preventDefault();
         e.stopPropagation();
 
         setIsRatingsPopupOpen(true);
-        if (detailedRatings.length === 0) {
+        if (friendsRatings.length === 0 && (type === "movie" || type === "tv")) {
             setLoadingRatings(true);
-            const ratings = await getAllMediaRatings(id);
-            setDetailedRatings(ratings);
-            setLoadingRatings(false);
+            try {
+                const ratings = await getFriendsRatings(id, type);
+                setFriendsRatings(ratings);
+            } finally {
+                setLoadingRatings(false);
+            }
         }
     };
 
@@ -157,20 +167,20 @@ export function MediaCard({
                                     <span className="text-[10px] font-black text-white">{voteAverage?.toFixed(1) || "0"}</span>
                                 </div>
 
-                                {/* Community Rating */}
+                                {/* User Rating + Friends Ratings */}
                                 <button
-                                    onClick={handleCommunityClick}
+                                    onClick={handleFriendsRatingsClick}
                                     className={cn(
                                         "flex items-center gap-1 px-1.5 py-0.5 rounded-md border transition-all shrink-0 hover:scale-110 active:scale-95",
-                                        communityRating && communityRating.count > 0
+                                        userRating !== null && userRating !== undefined
                                             ? "bg-primary/20 border-primary/30 text-primary"
                                             : "bg-white/5 border-white/5 text-neutral-500"
                                     )}
-                                    title="Topluluk Puanı"
+                                    title="Senin puanın ve arkadaş puanları"
                                 >
-                                    <Star className={cn("w-2.5 h-2.5", communityRating && communityRating.count > 0 ? "fill-current" : "text-neutral-500")} />
+                                    <Star className={cn("w-2.5 h-2.5", userRating !== null && userRating !== undefined ? "fill-current" : "text-neutral-500")} />
                                     <span className="text-[10px] font-black">
-                                        {communityRating?.average || "0"}
+                                        {userRating !== null && userRating !== undefined ? userRating.toFixed(1) : "-"}
                                     </span>
                                 </button>
                             </div>
@@ -229,7 +239,7 @@ export function MediaCard({
                                         <Star className="w-5 h-5 text-primary fill-current" />
                                     </div>
                                     <div>
-                                        <h3 className="text-lg font-black text-white uppercase tracking-tight">Puanlar</h3>
+                                        <h3 className="text-lg font-black text-white uppercase tracking-tight">Arkadaş Puanları</h3>
                                         <p className="text-[10px] text-neutral-500 font-bold uppercase tracking-wider">{title}</p>
                                     </div>
                                 </div>
@@ -248,12 +258,12 @@ export function MediaCard({
                                         <div className="w-8 h-8 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
                                         <p className="text-xs font-bold text-neutral-500 uppercase tracking-widest">Yükleniyor...</p>
                                     </div>
-                                ) : detailedRatings.length > 0 ? (
+                                ) : friendsRatings.length > 0 ? (
                                     <div className="space-y-3">
-                                        {detailedRatings.map((r) => (
+                                        {friendsRatings.map((r) => (
                                             <Link
                                                 key={r.userId}
-                                                href={`/profile/${r.username || r.userId}`}
+                                                href={`/profile/${r.userId}`}
                                                 className="flex items-center justify-between p-3 rounded-2xl bg-white/5 border border-white/5 hover:bg-white/10 hover:border-white/10 transition-all group"
                                                 onClick={() => setIsRatingsPopupOpen(false)}
                                             >
@@ -269,14 +279,14 @@ export function MediaCard({
                                                     </div>
                                                     <div>
                                                         <p className="text-sm font-black text-white group-hover:text-primary transition-colors truncate max-w-[150px]">
-                                                            {r.userName}
+                                                            {r.userName || "Arkadaş"}
                                                         </p>
-                                                        <p className="text-[10px] text-neutral-500 font-bold">@{r.username || "user"}</p>
+                                                        <p className="text-[10px] text-neutral-500 font-bold">Arkadaş</p>
                                                     </div>
                                                 </div>
                                                 <div className="bg-primary px-3 py-1.5 rounded-xl flex items-center gap-1.5 shadow-lg shadow-primary/20">
                                                     <Star className="w-3.5 h-3.5 text-white fill-current" />
-                                                    <span className="text-sm font-black text-white">{r.rating}</span>
+                                                    <span className="text-sm font-black text-white">{r.rating?.toFixed(1) || "0.0"}</span>
                                                 </div>
                                             </Link>
                                         ))}
@@ -286,17 +296,17 @@ export function MediaCard({
                                         <div className="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center border border-white/10">
                                             <Star className="w-8 h-8 text-neutral-700" />
                                         </div>
-                                        <p className="text-sm font-bold text-neutral-500 uppercase tracking-wider">Henüz puan verilmemiş</p>
+                                        <p className="text-sm font-bold text-neutral-500 uppercase tracking-wider">Arkadaşlarından henüz puan yok</p>
                                     </div>
                                 )}
                             </div>
 
                             {/* Footer Information */}
-                            {detailedRatings.length > 0 && (
+                            {friendsRatings.length > 0 && (
                                 <div className="p-4 bg-white/5 border-t border-white/5">
                                     <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-widest text-neutral-500 px-1">
-                                        <span>Toplam Değerlendirme</span>
-                                        <span className="text-primary">{detailedRatings.length}</span>
+                                        <span>Puan Veren Arkadaş</span>
+                                        <span className="text-primary">{friendsRatings.length}</span>
                                     </div>
                                 </div>
                             )}

@@ -4,6 +4,14 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { tmdb } from "@/lib/tmdb";
+import { Prisma } from "@prisma/client";
+
+function isPrismaConnectionError(error: unknown) {
+    if (error instanceof Prisma.PrismaClientInitializationError) return true;
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P1001") return true;
+    if (error instanceof Error && error.message.includes("Can't reach database server")) return true;
+    return false;
+}
 
 export async function rateMedia(tmdbId: number, type: "movie" | "tv", rating: number, title?: string, posterPath?: string | null) {
     const session = await auth();
@@ -228,6 +236,9 @@ export async function getUserRatingsBulk(tmdbIds: number[]) {
 
         return ratingsMap;
     } catch (error) {
+        if (isPrismaConnectionError(error)) {
+            return {};
+        }
         console.error("Get bulk user ratings error:", error);
         return {};
     }
@@ -266,6 +277,9 @@ export async function getCommunityRatingsBulk(tmdbIds: number[]) {
 
         return statsMap;
     } catch (error) {
+        if (isPrismaConnectionError(error)) {
+            return {};
+        }
         console.error("Get bulk community ratings error:", error);
         return {};
     }

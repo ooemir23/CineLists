@@ -5,6 +5,7 @@ import Credentials from "next-auth/providers/credentials";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import { prisma } from "@/lib/prisma";
 import { authConfig } from "./auth.config";
+import bcrypt from "bcryptjs";
 
 export const { auth, handlers, signIn, signOut } = NextAuth({
     ...authConfig,
@@ -28,37 +29,35 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
             name: "Email",
             credentials: {
                 email: { label: "Email", type: "email" },
+                password: { label: "Password", type: "password" },
             },
             async authorize(credentials) {
                 if (!credentials?.email) return null;
                 const email = credentials.email as string;
 
-                let user = await prisma.user.findUnique({
+                // Guest login bypasses DB and password checks
+                if (email.endsWith("@guest.cinelists.local")) {
+                    return {
+                        id: "guest_" + Math.random().toString(36).slice(-8),
+                        email: email,
+                        name: "Misafir",
+                        username: "guest_" + Math.random().toString(36).slice(-4),
+                        hasCompletedOnboarding: true,
+                        isGuest: true
+                    } as any;
+                }
+
+                const password = credentials.password as string | undefined;
+                if (!password) return null;
+
+                const user = await prisma.user.findUnique({
                     where: { email },
                 });
 
-                if (!user) {
-                    // IF GUEST: Don't create in DB
-                    if (email.endsWith("@guest.watchgo.local")) {
-                        return {
-                            id: "guest_" + Math.random().toString(36).slice(-8),
-                            email: email,
-                            name: "Misafir",
-                            username: "guest_" + Math.random().toString(36).slice(-4),
-                            hasCompletedOnboarding: true, // Guests skip onboarding
-                            isGuest: true
-                        } as any;
-                    }
+                if (!user?.password) return null;
 
-                    const username = email.split("@")[0] + "_" + Math.random().toString(36).slice(-4);
-                    user = await prisma.user.create({
-                        data: {
-                            email,
-                            username: username,
-                            name: email.split("@")[0],
-                        },
-                    });
-                }
+                const isValidPassword = await bcrypt.compare(password, user.password);
+                if (!isValidPassword) return null;
 
                 return user;
             }

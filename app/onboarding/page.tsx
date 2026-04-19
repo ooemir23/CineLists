@@ -40,7 +40,7 @@ export default async function OnboardingPage() {
                         <Film className="w-8 h-8 text-primary" />
                     </div>
                     <h1 className="text-4xl md:text-5xl font-black text-white tracking-tight">
-                        WatchGo'ya Hoş Geldin!
+                        cinelists'e Hoş Geldin!
                     </h1>
                     <p className="text-xl text-neutral-400 max-w-2xl mx-auto">
                         Sana en uygun önerileri sunabilmemiz için zevklerini öğrenmek istiyoruz.

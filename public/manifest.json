@@ -1,6 +1,6 @@
 {
-    "name": "WatchGo - Film ve Dizi Takip",
-    "short_name": "WatchGo",
+    "name": "cinelists - Film ve Dizi Takip",
+    "short_name": "cinelists",
     "description": "Film ve dizileri takip et, arkadaşlarınla paylaş, puanla ve keşfet",
     "start_url": "/",
     "display": "standalone",

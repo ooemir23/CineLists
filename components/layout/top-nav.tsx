@@ -86,7 +86,7 @@ export function TopNav({ user }: TopNavProps) {
             <div className="w-10 h-10 bg-amber-400 rounded-xl flex items-center justify-center rotate-3 group-hover:rotate-0 transition-transform">
               <Film size={24} className="text-slate-950" />
             </div>
-            <span className="tracking-tighter hidden md:block"><span className="text-amber-400">Watch</span>Go</span>
+            <span className="tracking-tighter hidden md:block"><span className="text-amber-400">cine</span>lists</span>
           </Link>
         </div>
 

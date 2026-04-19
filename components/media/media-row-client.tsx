@@ -90,7 +90,7 @@ export function MediaRowClient({ children, autoScroll = true }: MediaRowClientPr
         >
             <div
                 ref={scrollRef}
-                className="flex gap-4 lg:gap-6 overflow-x-auto pt-4 pb-4 -mx-8 px-8 md:-mx-4 md:px-4 hide-scrollbar"
+                className="flex gap-4 lg:gap-6 overflow-x-auto pt-12 pb-14 -mx-8 px-8 md:-mx-4 md:px-4 hide-scrollbar"
                 style={{ scrollBehavior: 'auto' }}
             >
                 {duplicatedChildren}

@@ -162,7 +162,7 @@ export default async function Home({ searchParams }: HomeProps) {
             {/* Consolidated Sections: Trendler & Popüler */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
               {/* Trendler Section with Amber Frame */}
-              <section className="group relative p-6 md:p-8 rounded-[3rem] border border-amber-500/10 bg-amber-500/[0.02] hover:bg-amber-500/[0.04] hover:border-amber-500/20 transition-all duration-500 overflow-hidden">
+              <section className="group relative p-6 md:px-10 md:py-12 rounded-[3.5rem] border border-amber-500/10 bg-amber-500/[0.02] hover:bg-amber-500/[0.04] hover:border-amber-500/20 transition-all duration-500">
                 <div className="absolute top-0 right-0 w-48 h-48 bg-amber-500/5 blur-[100px] -mr-24 -mt-24 pointer-events-none group-hover:bg-amber-500/10 transition-colors duration-500" />
 
                 <div className="flex items-center justify-between mb-4 relative z-10 gap-4">
@@ -199,7 +199,7 @@ export default async function Home({ searchParams }: HomeProps) {
               </section>
 
               {/* Popüler Section with Blue Frame */}
-              <section className="group relative p-6 md:p-8 rounded-[3rem] border border-blue-500/10 bg-blue-500/[0.02] hover:bg-blue-500/[0.04] hover:border-blue-500/20 transition-all duration-500 overflow-hidden">
+              <section className="group relative p-6 md:px-10 md:py-12 rounded-[3.5rem] border border-blue-500/10 bg-blue-500/[0.02] hover:bg-blue-500/[0.04] hover:border-blue-500/20 transition-all duration-500">
                 <div className="absolute top-0 right-0 w-48 h-48 bg-blue-500/5 blur-[100px] -mr-24 -mt-24 pointer-events-none group-hover:bg-blue-500/10 transition-colors duration-500" />
 
                 <div className="flex items-center justify-between mb-4 relative z-10 gap-4">
@@ -237,7 +237,7 @@ export default async function Home({ searchParams }: HomeProps) {
             </div>
 
             {/* Yakında Çıkacak Section with Green Frame */}
-            <section className="group relative p-6 md:p-8 rounded-[3rem] border border-emerald-500/10 bg-emerald-500/[0.02] hover:bg-emerald-500/[0.04] hover:border-emerald-500/20 transition-all duration-500 overflow-hidden">
+            <section className="group relative p-6 md:px-10 md:py-12 rounded-[3.5rem] border border-emerald-500/10 bg-emerald-500/[0.02] hover:bg-emerald-500/[0.04] hover:border-emerald-500/20 transition-all duration-500">
               <div className="absolute top-0 right-0 w-48 h-48 bg-emerald-500/5 blur-[100px] -mr-24 -mt-24 pointer-events-none group-hover:bg-emerald-500/10 transition-colors duration-500" />
 
               <div className="flex items-center justify-between mb-4 relative z-10 gap-4">

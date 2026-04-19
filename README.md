@@ -1,6 +1,6 @@
-# WatchGo - Film ve Dizi Takip Uygulaması
+# cinelists - Film ve Dizi Takip Uygulaması
 
-WatchGo, kullanıcıların film ve dizileri takip edebileceği, arkadaşlarıyla paylaşabileceği, puanlayabileceği modern bir web uygulamasıdır.
+cinelists, kullanıcıların film ve dizileri takip edebileceği, arkadaşlarıyla paylaşabileceği, puanlayabileceği modern bir web uygulamasıdır.
 
 ## 🚀 Özellikler
 
@@ -33,7 +33,7 @@ WatchGo, kullanıcıların film ve dizileri takip edebileceği, arkadaşlarıyla
 1. **Repository'yi klonlayın:**
    ```bash
    git clone <repository-url>
-   cd watch-go
+   cd cinelists
    ```
 
 2. **Bağımlılıkları yükleyin:**
@@ -48,7 +48,7 @@ WatchGo, kullanıcıların film ve dizileri takip edebileceği, arkadaşlarıyla
 
    `.env.local` dosyasını düzenleyin:
    ```env
-   DATABASE_URL="postgresql://username:password@localhost:5432/watchgo"
+   DATABASE_URL="postgresql://username:password@localhost:5432/cinelists"
    NEXTAUTH_SECRET="your-secret-key"
    NEXTAUTH_URL="http://localhost:3000"
    TMDB_API_KEY="your-tmdb-api-key"
@@ -87,7 +87,7 @@ WatchGo, kullanıcıların film ve dizileri takip edebileceği, arkadaşlarıyla
 ## 🏗️ Proje Yapısı
 
 ```
-watch-go/
+cinelists/
 ├── app/                    # Next.js App Router
 │   ├── api/               # API routes
 │   ├── login/             # Giriş sayfası

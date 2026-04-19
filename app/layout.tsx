@@ -21,8 +21,8 @@ export const viewport: Viewport = {
 
 export const metadata: Metadata = {
   title: {
-    default: "WatchGo - Film ve Dizi Takip",
-    template: "%s | WatchGo"
+    default: "cinelists - Film ve Dizi Takip",
+    template: "%s | cinelists"
   },
   description: "Film ve dizileri takip et, arkadaşlarınla paylaş, puanla ve keşfet.",
 
@@ -33,15 +33,15 @@ export const metadata: Metadata = {
   appleWebApp: {
     capable: true,
     statusBarStyle: 'black-translucent',
-    title: 'WatchGo'
+    title: 'cinelists'
   },
 
   // Open Graph
   openGraph: {
     type: 'website',
     locale: 'tr_TR',
-    siteName: 'WatchGo',
-    title: 'WatchGo - Film ve Dizi Takip',
+    siteName: 'cinelists',
+    title: 'cinelists - Film ve Dizi Takip',
     description: 'Film ve dizileri takip et, arkadaşlarınla paylaş',
   },
 
