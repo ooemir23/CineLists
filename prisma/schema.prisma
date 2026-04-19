@@ -36,21 +36,21 @@ model Session {
 
 model User {
   id                      String           @id @default(cuid())
-  username                String           @unique
   name                    String?
   email                   String?          @unique
   emailVerified           DateTime?
   image                   String?
   bio                     String?
-  password                String?
-  hasCompletedOnboarding  Boolean          @default(false)
   favoriteGenres          String[]
+  hasCompletedOnboarding  Boolean          @default(false)
   platforms               String[]
+  password                String?
   isPrivate               Boolean          @default(false)
+  isSuspended             Boolean          @default(false)
   showActivities          Boolean          @default(true)
   showStats               Boolean          @default(true)
-  isSuspended             Boolean          @default(false)
   suspendedAt             DateTime?
+  username                String           @unique
   accounts                Account[]
   activityRecommendations Activity[]       @relation("ActivityRecommendations")
   activities              Activity[]
@@ -108,11 +108,11 @@ model MediaItem {
   backdropPath    String?
   overview        String?
   releaseDate     DateTime?
-  runtime         Int?
   seasonCount     Int?
   episodeCount    Int?
   genres          String[]
   voteAverage     Float?
+  runtime         Int?
   activities      Activity[]
   episodes        Episode[]
   recommendations Recommendation[]
@@ -155,11 +155,11 @@ model Activity {
   review            String?
   watchedAt         DateTime?
   watchedWith       String?
-  recommendedById   String?
-  recommendedByText String?
   platform          String?
   createdAt         DateTime     @default(now())
   episodeId         String?
+  recommendedById   String?
+  recommendedByText String?
   episode           Episode?     @relation(fields: [episodeId], references: [id])
   media             MediaItem    @relation(fields: [mediaId], references: [id])
   recommendedBy     User?        @relation("ActivityRecommendations", fields: [recommendedById], references: [id])
@@ -174,10 +174,10 @@ model Comment {
   userId     String
   activityId String?
   episodeId  String?
-  personId   Int?
   content    String
-  isSpoiler  Boolean   @default(false)
   createdAt  DateTime  @default(now())
+  personId   Int?
+  isSpoiler  Boolean   @default(false)
   activity   Activity? @relation(fields: [activityId], references: [id], onDelete: Cascade)
   episode    Episode?  @relation(fields: [episodeId], references: [id], onDelete: Cascade)
   user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)

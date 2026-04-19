@@ -12,18 +12,14 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
     adapter: PrismaAdapter(prisma),
     session: { strategy: "jwt" },
     providers: [
-        ...(process.env.AUTH_GOOGLE_ID && process.env.AUTH_GOOGLE_SECRET ? [
-            GoogleProperty({
-                clientId: process.env.AUTH_GOOGLE_ID,
-                clientSecret: process.env.AUTH_GOOGLE_SECRET,
-            })
-        ] : []),
-        ...(process.env.AUTH_APPLE_ID && process.env.AUTH_APPLE_SECRET ? [
-            Apple({
-                clientId: process.env.AUTH_APPLE_ID,
-                clientSecret: process.env.AUTH_APPLE_SECRET,
-            })
-        ] : []),
+        GoogleProperty({
+            clientId: process.env.AUTH_GOOGLE_ID,
+            clientSecret: process.env.AUTH_GOOGLE_SECRET,
+        }),
+        Apple({
+            clientId: process.env.AUTH_APPLE_ID,
+            clientSecret: process.env.AUTH_APPLE_SECRET,
+        }),
         Credentials({
             id: "email",
             name: "Email",
