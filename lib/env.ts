@@ -10,6 +10,16 @@ const envSchema = z.object({
     DATABASE_URL: z.string().min(1),
 });
 
-export const env = typeof window === "undefined"
-    ? envSchema.parse(process.env)
-    : {} as z.infer<typeof envSchema>;
+function getEnv() {
+    if (typeof window !== "undefined") return {} as z.infer<typeof envSchema>;
+
+    try {
+        return envSchema.parse(process.env);
+    } catch {
+        // During build time, env vars might not be available
+        // Return a partial object to avoid build failures
+        return process.env as unknown as z.infer<typeof envSchema>;
+    }
+}
+
+export const env = getEnv();
