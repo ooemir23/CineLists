@@ -7,12 +7,12 @@ export const authConfig = {
     callbacks: {
         authorized({ auth, request: { nextUrl } }) {
             const isLoggedIn = !!auth?.user;
-            const protectedRoutes = ["/profile", "/watchlist", "/feed", "/notifications", "/community", "/messages", "/stats"];
+            const protectedRoutes = ["/profile", "/watchlist", "/watched", "/feed", "/notifications", "/community", "/messages", "/stats", "/recommendations"];
             const isProtectedRoute = protectedRoutes.some(route => nextUrl.pathname.startsWith(route));
 
             if (isProtectedRoute) {
-                if (isLoggedIn) return true;
-                return false; // Redirect unauthenticated users to login page
+                if (!isLoggedIn) return false; // Redirect unauthenticated users to login page
+                return true;
             }
             return true;
         },

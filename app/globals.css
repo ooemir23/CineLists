@@ -59,8 +59,8 @@
   --destructive-foreground: 210 40% 98%;
 
   /* Border / Input / Ring */
-  --border: 221 83% 53%;
-  --input: 221 83% 53%;
+  --border: 222 36% 18%;
+  --input: 222 36% 18%;
   --ring: 48 100% 50%;
 
   --radius: 0.75rem;
@@ -160,17 +160,9 @@ a,
 
 /* iOS Safari fixes */
 @supports (-webkit-touch-callout: none) {
-  body {
-    /* Fix for iOS Safari bounce scroll */
-    position: fixed;
-    overflow: hidden;
-    width: 100%;
-  }
-
-  #__next {
-    height: 100vh;
-    overflow-y: auto;
-    -webkit-overflow-scrolling: touch;
+  /* Use overscroll-behavior instead of position:fixed to prevent bounce without breaking scroll */
+  html {
+    overscroll-behavior: none;
   }
 }
 
@@ -252,4 +244,20 @@ a,
 
 .animate-marquee-infinite {
   animation: marquee-infinite 10s linear infinite;
+}
+
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in-up {
+  animation: fade-in-up 0.2s ease-out forwards;
 }

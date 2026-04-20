@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { tmdb } from "@/lib/tmdb";
 import { MediaRow } from "@/components/media/media-row";
-import { Play, Info, ChevronRight } from "lucide-react";
+import { ChevronRight } from "lucide-react";
 import { PersonalizedRecommendations } from "@/components/home/personalized-recommendations";
 import { getPersonalizedRecommendations } from "@/lib/recommendations";
 import { FriendsActivity } from "@/components/home/friends-activity";
@@ -128,16 +128,16 @@ export default async function Home({ searchParams }: HomeProps) {
   }
 
   return (
-    <div className="min-h-screen w-full overflow-x-hidden pb-20 bg-[#101624]">
+    <div className="min-h-screen w-full overflow-x-hidden pb-24 md:pb-0 bg-[#101624]">
 
       {/* Primary Top Section: Hero Slider & Friends Activity */}
-      <div className="max-w-[1600px] mx-auto px-4 sm:px-6 md:px-8 lg:px-12 mb-4 md:mb-6 pt-16 md:pt-20">
+      <div className="max-w-[1600px] mx-auto px-3 sm:px-6 md:px-8 lg:px-12 mb-4 md:mb-6 pt-14 md:pt-20">
         {!isFiltering && <HomeTopSection />}
       </div>
 
       {/* Personalized Recommendations - Highlighted Placement */}
       {!isFiltering && personalizedMovies?.results?.length > 0 && (
-        <div className="max-w-[1600px] mx-auto px-4 sm:px-6 md:px-8 lg:px-12 mb-6">
+        <div className="max-w-[1600px] mx-auto px-3 sm:px-6 md:px-8 lg:px-12 mb-6">
           <PersonalizedRecommendations
             results={personalizedMovies.results}
             reasons={personalizedMovies.reasons}
@@ -147,10 +147,10 @@ export default async function Home({ searchParams }: HomeProps) {
 
 
       {/* Main Content Area */}
-      <div className="max-w-[1600px] mx-auto px-4 sm:px-6 md:px-8 lg:px-12 space-y-6 md:space-y-10">
+      <div className="max-w-[1600px] mx-auto px-3 sm:px-6 md:px-8 lg:px-12 space-y-4 md:space-y-10">
 
         {isFiltering ? (
-          <div id="search-results" className="bg-white/5 rounded-3xl p-6 border border-white/10 scroll-mt-24">
+          <div id="search-results" className="bg-white/5 rounded-2xl md:rounded-3xl p-4 md:p-6 border border-white/10 scroll-mt-24">
             <MediaRow
               title={q ? `"${q}" için Arama Sonuçları` : "Arama Sonuçları"}
               items={(filterResults?.results || []).slice(0, 20)}
@@ -160,24 +160,24 @@ export default async function Home({ searchParams }: HomeProps) {
         ) : (
           <>
             {/* Consolidated Sections: Trendler & Popüler */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-6">
               {/* Trendler Section with Amber Frame */}
-              <section className="group relative p-6 md:px-10 md:py-12 rounded-[3.5rem] border border-amber-500/10 bg-amber-500/[0.02] hover:bg-amber-500/[0.04] hover:border-amber-500/20 transition-all duration-500">
+              <section className="group relative p-4 md:px-10 md:py-12 rounded-2xl md:rounded-[3.5rem] border border-amber-500/10 bg-amber-500/[0.02] hover:bg-amber-500/[0.04] hover:border-amber-500/20 transition-all duration-500 overflow-hidden">
                 <div className="absolute top-0 right-0 w-48 h-48 bg-amber-500/5 blur-[100px] -mr-24 -mt-24 pointer-events-none group-hover:bg-amber-500/10 transition-colors duration-500" />
 
-                <div className="flex items-center justify-between mb-4 relative z-10 gap-4">
+                <div className="flex items-center justify-between mb-3 md:mb-4 relative z-10 gap-2 md:gap-4">
                   <Link
                     href={trType === "tv" ? "/explore/tv/trending" : "/explore/movie/trending"}
-                    className="group/title flex items-center gap-3 overflow-hidden"
+                    className="group/title flex items-center gap-2 md:gap-3 overflow-hidden"
                   >
                     <div className="shrink-0">
-                      <span className="text-[10px] font-black text-amber-500 uppercase tracking-[0.3em] mb-2 block">Keşfedin</span>
-                      <h2 className="text-2xl md:text-3xl font-black text-white tracking-tight group-hover/title:text-amber-400 transition-colors truncate">
+                      <span className="text-[9px] md:text-[10px] font-black text-amber-500 uppercase tracking-[0.2em] md:tracking-[0.3em] mb-1 md:mb-2 block">Keşfedin</span>
+                      <h2 className="text-xl md:text-3xl font-black text-white tracking-tight group-hover/title:text-amber-400 transition-colors truncate">
                         Trendler
                       </h2>
                     </div>
-                    <div className="w-10 h-10 rounded-2xl bg-white/5 flex items-center justify-center border border-white/5 group-hover/title:bg-amber-400 group-hover/title:text-black transition-all group-hover/title:translate-x-1 shrink-0">
-                      <ChevronRight className="w-5 h-5" />
+                    <div className="w-8 h-8 md:w-10 md:h-10 rounded-xl md:rounded-2xl bg-white/5 flex items-center justify-center border border-white/5 group-hover/title:bg-amber-400 group-hover/title:text-black transition-all group-hover/title:translate-x-1 shrink-0">
+                      <ChevronRight className="w-4 h-4 md:w-5 md:h-5" />
                     </div>
                   </Link>
 
@@ -186,7 +186,7 @@ export default async function Home({ searchParams }: HomeProps) {
                   </div>
                 </div>
 
-                <div className="-mx-4 md:mx-0 relative z-10">
+                <div className="-mx-1 md:mx-0 relative z-10">
                   <MediaRow
                     title=""
                     items={[
@@ -199,22 +199,22 @@ export default async function Home({ searchParams }: HomeProps) {
               </section>
 
               {/* Popüler Section with Blue Frame */}
-              <section className="group relative p-6 md:px-10 md:py-12 rounded-[3.5rem] border border-blue-500/10 bg-blue-500/[0.02] hover:bg-blue-500/[0.04] hover:border-blue-500/20 transition-all duration-500">
+              <section className="group relative p-4 md:px-10 md:py-12 rounded-2xl md:rounded-[3.5rem] border border-blue-500/10 bg-blue-500/[0.02] hover:bg-blue-500/[0.04] hover:border-blue-500/20 transition-all duration-500 overflow-hidden">
                 <div className="absolute top-0 right-0 w-48 h-48 bg-blue-500/5 blur-[100px] -mr-24 -mt-24 pointer-events-none group-hover:bg-blue-500/10 transition-colors duration-500" />
 
-                <div className="flex items-center justify-between mb-4 relative z-10 gap-4">
+                <div className="flex items-center justify-between mb-3 md:mb-4 relative z-10 gap-2 md:gap-4">
                   <Link
                     href={poType === "tv" ? "/explore/tv/popular" : "/explore/movie/popular"}
-                    className="group/title flex items-center gap-3 overflow-hidden"
+                    className="group/title flex items-center gap-2 md:gap-3 overflow-hidden"
                   >
                     <div className="shrink-0">
-                      <span className="text-[10px] font-black text-blue-500 uppercase tracking-[0.3em] mb-2 block">Öne Çıkan</span>
-                      <h2 className="text-2xl md:text-3xl font-black text-white tracking-tight group-hover/title:text-blue-400 transition-colors truncate">
+                      <span className="text-[9px] md:text-[10px] font-black text-blue-500 uppercase tracking-[0.2em] md:tracking-[0.3em] mb-1 md:mb-2 block">Öne Çıkan</span>
+                      <h2 className="text-xl md:text-3xl font-black text-white tracking-tight group-hover/title:text-blue-400 transition-colors truncate">
                         Popüler
                       </h2>
                     </div>
-                    <div className="w-10 h-10 rounded-2xl bg-white/5 flex items-center justify-center border border-white/5 group-hover/title:bg-blue-400 group-hover/title:text-black transition-all group-hover/title:translate-x-1 shrink-0">
-                      <ChevronRight className="w-5 h-5" />
+                    <div className="w-8 h-8 md:w-10 md:h-10 rounded-xl md:rounded-2xl bg-white/5 flex items-center justify-center border border-white/5 group-hover/title:bg-blue-400 group-hover/title:text-black transition-all group-hover/title:translate-x-1 shrink-0">
+                      <ChevronRight className="w-4 h-4 md:w-5 md:h-5" />
                     </div>
                   </Link>
 
@@ -223,7 +223,7 @@ export default async function Home({ searchParams }: HomeProps) {
                   </div>
                 </div>
 
-                <div className="-mx-4 md:mx-0 relative z-10">
+                <div className="-mx-1 md:mx-0 relative z-10">
                   <MediaRow
                     title=""
                     items={[
@@ -237,27 +237,27 @@ export default async function Home({ searchParams }: HomeProps) {
             </div>
 
             {/* Yakında Çıkacak Section with Green Frame */}
-            <section className="group relative p-6 md:px-10 md:py-12 rounded-[3.5rem] border border-emerald-500/10 bg-emerald-500/[0.02] hover:bg-emerald-500/[0.04] hover:border-emerald-500/20 transition-all duration-500">
+            <section className="group relative p-4 md:px-10 md:py-12 rounded-2xl md:rounded-[3.5rem] border border-emerald-500/10 bg-emerald-500/[0.02] hover:bg-emerald-500/[0.04] hover:border-emerald-500/20 transition-all duration-500 overflow-hidden">
               <div className="absolute top-0 right-0 w-48 h-48 bg-emerald-500/5 blur-[100px] -mr-24 -mt-24 pointer-events-none group-hover:bg-emerald-500/10 transition-colors duration-500" />
 
-              <div className="flex items-center justify-between mb-4 relative z-10 gap-4">
+              <div className="flex items-center justify-between mb-3 md:mb-4 relative z-10 gap-2 md:gap-4">
                 <Link
                   href="/explore/movie/upcoming"
-                  className="group/title flex items-center gap-3 overflow-hidden"
+                  className="group/title flex items-center gap-2 md:gap-3 overflow-hidden"
                 >
                   <div className="shrink-0">
-                    <span className="text-[10px] font-black text-emerald-500 uppercase tracking-[0.3em] mb-2 block">Yeni Gelenler</span>
-                    <h2 className="text-2xl md:text-3xl font-black text-white tracking-tight group-hover/title:text-emerald-400 transition-colors truncate">
+                    <span className="text-[9px] md:text-[10px] font-black text-emerald-500 uppercase tracking-[0.2em] md:tracking-[0.3em] mb-1 md:mb-2 block">Yeni Gelenler</span>
+                    <h2 className="text-xl md:text-3xl font-black text-white tracking-tight group-hover/title:text-emerald-400 transition-colors truncate">
                       Yakında Çıkacak
                     </h2>
                   </div>
-                  <div className="w-10 h-10 rounded-2xl bg-white/5 flex items-center justify-center border border-white/5 group-hover/title:bg-emerald-400 group-hover/title:text-black transition-all group-hover/title:translate-x-1 shrink-0">
-                    <ChevronRight className="w-5 h-5" />
+                  <div className="w-8 h-8 md:w-10 md:h-10 rounded-xl md:rounded-2xl bg-white/5 flex items-center justify-center border border-white/5 group-hover/title:bg-emerald-400 group-hover/title:text-black transition-all group-hover/title:translate-x-1 shrink-0">
+                    <ChevronRight className="w-4 h-4 md:w-5 md:h-5" />
                   </div>
                 </Link>
               </div>
 
-              <div className="-mx-4 md:mx-0 relative z-10">
+              <div className="-mx-1 md:mx-0 relative z-10">
                 <MediaRow
                   title=""
                   items={(upcomingMovies?.results || []).map((m: any) => ({ ...m, media_type: "movie" })).slice(0, 20)}

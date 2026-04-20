@@ -9,7 +9,7 @@ type FetchOptions = {
 };
 
 export const tmdb = {
-    async fetch(endpoint: string, { params, cache = "force-cache" }: FetchOptions = {}): Promise<any> {
+    async fetch(endpoint: string, { params, cache }: FetchOptions = {}): Promise<any> {
         if (!API_KEY) {
             console.error("TMDB_API_KEY is not defined in environment variables");
             throw new Error("TMDB_API_KEY is missing");
@@ -26,9 +26,15 @@ export const tmdb = {
         }
 
         try {
-            const res = await fetch(url.toString(), {
-                next: { revalidate: 3600 },
-            });
+            const fetchOptions: RequestInit & { next?: { revalidate: number } } = {};
+
+            if (cache === "no-store") {
+                fetchOptions.next = { revalidate: 0 };
+            } else {
+                fetchOptions.next = { revalidate: 3600 };
+            }
+
+            const res = await fetch(url.toString(), fetchOptions);
 
             if (!res.ok) {
                 console.error(`TMDB API Error: ${res.status} ${res.statusText} at ${endpoint}`);

@@ -11,6 +11,11 @@ export async function completeOnboarding(formData: FormData) {
         throw new Error("Unauthorized");
     }
 
+    // Guest users are not in DB, skip onboarding persistence
+    if ((session.user as any).isGuest || session.user.id.startsWith("guest_")) {
+        redirect("/");
+    }
+
     const favoriteGenres = formData.getAll("genres") as string[];
     const platforms = formData.getAll("platforms") as string[];
 

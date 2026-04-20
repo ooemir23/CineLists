@@ -49,15 +49,27 @@ export async function registerUser(formData: FormData) {
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 12);
 
+    // Generate unique username
+    const baseUsername = email.split("@")[0].replace(/[^a-zA-Z0-9_]/g, "");
+    const username = baseUsername + "_" + Math.random().toString(36).slice(-4);
+
     // Create user
-    await prisma.user.create({
-        data: {
-            email,
-            username: email.split("@")[0] + "_" + Math.random().toString(36).slice(-4),
-            name,
-            password: hashedPassword,
-        },
-    });
+    try {
+        await prisma.user.create({
+            data: {
+                email,
+                username,
+                name,
+                password: hashedPassword,
+            },
+        });
+    } catch (error: any) {
+        if (error.code === 'P2002') {
+            redirect("/register?error=exists");
+        }
+        console.error("Registration error:", error);
+        redirect("/register?error=missing");
+    }
 
     try {
         await signIn("email", { email, password, redirectTo: "/onboarding" });
@@ -74,16 +86,8 @@ export async function handleSignOut() {
     const user = session?.user;
 
     if (user?.email?.endsWith("@guest.cinelists.local")) {
-        try {
-            // Delete the guest user from the database
-            // onDelete: Cascade in schema.prisma will handle associated data
-            await prisma.user.delete({
-                where: { id: user.id },
-            });
-            console.log(`Guest user ${user.id} deleted successfully.`);
-        } catch (error) {
-            console.error("Error deleting guest user:", error);
-        }
+        // Guest users are not persisted in DB (JWT-only), no cleanup needed
+        console.log(`Guest user ${user.id} signing out.`);
     }
 
     await signOut({ redirectTo: "/" });

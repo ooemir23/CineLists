@@ -74,11 +74,12 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
 
                 const dbUser = await prisma.user.findUnique({
                     where: { id: token.sub },
-                    select: { hasCompletedOnboarding: true }
+                    select: { hasCompletedOnboarding: true, isSuspended: true }
                 });
 
                 if (dbUser) {
                     (session.user as any).hasCompletedOnboarding = dbUser.hasCompletedOnboarding;
+                    (session.user as any).isSuspended = dbUser.isSuspended;
                 }
             }
             return session;

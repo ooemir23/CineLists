@@ -129,8 +129,21 @@ export async function getViewingTimeStats(userId: string): Promise<ViewingTimeSt
         where: { userId }
     });
 
-    // Ortalama bir bölüm 45 dakika
-    const tvMinutes = watchedEpisodes * 45;
+    // Gerçek bölüm sürelerini DB'den al, yoksa 45 dk varsay
+    const watchedTvEntries = await prisma.watched.findMany({
+        where: {
+            userId,
+            media: { type: "TV" }
+        },
+        include: {
+            media: { select: { runtime: true } }
+        }
+    });
+
+    const avgTvRuntime = watchedTvEntries.length > 0
+        ? watchedTvEntries.reduce((sum, w) => sum + (w.media.runtime || 45), 0) / watchedTvEntries.length
+        : 45;
+    const tvMinutes = watchedEpisodes * avgTvRuntime;
 
     const totalMinutes = movieMinutes + tvMinutes;
 

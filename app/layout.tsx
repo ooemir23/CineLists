@@ -69,7 +69,7 @@ export default async function RootLayout({
       <body className={cn(inter.className, "bg-background text-foreground overflow-x-hidden")} suppressHydrationWarning>
         <div className="flex flex-col min-h-screen max-w-[1920px] mx-auto shadow-2xl shadow-black/50">
           <TopNav user={session?.user} />
-          <main className="flex-1 pb-24 md:pb-0 min-h-screen relative z-0">
+          <main className="flex-1 pb-20 md:pb-0 min-h-screen relative z-0">
             <ErrorBoundary>
               {children}
             </ErrorBoundary>

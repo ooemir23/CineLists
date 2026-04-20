@@ -45,23 +45,32 @@ export function MobileDock({ user }: MobileDockProps) {
   const activeView = getActiveView();
 
   return (
-    <nav
-      className={`fixed bottom-0 left-0 w-full z-[200] ${dockBg} flex items-center justify-center px-2 py-1 sm:hidden`}
-      style={{ boxShadow: '0 -8px 32px -8px rgba(0,0,0,0.7)', minHeight: 64 }}
-    >
-      <div className="w-full max-w-md flex items-end justify-between mx-auto relative">
-        {/* Ekranım menü tuşu */}
-        <button
-          className={`flex flex-col items-center py-2 ${inactiveColor} focus:outline-none`}
-          style={{ minWidth: 48 }}
-          onClick={() => setMenuOpen((v) => !v)}
-          aria-label="Ekranım"
-        >
-          <List size={24} />
-          <span className="text-[10px] mt-0.5 font-bold">Ekranım</span>
-        </button>
-        {menuOpen && (
-          <div className="absolute bottom-14 left-0 w-40 bg-slate-900/95 rounded-xl shadow-lg flex flex-col py-2 z-50 animate-fade-in-up border border-white/10">
+    <>
+      {/* Backdrop for menus */}
+      {(menuOpen || profileMenuOpen) && (
+        <div
+          className="fixed inset-0 z-[199] sm:hidden"
+          onClick={() => { setMenuOpen(false); setProfileMenuOpen(false); }}
+          aria-hidden="true"
+        />
+      )}
+      <nav
+        className={`fixed bottom-0 left-0 w-full z-[200] ${dockBg} flex items-center justify-center px-2 py-1 sm:hidden safe-area-bottom`}
+        style={{ boxShadow: '0 -8px 32px -8px rgba(0,0,0,0.7)', minHeight: 64 }}
+      >
+        <div className="w-full max-w-md flex items-end justify-between mx-auto relative">
+          {/* Ekranım menü tuşu */}
+          <button
+            className={`flex flex-col items-center py-2 ${menuOpen ? activeColor : inactiveColor} focus:outline-none`}
+            style={{ minWidth: 48 }}
+            onClick={() => { setMenuOpen((v) => !v); setProfileMenuOpen(false); }}
+            aria-label="Ekranım"
+          >
+            <List size={24} />
+            <span className="text-[10px] mt-0.5 font-bold">Ekranım</span>
+          </button>
+          {menuOpen && (
+            <div className="absolute bottom-16 left-0 w-44 bg-slate-900/95 backdrop-blur-xl rounded-2xl shadow-xl flex flex-col py-2 z-50 border border-white/10 overflow-hidden">
             <Link href="/watched" className="flex items-center gap-2 px-4 py-3 text-sm text-white hover:bg-primary/10 transition" onClick={() => setMenuOpen(false)}>
               <Check size={20} /> İzlenenler
             </Link>
@@ -105,16 +114,16 @@ export function MobileDock({ user }: MobileDockProps) {
 
         {/* Profilim menü tuşu */}
         <button
-          className={`flex flex-col items-center py-2 ${inactiveColor} focus:outline-none`}
+          className={`flex flex-col items-center py-2 ${profileMenuOpen ? activeColor : inactiveColor} focus:outline-none`}
           style={{ minWidth: 48 }}
-          onClick={() => setProfileMenuOpen((v) => !v)}
+          onClick={() => { setProfileMenuOpen((v) => !v); setMenuOpen(false); }}
           aria-label="Profilim"
         >
           <User size={24} />
           <span className="text-[10px] mt-0.5 font-bold">Profilim</span>
         </button>
         {profileMenuOpen && (
-          <div className="absolute bottom-14 right-0 w-44 bg-slate-900/95 rounded-2xl shadow-xl flex flex-col py-2 z-50 animate-fade-in-up border border-white/10 overflow-hidden">
+          <div className="absolute bottom-16 right-0 w-44 bg-slate-900/95 backdrop-blur-xl rounded-2xl shadow-xl flex flex-col py-2 z-50 border border-white/10 overflow-hidden">
             {user ? (
               <>
                 <Link href="/profile" className="flex items-center gap-3 px-4 py-3 text-sm text-white hover:bg-amber-400/10 transition" onClick={() => setProfileMenuOpen(false)}>
@@ -171,5 +180,6 @@ export function MobileDock({ user }: MobileDockProps) {
         )}
       </div>
     </nav>
+    </>
   );
 }

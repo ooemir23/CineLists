@@ -91,12 +91,14 @@ export async function searchUsers(query: string) {
         where: {
             OR: [
                 { name: { contains: query, mode: "insensitive" } },
+                { username: { contains: query, mode: "insensitive" } },
                 { email: { contains: query, mode: "insensitive" } },
             ],
         },
         select: {
             id: true,
             name: true,
+            username: true,
             image: true,
             _count: {
                 select: { followedBy: true },
@@ -105,7 +107,6 @@ export async function searchUsers(query: string) {
         take: 10,
     });
 
-    // Fix for the type error in select
     return users.map(u => ({
         ...u,
         followersCount: (u as any)._count.followedBy

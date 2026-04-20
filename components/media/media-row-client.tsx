@@ -87,10 +87,15 @@ export function MediaRowClient({ children, autoScroll = true }: MediaRowClientPr
             className="relative group/slider"
             onMouseEnter={() => (isPaused.current = true)}
             onMouseLeave={() => (isPaused.current = false)}
+            onTouchStart={() => (isPaused.current = true)}
+            onTouchEnd={() => {
+                // Resume auto-scroll after a delay on touch end
+                setTimeout(() => { isPaused.current = false; }, 3000);
+            }}
         >
             <div
                 ref={scrollRef}
-                className="flex gap-4 lg:gap-6 overflow-x-auto pt-12 pb-14 -mx-8 px-8 md:-mx-4 md:px-4 hide-scrollbar"
+                className="flex gap-3 sm:gap-4 lg:gap-6 overflow-x-auto pt-2 pb-4 md:pt-12 md:pb-14 -mx-1 px-1 sm:-mx-4 sm:px-4 md:-mx-4 md:px-4 hide-scrollbar snap-x snap-mandatory"
                 style={{ scrollBehavior: 'auto' }}
             >
                 {duplicatedChildren}

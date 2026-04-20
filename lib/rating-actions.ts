@@ -19,6 +19,10 @@ export async function rateMedia(tmdbId: number, type: "movie" | "tv", rating: nu
         return { success: false, error: "Giriş yapmalısınız" };
     }
 
+    if ((session.user as any).isGuest || session.user.id.startsWith("guest_")) {
+        return { success: false, error: "Puanlama yapmak için giriş yapmalısınız" };
+    }
+
     const dbUser = await prisma.user.findUnique({
         where: { id: session.user.id },
     });
