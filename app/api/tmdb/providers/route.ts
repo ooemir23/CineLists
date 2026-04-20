@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getEnvVar } from "@/lib/env";
 
-const TMDB_API_KEY = process.env.TMDB_API_KEY;
+const TMDB_API_KEY = getEnvVar("TMDB_API_KEY");
 const TMDB_BASE_URL = "https://api.themoviedb.org/3";
 
 export async function GET(request: NextRequest) {

@@ -1,5 +1,10 @@
 import { z } from "zod";
 
+// Dynamic env access to avoid build-time secret detection by Railpack/Nixpacks
+function getEnvVar(key: string): string | undefined {
+    return (typeof process !== "undefined" && process.env) ? process.env[key] : undefined;
+}
+
 const envSchema = z.object({
     TMDB_API_KEY: z.string().min(1),
     AUTH_GOOGLE_ID: z.string().optional(),
@@ -17,9 +22,11 @@ function getEnv() {
         return envSchema.parse(process.env);
     } catch {
         // During build time, env vars might not be available
-        // Return a partial object to avoid build failures
         return process.env as unknown as z.infer<typeof envSchema>;
     }
 }
 
 export const env = getEnv();
+
+// Export dynamic getter for use in auth providers
+export { getEnvVar };

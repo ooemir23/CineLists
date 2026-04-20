@@ -5,6 +5,7 @@ import Credentials from "next-auth/providers/credentials";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import { prisma } from "@/lib/prisma";
 import { authConfig } from "./auth.config";
+import { getEnvVar } from "@/lib/env";
 import bcrypt from "bcryptjs";
 
 export const { auth, handlers, signIn, signOut } = NextAuth({
@@ -13,12 +14,12 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
     session: { strategy: "jwt" },
     providers: [
         GoogleProperty({
-            clientId: process.env.AUTH_GOOGLE_ID,
-            clientSecret: process.env.AUTH_GOOGLE_SECRET,
+            clientId: getEnvVar("AUTH_GOOGLE_ID"),
+            clientSecret: getEnvVar("AUTH_GOOGLE_SECRET"),
         }),
         Apple({
-            clientId: process.env.AUTH_APPLE_ID,
-            clientSecret: process.env.AUTH_APPLE_SECRET,
+            clientId: getEnvVar("AUTH_APPLE_ID"),
+            clientSecret: getEnvVar("AUTH_APPLE_SECRET"),
         }),
         Credentials({
             id: "email",
