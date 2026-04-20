@@ -12,7 +12,7 @@ COPY prisma ./prisma/
 # Install dependencies
 RUN npm ci --legacy-peer-deps
 
-# Generate Prisma client
+# Generate Prisma client (no DB connection needed)
 RUN npx prisma generate
 
 # Build stage
@@ -23,8 +23,8 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
-# Run Prisma migrate and build
-RUN npx prisma migrate deploy && npm run build
+# Build only (no migration - that runs at startup)
+RUN npm run build
 
 # Production stage
 FROM base AS runner
@@ -42,6 +42,11 @@ COPY --from=builder /app/.next/static ./.next/static
 COPY --from=builder /app/prisma ./prisma
 COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
 COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
+COPY --from=builder /app/node_modules/prisma ./node_modules/prisma
+
+# Copy startup script
+COPY start.sh ./
+RUN chmod +x ./start.sh
 
 USER nextjs
 
@@ -50,4 +55,4 @@ EXPOSE 3000
 ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
 
-CMD ["node", "server.js"]
+CMD ["./start.sh"]
