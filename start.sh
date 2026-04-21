@@ -5,7 +5,7 @@ echo "=== CineLists Starting ==="
 
 # Run Prisma migrations at startup
 echo "Attempting to push database schema..."
-if npx prisma db push --accept-data-loss; then
+if /app/node_modules/.bin/prisma db push --accept-data-loss; then
     echo "SUCCESS: Database schema pushed successfully."
 else
     echo "ERROR: Database push failed! Please check DATABASE_URL and connectivity."
