@@ -55,6 +55,13 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
     callbacks: {
         ...authConfig.callbacks,
         async signIn({ user, account, profile }) {
+            // Guest users must never be persisted to the database.
+            // Returning false here prevents PrismaAdapter from creating a DB
+            // record. The jwt callback handles guest token creation separately.
+            if ((user as any).isGuest || user.id?.startsWith("guest_")) {
+                return false;
+            }
+
             // Google ile giriş yapılırken profil verilerini senkronize et
             if (account?.provider === "google" && profile?.sub) {
                 try {
@@ -85,6 +92,8 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
 
                 // If guest (id starts with guest_), don't check DB
                 if (token.sub.startsWith("guest_") || (token as any).isGuest) {
+                    session.user.name = (token as any).guestName ?? session.user.name;
+                    session.user.email = (token as any).guestEmail ?? session.user.email;
                     (session.user as any).isGuest = true;
                     (session.user as any).hasCompletedOnboarding = true;
                     return session;
@@ -110,9 +119,20 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
             }
             return session;
         },
-        async jwt({ token, user }) {
+        async jwt({ token, user, trigger }) {
+            // Guest users: signIn callback returns false to block DB persistence,
+            // so we must build the guest token here directly from the user object
+            // returned by authorize, before the adapter is ever invoked.
+            if (user && ((user as any).isGuest || user.id?.startsWith("guest_"))) {
+                token.sub = user.id ?? token.sub;
+                (token as any).isGuest = true;
+                (token as any).guestName = user.name;
+                (token as any).guestEmail = user.email;
+                return token;
+            }
+
             if (user) {
-                (token as any).isGuest = (user as any).isGuest;
+                (token as any).isGuest = false;
             }
             return token;
         },
