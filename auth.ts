@@ -65,14 +65,21 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
             // Google ile giriş yapılırken profil verilerini senkronize et
             if (account?.provider === "google" && profile?.sub) {
                 try {
-                    // Sadece kullanıcı ID'si varsa (zaten kayıtlıysa) güncelleme yap
-                    if (user.id) {
+                    // Use email as the unique identifier — it is always present for
+                    // Google OAuth users and is set on the record created by
+                    // PrismaAdapter, making it reliable for both new and existing users.
+                    if (user.email) {
                         const googleImage = (profile as any).picture || user.image;
                         const googleName = user.name || (profile as any).name;
 
-                        await prisma.user.update({
-                            where: { id: user.id },
-                            data: {
+                        await prisma.user.upsert({
+                            where: { email: user.email },
+                            update: {
+                                name: googleName || undefined,
+                                image: googleImage || undefined,
+                            },
+                            create: {
+                                email: user.email,
                                 name: googleName || undefined,
                                 image: googleImage || undefined,
                             },
