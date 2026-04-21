@@ -60,6 +60,26 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
     ],
     callbacks: {
         ...authConfig.callbacks,
+        async signIn({ user, account, profile }) {
+            // Google ile giriş yapılırken profil verilerini senkronize et
+            if (account?.provider === "google" && profile?.sub) {
+                try {
+                    const googleImage = (profile as any).picture || user.image;
+                    const googleName = user.name || (profile as any).name;
+
+                    await prisma.user.update({
+                        where: { id: user.id! },
+                        data: {
+                            name: googleName || undefined,
+                            image: googleImage || undefined,
+                        },
+                    });
+                } catch (error) {
+                    console.error("Google profil senkronizasyon hatası:", error);
+                }
+            }
+            return true;
+        },
         async session({ session, token }) {
             if (token.sub && session.user) {
                 session.user.id = token.sub;
@@ -73,12 +93,20 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
 
                 const dbUser = await prisma.user.findUnique({
                     where: { id: token.sub },
-                    select: { hasCompletedOnboarding: true, isSuspended: true }
+                    select: {
+                        hasCompletedOnboarding: true,
+                        isSuspended: true,
+                        name: true,
+                        image: true,
+                    }
                 });
 
                 if (dbUser) {
                     (session.user as any).hasCompletedOnboarding = dbUser.hasCompletedOnboarding;
                     (session.user as any).isSuspended = dbUser.isSuspended;
+                    // Session'da güncel profil verilerini tut
+                    session.user.name = dbUser.name;
+                    session.user.image = dbUser.image;
                 }
             }
             return session;
