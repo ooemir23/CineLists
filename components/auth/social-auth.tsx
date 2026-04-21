@@ -1,6 +1,8 @@
 "use client";
 
 import { loginAsGuest } from "@/lib/guest-actions";
+import { signInWithGoogle } from "@/lib/auth-actions";
+
 
 type SocialAuthProps = {
     showGuest?: boolean;
@@ -19,8 +21,8 @@ export function SocialAuth({ showGuest }: SocialAuthProps) {
 
     return (
         <div className={`grid ${gridCols} gap-3`}>
-            <a
-                href="/api/auth/signin/google?callbackUrl=/onboarding"
+            <button
+                onClick={() => signInWithGoogle()}
                 className="w-full flex flex-col items-center justify-center gap-1 bg-white/5 text-white py-3 rounded-xl hover:bg-white/10 transition-colors border border-white/10"
             >
                 <svg className="w-5 h-5" viewBox="0 0 24 24">
@@ -42,7 +44,7 @@ export function SocialAuth({ showGuest }: SocialAuthProps) {
                     />
                 </svg>
                 <span className="text-[10px] font-semibold uppercase opacity-60">Google</span>
-            </a>
+            </button>
 
             <button
                 onClick={handleMailClick}

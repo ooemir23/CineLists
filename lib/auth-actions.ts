@@ -92,3 +92,8 @@ export async function handleSignOut() {
 
     await signOut({ redirectTo: "/" });
 }
+
+export async function signInWithGoogle() {
+    await signIn("google", { redirectTo: "/onboarding" });
+}
+
