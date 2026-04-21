@@ -52,12 +52,15 @@ model User {
   suspendedAt             DateTime?
   username                String           @unique @default(cuid())
   accounts                Account[]
+  achievements            Achievement[]
   activityRecommendations Activity[]       @relation("ActivityRecommendations")
   activities              Activity[]
   comments                Comment[]
+  customLists             CustomList[]
   favoritePersons         FavoritePerson[]
   following               Follow[]         @relation("following")
   followedBy              Follow[]         @relation("followedBy")
+  likedLists              ListLike[]
   notifications           Indicates[]
   receivedMessages        Message[]        @relation("receivedMessages")
   sentMessages            Message[]        @relation("sentMessages")
@@ -114,6 +117,7 @@ model MediaItem {
   voteAverage     Float?
   runtime         Int?
   activities      Activity[]
+  customListItems CustomListItem[]
   episodes        Episode[]
   recommendations Recommendation[]
   toWatchBy       ToWatch[]
@@ -265,4 +269,112 @@ enum NotificationType {
   NEW_RECOMMENDATION
   MENTION
   FRIEND_ACTIVITY
+}
+
+// ============================================
+// CUSTOM LISTS / KOLEKSİYONLAR
+// ============================================
+
+model CustomList {
+  id          String   @id @default(cuid())
+  title       String
+  description String?
+  isPublic    Boolean  @default(true)
+  coverImage  String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items       CustomListItem[]
+  likes       ListLike[]
+
+  @@index([userId])
+}
+
+model CustomListItem {
+  id         String   @id @default(cuid())
+  listId     String
+  mediaId    String
+  order      Int      @default(0)
+  addedAt    DateTime @default(now())
+  note       String?
+  list       CustomList @relation(fields: [listId], references: [id], onDelete: Cascade)
+  media      MediaItem @relation(fields: [mediaId], references: [id])
+
+  @@unique([listId, mediaId])
+  @@index([listId])
+}
+
+model ListLike {
+  id        String   @id @default(cuid())
+  listId    String
+  userId    String
+  createdAt DateTime @default(now())
+  list      CustomList @relation(fields: [listId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([listId, userId])
+}
+
+// ============================================
+// ACHIEVEMENT / ROZET SİSTEMİ
+// ============================================
+
+model Achievement {
+  id          String   @id @default(cuid())
+  userId      String
+  type        AchievementType
+  unlockedAt  DateTime @default(now())
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, type])
+  @@index([userId])
+}
+
+enum AchievementType {
+  // İzleme rozetleri
+  FIRST_WATCH          // İlk film/dizi izle
+  MOVIE_BUFF_10        // 10 film izle
+  MOVIE_BUFF_50        // 50 film izle
+  MOVIE_BUFF_100       // 100 film izle
+  MOVIE_BUFF_250       // 250 film izle
+  MOVIE_BUFF_500       // 500 film izle
+  TV_BINGER_5          // 5 dizi izle
+  TV_BINGER_20         // 20 dizi izle
+  TV_BINGER_50         // 50 dizi izle
+  EPISODE_MASTER_50    // 50 bölüm izle
+  EPISODE_MASTER_200   // 200 bölüm izle
+  EPISODE_MASTER_500   // 500 bölüm izle
+  MARATHON_RUNNER      // Günde 3+ film izle
+  
+  // Puanlama rozetleri
+  CRITIC_10            // 10 içeriği puanla
+  CRITIC_50            // 50 içeriği puanla
+  CRITIC_100           // 100 içeriği puanla
+  REVIEWER_5           // 5 inceleme yaz
+  REVIEWER_25          // 25 inceleme yaz
+  
+  // Tür rozetleri
+  GENRE_EXPLORER       // 5 farklı türden izle
+  GENRE_MASTER         // Bir türden 20+ izle
+  ALL_ROUNDER          // 10 farklı türden izle
+  
+  // Sosyal rozetler
+  SOCIAL_5             // 5 kişiyi takip et
+  SOCIAL_25            // 25 kişiyi takip et
+  INFLUENCER_10        // 10 takipçi kazan
+  INFLUENCER_50        // 50 takipçi kazan
+  RECOMMENDER          // 5 öneri gönder
+  COMMENTER_10         // 10 yorum yap
+  COMMENTER_50         // 50 yorum yap
+  
+  // Liste rozetleri
+  LIST_CREATOR         // İlk listeyi oluştur
+  LIST_MASTER          // 5 liste oluştur
+  CURATOR              // Bir listeye 25+ içerik ekle
+  
+  // Özel rozetler
+  EARLY_BIRD           // Platformun erken kullanıcısı
+  NIGHT_OWL            // Gece 00:00-05:00 arası izle
+  WEEKEND_WARRIOR      // Hafta sonu 10+ içerik izle
 }

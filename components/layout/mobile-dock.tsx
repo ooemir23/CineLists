@@ -14,7 +14,9 @@ import {
   BarChart3,
   Bell,
   Search,
-  LogOut
+  LogOut,
+  Award,
+  Calendar
 } from "lucide-react";
 import { handleSignOut } from "@/lib/auth-actions";
 
@@ -70,12 +72,21 @@ export function MobileDock({ user }: MobileDockProps) {
             <span className="text-[10px] mt-0.5 font-bold">Ekranım</span>
           </button>
           {menuOpen && (
-            <div className="absolute bottom-16 left-0 w-44 bg-slate-900/95 backdrop-blur-xl rounded-2xl shadow-xl flex flex-col py-2 z-50 border border-white/10 overflow-hidden">
+            <div className="absolute bottom-16 left-0 w-52 bg-slate-900/95 backdrop-blur-xl rounded-2xl shadow-xl flex flex-col py-2 z-50 border border-white/10 overflow-hidden">
             <Link href="/watched" className="flex items-center gap-2 px-4 py-3 text-sm text-white hover:bg-primary/10 transition" onClick={() => setMenuOpen(false)}>
               <Check size={20} /> İzlenenler
             </Link>
             <Link href="/watchlist" className="flex items-center gap-2 px-4 py-3 text-sm text-white hover:bg-primary/10 transition" onClick={() => setMenuOpen(false)}>
               <Bookmark size={20} /> İzlenecekler
+            </Link>
+            <Link href="/lists" className="flex items-center gap-2 px-4 py-3 text-sm text-white hover:bg-primary/10 transition" onClick={() => setMenuOpen(false)}>
+              <List size={20} /> Listelerim
+            </Link>
+            <Link href="/calendar" className="flex items-center gap-2 px-4 py-3 text-sm text-white hover:bg-primary/10 transition" onClick={() => setMenuOpen(false)}>
+              <Calendar size={20} /> Takvim
+            </Link>
+            <Link href="/achievements" className="flex items-center gap-2 px-4 py-3 text-sm text-white hover:bg-primary/10 transition" onClick={() => setMenuOpen(false)}>
+              <Award size={20} /> Rozetler
             </Link>
             <Link href="/stats" className="flex items-center gap-2 px-4 py-3 text-sm text-white hover:bg-primary/10 transition" onClick={() => setMenuOpen(false)}>
               <BarChart3 size={20} /> İstatistikler

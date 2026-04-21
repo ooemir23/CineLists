@@ -19,6 +19,7 @@ import { getReceivedRecommendation } from "@/lib/recommendation-actions";
 import { Star, Calendar, Clock, ArrowLeft, Play, Info, Tv, Globe } from "lucide-react";
 import { ExpandableImage } from "@/components/ui/expandable-image";
 import { TrailerButton } from "@/components/media/trailer-button";
+import { AddToListButton } from "@/components/lists/add-to-list-button";
 import { Metadata } from "next";
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
@@ -298,6 +299,10 @@ export default async function DetailsPage(props: Props) {
                                         variant="standard"
                                     />
                                 </div>
+                                {/* Add to Custom List */}
+                                {!isGuest && dbMedia && (
+                                    <AddToListButton mediaId={dbMedia.id} />
+                                )}
                             </div>
 
                             {/* Overview (Desktop Only in Hero, Mobile moved below) */}

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, Search, Heart, User, LogOut, LogIn, Users, Bell, Activity, MessageSquare, BarChart3, Check } from "lucide-react";
+import { Home, Search, Heart, User, LogOut, LogIn, Users, Bell, Activity, MessageSquare, BarChart3, Check, List, Award, Calendar } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
 
@@ -127,6 +127,42 @@ export function Sidebar({ user }: SidebarProps) {
                 >
                     <MessageSquare className={cn("w-5 h-5", pathname.startsWith("/messages") ? "text-primary" : "text-neutral-500 group-hover:text-white")} />
                     Mesajlar
+                </Link>
+                <Link
+                    href="/lists"
+                    className={cn(
+                        "flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 group text-sm font-medium",
+                        pathname.startsWith("/lists")
+                            ? "bg-primary/20 text-primary shadow-[0_0_20px_-5px_var(--primary)]"
+                            : "text-neutral-400 hover:text-white hover:bg-white/5"
+                    )}
+                >
+                    <List className={cn("w-5 h-5", pathname.startsWith("/lists") ? "text-primary" : "text-neutral-500 group-hover:text-white")} />
+                    Listelerim
+                </Link>
+                <Link
+                    href="/calendar"
+                    className={cn(
+                        "flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 group text-sm font-medium",
+                        pathname === "/calendar"
+                            ? "bg-primary/20 text-primary shadow-[0_0_20px_-5px_var(--primary)]"
+                            : "text-neutral-400 hover:text-white hover:bg-white/5"
+                    )}
+                >
+                    <Calendar className={cn("w-5 h-5", pathname === "/calendar" ? "text-primary" : "text-neutral-500 group-hover:text-white")} />
+                    Takvim
+                </Link>
+                <Link
+                    href="/achievements"
+                    className={cn(
+                        "flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 group text-sm font-medium",
+                        pathname === "/achievements"
+                            ? "bg-primary/20 text-primary shadow-[0_0_20px_-5px_var(--primary)]"
+                            : "text-neutral-400 hover:text-white hover:bg-white/5"
+                    )}
+                >
+                    <Award className={cn("w-5 h-5", pathname === "/achievements" ? "text-primary" : "text-neutral-500 group-hover:text-white")} />
+                    Rozetler
                 </Link>
                 <Link
                     href="/profile"
