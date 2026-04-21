@@ -61,22 +61,27 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
             // Google ile giriş yapılırken profil verilerini senkronize et
             if (account?.provider === "google" && profile?.sub) {
                 try {
-                    const googleImage = (profile as any).picture || user.image;
-                    const googleName = user.name || (profile as any).name;
+                    // Sadece kullanıcı ID'si varsa (zaten kayıtlıysa) güncelleme yap
+                    if (user.id) {
+                        const googleImage = (profile as any).picture || user.image;
+                        const googleName = user.name || (profile as any).name;
 
-                    await prisma.user.update({
-                        where: { id: user.id! },
-                        data: {
-                            name: googleName || undefined,
-                            image: googleImage || undefined,
-                        },
-                    });
+                        await prisma.user.update({
+                            where: { id: user.id },
+                            data: {
+                                name: googleName || undefined,
+                                image: googleImage || undefined,
+                            },
+                        });
+                    }
                 } catch (error) {
                     console.error("Google profil senkronizasyon hatası:", error);
+                    // Hata olsa bile giriş işlemine devam et (return true)
                 }
             }
             return true;
         },
+
         async session({ session, token }) {
             if (token.sub && session.user) {
                 session.user.id = token.sub;
