@@ -131,13 +131,13 @@ export default async function Home({ searchParams }: HomeProps) {
     <div className="min-h-screen w-full overflow-x-hidden pb-24 md:pb-0 bg-[#101624]">
 
       {/* Primary Top Section: Hero Slider & Friends Activity */}
-      <div className="max-w-[1600px] mx-auto px-3 sm:px-6 md:px-8 lg:px-12 mb-4 md:mb-6 pt-14 md:pt-20">
+      <div className="max-w-[1600px] mx-auto px-3 sm:px-6 md:px-8 lg:px-12 pt-2 md:pt-4">
         {!isFiltering && <HomeTopSection />}
       </div>
 
       {/* Personalized Recommendations - Highlighted Placement */}
       {!isFiltering && personalizedMovies?.results?.length > 0 && (
-        <div className="max-w-[1600px] mx-auto px-3 sm:px-6 md:px-8 lg:px-12 mb-6">
+        <div className="max-w-[1600px] mx-auto px-3 sm:px-6 md:px-8 lg:px-12 mt-3 md:mt-4">
           <PersonalizedRecommendations
             results={personalizedMovies.results}
             reasons={personalizedMovies.reasons}
@@ -147,10 +147,10 @@ export default async function Home({ searchParams }: HomeProps) {
 
 
       {/* Main Content Area */}
-      <div className="max-w-[1600px] mx-auto px-3 sm:px-6 md:px-8 lg:px-12 space-y-4 md:space-y-10">
+      <div className="max-w-[1600px] mx-auto px-3 sm:px-6 md:px-8 lg:px-12 mt-3 md:mt-4 space-y-3 md:space-y-5">
 
         {isFiltering ? (
-          <div id="search-results" className="bg-white/5 rounded-2xl md:rounded-3xl p-4 md:p-6 border border-white/10 scroll-mt-24">
+          <div id="search-results" className="bg-white/5 rounded-2xl p-4 md:p-5 border border-white/10 scroll-mt-24">
             <MediaRow
               title={q ? `"${q}" için Arama Sonuçları` : "Arama Sonuçları"}
               items={(filterResults?.results || []).slice(0, 20)}
@@ -160,24 +160,24 @@ export default async function Home({ searchParams }: HomeProps) {
         ) : (
           <>
             {/* Consolidated Sections: Trendler & Popüler */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
               {/* Trendler Section with Amber Frame */}
-              <section className="group relative p-4 md:px-10 md:py-12 rounded-2xl md:rounded-[3.5rem] border border-amber-500/10 bg-amber-500/[0.02] hover:bg-amber-500/[0.04] hover:border-amber-500/20 transition-all duration-500 overflow-hidden">
-                <div className="absolute top-0 right-0 w-48 h-48 bg-amber-500/5 blur-[100px] -mr-24 -mt-24 pointer-events-none group-hover:bg-amber-500/10 transition-colors duration-500" />
+              <section className="group relative p-3 md:p-5 rounded-2xl border border-amber-500/10 bg-amber-500/[0.02] hover:bg-amber-500/[0.04] hover:border-amber-500/20 transition-all duration-500 overflow-hidden">
+                <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500/5 blur-[80px] -mr-16 -mt-16 pointer-events-none group-hover:bg-amber-500/10 transition-colors duration-500" />
 
-                <div className="flex items-center justify-between mb-3 md:mb-4 relative z-10 gap-2 md:gap-4">
+                <div className="flex items-center justify-between mb-2 md:mb-3 relative z-10 gap-2">
                   <Link
                     href={trType === "tv" ? "/explore/tv/trending" : "/explore/movie/trending"}
-                    className="group/title flex items-center gap-2 md:gap-3 overflow-hidden"
+                    className="group/title flex items-center gap-2 overflow-hidden"
                   >
                     <div className="shrink-0">
-                      <span className="text-[9px] md:text-[10px] font-black text-amber-500 uppercase tracking-[0.2em] md:tracking-[0.3em] mb-1 md:mb-2 block">Keşfedin</span>
-                      <h2 className="text-xl md:text-3xl font-black text-white tracking-tight group-hover/title:text-amber-400 transition-colors truncate">
+                      <span className="text-[9px] font-black text-amber-500 uppercase tracking-[0.15em] block">Keşfedin</span>
+                      <h2 className="text-lg md:text-2xl font-black text-white tracking-tight group-hover/title:text-amber-400 transition-colors truncate">
                         Trendler
                       </h2>
                     </div>
-                    <div className="w-8 h-8 md:w-10 md:h-10 rounded-xl md:rounded-2xl bg-white/5 flex items-center justify-center border border-white/5 group-hover/title:bg-amber-400 group-hover/title:text-black transition-all group-hover/title:translate-x-1 shrink-0">
-                      <ChevronRight className="w-4 h-4 md:w-5 md:h-5" />
+                    <div className="w-7 h-7 md:w-8 md:h-8 rounded-lg bg-white/5 flex items-center justify-center border border-white/5 group-hover/title:bg-amber-400 group-hover/title:text-black transition-all group-hover/title:translate-x-1 shrink-0">
+                      <ChevronRight className="w-3.5 h-3.5 md:w-4 md:h-4" />
                     </div>
                   </Link>
 
@@ -199,22 +199,22 @@ export default async function Home({ searchParams }: HomeProps) {
               </section>
 
               {/* Popüler Section with Blue Frame */}
-              <section className="group relative p-4 md:px-10 md:py-12 rounded-2xl md:rounded-[3.5rem] border border-blue-500/10 bg-blue-500/[0.02] hover:bg-blue-500/[0.04] hover:border-blue-500/20 transition-all duration-500 overflow-hidden">
-                <div className="absolute top-0 right-0 w-48 h-48 bg-blue-500/5 blur-[100px] -mr-24 -mt-24 pointer-events-none group-hover:bg-blue-500/10 transition-colors duration-500" />
+              <section className="group relative p-3 md:p-5 rounded-2xl border border-blue-500/10 bg-blue-500/[0.02] hover:bg-blue-500/[0.04] hover:border-blue-500/20 transition-all duration-500 overflow-hidden">
+                <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/5 blur-[80px] -mr-16 -mt-16 pointer-events-none group-hover:bg-blue-500/10 transition-colors duration-500" />
 
-                <div className="flex items-center justify-between mb-3 md:mb-4 relative z-10 gap-2 md:gap-4">
+                <div className="flex items-center justify-between mb-2 md:mb-3 relative z-10 gap-2">
                   <Link
                     href={poType === "tv" ? "/explore/tv/popular" : "/explore/movie/popular"}
-                    className="group/title flex items-center gap-2 md:gap-3 overflow-hidden"
+                    className="group/title flex items-center gap-2 overflow-hidden"
                   >
                     <div className="shrink-0">
-                      <span className="text-[9px] md:text-[10px] font-black text-blue-500 uppercase tracking-[0.2em] md:tracking-[0.3em] mb-1 md:mb-2 block">Öne Çıkan</span>
-                      <h2 className="text-xl md:text-3xl font-black text-white tracking-tight group-hover/title:text-blue-400 transition-colors truncate">
+                      <span className="text-[9px] font-black text-blue-500 uppercase tracking-[0.15em] block">Öne Çıkan</span>
+                      <h2 className="text-lg md:text-2xl font-black text-white tracking-tight group-hover/title:text-blue-400 transition-colors truncate">
                         Popüler
                       </h2>
                     </div>
-                    <div className="w-8 h-8 md:w-10 md:h-10 rounded-xl md:rounded-2xl bg-white/5 flex items-center justify-center border border-white/5 group-hover/title:bg-blue-400 group-hover/title:text-black transition-all group-hover/title:translate-x-1 shrink-0">
-                      <ChevronRight className="w-4 h-4 md:w-5 md:h-5" />
+                    <div className="w-7 h-7 md:w-8 md:h-8 rounded-lg bg-white/5 flex items-center justify-center border border-white/5 group-hover/title:bg-blue-400 group-hover/title:text-black transition-all group-hover/title:translate-x-1 shrink-0">
+                      <ChevronRight className="w-3.5 h-3.5 md:w-4 md:h-4" />
                     </div>
                   </Link>
 
@@ -237,22 +237,22 @@ export default async function Home({ searchParams }: HomeProps) {
             </div>
 
             {/* Yakında Çıkacak Section with Green Frame */}
-            <section className="group relative p-4 md:px-10 md:py-12 rounded-2xl md:rounded-[3.5rem] border border-emerald-500/10 bg-emerald-500/[0.02] hover:bg-emerald-500/[0.04] hover:border-emerald-500/20 transition-all duration-500 overflow-hidden">
-              <div className="absolute top-0 right-0 w-48 h-48 bg-emerald-500/5 blur-[100px] -mr-24 -mt-24 pointer-events-none group-hover:bg-emerald-500/10 transition-colors duration-500" />
+            <section className="group relative p-3 md:p-5 rounded-2xl border border-emerald-500/10 bg-emerald-500/[0.02] hover:bg-emerald-500/[0.04] hover:border-emerald-500/20 transition-all duration-500 overflow-hidden">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/5 blur-[80px] -mr-16 -mt-16 pointer-events-none group-hover:bg-emerald-500/10 transition-colors duration-500" />
 
-              <div className="flex items-center justify-between mb-3 md:mb-4 relative z-10 gap-2 md:gap-4">
+              <div className="flex items-center justify-between mb-2 md:mb-3 relative z-10 gap-2">
                 <Link
                   href="/explore/movie/upcoming"
-                  className="group/title flex items-center gap-2 md:gap-3 overflow-hidden"
+                  className="group/title flex items-center gap-2 overflow-hidden"
                 >
                   <div className="shrink-0">
-                    <span className="text-[9px] md:text-[10px] font-black text-emerald-500 uppercase tracking-[0.2em] md:tracking-[0.3em] mb-1 md:mb-2 block">Yeni Gelenler</span>
-                    <h2 className="text-xl md:text-3xl font-black text-white tracking-tight group-hover/title:text-emerald-400 transition-colors truncate">
+                    <span className="text-[9px] font-black text-emerald-500 uppercase tracking-[0.15em] block">Yeni Gelenler</span>
+                    <h2 className="text-lg md:text-2xl font-black text-white tracking-tight group-hover/title:text-emerald-400 transition-colors truncate">
                       Yakında Çıkacak
                     </h2>
                   </div>
-                  <div className="w-8 h-8 md:w-10 md:h-10 rounded-xl md:rounded-2xl bg-white/5 flex items-center justify-center border border-white/5 group-hover/title:bg-emerald-400 group-hover/title:text-black transition-all group-hover/title:translate-x-1 shrink-0">
-                    <ChevronRight className="w-4 h-4 md:w-5 md:h-5" />
+                  <div className="w-7 h-7 md:w-8 md:h-8 rounded-lg bg-white/5 flex items-center justify-center border border-white/5 group-hover/title:bg-emerald-400 group-hover/title:text-black transition-all group-hover/title:translate-x-1 shrink-0">
+                    <ChevronRight className="w-3.5 h-3.5 md:w-4 md:h-4" />
                   </div>
                 </Link>
               </div>
