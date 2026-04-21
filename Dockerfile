@@ -48,6 +48,9 @@ COPY --from=builder /app/node_modules/prisma ./node_modules/prisma
 COPY start.sh ./
 RUN chmod +x ./start.sh
 
+# Create prisma directory with write permissions for nextjs user
+RUN mkdir -p /app/.prisma && chown -R nextjs:nodejs /app/.prisma && chown -R nextjs:nodejs /app
+
 USER nextjs
 
 EXPOSE 3000
