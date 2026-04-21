@@ -1,10 +1,9 @@
 import NextAuth from "next-auth";
-import GoogleProperty from "next-auth/providers/google";
+import Google from "next-auth/providers/google";
 import Credentials from "next-auth/providers/credentials";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import { prisma } from "@/lib/prisma";
 import { authConfig } from "./auth.config";
-import { getEnvVar } from "@/lib/env";
 import bcrypt from "bcryptjs";
 
 export const { auth, handlers, signIn, signOut } = NextAuth({
@@ -13,12 +12,10 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
     trustHost: true,
     session: { strategy: "jwt" },
     providers: [
-        ...(getEnvVar("AUTH_GOOGLE_ID") && getEnvVar("AUTH_GOOGLE_SECRET")
-            ? [GoogleProperty({
-                clientId: getEnvVar("AUTH_GOOGLE_ID"),
-                clientSecret: getEnvVar("AUTH_GOOGLE_SECRET"),
-            })]
-            : []),
+        Google({
+            clientId: process.env.AUTH_GOOGLE_ID!,
+            clientSecret: process.env.AUTH_GOOGLE_SECRET!,
+        }),
         Credentials({
             id: "email",
             name: "Email",
