@@ -13,11 +13,17 @@ type DiscoverItem = {
     id: number;
     title?: string;
     name?: string;
+    original_title?: string;
+    original_name?: string;
     poster_path: string | null;
     vote_average: number;
     release_date?: string;
     first_air_date?: string;
     media_type?: string;
+    overview?: string;
+    runtime?: number;
+    watch_providers?: any;
+    friend?: any;
 };
 
 const categoryOptions = [
