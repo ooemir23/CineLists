@@ -87,8 +87,8 @@ export const tmdb = {
         return this.fetch("/trending/tv/day");
     },
 
-    async getTrending(type: "movie" | "tv", timeWindow: "day" | "week") {
-        return this.fetch(`/trending/${type}/${timeWindow}`);
+    async getTrending(type: "movie" | "tv", timeWindow: "day" | "week", params: Record<string, string> = {}) {
+        return this.fetch(`/trending/${type}/${timeWindow}`, { params });
     },
 
     async searchMulti(query: string) {
@@ -116,20 +116,28 @@ export const tmdb = {
         return this.fetch(`/discover/${type}`, { params });
     },
 
-    async getTopRated(type: "movie" | "tv") {
-        return this.fetch(`/${type}/top_rated`);
+    async getTopRated(type: "movie" | "tv", params: Record<string, string> = {}) {
+        return this.fetch(`/${type}/top_rated`, { params });
     },
 
-    async getPopular(type: "movie" | "tv") {
-        return this.fetch(`/${type}/popular`);
+    async getPopular(type: "movie" | "tv", params: Record<string, string> = {}) {
+        return this.fetch(`/${type}/popular`, { params });
     },
 
-    async getUpcomingMovies() {
-        return this.fetch("/movie/upcoming");
+    async getUpcomingMovies(params: Record<string, string> = {}) {
+        return this.fetch("/movie/upcoming", { params });
     },
 
-    async getAiringTodayTV() {
-        return this.fetch("/tv/airing_today");
+    async getAiringTodayTV(params: Record<string, string> = {}) {
+        return this.fetch("/tv/airing_today", { params });
+    },
+    
+    async getOnTheAirTV(params: Record<string, string> = {}) {
+        return this.fetch("/tv/on_the_air", { params });
+    },
+
+    async getNowPlayingMovies(params: Record<string, string> = {}) {
+        return this.fetch("/movie/now_playing", { params });
     },
 
     async getGenres(type: "movie" | "tv") {

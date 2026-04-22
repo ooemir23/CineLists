@@ -22,6 +22,14 @@ type MediaCardProps = {
     releaseDate?: string;
     type: "movie" | "tv" | "person";
     fullWidth?: boolean;
+    overview?: string;
+    watchProviders?: any;
+    friend?: {
+        name: string | null;
+        image: string | null;
+        type: string;
+    };
+    compact?: boolean;
 };
 
 const IMAGE_BASE_URL = "https://image.tmdb.org/t/p/w500";
@@ -58,7 +66,11 @@ export function MediaCard({
     runtime,
     releaseDate,
     type,
-    fullWidth = false
+    fullWidth = false,
+    overview,
+    watchProviders,
+    friend,
+    compact = false
 }: MediaCardProps) {
     type FriendRating = {
         userId: string;
@@ -71,6 +83,30 @@ export function MediaCard({
     const [isRatingsPopupOpen, setIsRatingsPopupOpen] = useState(false);
     const [friendsRatings, setFriendsRatings] = useState<FriendRating[]>([]);
     const [loadingRatings, setLoadingRatings] = useState(false);
+    const [showPreview, setShowPreview] = useState(false);
+    const [hoverTimer, setHoverTimer] = useState<NodeJS.Timeout | null>(null);
+
+    const handleMouseEnter = () => {
+        if (typeof window !== 'undefined' && window.matchMedia('(hover: hover)').matches) {
+            const timer = setTimeout(() => setShowPreview(true), 1000);
+            setHoverTimer(timer);
+        }
+    };
+
+    const handleMouseLeave = () => {
+        if (hoverTimer) clearTimeout(hoverTimer);
+        setShowPreview(false);
+    };
+
+    const handleTouchStart = () => {
+        const timer = setTimeout(() => setShowPreview(true), 500);
+        setHoverTimer(timer);
+    };
+
+    const handleTouchEnd = () => {
+        if (hoverTimer) clearTimeout(hoverTimer);
+        setShowPreview(false);
+    };
 
     const handleFriendsRatingsClick = async (e: React.MouseEvent) => {
         e.preventDefault();
@@ -94,9 +130,13 @@ export function MediaCard({
         <>
             <Link
                 href={`/${type}/${id}`}
+                onMouseEnter={handleMouseEnter}
+                onMouseLeave={handleMouseLeave}
+                onTouchStart={handleTouchStart}
+                onTouchEnd={handleTouchEnd}
                 className={cn(
-                    "group relative flex flex-col gap-2 md:gap-3 transition-all duration-500 ease-out flex-none hover:z-40 md:hover:scale-110 snap-start",
-                    fullWidth ? "w-full" : "w-32 sm:w-36 md:w-44 lg:w-48"
+                    "group relative flex flex-col gap-1.5 md:gap-2 transition-all duration-500 ease-out flex-none hover:z-40 md:hover:scale-110 snap-start",
+                    fullWidth ? "w-full" : compact ? "w-24 sm:w-28 md:w-32" : "w-32 sm:w-36 md:w-44 lg:w-48"
                 )}
             >
                 <div className={cn(
@@ -108,6 +148,22 @@ export function MediaCard({
                             : "group-hover:ring-2 group-hover:ring-primary/50",
                     type === "person" && "aspect-square rounded-full border-4 border-white/5 group-hover:border-primary/50"
                 )}>
+                    {/* Friend Activity Overlay */}
+                    {friend && (
+                        <div className="absolute top-2 left-2 z-20 flex items-center gap-1.5 px-2 py-1 rounded-full bg-black/60 backdrop-blur-md border border-white/10 max-w-[calc(100%-16px)]">
+                            <div className="w-4 h-4 rounded-full overflow-hidden border border-amber-400/50 shrink-0">
+                                <img 
+                                    src={friend.image || `https://ui-avatars.com/api/?name=${friend.name || "U"}&background=fbbf24&color=000`} 
+                                    alt={friend.name || "User"}
+                                    className="w-full h-full object-cover"
+                                />
+                            </div>
+                            <span className="text-[9px] font-black text-white truncate uppercase tracking-tighter">
+                                {friend.name?.split(" ")[0]} {friend.type === "WATCHED" ? "izledi" : friend.type === "RATED" ? "puanladı" : "ekledi"}
+                            </span>
+                        </div>
+                    )}
+
                     {/* Visual Content Wrapper with overflow-hidden */}
                     <div className="absolute inset-0 rounded-2xl overflow-hidden z-0">
                         {posterPath ? (
@@ -154,13 +210,14 @@ export function MediaCard({
                     {type !== "person" && (
                         <div className="flex items-center justify-between gap-2 overflow-hidden">
                             <span className={cn(
-                                "text-[9px] font-black uppercase tracking-[0.15em] shrink-0",
+                                "font-black uppercase tracking-[0.15em] shrink-0",
+                                compact ? "text-[8px]" : "text-[9px]",
                                 type === "movie" ? "text-amber-500" : "text-blue-500"
                             )}>
                                 {type === "movie" ? "Film" : "Dizi"}
                             </span>
 
-                            <div className="flex items-center gap-2 flex-1 justify-end min-w-0">
+                            <div className={cn("flex items-center flex-1 justify-end min-w-0", compact ? "gap-1" : "gap-2")}>
                                 {/* TMDB Global Rating */}
                                 <div className="flex items-center gap-1 bg-white/5 px-1.5 py-0.5 rounded-md border border-white/5 shrink-0" title="Dünya Geneli Puanı (TMDB)">
                                     <Globe className="w-2.5 h-2.5 text-blue-400" />
@@ -188,15 +245,20 @@ export function MediaCard({
                     )}
 
                     <div className={cn(
-                        "font-black text-white transition-colors tracking-tight group-hover:text-primary",
-                        type === "person" ? "text-[10px] md:text-xs" : "text-base"
+                        "font-black text-white transition-colors tracking-tight group-hover:text-primary leading-tight",
+                        type === "person" ? "text-[10px] md:text-xs" : compact ? "text-[11px] md:text-xs" : "text-sm md:text-base"
                     )}>
                         <AutoScrollText text={title} />
                     </div>
+                    {originalTitle && originalTitle !== title && type !== "person" && (
+                        <p className="text-[9px] md:text-[10px] font-bold text-neutral-500 uppercase tracking-tight truncate opacity-80">
+                            {originalTitle}
+                        </p>
+                    )}
                     {type === "person" ? (
                         <span className="text-xs text-primary/80 font-bold uppercase tracking-widest">Sanatçı</span>
                     ) : (
-                        <div className="flex items-center gap-2 mt-0.5">
+                        <div className="flex items-center flex-wrap gap-x-2 gap-y-1 mt-0.5">
                             {releaseDate && (
                                 <span className="text-[11px] font-bold text-neutral-500">
                                     {new Date(releaseDate).getFullYear()}
@@ -207,9 +269,53 @@ export function MediaCard({
                                     • {formatRuntime(runtime)}
                                 </span>
                             )}
+                            {watchProviders?.flatrate && (
+                                <div className="flex items-center gap-1">
+                                    <span className="text-neutral-600 font-black text-[9px]">•</span>
+                                    <div className="flex gap-0.5">
+                                        {watchProviders.flatrate.slice(0, 3).map((provider: any) => (
+                                            <div key={provider.provider_id} className="w-3.5 h-3.5 rounded-[3px] overflow-hidden border border-white/10">
+                                                <img 
+                                                    src={`https://image.tmdb.org/t/p/original${provider.logo_path}`} 
+                                                    alt={provider.provider_name}
+                                                    className="w-full h-full object-cover"
+                                                />
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     )}
                 </div>
+
+                {/* Preview Popup */}
+                {showPreview && overview && (
+                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-4 w-64 p-4 bg-[#1b2334] border border-white/10 rounded-2xl shadow-2xl z-[100] animate-in fade-in zoom-in-95 slide-in-from-bottom-2 duration-200 pointer-events-none">
+                        <div className="absolute inset-x-0 bottom-[-8px] left-1/2 -translate-x-1/2 w-4 h-4 bg-[#1b2334] border-r border-b border-white/10 rotate-45" />
+                        
+                        <div className="flex items-center justify-between mb-2">
+                            <h4 className="text-xs font-black text-amber-400 uppercase tracking-widest">Özet</h4>
+                            {watchProviders?.flatrate && (
+                                <div className="flex gap-1">
+                                    {watchProviders.flatrate.slice(0, 2).map((provider: any) => (
+                                        <div key={provider.provider_id} className="w-5 h-5 rounded-md overflow-hidden border border-white/10 shadow-lg">
+                                            <img 
+                                                src={`https://image.tmdb.org/t/p/original${provider.logo_path}`} 
+                                                alt={provider.provider_name}
+                                                className="w-full h-full object-cover"
+                                            />
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+
+                        <p className="text-[11px] text-white font-medium leading-relaxed line-clamp-6 italic">
+                            "{overview}"
+                        </p>
+                    </div>
+                )}
             </Link>
 
             {/* Recommend Modal */}
