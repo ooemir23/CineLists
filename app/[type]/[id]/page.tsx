@@ -60,8 +60,19 @@ type Props = {
 export default async function DetailsPage(props: Props) {
     const params = await props.params;
     const { type, id } = params;
+    const mediaId = parseInt(id);
     const session = await auth();
+    const isAuthenticated = !!session?.user?.id;
     const isGuest = (session?.user as any)?.isGuest;
+
+    const withFallback = async <T,>(promise: Promise<T>, fallback: T): Promise<T> => {
+        try {
+            return await promise;
+        } catch (error) {
+            console.error("Details page fallback:", error);
+            return fallback;
+        }
+    };
 
     if (type !== "movie" && type !== "tv") {
         notFound();
@@ -79,21 +90,21 @@ export default async function DetailsPage(props: Props) {
         dbMedia
     ] = await Promise.all([
         tmdb.getDetails(type as "movie" | "tv", id).catch(() => null),
-        getToWatchStatus(parseInt(id)),
-        getWatchStatus(parseInt(id)),
-        type === "tv" ? getWatchedEpisodes(parseInt(id)) : Promise.resolve([]),
+        withFallback(getToWatchStatus(mediaId), false),
+        withFallback(getWatchStatus(mediaId), null),
+        type === "tv" ? withFallback(getWatchedEpisodes(mediaId), []) : Promise.resolve([]),
         tmdb.getWatchProviders(type as "movie" | "tv", id).catch(() => null),
-        (async () => {
+        withFallback((async () => {
             const { getUserRating } = await import("@/lib/rating-actions");
-            return getUserRating(parseInt(id), type as "movie" | "tv");
-        })(),
-        (async () => {
+            return getUserRating(mediaId, type as "movie" | "tv");
+        })(), null),
+        withFallback((async () => {
             const { getFriendsRatings } = await import("@/lib/rating-actions");
-            return getFriendsRatings(parseInt(id), type as "movie" | "tv");
-        })(),
-        getReceivedRecommendation(parseInt(id)),
-        prisma.mediaItem.findUnique({
-            where: { tmdbId: parseInt(id) },
+            return getFriendsRatings(mediaId, type as "movie" | "tv");
+        })(), []),
+        withFallback(getReceivedRecommendation(mediaId), null),
+        withFallback(prisma.mediaItem.findUnique({
+            where: { tmdbId: mediaId },
             include: {
                 activities: {
                     where: { type: "REVIEWED" },
@@ -101,7 +112,7 @@ export default async function DetailsPage(props: Props) {
                     orderBy: { createdAt: "desc" }
                 }
             }
-        })
+        }), null)
     ]) as [any, boolean, any, any, any, number | null, any[], any, any];
 
     if (!data) notFound();
@@ -278,6 +289,7 @@ export default async function DetailsPage(props: Props) {
                                             id: activeRecommendation.sender.id,
                                             name: activeRecommendation.sender.name || "Bilinmiyor"
                                         } : undefined}
+                                        isAuthenticated={isAuthenticated}
                                         isGuest={isGuest}
                                         variant="minimal"
                                     />
@@ -295,6 +307,7 @@ export default async function DetailsPage(props: Props) {
                                             id: activeRecommendation.sender.id,
                                             name: activeRecommendation.sender.name || "Bilinmiyor"
                                         } : undefined}
+                                        isAuthenticated={isAuthenticated}
                                         isGuest={isGuest}
                                         variant="standard"
                                     />

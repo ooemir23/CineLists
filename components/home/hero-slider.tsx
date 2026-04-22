@@ -31,15 +31,18 @@ const CATEGORY_CONFIG = {
 
 export function HeroSlider({ items }: HeroSliderProps) {
     const [currentIndex, setCurrentIndex] = useState(0);
+    const hasItems = items.length > 0;
 
     // Auto-advance slide
     useEffect(() => {
+        if (!hasItems) return;
+
         const timer = setInterval(() => {
             setCurrentIndex((prev) => (prev + 1) % items.length);
         }, 10000); // 10 seconds per slide
 
         return () => clearInterval(timer);
-    }, [items.length]);
+    }, [hasItems, items.length]);
 
     // Reset timer on interaction
     const handleManualChange = (index: number) => {
@@ -47,6 +50,8 @@ export function HeroSlider({ items }: HeroSliderProps) {
     };
 
     const handleDragEnd = (event: any, info: any) => {
+        if (!hasItems) return;
+
         if (info.offset.x > 50) {
             // Swipe Right (Previous)
             setCurrentIndex((prev) => (prev === 0 ? items.length - 1 : prev - 1));
@@ -55,6 +60,19 @@ export function HeroSlider({ items }: HeroSliderProps) {
             setCurrentIndex((prev) => (prev + 1) % items.length);
         }
     };
+
+    if (!hasItems) {
+        return (
+            <div className="w-full h-[65svh] md:h-[450px] rounded-[32px] md:rounded-[40px] overflow-hidden shadow-2xl border border-white/10 relative bg-gradient-to-br from-[#111827] to-[#0b1220] flex items-center justify-center p-8 text-center">
+                <div className="max-w-md space-y-3">
+                    <h3 className="text-xl md:text-2xl font-black text-white tracking-tight">İçerikler Yüklenemedi</h3>
+                    <p className="text-sm text-neutral-300 font-medium">
+                        TMDB bağlantısı kurulamadı. Geçerli API anahtarı ekledikten sonra içerikler burada görünecek.
+                    </p>
+                </div>
+            </div>
+        );
+    }
 
     const currentItem = items[currentIndex];
     const config = CATEGORY_CONFIG[currentItem.category];

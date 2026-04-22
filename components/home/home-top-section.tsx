@@ -13,31 +13,43 @@ export async function HomeTopSection() {
         tmdb.getPopular("movie")
     ]);
 
-    // Prepare items with fallback to ensure we have data
+    const trendingMovie = trendingMovies?.results?.[0];
+    const upcomingMovie = upcomingMovies?.results?.[0];
+    const trendingTv = trendingTV?.results?.[0];
+    const popularMovie = popularMovies?.results?.[1] || popularMovies?.results?.[0];
+
+    // Prepare items safely; TMDB can be unavailable in local env
     const items = [
-        {
-            ...trendingMovies.results[0],
-            media_type: "movie",
-            category: "trending"
-        },
-        {
-            ...upcomingMovies.results[0],
-            media_type: "movie",
-            category: "upcoming"
-        },
-        {
-            ...trendingTV.results[0],
-            title: trendingTV.results[0].name, // Normalize TV name to title
-            media_type: "tv",
-            category: "tv"
-        },
-        // Use the 2nd popular movie to avoid duplication if it's the same as trending
-        {
-            ...popularMovies.results[1] || popularMovies.results[0],
-            media_type: "movie",
-            category: "popular"
-        },
-    ].filter(item => item && item.backdrop_path); // Filter out incomplete items
+        trendingMovie
+            ? {
+                ...trendingMovie,
+                media_type: "movie",
+                category: "trending"
+            }
+            : null,
+        upcomingMovie
+            ? {
+                ...upcomingMovie,
+                media_type: "movie",
+                category: "upcoming"
+            }
+            : null,
+        trendingTv
+            ? {
+                ...trendingTv,
+                title: trendingTv.name || trendingTv.title,
+                media_type: "tv",
+                category: "tv"
+            }
+            : null,
+        popularMovie
+            ? {
+                ...popularMovie,
+                media_type: "movie",
+                category: "popular"
+            }
+            : null,
+    ].filter((item): item is NonNullable<typeof item> => !!item && !!item.backdrop_path);
 
     return (
         <section className="flex flex-col lg:flex-row lg:items-stretch gap-4 w-full">

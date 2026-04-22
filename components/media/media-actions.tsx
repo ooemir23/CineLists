@@ -6,7 +6,6 @@ import Link from "next/link";
 import { RecommendModal } from "./recommend-modal";
 import { toggleToWatch } from "@/lib/actions";
 import { toggleWatchedStatus } from "@/lib/activity-actions";
-import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { WatchDetailsForm } from "./watch-details-form";
 
@@ -22,6 +21,7 @@ type MediaActionsProps = {
         id: string;
         name: string;
     } | null;
+    isAuthenticated?: boolean;
     isGuest?: boolean;
     variant?: "standard" | "minimal";
 };
@@ -35,6 +35,7 @@ export function MediaActions({
     initialStatus,
     initialRating,
     initialRecommendation,
+    isAuthenticated,
     isGuest,
     variant = "standard"
 }: MediaActionsProps) {
@@ -45,29 +46,34 @@ export function MediaActions({
     const [userRating, setUserRating] = useState(initialRating || 0);
     const [guestWarning, setGuestWarning] = useState<string | null>(null);
     const [isPending, startTransition] = useTransition();
-    const router = useRouter();
     const formRef = useRef<HTMLDivElement>(null);
+    const isRestrictedUser = !isAuthenticated || isGuest;
+
+    const showAuthWarning = (message: string) => {
+        setGuestWarning(message);
+        setTimeout(() => setGuestWarning(null), 3000);
+    };
 
     // ... (same logic as before) ...
 
     const handleToggleWatchlist = () => {
-        // ... (implementation same as original)
-        if (isGuest) {
-            setGuestWarning("Listeye eklemek için kayıt olmalısın!");
-            setTimeout(() => setGuestWarning(null), 3000);
+        if (isRestrictedUser) {
+            showAuthWarning("İzlenecek listesi için kayıt olmalısın!");
             return;
         }
         setInWatchlist((prev) => !prev);
         startTransition(async () => {
             const result = await toggleToWatch(tmdbId, type, title, posterPath);
-            if (result.error) router.push("/login"); // Redirect if unauthorized
+            if (result.error) {
+                setInWatchlist((prev) => !prev);
+                showAuthWarning("Bu işlem için giriş yapmalı veya kayıt olmalısın.");
+            }
         });
     };
 
     const handleMarkWatched = () => {
-        if (isGuest) {
-            setGuestWarning("İzlendi işaretlemek için kayıt olmalısın!");
-            setTimeout(() => setGuestWarning(null), 3000);
+        if (isRestrictedUser) {
+            showAuthWarning("İzledim olarak işaretlemek için kayıt olmalısın!");
             return;
         }
         // Optimistic update
@@ -88,7 +94,7 @@ export function MediaActions({
                 // Revert
                 setIsWatched(!newStatus);
                 if (newStatus) setShowDetailsForm(false);
-                router.push("/login");
+                showAuthWarning("Bu işlem için giriş yapmalı veya kayıt olmalısın.");
             }
         });
     };
@@ -173,9 +179,8 @@ export function MediaActions({
                 {/* Recommend Button - Always visible but styled differently */}
                 <button
                     onClick={() => {
-                        if (isGuest) {
-                            setGuestWarning("Tavsiye etmek için kayıt olmalısın!");
-                            setTimeout(() => setGuestWarning(null), 3000);
+                        if (isRestrictedUser) {
+                            showAuthWarning("Tavsiye etmek için kayıt olmalısın!");
                             return;
                         }
                         setIsRecommendOpen(true);

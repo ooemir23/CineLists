@@ -7,6 +7,7 @@ import { getPersonalizedRecommendations } from "@/lib/recommendations";
 import { FriendsActivity } from "@/components/home/friends-activity";
 import { HomeTopSection } from "@/components/home/home-top-section";
 import { SectionTabs } from "@/components/home/section-tabs";
+import { HomeDiscoverySection } from "@/components/home/home-discovery-section";
 
 export const revalidate = 3600; // Revalidate every hour
 
@@ -135,6 +136,8 @@ export default async function Home({ searchParams }: HomeProps) {
         {!isFiltering && <HomeTopSection />}
       </div>
 
+      {!isFiltering && <HomeDiscoverySection />}
+
       {/* Personalized Recommendations - Highlighted Placement */}
       {!isFiltering && personalizedMovies?.results?.length > 0 && (
         <div className="max-w-[1600px] mx-auto px-3 sm:px-6 md:px-8 lg:px-12 mt-3 md:mt-4">
@@ -147,7 +150,7 @@ export default async function Home({ searchParams }: HomeProps) {
 
 
       {/* Main Content Area */}
-      <div className="max-w-[1600px] mx-auto px-3 sm:px-6 md:px-8 lg:px-12 mt-3 md:mt-4 space-y-3 md:space-y-5">
+      <div className="max-w-[1600px] mx-auto px-3 sm:px-6 md:px-8 lg:px-12 mt-3 md:mt-4 space-y-2 md:space-y-3">
 
         {isFiltering ? (
           <div id="search-results" className="bg-white/5 rounded-2xl p-4 md:p-5 border border-white/10 scroll-mt-24">
@@ -160,15 +163,15 @@ export default async function Home({ searchParams }: HomeProps) {
         ) : (
           <>
             {/* Consolidated Sections: Trendler & Popüler */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-2 md:gap-3">
               {/* Trendler Section with Amber Frame */}
-              <section className="group relative p-3 md:p-5 rounded-2xl border border-amber-500/10 bg-amber-500/[0.02] hover:bg-amber-500/[0.04] hover:border-amber-500/20 transition-all duration-500 overflow-hidden">
+              <section className="group relative p-2.5 md:p-4 rounded-2xl border border-amber-500/10 bg-amber-500/[0.02] hover:bg-amber-500/[0.04] hover:border-amber-500/20 transition-all duration-500">
                 <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500/5 blur-[80px] -mr-16 -mt-16 pointer-events-none group-hover:bg-amber-500/10 transition-colors duration-500" />
 
-                <div className="flex items-center justify-between mb-2 md:mb-3 relative z-10 gap-2">
+                <div className="flex items-center justify-between mb-1.5 md:mb-2.5 relative z-10 gap-2">
                   <Link
                     href={trType === "tv" ? "/explore/tv/trending" : "/explore/movie/trending"}
-                    className="group/title flex items-center gap-2 overflow-hidden"
+                    className="group/title flex items-center gap-2"
                   >
                     <div className="shrink-0">
                       <span className="text-[9px] font-black text-amber-500 uppercase tracking-[0.15em] block">Keşfedin</span>
@@ -186,7 +189,7 @@ export default async function Home({ searchParams }: HomeProps) {
                   </div>
                 </div>
 
-                <div className="-mx-1 md:mx-0 relative z-10">
+                <div className="relative z-10">
                   <MediaRow
                     title=""
                     items={[
@@ -199,13 +202,13 @@ export default async function Home({ searchParams }: HomeProps) {
               </section>
 
               {/* Popüler Section with Blue Frame */}
-              <section className="group relative p-3 md:p-5 rounded-2xl border border-blue-500/10 bg-blue-500/[0.02] hover:bg-blue-500/[0.04] hover:border-blue-500/20 transition-all duration-500 overflow-hidden">
+              <section className="group relative p-2.5 md:p-4 rounded-2xl border border-blue-500/10 bg-blue-500/[0.02] hover:bg-blue-500/[0.04] hover:border-blue-500/20 transition-all duration-500">
                 <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/5 blur-[80px] -mr-16 -mt-16 pointer-events-none group-hover:bg-blue-500/10 transition-colors duration-500" />
 
-                <div className="flex items-center justify-between mb-2 md:mb-3 relative z-10 gap-2">
+                <div className="flex items-center justify-between mb-1.5 md:mb-2.5 relative z-10 gap-2">
                   <Link
                     href={poType === "tv" ? "/explore/tv/popular" : "/explore/movie/popular"}
-                    className="group/title flex items-center gap-2 overflow-hidden"
+                    className="group/title flex items-center gap-2"
                   >
                     <div className="shrink-0">
                       <span className="text-[9px] font-black text-blue-500 uppercase tracking-[0.15em] block">Öne Çıkan</span>
@@ -223,7 +226,7 @@ export default async function Home({ searchParams }: HomeProps) {
                   </div>
                 </div>
 
-                <div className="-mx-1 md:mx-0 relative z-10">
+                <div className="relative z-10">
                   <MediaRow
                     title=""
                     items={[
@@ -237,13 +240,13 @@ export default async function Home({ searchParams }: HomeProps) {
             </div>
 
             {/* Yakında Çıkacak Section with Green Frame */}
-            <section className="group relative p-3 md:p-5 rounded-2xl border border-emerald-500/10 bg-emerald-500/[0.02] hover:bg-emerald-500/[0.04] hover:border-emerald-500/20 transition-all duration-500 overflow-hidden">
+            <section className="group relative p-2.5 md:p-4 rounded-2xl border border-emerald-500/10 bg-emerald-500/[0.02] hover:bg-emerald-500/[0.04] hover:border-emerald-500/20 transition-all duration-500">
               <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/5 blur-[80px] -mr-16 -mt-16 pointer-events-none group-hover:bg-emerald-500/10 transition-colors duration-500" />
 
-              <div className="flex items-center justify-between mb-2 md:mb-3 relative z-10 gap-2">
+              <div className="flex items-center justify-between mb-1.5 md:mb-2.5 relative z-10 gap-2">
                 <Link
                   href="/explore/movie/upcoming"
-                  className="group/title flex items-center gap-2 overflow-hidden"
+                  className="group/title flex items-center gap-2"
                 >
                   <div className="shrink-0">
                     <span className="text-[9px] font-black text-emerald-500 uppercase tracking-[0.15em] block">Yeni Gelenler</span>
@@ -257,7 +260,7 @@ export default async function Home({ searchParams }: HomeProps) {
                 </Link>
               </div>
 
-              <div className="-mx-1 md:mx-0 relative z-10">
+              <div className="relative z-10">
                 <MediaRow
                   title=""
                   items={(upcomingMovies?.results || []).map((m: any) => ({ ...m, media_type: "movie" })).slice(0, 20)}

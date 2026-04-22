@@ -5,6 +5,14 @@ import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 import { AuthError } from "next-auth";
 import { redirect } from "next/navigation";
+import { Prisma } from "@prisma/client";
+
+function isPrismaConnectionError(error: unknown) {
+    if (error instanceof Prisma.PrismaClientInitializationError) return true;
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P1001") return true;
+    if (error instanceof Error && error.message.includes("Can't reach database server")) return true;
+    return false;
+}
 
 export async function loginUser(formData: FormData) {
     const email = String(formData.get("email") || "").trim();
@@ -29,7 +37,7 @@ export async function registerUser(formData: FormData) {
     const password = String(formData.get("password") || "");
     const name = String(formData.get("name") || "").trim();
 
-    if (!email || !password || !name) {
+    if (!email || !password) {
         redirect("/register?error=missing");
     }
 
@@ -38,9 +46,17 @@ export async function registerUser(formData: FormData) {
     }
 
     // Check if user already exists
-    const existingUser = await prisma.user.findUnique({
-        where: { email },
-    });
+    let existingUser = null;
+    try {
+        existingUser = await prisma.user.findUnique({
+            where: { email },
+        });
+    } catch (error) {
+        if (isPrismaConnectionError(error)) {
+            redirect("/register?error=db");
+        }
+        throw error;
+    }
 
     if (existingUser) {
         redirect("/register?error=exists");
@@ -48,6 +64,8 @@ export async function registerUser(formData: FormData) {
 
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 12);
+
+    const resolvedName = name || email.split("@")[0] || "Kullanici";
 
     // Generate unique username
     const baseUsername = email.split("@")[0].replace(/[^a-zA-Z0-9_]/g, "");
@@ -59,16 +77,19 @@ export async function registerUser(formData: FormData) {
             data: {
                 email,
                 username,
-                name,
+                name: resolvedName,
                 password: hashedPassword,
             },
         });
     } catch (error: any) {
+        if (isPrismaConnectionError(error)) {
+            redirect("/register?error=db");
+        }
         if (error.code === 'P2002') {
             redirect("/register?error=exists");
         }
         console.error("Registration error:", error);
-        redirect("/register?error=missing");
+        redirect("/register?error=unknown");
     }
 
     try {

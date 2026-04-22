@@ -3,6 +3,26 @@ import { env } from "./env";
 const TMDB_BASE_URL = "https://api.themoviedb.org/3";
 const API_KEY = env.TMDB_API_KEY;
 
+const EMPTY_LIST_RESPONSE = {
+    results: [],
+    genres: [],
+    total_pages: 0,
+    total_results: 0,
+};
+
+function isListEndpoint(endpoint: string): boolean {
+    return (
+        endpoint.includes("trending") ||
+        endpoint.includes("popular") ||
+        endpoint.includes("discover") ||
+        endpoint.includes("search") ||
+        endpoint.includes("genre") ||
+        endpoint.includes("upcoming") ||
+        endpoint.includes("airing_today") ||
+        endpoint.includes("top_rated")
+    );
+}
+
 type FetchOptions = {
     params?: Record<string, string>;
     cache?: RequestCache;
@@ -10,8 +30,11 @@ type FetchOptions = {
 
 export const tmdb = {
     async fetch(endpoint: string, { params, cache }: FetchOptions = {}): Promise<any> {
-        if (!API_KEY) {
-            console.error("TMDB_API_KEY is not defined in environment variables");
+        if (!API_KEY || API_KEY.includes("buraya")) {
+            console.error("TMDB_API_KEY is missing or placeholder value");
+            if (isListEndpoint(endpoint)) {
+                return EMPTY_LIST_RESPONSE;
+            }
             throw new Error("TMDB_API_KEY is missing");
         }
 
@@ -38,9 +61,9 @@ export const tmdb = {
 
             if (!res.ok) {
                 console.error(`TMDB API Error: ${res.status} ${res.statusText} at ${endpoint}`);
-                // Return empty results instead of throwing to prevent page crash
-                if (endpoint.includes("trending") || endpoint.includes("popular") || endpoint.includes("discover") || endpoint.includes("search") || endpoint.includes("genre")) {
-                    return { results: [], genres: [], total_pages: 0, total_results: 0 };
+                // Return empty results instead of throwing to prevent list pages from crashing
+                if (isListEndpoint(endpoint)) {
+                    return EMPTY_LIST_RESPONSE;
                 }
                 throw new Error(`TMDB Error: ${res.status} ${res.statusText}`);
             }
@@ -49,8 +72,8 @@ export const tmdb = {
         } catch (error) {
             console.error(`Network error fetching from TMDB (${endpoint}):`, error);
             // If it's a results-based endpoint, return empty results to allow UI to render
-            if (endpoint.includes("trending") || endpoint.includes("popular") || endpoint.includes("discover") || endpoint.includes("search") || endpoint.includes("genre")) {
-                return { results: [], genres: [], total_pages: 0, total_results: 0 };
+            if (isListEndpoint(endpoint)) {
+                return EMPTY_LIST_RESPONSE;
             }
             throw error;
         }

@@ -364,6 +364,43 @@ export async function getMediaMetadataBulk(items: { id: number; type: "movie" | 
     if (items.length === 0) return {};
 
     const tmdbIds = items.map(i => i.id);
+    const dbUrl = process.env.DATABASE_URL || "";
+    const isRailwayInternalDb = dbUrl.includes("railway.internal");
+
+    const getRuntimeFromDetails = (details: any, type: "movie" | "tv") => {
+        if (type === "movie") {
+            return (typeof details.runtime === "number" && details.runtime > 0) ? details.runtime : null;
+        }
+
+        const runtime = (details.episode_run_time && details.episode_run_time.length > 0)
+            ? details.episode_run_time[0]
+            : (details.last_episode_to_air?.runtime || details.next_episode_to_air?.runtime || details.runtime || null);
+
+        return (typeof runtime === "number" && runtime > 0) ? runtime : null;
+    };
+
+    // Local development cannot reach Railway internal hosts.
+    // In that case, skip DB reads/writes and build metadata directly from TMDB.
+    if (isRailwayInternalDb) {
+        const metadataMap: Record<number, { runtime?: number | null }> = {};
+
+        const fetched = await Promise.all(
+            items.map(async (item) => {
+                try {
+                    const details = await tmdb.getDetails(item.type, item.id.toString());
+                    return { id: item.id, runtime: getRuntimeFromDetails(details, item.type) };
+                } catch {
+                    return { id: item.id, runtime: null };
+                }
+            })
+        );
+
+        fetched.forEach((res) => {
+            metadataMap[res.id] = { runtime: res.runtime };
+        });
+
+        return metadataMap;
+    }
 
     try {
         // 1. Get existing data from DB
@@ -376,7 +413,7 @@ export async function getMediaMetadataBulk(items: { id: number; type: "movie" | 
                 tmdbId: true,
                 runtime: true
             }
-        });
+        }).catch(() => []);
 
         const metadataMap: Record<number, { runtime?: number | null }> = {};
         mediaItems.forEach(item => {
@@ -393,22 +430,7 @@ export async function getMediaMetadataBulk(items: { id: number; type: "movie" | 
                     try {
                         const details = await tmdb.getDetails(item.type, item.id.toString());
 
-                        // Enhanced runtime logic
-                        let runtime = details.runtime; // Standard for movies
-
-                        if (item.type === "tv") {
-                            // Try multiple fields for TV runtime:
-                            // 1. Array of runtimes (first one)
-                            // 2. Last aired episode runtime
-                            // 3. Next aired episode runtime
-                            // 4. Default runtime field (sometimes present)
-                            runtime = (details.episode_run_time && details.episode_run_time.length > 0)
-                                ? details.episode_run_time[0]
-                                : (details.last_episode_to_air?.runtime || details.next_episode_to_air?.runtime || details.runtime || null);
-                        }
-
-                        // Ensure runtime is a valid number (> 0)
-                        const validRuntime = (typeof runtime === "number" && runtime > 0) ? runtime : null;
+                        const validRuntime = getRuntimeFromDetails(details, item.type);
 
                         // Save/Update in DB for future requests
                         await prisma.mediaItem.upsert({

@@ -1,14 +1,8 @@
 "use client";
 
-import { loginAsGuest } from "@/lib/guest-actions";
 import { signInWithGoogle } from "@/lib/auth-actions";
 
-
-type SocialAuthProps = {
-    showGuest?: boolean;
-};
-
-export function SocialAuth({ showGuest }: SocialAuthProps) {
+export function SocialAuth() {
     const handleMailClick = () => {
         const emailInput = document.getElementById("email");
         if (emailInput) {
@@ -17,10 +11,8 @@ export function SocialAuth({ showGuest }: SocialAuthProps) {
         }
     };
 
-    const gridCols = showGuest ? "grid-cols-3" : "grid-cols-2";
-
     return (
-        <div className={`grid ${gridCols} gap-3`}>
+        <div className="grid grid-cols-2 gap-3">
             <button
                 onClick={() => signInWithGoogle()}
                 className="w-full flex flex-col items-center justify-center gap-1 bg-white/5 text-white py-3 rounded-xl hover:bg-white/10 transition-colors border border-white/10"
@@ -57,15 +49,6 @@ export function SocialAuth({ showGuest }: SocialAuthProps) {
                 <span className="text-[10px] font-semibold uppercase opacity-60">Mail</span>
             </button>
 
-            {showGuest && (
-                <button
-                    onClick={() => loginAsGuest()}
-                    className="w-full flex flex-col items-center justify-center gap-1 bg-white/5 text-white py-3 rounded-xl hover:bg-white/10 transition-colors border border-white/10"
-                >
-                    <span className="text-lg leading-none">👻</span>
-                    <span className="text-[10px] font-semibold uppercase opacity-60">Misafir</span>
-                </button>
-            )}
         </div>
     );
 }

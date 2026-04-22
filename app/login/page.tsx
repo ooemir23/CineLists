@@ -82,7 +82,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
                     </div>
                 </div>
 
-                <SocialAuth showGuest={true} />
+                <SocialAuth />
 
                 <p className="text-center text-sm text-neutral-400">
                     Hesabınız yok mu?{" "}
