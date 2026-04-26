@@ -98,6 +98,20 @@ export const tmdb = {
         });
     },
 
+    async searchMovies(query: string) {
+        return this.fetch("/search/movie", {
+            params: { query },
+            cache: "no-store",
+        });
+    },
+
+    async searchTV(query: string) {
+        return this.fetch("/search/tv", {
+            params: { query },
+            cache: "no-store",
+        });
+    },
+
     async getDetails(type: "movie" | "tv", id: string) {
         return this.fetch(`/${type}/${id}`, {
             params: { append_to_response: "credits,recommendations,similar,images,videos" }
