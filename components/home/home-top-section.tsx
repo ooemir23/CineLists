@@ -4,7 +4,7 @@ import { Activity, ArrowRight, Rss } from "lucide-react";
 import { FriendsActivity } from "./friends-activity";
 import { HeroSlider } from "./hero-slider";
 
-export async function HomeTopSection() {
+export async function HomeTopSection({ personalizedResults }: { personalizedResults?: any[] }) {
     // Fetch diverse content for the slider
     const [trendingMovies, upcomingMovies, trendingTV, popularMovies] = await Promise.all([
         tmdb.getTrendingMovies(),
@@ -19,7 +19,7 @@ export async function HomeTopSection() {
     const popularMovie = popularMovies?.results?.[1] || popularMovies?.results?.[0];
 
     // Prepare items safely; TMDB can be unavailable in local env
-    const items = [
+    const trendingItems = [
         trendingMovie
             ? {
                 ...trendingMovie,
@@ -50,6 +50,19 @@ export async function HomeTopSection() {
             }
             : null,
     ].filter((item): item is NonNullable<typeof item> => !!item && !!item.backdrop_path);
+
+    // Personalized items mapping
+    const personalizedItems = (personalizedResults || [])
+        .slice(0, 3)
+        .map(item => ({
+            ...item,
+            media_type: item.mediaType || "movie", // Handle the field name from getPersonalizedRecommendations
+            category: "personalized"
+        }))
+        .filter(item => !!item.backdrop_path);
+
+    // Combine: Personalized first, then trending
+    const items = [...personalizedItems, ...trendingItems].slice(0, 5);
 
     return (
         <section className="flex flex-col lg:flex-row lg:items-stretch gap-4 w-full">

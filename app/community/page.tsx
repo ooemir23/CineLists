@@ -45,7 +45,7 @@ export default async function CommunityPage(props: { searchParams: Promise<{ q?:
     }
 
     return (
-        <div className="container mx-auto px-6 py-10 min-h-screen">
+        <div className="container mx-auto px-6 py-10 ">
             <div className="flex items-center gap-3 mb-8">
                 <Users className="w-8 h-8 text-primary" />
                 <h1 className="text-3xl font-bold text-white">Topluluk</h1>

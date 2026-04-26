@@ -12,7 +12,7 @@ export default async function NotificationsPage() {
     const notifications = await getNotifications();
 
     return (
-        <div className="container mx-auto px-6 py-12 min-h-screen">
+        <div className="container mx-auto px-6 py-12 ">
             <NotificationsList initialNotifications={notifications} />
         </div>
     );

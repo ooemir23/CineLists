@@ -47,7 +47,7 @@ export function ProfileClientWrapper({ user }: { user: UserData }) {
                     <p className="text-neutral-500 text-sm mb-2 font-bold tracking-tight">@{user.username}</p>
                     {user.bio && (
                         <p className="text-neutral-400 text-xs text-center mb-6 font-medium leading-relaxed px-4 italic line-clamp-3">
-                            "{user.bio}"
+                            &ldquo;{user.bio}&rdquo;
                         </p>
                     )}
 

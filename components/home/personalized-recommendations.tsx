@@ -1,8 +1,7 @@
 import { MediaCard } from "@/components/media/media-card";
 import { MediaRowClient } from "@/components/media/media-row-client";
 import { getUserRatingsBulk } from "@/lib/rating-actions";
-import { Sparkles, Tv, Monitor, ChevronRight } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { Sparkles, ChevronRight } from "lucide-react";
 import Link from "next/link";
 
 type PersonalizedRecommendationsProps = {

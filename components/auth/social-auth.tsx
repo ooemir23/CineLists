@@ -1,8 +1,11 @@
 "use client";
 
 import { signInWithGoogle } from "@/lib/auth-actions";
+import { useTransition } from "react";
 
 export function SocialAuth() {
+    const [isPending, startTransition] = useTransition();
+
     const handleMailClick = () => {
         const emailInput = document.getElementById("email");
         if (emailInput) {
@@ -11,11 +14,20 @@ export function SocialAuth() {
         }
     };
 
+    const handleGoogleLogin = () => {
+        startTransition(() => {
+            signInWithGoogle().catch((error) => {
+                console.error("Google login failed:", error);
+            });
+        });
+    };
+
     return (
         <div className="grid grid-cols-2 gap-3">
             <button
-                onClick={() => signInWithGoogle()}
-                className="w-full flex flex-col items-center justify-center gap-1 bg-white/5 text-white py-3 rounded-xl hover:bg-white/10 transition-colors border border-white/10"
+                onClick={handleGoogleLogin}
+                disabled={isPending}
+                className="w-full flex flex-col items-center justify-center gap-1 bg-white/5 text-white py-3 rounded-xl hover:bg-white/10 transition-colors border border-white/10 disabled:opacity-50"
             >
                 <svg className="w-5 h-5" viewBox="0 0 24 24">
                     <path
@@ -40,7 +52,8 @@ export function SocialAuth() {
 
             <button
                 onClick={handleMailClick}
-                className="w-full flex flex-col items-center justify-center gap-1 bg-white/5 text-white py-3 rounded-xl hover:bg-white/10 transition-colors border border-white/10"
+                disabled={isPending}
+                className="w-full flex flex-col items-center justify-center gap-1 bg-white/5 text-white py-3 rounded-xl hover:bg-white/10 transition-colors border border-white/10 disabled:opacity-50"
             >
                 <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <rect width="20" height="16" x="2" y="4" rx="2" />
@@ -48,7 +61,7 @@ export function SocialAuth() {
                 </svg>
                 <span className="text-[10px] font-semibold uppercase opacity-60">Mail</span>
             </button>
-
         </div>
     );
 }
+

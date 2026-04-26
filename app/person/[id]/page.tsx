@@ -37,7 +37,7 @@ export default async function PersonPage(props: Props) {
         ?.slice(0, 20) || [];
 
     return (
-        <div className="min-h-screen bg-background pb-20">
+        <div className=" bg-background pb-20">
             <div className="max-w-7xl mx-auto px-6 md:px-10 py-12">
                 <div className="flex flex-col md:flex-row gap-12 items-start">
                     {/* Left Column: Image and Social */}

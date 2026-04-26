@@ -9,10 +9,24 @@ import { addEpisodeComment } from "@/lib/comment-actions";
 import { EpisodeDetailsModal } from "./episode-details-modal";
 import { useRouter } from "next/navigation";
 
+type Episode = {
+    id: string;
+    title?: string;
+    name?: string;
+    episode_number: number;
+    season_number: number;
+    overview?: string;
+    still_path?: string;
+    air_date?: string;
+    runtime?: number;
+    comments?: any[];
+    ratings?: Array<{ rating: number; userId?: string }>;
+};
+
 type EpisodeItemProps = {
     tmdbId: number;
     seasonNumber: number;
-    episode: any;
+    episode: Episode;
     isWatched: boolean;
     onRefresh?: () => void;
 };
@@ -52,10 +66,10 @@ export default function EpisodeItem({
                     tmdbId,
                     seasonNumber,
                     episode.episode_number,
-                    episode.name,
-                    episode.overview,
-                    episode.still_path,
-                    episode.air_date
+                    episode.name || episode.title || "",
+                    episode.overview || "",
+                    episode.still_path || "",
+                    episode.air_date || ""
                 );
             } else {
                 await removeEpisodeWatch(tmdbId, seasonNumber, episode.episode_number);
@@ -80,10 +94,10 @@ export default function EpisodeItem({
                 seasonNumber,
                 episodeNumber: episode.episode_number,
                 rating,
-                title: episode.name,
-                overview: episode.overview,
-                stillPath: episode.still_path,
-                airDate: episode.air_date
+                title: episode.name || "",
+                overview: episode.overview || "",
+                stillPath: episode.still_path || "",
+                airDate: episode.air_date || ""
             });
             onRefresh?.();
             router.refresh();
@@ -98,10 +112,10 @@ export default function EpisodeItem({
                 tmdbId,
                 seasonNumber,
                 episodeNumber: episode.episode_number,
-                title: episode.name,
-                overview: episode.overview,
-                stillPath: episode.still_path,
-                airDate: episode.air_date
+                title: episode.name || "",
+                overview: episode.overview || "",
+                stillPath: episode.still_path || "",
+                airDate: episode.air_date || ""
             });
 
             const result = await addEpisodeComment(dbEp.id, text, `/tv/${tmdbId}`, isSpoiler);
@@ -135,7 +149,7 @@ export default function EpisodeItem({
                         {episode.still_path ? (
                             <Image
                                 src={`https://image.tmdb.org/t/p/w300${episode.still_path}`}
-                                alt={episode.name}
+                                alt={episode.name || "Episode"}
                                 fill
                                 className="object-cover group-hover:scale-105 transition-transform duration-500"
                             />

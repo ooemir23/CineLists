@@ -136,7 +136,7 @@ export default async function FeedPage() {
     const allActivities = await getGroupedFeedActivities(session.user.id, followingIds);
 
     return (
-        <div className="min-h-screen bg-[#101624] text-neutral-100 pb-20">
+        <div className=" bg-[#101624] text-neutral-100 pb-20">
             <div className="max-w-7xl mx-auto px-2 md:px-10 py-8 md:py-10">
                 {/* Minimal Header */}
                 <div className="flex flex-col md:flex-row md:items-end gap-2 md:gap-4 mb-6 md:mb-10 pl-2 md:pl-0">

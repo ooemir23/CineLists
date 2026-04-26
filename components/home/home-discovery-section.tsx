@@ -166,7 +166,8 @@ export function HomeDiscoverySection() {
                 } else {
                     setItems(prev => [...prev, ...(data?.results || [])]);
                 }
-            } catch (err) {
+            } catch (err: any) {
+                if (err.name === 'AbortError') return;
                 console.error("Discovery fetch error:", err);
                 if (page === 1) setItems([]);
             } finally {
@@ -179,139 +180,167 @@ export function HomeDiscoverySection() {
         return () => controller.abort();
     }, [activeType, activeCategory, activeTimeWindow, genre, year, rating, provider, language, country, page]);
 
+    const [isFilterSheetOpen, setIsFilterSheetOpen] = useState(false);
+
     return (
         <section id="home-discover" ref={headerRef} className="max-w-[1600px] mx-auto px-3 sm:px-6 md:px-8 lg:px-12 mt-4 md:mt-5">
-            {/* Sticky Header Container */}
-            <div className="sticky top-[72px] z-40 pb-4 -mx-3 px-3 sm:-mx-6 sm:px-6 md:-mx-8 md:px-8 lg:-mx-12 lg:px-12 transition-all duration-300">
-                <div className="absolute inset-0 bg-[#0f172a]/80 backdrop-blur-md pointer-events-none border-b border-white/5 opacity-0 group-scroll:opacity-100 transition-opacity" />
+            {/* Filter Bottom Sheet for Mobile */}
+            {isFilterSheetOpen && (
+                <div 
+                    className="fixed inset-0 z-[1000] lg:hidden bg-black/60 backdrop-blur-sm animate-in fade-in duration-300"
+                    onClick={() => setIsFilterSheetOpen(false)}
+                />
+            )}
+            <div className={cn(
+                "fixed bottom-0 left-0 right-0 z-[1001] lg:hidden bg-[#0f172a] border-t border-white/10 rounded-t-[2.5rem] p-6 pb-12 transition-transform duration-300 ease-out",
+                isFilterSheetOpen ? "translate-y-0" : "translate-y-full"
+            )}>
+                <div className="w-12 h-1.5 bg-white/20 rounded-full mx-auto mb-8" />
                 
-                {/* Primary Discovery Bar */}
-                <div className="flex flex-col lg:flex-row gap-2 lg:items-center mb-3 relative z-10">
-                    {/* Type Switcher */}
-                    <div className="flex bg-[#1b2334]/90 p-1.5 rounded-[2rem] border border-white/10 backdrop-blur-xl shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] lg:w-auto w-full">
-                        <button
-                            onClick={() => setActiveType("all")}
-                            className={cn(
-                                "flex-1 lg:flex-none flex items-center justify-center gap-2 px-4 py-2.5 md:px-6 md:py-3 rounded-[1.4rem] text-sm font-black transition-all uppercase tracking-tight",
-                                activeType === "all"
-                                    ? "bg-amber-400 text-black shadow-[0_0_0_1px_rgba(255,195,0,0.35),0_8px_24px_-10px_rgba(255,195,0,0.6)]"
-                                    : "text-neutral-400 hover:text-white"
-                            )}
-                        >
-                            Tümü
-                        </button>
-                        <button
-                            onClick={() => setActiveType("movie")}
-                            className={cn(
-                                "flex-1 lg:flex-none flex items-center justify-center gap-2 px-4 py-2.5 md:px-6 md:py-3 rounded-[1.4rem] text-sm font-black transition-all uppercase tracking-tight",
-                                activeType === "movie"
-                                    ? "bg-amber-400 text-black shadow-[0_0_0_1px_rgba(255,195,0,0.35),0_8px_24px_-10px_rgba(255,195,0,0.6)]"
-                                    : "text-neutral-400 hover:text-white"
-                            )}
-                        >
-                            <Film size={18} />
-                            Film
-                        </button>
-                        <button
-                            onClick={() => setActiveType("tv")}
-                            className={cn(
-                                "flex-1 lg:flex-none flex items-center justify-center gap-2 px-4 py-2.5 md:px-6 md:py-3 rounded-[1.4rem] text-sm font-black transition-all uppercase tracking-tight",
-                                activeType === "tv"
-                                    ? "bg-amber-400 text-black shadow-[0_0_0_1px_rgba(255,195,0,0.35),0_8px_24px_-10px_rgba(255,195,0,0.6)]"
-                                    : "text-neutral-400 hover:text-white"
-                            )}
-                        >
-                            <Tv size={18} />
-                            Dizi
-                        </button>
+                <h3 className="text-xl font-black text-white uppercase tracking-tighter mb-6">İçerikleri Filtrele</h3>
+                
+                <div className="flex flex-col gap-6 max-h-[60vh] overflow-y-auto pr-2 no-scrollbar">
+                    {/* Time Window in Sheet */}
+                    <div className="space-y-3">
+                        <span className="text-[10px] font-black text-amber-400 uppercase tracking-widest px-2">Zaman Aralığı</span>
+                        <div className="flex bg-white/5 p-1 rounded-2xl border border-white/5">
+                            {["day", "week", "month"].map((tw) => (
+                                <button
+                                    key={tw}
+                                    onClick={() => setActiveTimeWindow(tw as any)}
+                                    className={cn(
+                                        "flex-1 py-3 rounded-xl text-xs font-black uppercase tracking-tight transition-all",
+                                        activeTimeWindow === tw ? "bg-amber-400 text-black shadow-lg" : "text-neutral-400"
+                                    )}
+                                >
+                                    {tw === "day" ? "Günün" : tw === "week" ? "Haftanın" : "Ayın"}
+                                </button>
+                            ))}
+                        </div>
                     </div>
 
-                    {/* Category Options */}
-                    <div className="flex-1 flex flex-wrap bg-[#1b2334]/90 p-1.5 rounded-3xl border border-white/10 backdrop-blur-xl shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] gap-1">
-                        {categoryOptions.map((opt) => (
+                    {/* Detailed Filters in Sheet */}
+                    <div className="grid grid-cols-2 gap-4">
+                        {[
+                            { label: "Tür", value: genre, setter: setGenre, options: GENRE_OPTIONS },
+                            { label: "Yıl", value: year, setter: setYear, options: YEAR_OPTIONS.map(y => ({ id: y, label: y || "Hepsi" })) },
+                            { label: "Puan", value: rating, setter: setRating, options: RATING_OPTIONS },
+                            { label: "Platform", value: provider, setter: setProvider, options: PROVIDER_OPTIONS },
+                            { label: "Dil", value: language, setter: setLanguage, options: LANGUAGE_OPTIONS },
+                            { label: "Ülke", value: country, setter: setCountry, options: COUNTRY_OPTIONS },
+                        ].map((filter, idx) => (
+                            <div key={idx} className="space-y-2">
+                                <span className="text-[10px] font-black text-neutral-500 uppercase tracking-widest px-2">{filter.label}</span>
+                                <div className="relative">
+                                    <select 
+                                        value={filter.value} 
+                                        onChange={(e) => filter.setter(e.target.value)}
+                                        className={cn(
+                                            "w-full bg-white/5 border border-white/10 rounded-2xl px-4 py-3.5 text-sm font-bold appearance-none outline-none focus:border-amber-400/50 transition-colors",
+                                            filter.value ? "text-amber-400 border-amber-400/20" : "text-neutral-300"
+                                        )}
+                                    >
+                                        {filter.options.map(opt => (
+                                            <option key={opt.id} value={opt.id} className="bg-[#0f172a] text-white">
+                                                {opt.label}
+                                            </option>
+                                        ))}
+                                    </select>
+                                    <Filter className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-500 pointer-events-none" />
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+
+                <div className="mt-8 flex gap-3">
+                    <button 
+                        onClick={() => {
+                            setGenre(""); setYear(""); setRating(""); setProvider(""); setLanguage(""); setCountry("");
+                        }}
+                        className="flex-1 py-4 rounded-2xl bg-white/5 border border-white/10 text-white font-black text-xs uppercase tracking-widest active:scale-95 transition-all"
+                    >
+                        Sıfırla
+                    </button>
+                    <button 
+                        onClick={() => setIsFilterSheetOpen(false)}
+                        className="flex-[2] py-4 rounded-2xl bg-amber-400 text-black font-black text-xs uppercase tracking-widest shadow-xl shadow-amber-400/20 active:scale-95 transition-all"
+                    >
+                        Uygula
+                    </button>
+                </div>
+            </div>
+
+            {/* Sticky Header Container */}
+            <div className="sticky top-[72px] z-40 pb-2 md:pb-4 -mx-3 px-3 sm:-mx-6 sm:px-6 md:-mx-8 md:px-8 lg:-mx-12 lg:px-12">
+                
+                {/* Primary Discovery Bar */}
+                <div className="flex flex-col lg:flex-row gap-2 lg:items-center mb-2 md:mb-3 relative z-10">
+                    {/* Type Switcher */}
+                    <div className="flex bg-[#1b2334]/90 p-1 md:p-1.5 rounded-full md:rounded-[2rem] border border-white/10 backdrop-blur-xl lg:w-auto w-full">
+                        {["all", "movie", "tv"].map((t) => (
                             <button
-                                key={opt.id}
-                                onClick={() => setActiveCategory(opt.id as MenuCategory)}
+                                key={t}
+                                onClick={() => setActiveType(t as any)}
                                 className={cn(
-                                    "flex-1 lg:flex-none flex items-center justify-center gap-2 px-4 py-2.5 md:px-5 md:py-3 rounded-[1.4rem] text-[10px] md:text-xs font-black transition-all uppercase tracking-widest whitespace-nowrap",
-                                    activeCategory === opt.id
-                                        ? "bg-white/10 text-white border border-white/15"
-                                        : "text-neutral-500 hover:text-white"
+                                    "flex-1 lg:flex-none flex items-center justify-center gap-1.5 px-3 py-2 md:px-6 md:py-3 rounded-full md:rounded-[1.4rem] text-[10px] md:text-sm font-black transition-all uppercase tracking-tight",
+                                    activeType === t ? "bg-amber-400 text-black shadow-lg" : "text-neutral-400 hover:text-white"
                                 )}
                             >
-                                <opt.icon size={14} className={activeCategory === opt.id ? "text-amber-400" : ""} />
-                                {opt.label}
+                                {t === "movie" ? <Film size={14} className="md:w-[18px] md:h-[18px]" /> : t === "tv" ? <Tv size={14} className="md:w-[18px] md:h-[18px]" /> : null}
+                                {t === "all" ? "Tümü" : t === "movie" ? "Film" : "Dizi"}
                             </button>
                         ))}
                     </div>
 
-                    {/* View Mode Toggles */}
-                    <div className="flex bg-[#1b2334]/90 p-1 rounded-full border border-white/10 backdrop-blur-xl lg:w-auto w-full justify-center shrink-0">
+                    {/* Category Options & Filter Button */}
+                    <div className="flex items-center gap-2 lg:flex-1">
+                        <div className="flex-1 flex bg-[#1b2334]/90 p-1 md:p-1.5 rounded-full md:rounded-3xl border border-white/10 backdrop-blur-xl gap-1 overflow-x-auto hide-scrollbar">
+                            {categoryOptions.map((opt) => (
+                                <button
+                                    key={opt.id}
+                                    onClick={() => setActiveCategory(opt.id as MenuCategory)}
+                                    className={cn(
+                                        "flex-none flex items-center justify-center gap-1.5 px-3 py-2 md:px-5 md:py-3 rounded-full md:rounded-[1.4rem] text-[9px] md:text-xs font-black transition-all uppercase tracking-widest whitespace-nowrap",
+                                        activeCategory === opt.id
+                                            ? "bg-white/10 text-white border border-white/15"
+                                            : "text-neutral-500 hover:text-white"
+                                    )}
+                                >
+                                    <opt.icon size={12} className={cn("md:w-3.5 md:h-3.5", activeCategory === opt.id ? "text-amber-400" : "")} />
+                                    {opt.label}
+                                </button>
+                            ))}
+                        </div>
+
+                        {/* Mobile Filter Trigger */}
                         <button
-                            onClick={() => setViewMode("grid")}
-                            className={cn(
-                                "p-2 rounded-lg transition-all",
-                                viewMode === "grid" ? "bg-amber-400 text-black shadow-lg" : "text-neutral-400 hover:text-white"
-                            )}
-                            title="Izgara"
+                            onClick={() => setIsFilterSheetOpen(true)}
+                            className="lg:hidden flex items-center justify-center w-10 h-10 rounded-full bg-amber-400 text-black shadow-lg shadow-amber-400/20 active:scale-90 transition-all shrink-0"
                         >
-                            <LayoutGrid size={18} />
+                            <Filter size={18} strokeWidth={2.5} />
                         </button>
-                        <button
-                            onClick={() => setViewMode("compact")}
-                            className={cn(
-                                "p-2 rounded-lg transition-all",
-                                viewMode === "compact" ? "bg-amber-400 text-black shadow-lg" : "text-neutral-400 hover:text-white"
-                            )}
-                            title="Kompakt"
-                        >
-                            <Grid3X3 size={18} />
-                        </button>
-                        <button
-                            onClick={() => setViewMode("list")}
-                            className={cn(
-                                "p-2 rounded-lg transition-all",
-                                viewMode === "list" ? "bg-amber-400 text-black shadow-lg" : "text-neutral-400 hover:text-white"
-                            )}
-                            title="Liste"
-                        >
-                            <ListIcon size={18} />
-                        </button>
+                    </div>
+
+                    {/* View Mode Toggles - Desktop Only */}
+                    <div className="hidden md:flex bg-[#1b2334]/90 p-1 rounded-full border border-white/10 backdrop-blur-xl shrink-0">
+                        <button onClick={() => setViewMode("grid")} className={cn("p-2 rounded-lg transition-all", viewMode === "grid" ? "bg-amber-400 text-black shadow-lg" : "text-neutral-400 hover:text-white")} title="Izgara"><LayoutGrid size={18} /></button>
+                        <button onClick={() => setViewMode("compact")} className={cn("p-2 rounded-lg transition-all", viewMode === "compact" ? "bg-amber-400 text-black shadow-lg" : "text-neutral-400 hover:text-white")} title="Kompakt"><Grid3X3 size={18} /></button>
+                        <button onClick={() => setViewMode("list")} className={cn("p-2 rounded-lg transition-all", viewMode === "list" ? "bg-amber-400 text-black shadow-lg" : "text-neutral-400 hover:text-white")} title="Liste"><ListIcon size={18} /></button>
                     </div>
                 </div>
 
-                <div className="flex flex-col lg:flex-row items-stretch lg:items-center gap-3 relative z-10 animate-in fade-in slide-in-from-top-2 duration-500">
-                    <div className="flex bg-[#1b2334]/90 p-1.5 rounded-[2rem] border border-white/10 backdrop-blur-xl shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] lg:w-auto w-full">
-                        <button
-                            onClick={() => setActiveTimeWindow("day")}
-                            className={cn(
-                                "flex-1 lg:flex-none flex items-center justify-center px-4 py-2.5 md:px-6 md:py-3 rounded-[1.4rem] text-sm font-black transition-all uppercase tracking-tight whitespace-nowrap",
-                                activeTimeWindow === "day" ? "bg-amber-400 text-black shadow-[0_0_0_1px_rgba(255,195,0,0.35),0_8px_24px_-10px_rgba(255,195,0,0.6)]" : "text-neutral-400 hover:text-white"
-                            )}
-                        >
-                            Günün
-                        </button>
-                        <button
-                            onClick={() => setActiveTimeWindow("week")}
-                            className={cn(
-                                "flex-1 lg:flex-none flex items-center justify-center px-4 py-2.5 md:px-6 md:py-3 rounded-[1.4rem] text-sm font-black transition-all uppercase tracking-tight whitespace-nowrap",
-                                activeTimeWindow === "week" ? "bg-amber-400 text-black shadow-[0_0_0_1px_rgba(255,195,0,0.35),0_8px_24px_-10px_rgba(255,195,0,0.6)]" : "text-neutral-400 hover:text-white"
-                            )}
-                        >
-                            Haftanın
-                        </button>
-                        <button
-                            onClick={() => setActiveTimeWindow("month")}
-                            className={cn(
-                                "flex-1 lg:flex-none flex items-center justify-center px-4 py-2.5 md:px-6 md:py-3 rounded-[1.4rem] text-sm font-black transition-all uppercase tracking-tight whitespace-nowrap",
-                                activeTimeWindow === "month" ? "bg-amber-400 text-black shadow-[0_0_0_1px_rgba(255,195,0,0.35),0_8px_24px_-10px_rgba(255,195,0,0.6)]" : "text-neutral-400 hover:text-white"
-                            )}
-                        >
-                            Ayın
-                        </button>
+                {/* Desktop-only Filters Row */}
+                <div className="hidden lg:flex flex-col lg:flex-row items-stretch lg:items-center gap-2 md:gap-3 relative z-10">
+                    <div className="flex bg-[#1b2334]/90 p-1 rounded-full md:rounded-[2rem] border border-white/10 backdrop-blur-xl lg:w-auto w-full">
+                        {["day", "week", "month"].map(tw => (
+                            <button key={tw} onClick={() => setActiveTimeWindow(tw as any)} className={cn("flex-1 lg:flex-none flex items-center justify-center px-3 py-2 md:px-6 md:py-3 rounded-full md:rounded-[1.4rem] text-[10px] md:text-sm font-black transition-all uppercase tracking-tight whitespace-nowrap", activeTimeWindow === tw ? "bg-amber-400 text-black" : "text-neutral-400 hover:text-white")}>
+                                {tw === "day" ? "Günün" : tw === "week" ? "Haftanın" : "Ayın"}
+                            </button>
+                        ))}
                     </div>
 
-                    <div className="flex flex-wrap bg-[#1b2334]/90 p-1.5 rounded-3xl border border-white/10 backdrop-blur-xl shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] max-w-full gap-1 items-center">
+                    <div className="flex bg-[#1b2334]/90 p-1 rounded-2xl md:rounded-3xl border border-white/10 backdrop-blur-xl gap-0.5 md:gap-1 items-center overflow-x-auto hide-scrollbar">
                         {[
                             { value: genre, setter: setGenre, options: GENRE_OPTIONS },
                             { value: year, setter: setYear, options: YEAR_OPTIONS.map(y => ({ id: y, label: y || "Yıl" })) },
@@ -320,46 +349,12 @@ export function HomeDiscoverySection() {
                             { value: language, setter: setLanguage, options: LANGUAGE_OPTIONS },
                             { value: country, setter: setCountry, options: COUNTRY_OPTIONS },
                         ].map((filter, idx) => (
-                            <select 
-                                key={idx}
-                                value={filter.value} 
-                                onChange={(e) => filter.setter(e.target.value)}
-                                className={cn(
-                                    "bg-transparent text-sm font-black px-4 py-2.5 md:px-6 md:py-3 outline-none cursor-pointer uppercase tracking-tight appearance-none text-center hover:bg-white/5 rounded-[1.2rem] transition-colors",
-                                    filter.value !== "" ? "text-amber-400" : "text-white"
-                                )}
-                            >
-                                {filter.options.map(opt => (
-                                    <option key={opt.id} value={opt.id} className="bg-[#1b2334] text-white">
-                                        {opt.label}
-                                    </option>
-                                ))}
+                            <select key={idx} value={filter.value} onChange={(e) => filter.setter(e.target.value)} className={cn("bg-transparent text-[9px] md:text-sm font-black px-2 py-2 md:px-6 md:py-3 outline-none cursor-pointer uppercase tracking-tight appearance-none text-center hover:bg-white/5 rounded-xl md:rounded-[1.2rem] transition-colors shrink-0", filter.value !== "" ? "text-amber-400" : "text-neutral-500 hover:text-white")}>
+                                {filter.options.map(opt => <option key={opt.id} value={opt.id} className="bg-[#1b2334] text-white">{opt.label}</option>)}
                             </select>
                         ))}
-
-                        <div className="ml-2 md:ml-4 px-2 md:px-4 border-l border-white/10 flex-1">
-                            <h2 className="text-sm md:text-2xl font-black text-amber-400 tracking-tighter uppercase italic whitespace-nowrap">
-                                {HOME_CATEGORY_LABELS[activeCategory]} {activeType === "all" ? "İçerikler" : activeType === "movie" ? "Filmler" : "Diziler"}
-                            </h2>
-                        </div>
                     </div>
                 </div>
-
-                {(genre || year || rating || provider || language || country) && (
-                    <button
-                        onClick={() => {
-                            setGenre("");
-                            setYear("");
-                            setRating("");
-                            setProvider("");
-                            setLanguage("");
-                            setCountry("");
-                        }}
-                        className="lg:flex-none flex items-center justify-center gap-2 px-6 py-2.5 rounded-full text-[10px] font-black text-red-400 border border-red-400/20 hover:bg-red-400/10 transition-all uppercase tracking-widest whitespace-nowrap mt-3"
-                    >
-                        Sıfırla
-                    </button>
-                )}
             </div>
 
             {isLoading ? (

@@ -32,7 +32,7 @@ export default async function ListDetailPage({ params }: ListDetailPageProps) {
   const isOwner = list.userId === session.user.id;
 
   return (
-    <div className="max-w-7xl mx-auto px-6 md:px-10 lg:px-16 py-10 min-h-screen">
+    <div className="max-w-7xl mx-auto px-6 md:px-10 lg:px-16 py-10 ">
       {/* Back Button */}
       <Link
         href="/lists"

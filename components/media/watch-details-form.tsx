@@ -177,53 +177,68 @@ export function WatchDetailsForm({
                 </div>
 
                 {/* Watched With */}
-                <div className="space-y-3 md:col-span-2">
+                <div className="space-y-3">
                     <label className="text-[10px] font-bold text-neutral-500 uppercase tracking-widest flex items-center gap-1.5">
                         <Users className="w-3 h-3 text-blue-400" /> Kiminle?
                     </label>
-                    <div className="flex flex-col sm:flex-row gap-2">
-                        <div className="relative flex-1">
-                            <select
-                                className="w-full bg-white/5 border border-white/5 rounded-xl px-4 py-2 text-xs font-bold text-white focus:outline-none focus:ring-1 focus:ring-primary/40 appearance-none cursor-pointer"
-                                value={""}
-                                onChange={(e) => {
-                                    const val = e.target.value;
-                                    const friend = friends.find(f => f.id === val);
-                                    const nameToTrack = friend?.name || val;
-                                    if (val && !selectedPeople.includes(nameToTrack)) {
-                                        setSelectedPeople([...selectedPeople, nameToTrack]);
-                                    }
-                                }}
-                            >
-                                <option value="" disabled className="bg-neutral-900">Arkadaş seç...</option>
-                                {friends.filter(f => !selectedPeople.includes(f.name || "")).map(friend => (
-                                    <option key={friend.id} value={friend.id} className="bg-neutral-900">{friend.name}</option>
-                                ))}
-                            </select>
-                        </div>
-                        <div className="flex-1 flex gap-2">
-                            <input
-                                type="text"
-                                placeholder="Veya isim..."
-                                value={customPerson}
-                                onChange={(e) => setCustomPerson(e.target.value)}
-                                onKeyDown={(e) => e.key === "Enter" && addCustomPerson()}
-                                className="w-full bg-white/5 border border-white/5 rounded-xl px-4 py-2 text-xs font-bold text-white focus:outline-none focus:ring-1 focus:ring-primary/40"
-                            />
-                            <button
-                                onClick={addCustomPerson}
-                                type="button"
-                                className="p-2 bg-primary/10 text-primary border border-primary/20 rounded-xl hover:bg-primary/20 transition-all"
-                            >
-                                <UserPlus className="w-4 h-4" />
-                            </button>
+                    <div className="relative group">
+                        <div className="flex gap-2">
+                            <div className="relative flex-1">
+                                <input
+                                    type="text"
+                                    placeholder="Arkadaş seç veya isim yaz..."
+                                    value={customPerson}
+                                    onChange={(e) => setCustomPerson(e.target.value)}
+                                    onKeyDown={(e) => {
+                                        if (e.key === "Enter" && customPerson.trim()) {
+                                            e.preventDefault();
+                                            addCustomPerson();
+                                        }
+                                    }}
+                                    className="w-full bg-white/5 border border-white/5 rounded-xl px-4 py-2.5 text-xs font-bold text-white focus:outline-none focus:ring-1 focus:ring-primary/40 transition-all"
+                                />
+                                {customPerson.trim() && (
+                                    <div className="absolute top-full left-0 right-0 mt-1 bg-neutral-900 border border-white/10 rounded-xl shadow-2xl z-50 overflow-hidden animate-in fade-in slide-in-from-top-1 duration-200">
+                                        <div className="max-h-48 overflow-y-auto">
+                                            {/* Friends Match */}
+                                            {friends
+                                                .filter(f => f.name?.toLowerCase().includes(customPerson.toLowerCase()) && !selectedPeople.includes(f.name || ""))
+                                                .map(friend => (
+                                                    <button
+                                                        key={friend.id}
+                                                        onClick={() => {
+                                                            setSelectedPeople([...selectedPeople, friend.name || ""]);
+                                                            setCustomPerson("");
+                                                        }}
+                                                        className="w-full px-4 py-2 text-left text-xs font-bold text-white hover:bg-primary/20 transition-colors flex items-center gap-2 border-b border-white/5"
+                                                    >
+                                                        <div className="w-5 h-5 rounded-full overflow-hidden border border-white/10 shrink-0">
+                                                            <img src={friend.image || `https://ui-avatars.com/api/?name=${friend.name}&background=random`} className="w-full h-full object-cover" />
+                                                        </div>
+                                                        {friend.name}
+                                                        <span className="ml-auto text-[8px] text-neutral-500 uppercase">Arkadaş</span>
+                                                    </button>
+                                                ))
+                                            }
+                                            {/* Custom Option */}
+                                            <button
+                                                onClick={addCustomPerson}
+                                                className="w-full px-4 py-3 text-left text-xs font-black text-primary hover:bg-primary/10 transition-colors flex items-center gap-2"
+                                            >
+                                                <Plus className="w-4 h-4" />
+                                                "{customPerson}" Ekle
+                                            </button>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
                         </div>
                     </div>
 
                     {selectedPeople.length > 0 && (
                         <div className="flex flex-wrap gap-1.5 pt-1">
                             {selectedPeople.map(idOrName => {
-                                const friend = friends.find(f => f.id === idOrName);
+                                const friend = friends.find(f => f.id === idOrName || f.name === idOrName);
                                 const isFriend = !!friend;
                                 return (
                                     <div
@@ -250,47 +265,58 @@ export function WatchDetailsForm({
                 </div>
 
                 {/* Recommended By */}
-                <div className="space-y-3 md:col-span-2">
+                <div className="space-y-3">
                     <label className="text-[10px] font-bold text-neutral-500 uppercase tracking-widest flex items-center gap-1.5">
                         <MessageSquare className="w-3 h-3 text-purple-400" /> Tavsiye Eden?
                     </label>
-                    <div className="flex flex-col sm:flex-row gap-2">
-                        <div className="relative flex-1">
-                            <select
-                                className="w-full bg-white/5 border border-white/5 rounded-xl px-4 py-2 text-xs font-bold text-white focus:outline-none focus:ring-1 focus:ring-primary/40 appearance-none cursor-pointer"
-                                value={""}
-                                onChange={(e) => {
-                                    const val = e.target.value;
-                                    const friend = friends.find(f => f.id === val);
-                                    const nameToTrack = friend?.name || val;
-                                    if (val && !selectedRecommenders.includes(nameToTrack)) {
-                                        setSelectedRecommenders([...selectedRecommenders, nameToTrack]);
+                    <div className="relative">
+                        <input
+                            type="text"
+                            placeholder="Arkadaş seç veya isim yaz..."
+                            value={customRecommender}
+                            onChange={(e) => setCustomRecommender(e.target.value)}
+                            onKeyDown={(e) => {
+                                if (e.key === "Enter" && customRecommender.trim()) {
+                                    e.preventDefault();
+                                    addCustomRecommender();
+                                }
+                            }}
+                            className="w-full bg-white/5 border border-white/5 rounded-xl px-4 py-2.5 text-xs font-bold text-white focus:outline-none focus:ring-1 focus:ring-primary/40 transition-all"
+                        />
+                        {customRecommender.trim() && (
+                            <div className="absolute top-full left-0 right-0 mt-1 bg-neutral-900 border border-white/10 rounded-xl shadow-2xl z-50 overflow-hidden animate-in fade-in slide-in-from-top-1 duration-200">
+                                <div className="max-h-48 overflow-y-auto">
+                                    {/* Friends Match */}
+                                    {friends
+                                        .filter(f => f.name?.toLowerCase().includes(customRecommender.toLowerCase()) && !selectedRecommenders.includes(f.name || ""))
+                                        .map(friend => (
+                                            <button
+                                                key={friend.id}
+                                                onClick={() => {
+                                                    setSelectedRecommenders([...selectedRecommenders, friend.name || ""]);
+                                                    setCustomRecommender("");
+                                                }}
+                                                className="w-full px-4 py-2 text-left text-xs font-bold text-white hover:bg-primary/20 transition-colors flex items-center gap-2 border-b border-white/5"
+                                            >
+                                                <div className="w-5 h-5 rounded-full overflow-hidden border border-white/10 shrink-0">
+                                                    <img src={friend.image || `https://ui-avatars.com/api/?name=${friend.name}&background=random`} className="w-full h-full object-cover" />
+                                                </div>
+                                                {friend.name}
+                                                <span className="ml-auto text-[8px] text-neutral-500 uppercase">Arkadaş</span>
+                                            </button>
+                                        ))
                                     }
-                                }}
-                            >
-                                <option value="" disabled className="bg-neutral-900">Arkadaş seç...</option>
-                                {friends.filter(f => !selectedRecommenders.includes(f.name || "")).map(friend => (
-                                    <option key={friend.id} value={friend.id} className="bg-neutral-900">{friend.name}</option>
-                                ))}
-                            </select>
-                        </div>
-                        <div className="flex-1 flex gap-2">
-                            <input
-                                type="text"
-                                placeholder="Veya isim..."
-                                value={customRecommender}
-                                onChange={(e) => setCustomRecommender(e.target.value)}
-                                onKeyDown={(e) => e.key === "Enter" && addCustomRecommender()}
-                                className="w-full bg-white/5 border border-white/5 rounded-xl px-4 py-2 text-xs font-bold text-white focus:outline-none focus:ring-1 focus:ring-primary/40"
-                            />
-                            <button
-                                onClick={addCustomRecommender}
-                                type="button"
-                                className="p-2 bg-purple-500/10 text-purple-400 border border-purple-500/20 rounded-xl hover:bg-purple-500/20 transition-all"
-                            >
-                                <UserPlus className="w-4 h-4" />
-                            </button>
-                        </div>
+                                    {/* Custom Option */}
+                                    <button
+                                        onClick={addCustomRecommender}
+                                        className="w-full px-4 py-3 text-left text-xs font-black text-purple-400 hover:bg-purple-500/10 transition-colors flex items-center gap-2"
+                                    >
+                                        <Plus className="w-4 h-4" />
+                                        "{customRecommender}" Ekle
+                                    </button>
+                                </div>
+                            </div>
+                        )}
                     </div>
 
                     {selectedRecommenders.length > 0 && (

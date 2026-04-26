@@ -1,10 +1,10 @@
 "use client";
 import React, { useState, useMemo } from "react";
-
-
+import { motion } from "framer-motion";
+import { cn } from "@/lib/utils";
 import WatchedSearchBar from "@/components/watched/watched-search-bar";
 import { MediaCard } from "@/components/media/media-card";
-import { Calendar, Star, User, Users, Film } from "@/components/Icons";
+import { Calendar, Star, User, Users, Film, Tv, Filter, RefreshCcw } from "lucide-react";
 
 // Genre listeleri (sabit)
 const MOVIE_GENRES = [
@@ -18,7 +18,7 @@ const ALL_GENRES = [...new Set([...MOVIE_GENRES, ...TV_GENRES])].sort();
 export default function WatchedSearchBarWrapper({ watched }: { watched: any[] }) {
     const [searchValue, setSearchValue] = useState("");
     const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
-    const [filterOpen, setFilterOpen] = useState(true);
+    const [filterOpen, setFilterOpen] = useState(false);
 
     // Filtreler
     const [filterType, setFilterType] = useState<string>("");
@@ -82,69 +82,113 @@ export default function WatchedSearchBarWrapper({ watched }: { watched: any[] })
                 onFilterClick={() => setFilterOpen(!filterOpen)}
             />
             {filterOpen && (
-                <div className="flex flex-wrap gap-4 bg-slate-800 rounded-xl p-4 mt-4 mb-2">
+                <motion.div 
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="flex flex-wrap items-center gap-3 bg-[#1b2334]/60 backdrop-blur-xl rounded-[1.5rem] p-3 md:p-4 mt-4 border border-white/5 shadow-2xl"
+                >
                     {/* Tür filtresi - toggle button'lar */}
-                    <div className="flex gap-2">
+                    <div className="flex bg-white/5 p-1 rounded-2xl border border-white/5">
                         <button
                             onClick={() => setFilterType(filterType === "MOVIE" ? "" : "MOVIE")}
-                            className={`px-3 py-2 text-xs rounded-lg transition ${filterType === "MOVIE" ? "bg-emerald-700/60 text-white" : "bg-slate-900 text-white hover:bg-slate-800"}`}
+                            className={cn(
+                                "flex items-center gap-2 px-4 py-2 rounded-xl text-[11px] font-black uppercase tracking-wider transition-all",
+                                filterType === "MOVIE" ? "bg-amber-400 text-black shadow-lg shadow-amber-400/20" : "text-neutral-400 hover:text-white"
+                            )}
                         >
+                            <Film size={14} />
                             Film
                         </button>
                         <button
                             onClick={() => setFilterType(filterType === "TV" ? "" : "TV")}
-                            className={`px-3 py-2 text-xs rounded-lg transition ${filterType === "TV" ? "bg-emerald-700/60 text-white" : "bg-slate-900 text-white hover:bg-slate-800"}`}
+                            className={cn(
+                                "flex items-center gap-2 px-4 py-2 rounded-xl text-[11px] font-black uppercase tracking-wider transition-all",
+                                filterType === "TV" ? "bg-amber-400 text-black shadow-lg shadow-amber-400/20" : "text-neutral-400 hover:text-white"
+                            )}
                         >
+                            <Tv size={14} />
                             Dizi
                         </button>
                     </div>
-                    {/* Puan türü filtresi */}
-                    <select
-                        value={filterRatingType}
-                        onChange={e => setFilterRatingType(e.target.value as "user" | "tmdb")}
-                        className="bg-slate-900 text-white rounded-lg px-3 py-2 text-xs"
-                    >
-                        <option value="user">Verdiğim Puanlar</option>
-                        <option value="tmdb">Genel Puan</option>
-                    </select>
-                    {/* Puan filtresi */}
-                    <select
-                        value={filterRating}
-                        onChange={e => setFilterRating(e.target.value)}
-                        className="bg-slate-900 text-white rounded-lg px-3 py-2 text-xs"
-                    >
-                        <option value="">{filterRatingType === "user" ? "Tüm Verdiğim Puanlar" : "Tüm Genel Puanlar"}</option>
-                        <option value="9">9+</option>
-                        <option value="8">8+</option>
-                        <option value="7">7+</option>
-                        <option value="6">6+</option>
-                        <option value="5">5+</option>
-                    </select>
-                    {/* Genre filtresi */}
-                    <select
-                        value={filterGenre}
-                        onChange={e => setFilterGenre(e.target.value)}
-                        className="bg-slate-900 text-white rounded-lg px-3 py-2 text-xs"
-                    >
-                        <option value="">Türler</option>
-                        {(filterType === "TV" ? TV_GENRES : filterType === "MOVIE" ? MOVIE_GENRES : ALL_GENRES).map(g => <option key={g} value={g}>{g}</option>)}
-                    </select>
-                    {/* İzlenme yılı filtresi */}
-                    <select
-                        value={filterYear}
-                        onChange={e => setFilterYear(e.target.value)}
-                        className="bg-slate-900 text-white rounded-lg px-3 py-2 text-xs"
-                    >
-                        <option value="">Tüm Yıllar</option>
-                        {years.map(y => (
-                            <option key={y} value={y}>{y}</option>
-                        ))}
-                    </select>
+
+                    <div className="h-6 w-[1px] bg-white/10 hidden md:block mx-1" />
+
+                    {/* Puan türü ve değeri filtresi */}
+                    <div className="flex flex-wrap gap-2 flex-1 items-center">
+                        <div className="relative group">
+                            <select
+                                value={filterRatingType}
+                                onChange={e => setFilterRatingType(e.target.value as "user" | "tmdb")}
+                                className="bg-white/5 text-white rounded-2xl px-4 py-2.5 text-[11px] font-black uppercase tracking-wider outline-none border border-white/5 focus:border-amber-400/30 transition-all appearance-none pr-10 cursor-pointer"
+                            >
+                                <option value="user" className="bg-[#1b2334]">Verdiğim Puanlar</option>
+                                <option value="tmdb" className="bg-[#1b2334]">Genel Puan</option>
+                            </select>
+                            <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-neutral-500 group-hover:text-amber-400 transition-colors">
+                                <Star size={12} fill="currentColor" />
+                            </div>
+                        </div>
+
+                        <div className="relative group">
+                            <select
+                                value={filterRating}
+                                onChange={e => setFilterRating(e.target.value)}
+                                className={cn(
+                                    "bg-white/5 rounded-2xl px-4 py-2.5 text-[11px] font-black uppercase tracking-wider outline-none border border-white/5 focus:border-amber-400/30 transition-all appearance-none pr-10 cursor-pointer",
+                                    filterRating ? "text-amber-400 border-amber-400/20" : "text-white"
+                                )}
+                            >
+                                <option value="" className="bg-[#1b2334]">{filterRatingType === "user" ? "Tüm Puanlar" : "Tüm Genel"}</option>
+                                <option value="9" className="bg-[#1b2334]">9+ Puan</option>
+                                <option value="8" className="bg-[#1b2334]">8+ Puan</option>
+                                <option value="7" className="bg-[#1b2334]">7+ Puan</option>
+                                <option value="6" className="bg-[#1b2334]">6+ Puan</option>
+                                <option value="5" className="bg-[#1b2334]">5+ Puan</option>
+                            </select>
+                            <Filter className="absolute right-3 top-1/2 -translate-y-1/2 w-3 h-3 text-neutral-500 pointer-events-none" />
+                        </div>
+
+                        <div className="relative group">
+                            <select
+                                value={filterGenre}
+                                onChange={e => setFilterGenre(e.target.value)}
+                                className={cn(
+                                    "bg-white/5 rounded-2xl px-4 py-2.5 text-[11px] font-black uppercase tracking-wider outline-none border border-white/5 focus:border-amber-400/30 transition-all appearance-none pr-10 cursor-pointer",
+                                    filterGenre ? "text-amber-400 border-amber-400/20" : "text-white"
+                                )}
+                            >
+                                <option value="" className="bg-[#1b2334]">Türler</option>
+                                {(filterType === "TV" ? TV_GENRES : filterType === "MOVIE" ? MOVIE_GENRES : ALL_GENRES).map(g => <option key={g} value={g} className="bg-[#1b2334]">{g}</option>)}
+                            </select>
+                            <Filter className="absolute right-3 top-1/2 -translate-y-1/2 w-3 h-3 text-neutral-500 pointer-events-none" />
+                        </div>
+
+                        <div className="relative group">
+                            <select
+                                value={filterYear}
+                                onChange={e => setFilterYear(e.target.value)}
+                                className={cn(
+                                    "bg-white/5 rounded-2xl px-4 py-2.5 text-[11px] font-black uppercase tracking-wider outline-none border border-white/5 focus:border-amber-400/30 transition-all appearance-none pr-10 cursor-pointer",
+                                    filterYear ? "text-amber-400 border-amber-400/20" : "text-white"
+                                )}
+                            >
+                                <option value="" className="bg-[#1b2334]">Tüm Yıllar</option>
+                                {years.map(y => (
+                                    <option key={y} value={y} className="bg-[#1b2334]">{y}</option>
+                                ))}
+                            </select>
+                            <Calendar className="absolute right-3 top-1/2 -translate-y-1/2 w-3 h-3 text-neutral-500 pointer-events-none" />
+                        </div>
+                    </div>
+
                     <button
                         onClick={() => { setFilterType(""); setFilterRating(""); setFilterRatingType("user"); setFilterYear(""); setFilterGenre(""); }}
-                        className="text-xs text-white bg-red-600 hover:bg-red-700 rounded-lg px-3 py-2"
-                    >Temizle</button>
-                </div>
+                        className="px-5 py-2.5 rounded-2xl bg-rose-500/10 text-rose-500 hover:bg-rose-500 hover:text-white font-black text-[11px] uppercase tracking-[0.2em] transition-all active:scale-95 flex items-center gap-2"
+                    >
+                        <RefreshCcw size={14} />
+                        Sıfırla
+                    </button>
+                </motion.div>
             )}
             {viewMode === "grid" ? (
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-8 mt-8">

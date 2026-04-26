@@ -6,7 +6,7 @@ import { Star, Calendar, TrendingUp, Trophy } from "lucide-react";
 import { HeroActions } from "./hero-actions";
 import { cn } from "@/lib/utils";
 
-type CategoryType = "trending" | "upcoming" | "tv" | "popular";
+type CategoryType = "trending" | "upcoming" | "tv" | "popular" | "personalized";
 
 interface HeroItem {
     id: number;
@@ -27,6 +27,7 @@ const CATEGORY_CONFIG = {
     upcoming: { label: "Yakında Vizyonda", icon: Calendar, color: "text-blue-400", bgColor: "bg-blue-400" },
     tv: { label: "Popüler Dizi", icon: TrendingUp, color: "text-emerald-400", bgColor: "bg-emerald-400" },
     popular: { label: "Haftanın Filmi", icon: Trophy, color: "text-purple-400", bgColor: "bg-purple-400" },
+    personalized: { label: "Size Özel Öneri", icon: Trophy, color: "text-rose-400", bgColor: "bg-rose-400" },
 };
 
 export function HeroSlider({ items }: HeroSliderProps) {
@@ -63,7 +64,7 @@ export function HeroSlider({ items }: HeroSliderProps) {
 
     if (!hasItems) {
         return (
-            <div className="w-full h-[65svh] md:h-[450px] rounded-[32px] md:rounded-[40px] overflow-hidden shadow-2xl border border-white/10 relative bg-gradient-to-br from-[#111827] to-[#0b1220] flex items-center justify-center p-8 text-center">
+            <div className="w-full h-[65svh] md:h-[500px] rounded-[32px] md:rounded-[40px] overflow-hidden shadow-2xl border border-white/10 relative bg-gradient-to-br from-[#111827] to-[#0b1220] flex items-center justify-center p-8 text-center">
                 <div className="max-w-md space-y-3">
                     <h3 className="text-xl md:text-2xl font-black text-white tracking-tight">İçerikler Yüklenemedi</h3>
                     <p className="text-sm text-neutral-300 font-medium">
@@ -85,62 +86,7 @@ export function HeroSlider({ items }: HeroSliderProps) {
 
     return (
         <div className="flex flex-col gap-6">
-            {/* Top Navigation Tabs - External Header */}
-            {/* Top Navigation Tabs - External Header - Minimal Design */}
-            <div className="w-full px-2">
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4 w-full">
-                    {items.map((item, index) => {
-                        const itemConfig = CATEGORY_CONFIG[item.category];
-                        const isActive = index === currentIndex;
-                        const ItemIcon = itemConfig.icon;
-                        return (
-                            <button
-                                key={`${item.id}-${item.category}`}
-                                onClick={() => handleManualChange(index)}
-                                className={cn(
-                                    "group relative flex items-center justify-center gap-2 py-3 rounded-xl transition-all duration-500 w-full outline-none",
-                                    isActive ? "opacity-100" : "opacity-40 hover:opacity-70"
-                                )}
-                            >
-                                {/* Minimal Background Highlight for Active */}
-                                {isActive && (
-                                    <motion.div
-                                        layoutId="nav-bg"
-                                        className="absolute inset-0 bg-white/[0.03] rounded-xl"
-                                        transition={{ duration: 0.3 }}
-                                    />
-                                )}
-
-                                <ItemIcon
-                                    size={16}
-                                    className={cn(
-                                        "relative z-10 transition-all duration-300",
-                                        isActive ? itemConfig.color : "text-white"
-                                    )}
-                                />
-
-                                <span className={cn(
-                                    "relative z-10 text-[10px] sm:text-xs font-black uppercase tracking-[0.1em] transition-all duration-300 truncate",
-                                    isActive ? "text-white" : "text-white"
-                                )}>
-                                    {itemConfig.label}
-                                </span>
-
-                                {/* Active Line Indicator */}
-                                {isActive && (
-                                    <motion.div
-                                        layoutId="nav-indicator"
-                                        className={cn("absolute bottom-0 left-0 right-0 h-[2px] rounded-full w-12 mx-auto", itemConfig.bgColor)}
-                                        transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                                    />
-                                )}
-                            </button>
-                        );
-                    })}
-                </div>
-            </div>
-
-            <div className="w-full h-[65svh] md:h-[450px] rounded-[32px] md:rounded-[40px] overflow-hidden shadow-2xl border border-white/10 relative group">
+            <div className="w-full h-[65svh] md:h-[500px] rounded-[32px] md:rounded-[40px] overflow-hidden shadow-2xl border border-white/10 relative group">
                 <AnimatePresence mode="wait">
                     <motion.div
                         key={`${currentItem.id}-${currentItem.category}`}
@@ -168,16 +114,6 @@ export function HeroSlider({ items }: HeroSliderProps) {
                         <div className="absolute inset-0 flex flex-col justify-end p-6 md:p-10 gap-3 md:gap-4 pb-16 md:pb-10">
 
                             <div className="space-y-2 max-w-2xl pt-10">
-                                <motion.div
-                                    initial={{ y: 20, opacity: 0 }}
-                                    animate={{ y: 0, opacity: 1 }}
-                                    transition={{ delay: 0.3 }}
-                                    className="flex items-center gap-2 mb-2"
-                                >
-                                    <span className={cn("px-2 py-0.5 rounded-md bg-white/10 backdrop-blur-md border border-white/10 text-[10px] font-black uppercase tracking-widest text-white/80")}>
-                                        {config.label}
-                                    </span>
-                                </motion.div>
 
                                 <motion.h2
                                     initial={{ y: 20, opacity: 0 }}
@@ -205,9 +141,16 @@ export function HeroSlider({ items }: HeroSliderProps) {
                             >
                                 <HeroActions movieId={currentItem.id} mediaType={currentItem.media_type} />
 
-                                <div className="flex items-center gap-1.5 text-white/90 bg-white/10 backdrop-blur-xl px-3 py-2 rounded-xl border border-white/10 shadow-lg mt-2">
-                                    <Star size={14} className={cn("fill-current", config.color)} />
-                                    <span className="font-bold text-sm tabular-nums">{currentItem.vote_average.toFixed(1)}</span>
+                                <div className="flex items-center gap-2">
+                                    <div className="flex items-center gap-1.5 text-white/90 bg-white/10 backdrop-blur-xl px-3 py-2 rounded-xl border border-white/10 shadow-lg mt-2">
+                                        <Icon size={14} className={cn("fill-current", config.color)} />
+                                        <span className="font-bold text-[10px] uppercase tracking-wider">{config.label}</span>
+                                    </div>
+
+                                    <div className="flex items-center gap-1.5 text-white/90 bg-white/10 backdrop-blur-xl px-3 py-2 rounded-xl border border-white/10 shadow-lg mt-2">
+                                        <Star size={14} className="fill-current text-amber-400" />
+                                        <span className="font-bold text-sm tabular-nums">{currentItem.vote_average.toFixed(1)}</span>
+                                    </div>
                                 </div>
                             </motion.div>
                         </div>

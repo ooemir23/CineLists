@@ -17,7 +17,7 @@ export default async function WatchedPage() {
     const isGuest = (session.user as any).isGuest || (session.user as any).id?.startsWith("guest_");
     if (isGuest) {
         return (
-            <div className="max-w-7xl mx-auto px-6 md:px-10 lg:px-16 py-10 min-h-screen">
+            <div className="max-w-7xl mx-auto px-6 md:px-10 lg:px-16 py-10 ">
                 <div className="flex flex-col md:flex-row md:items-center gap-3 mb-12">
                     <div className="flex items-center gap-3">
                         <Check className="w-10 h-10 text-primary" />
@@ -61,7 +61,7 @@ export default async function WatchedPage() {
     }
 
     return (
-        <div className="max-w-7xl mx-auto px-6 md:px-10 lg:px-16 py-10 min-h-screen">
+        <div className="max-w-7xl mx-auto px-6 md:px-10 lg:px-16 py-10">
             <div className="flex flex-col md:flex-row md:items-center gap-3 mb-12">
                 <div className="flex items-center gap-3">
                     <Check className="w-10 h-10 text-primary" />

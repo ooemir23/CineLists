@@ -72,6 +72,7 @@ export function SettingsModal({ user, onClose }: SettingsModalProps) {
     // Delete/Suspend States
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
     const [showSuspendConfirm, setShowSuspendConfirm] = useState(false);
+    const [showAllGenres, setShowAllGenres] = useState(false);
 
     const handleUsernameChange = async (val: string) => {
         setUsername(val);
@@ -434,7 +435,7 @@ export function SettingsModal({ user, onClose }: SettingsModalProps) {
                                                 Favori Türler
                                             </h4>
                                             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                                                {user.allGenres && user.allGenres.map((genre) => {
+                                                {(showAllGenres ? user.allGenres : user.allGenres.slice(0, 9)).map((genre) => {
                                                     const isSelected = favoriteGenres.includes(genre.id.toString());
                                                     return (
                                                         <button
@@ -459,6 +460,14 @@ export function SettingsModal({ user, onClose }: SettingsModalProps) {
                                                     );
                                                 })}
                                             </div>
+                                            {user.allGenres && user.allGenres.length > 9 && (
+                                                <button 
+                                                    onClick={() => setShowAllGenres(!showAllGenres)}
+                                                    className="w-full py-2 text-[10px] font-black uppercase tracking-widest text-neutral-500 hover:text-white transition-colors"
+                                                >
+                                                    {showAllGenres ? "Daha Az Göster" : "Daha Fazla Göster"}
+                                                </button>
+                                            )}
                                         </div>
 
                                         <div className="space-y-4 pt-4 border-t border-white/5">

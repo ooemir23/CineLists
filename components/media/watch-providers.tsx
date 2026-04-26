@@ -143,7 +143,7 @@ export function WatchProviders({ providers, isGlobal, isGuest }: WatchProvidersP
                             {isGlobal && (
                                 <div className="bg-yellow-500/10 border border-yellow-500/20 p-4 rounded-2xl flex items-center gap-3">
                                     <div className="w-2 h-2 rounded-full bg-yellow-500 animate-pulse" />
-                                    <p className="text-xs font-bold text-yellow-500/80">Türkiye'de bulunamadı. Diğer ülkelerdeki seçenekler gösteriliyor.</p>
+                                    <p className="text-xs font-bold text-yellow-500/80">Türkiye&rsquo;de bulunamadı. Diğer ülkelerdeki seçenekler gösteriliyor.</p>
                                 </div>
                             )}
 

@@ -130,6 +130,22 @@
   .hide-scrollbar::-webkit-scrollbar {
     display: none;
   }
+
+  /* Mobile Layout Utilities */
+  .mobile-grid-2 {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  }
+
+  .mobile-card-shadow {
+    box-shadow: 0 4px 12px -2px rgba(0, 0, 0, 0.4);
+  }
+
+  .mobile-container {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
 }
 
 /* Custom Scrollbar */
@@ -177,12 +193,27 @@ a,
 
 /* Prevent zoom on input focus */
 @media screen and (max-width: 768px) {
-
   input,
   textarea,
   select {
     font-size: 16px !important;
     /* iOS zooms if < 16px */
+  }
+
+  /* Optimize spacing for mobile */
+  .mobile-spacing-y {
+    margin-top: 1.5rem;
+    margin-bottom: 1.5rem;
+  }
+
+  /* Better whitespace for mobile */
+  h1, h2, h3 {
+    letter-spacing: -0.01em;
+  }
+
+  /* Touch optimization for all buttons */
+  button:not(.no-touch-scale):active {
+    transform: scale(0.96);
   }
 }
 

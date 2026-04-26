@@ -150,15 +150,6 @@ export function MediaFilter() {
         return () => clearTimeout(timeoutId);
     }, [type, year, minRating, country, selectedProviders, selectedGenres, query, pathname, router, searchParams, isInitialRender]);
 
-    // Scroll to results when filters are applied
-    useEffect(() => {
-        if (lastFilterTime > 0) {
-            const resultsElement = document.getElementById("search-results");
-            if (resultsElement) {
-                resultsElement.scrollIntoView({ behavior: "smooth", block: "start" });
-            }
-        }
-    }, [lastFilterTime]);
 
     const hasActiveFilters = year || minRating || query || (country && country !== "TR") || selectedProviders.length > 0 || selectedGenres.length > 0 || searchParams.get("type");
 
@@ -212,25 +203,7 @@ export function MediaFilter() {
     return (
         <div className="relative">
             <div className="bg-gradient-to-br from-white/10 via-white/5 to-transparent backdrop-blur-xl border border-white/10 rounded-2xl p-3 md:p-4 shadow-2xl">
-                <div className="flex flex-col gap-3">
-                    {/* Header - Compact Line */}
-                    <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                            <h3 className="text-sm md:text-base font-black text-white uppercase tracking-tight italic">
-                                Keşfet
-                            </h3>
-                        </div>
-
-                        {hasActiveFilters && (
-                            <button
-                                onClick={handleClear}
-                                className="flex items-center gap-1 px-2 py-1 bg-red-500/10 hover:bg-red-500/20 text-red-500 rounded-lg transition-all border border-red-500/10 text-[10px] font-black uppercase"
-                            >
-                                <X className="w-3 h-3" />
-                                Temizle
-                            </button>
-                        )}
-                    </div>
+                <div className="flex flex-col gap-2">
 
                     {/* Filters - Ultra Compact */}
                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2">
@@ -309,7 +282,7 @@ export function MediaFilter() {
                             <button
                                 onClick={() => setShowProviderDropdown(!showProviderDropdown)}
                                 disabled={loading}
-                                className="w-full h-full min-h-[28px] flex items-center justify-center bg-white/5 border border-white/10 rounded-lg hover:bg-white/10 transition-all disabled:opacity-50 text-[10px] font-black text-white"
+                                className="w-full h-full min-h-[28px] flex items-center justify-center bg-white/5 border border-white/10 rounded-lg hover:bg-white/10 transition-all disabled:opacity-50 text-[10px] font-black text-neutral-500 hover:text-white uppercase"
                             >
                                 <span className="truncate px-1 flex items-center gap-1">
                                     {selectedProviders.length > 0 ? (
@@ -411,7 +384,7 @@ export function MediaFilter() {
                             <button
                                 onClick={() => setShowGenreDropdown(!showGenreDropdown)}
                                 disabled={loading}
-                                className="w-full h-full min-h-[28px] flex items-center justify-center bg-white/5 border border-white/10 rounded-lg hover:bg-white/10 transition-all disabled:opacity-50 text-[10px] font-black text-white"
+                                className="w-full h-full min-h-[28px] flex items-center justify-center bg-white/5 border border-white/10 rounded-lg hover:bg-white/10 transition-all disabled:opacity-50 text-[10px] font-black text-neutral-500 hover:text-white uppercase"
                             >
                                 <span className="truncate px-1 flex items-center gap-1">
                                     {selectedGenres.length > 0 ? (
@@ -496,7 +469,7 @@ export function MediaFilter() {
                             <select
                                 value={year}
                                 onChange={(e) => setYear(e.target.value)}
-                                className="w-full h-full min-h-[28px] bg-white/5 border border-white/10 rounded-lg py-1 px-1 text-[10px] font-black text-white appearance-none focus:outline-none transition-all cursor-pointer hover:bg-white/10 text-center"
+                                className="w-full h-full min-h-[28px] bg-white/5 border border-white/10 rounded-lg py-1 px-1 text-[10px] font-black text-neutral-500 hover:text-white appearance-none focus:outline-none transition-all cursor-pointer hover:bg-white/10 text-center uppercase"
                             >
                                 <option value="" className="bg-neutral-900">Yıl</option>
                                 {YEARS.map(y => (
@@ -616,6 +589,14 @@ export function MediaFilter() {
                                     <X className="w-3 h-3 opacity-60 group-hover:opacity-100" />
                                 </button>
                             )}
+
+                            <button
+                                onClick={handleClear}
+                                className="flex items-center gap-1.5 px-3 py-1.5 bg-red-500/10 hover:bg-red-500/20 text-red-500 rounded-lg transition-all border border-red-500/20 text-xs font-black uppercase ml-auto"
+                            >
+                                <X className="w-3.5 h-3.5" />
+                                Temizle
+                            </button>
                         </div>
                     )}
                 </div>

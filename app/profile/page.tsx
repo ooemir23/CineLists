@@ -80,7 +80,7 @@ export default async function ProfilePage() {
 
     if (!user || !stats) {
         return (
-            <div className="flex items-center justify-center min-h-screen">
+            <div className="flex items-center justify-center ">
                 <p className="text-white">Kullanıcı verileri yüklenemedi.</p>
             </div>
         );
@@ -101,7 +101,7 @@ export default async function ProfilePage() {
     };
 
     return (
-        <div className="container mx-auto px-6 py-10 min-h-screen">
+        <div className="container mx-auto px-6 py-10 ">
             <div className="flex flex-col lg:flex-row gap-10 items-start">
                 {/* Profile Card (Client Component) */}
                 <ProfileClientWrapper user={userData as any} />

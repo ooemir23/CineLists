@@ -49,7 +49,6 @@ const RatingPortal = ({ children }: { children: React.ReactNode }) => {
     const [mounted, setMounted] = useState(false);
     useEffect(() => {
         setMounted(true);
-        return () => setMounted(false);
     }, []);
     if (!mounted) return null;
     return createPortal(children, document.body);
@@ -136,11 +135,11 @@ export function MediaCard({
                 onTouchEnd={handleTouchEnd}
                 className={cn(
                     "group relative flex flex-col gap-1.5 md:gap-2 transition-all duration-500 ease-out flex-none hover:z-40 md:hover:scale-110 snap-start",
-                    fullWidth ? "w-full" : compact ? "w-24 sm:w-28 md:w-32" : "w-32 sm:w-36 md:w-44 lg:w-48"
+                    fullWidth ? "w-full" : compact ? "w-20 sm:w-28 md:w-32" : "w-[42vw] sm:w-36 md:w-44 lg:w-48"
                 )}
             >
                 <div className={cn(
-                    "relative aspect-[2/3] rounded-2xl bg-slate-800 shadow-xl transition-all duration-500 group-hover:scale-[1.03] group-hover:shadow-2xl",
+                    "relative aspect-[2/3] rounded-xl md:rounded-2xl bg-slate-800 shadow-xl transition-all duration-500 group-hover:scale-[1.03] group-hover:shadow-2xl",
                     type === "movie"
                         ? "group-hover:ring-2 group-hover:ring-amber-500/50 group-hover:shadow-amber-500/20"
                         : type === "tv"
@@ -150,29 +149,29 @@ export function MediaCard({
                 )}>
                     {/* Friend Activity Overlay */}
                     {friend && (
-                        <div className="absolute top-2 left-2 z-20 flex items-center gap-1.5 px-2 py-1 rounded-full bg-black/60 backdrop-blur-md border border-white/10 max-w-[calc(100%-16px)]">
-                            <div className="w-4 h-4 rounded-full overflow-hidden border border-amber-400/50 shrink-0">
+                        <div className="absolute top-1.5 left-1.5 md:top-2 md:left-2 z-20 flex items-center gap-1 px-1.5 py-0.5 md:px-2 md:py-1 rounded-full bg-black/60 backdrop-blur-md border border-white/10 max-w-[calc(100%-12px)]">
+                            <div className="w-3 h-3 md:w-4 md:h-4 rounded-full overflow-hidden border border-amber-400/50 shrink-0">
                                 <img 
                                     src={friend.image || `https://ui-avatars.com/api/?name=${friend.name || "U"}&background=fbbf24&color=000`} 
                                     alt={friend.name || "User"}
                                     className="w-full h-full object-cover"
                                 />
                             </div>
-                            <span className="text-[9px] font-black text-white truncate uppercase tracking-tighter">
+                            <span className="text-[8px] md:text-[9px] font-black text-white truncate uppercase tracking-tighter">
                                 {friend.name?.split(" ")[0]} {friend.type === "WATCHED" ? "izledi" : friend.type === "RATED" ? "puanladı" : "ekledi"}
                             </span>
                         </div>
                     )}
 
                     {/* Visual Content Wrapper with overflow-hidden */}
-                    <div className="absolute inset-0 rounded-2xl overflow-hidden z-0">
+                    <div className="absolute inset-0 rounded-xl md:rounded-2xl overflow-hidden z-0">
                         {posterPath ? (
                             <Image
                                 src={`${IMAGE_BASE_URL}${posterPath}`}
                                 alt={title}
                                 fill
                                 className="object-cover transition-all duration-500 group-hover:scale-110 group-hover:rotate-1"
-                                sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 20vw"
+                                sizes="(max-width: 768px) 45vw, (max-width: 1200px) 33vw, 20vw"
                             />
                         ) : (
                             <div className="w-full h-full flex items-center justify-center bg-slate-900">
@@ -191,10 +190,10 @@ export function MediaCard({
                                             e.stopPropagation();
                                             setIsRecommendOpen(true);
                                         }}
-                                        className="w-8 h-8 bg-white/10 backdrop-blur-md rounded-xl flex items-center justify-center border border-white/10 text-white opacity-0 group-hover:opacity-100 transition-all hover:bg-primary hover:border-primary active:scale-90"
+                                        className="w-7 h-7 bg-white/10 backdrop-blur-md rounded-lg flex items-center justify-center border border-white/10 text-white opacity-100 md:opacity-0 group-hover:opacity-100 transition-all hover:bg-primary hover:border-primary active:scale-90 touch-target-sm"
                                         title="Tavsiye Et"
                                     >
-                                        <Send className="w-4 h-4" />
+                                        <Send className="w-3.5 h-3.5" />
                                     </button>
                                 </div>
                             </div>
@@ -203,40 +202,40 @@ export function MediaCard({
                 </div>
 
                 <div className={cn(
-                    "flex flex-col gap-1 px-1",
+                    "flex flex-col gap-0.5 md:gap-1 px-0.5 md:px-1",
                     type === "person" && "items-center text-center"
                 )}>
                     {/* Label and Ratings Row */}
                     {type !== "person" && (
-                        <div className="flex items-center justify-between gap-2 overflow-hidden">
+                        <div className="flex items-center justify-between gap-1 overflow-hidden">
                             <span className={cn(
-                                "font-black uppercase tracking-[0.15em] shrink-0",
-                                compact ? "text-[8px]" : "text-[9px]",
+                                "font-black uppercase tracking-[0.1em] shrink-0",
+                                compact ? "text-[7px]" : "text-[8px] md:text-[9px]",
                                 type === "movie" ? "text-amber-500" : "text-blue-500"
                             )}>
                                 {type === "movie" ? "Film" : "Dizi"}
                             </span>
 
-                            <div className={cn("flex items-center flex-1 justify-end min-w-0", compact ? "gap-1" : "gap-2")}>
+                            <div className={cn("flex items-center flex-1 justify-end min-w-0", compact ? "gap-0.5" : "gap-1 md:gap-2")}>
                                 {/* TMDB Global Rating */}
-                                <div className="flex items-center gap-1 bg-white/5 px-1.5 py-0.5 rounded-md border border-white/5 shrink-0" title="Dünya Geneli Puanı (TMDB)">
-                                    <Globe className="w-2.5 h-2.5 text-blue-400" />
-                                    <span className="text-[10px] font-black text-white">{voteAverage?.toFixed(1) || "0"}</span>
+                                <div className="flex items-center gap-0.5 bg-white/5 px-1 py-0.5 rounded-md border border-white/5 shrink-0" title="Dünya Geneli Puanı (TMDB)">
+                                    <Globe className="w-2 md:w-2.5 h-2 md:h-2.5 text-blue-400" />
+                                    <span className="text-[9px] md:text-[10px] font-black text-white">{voteAverage?.toFixed(1) || "0"}</span>
                                 </div>
 
                                 {/* User Rating + Friends Ratings */}
                                 <button
                                     onClick={handleFriendsRatingsClick}
                                     className={cn(
-                                        "flex items-center gap-1 px-1.5 py-0.5 rounded-md border transition-all shrink-0 hover:scale-110 active:scale-95",
+                                        "flex items-center gap-0.5 px-1 md:px-1.5 py-0.5 rounded-md border transition-all shrink-0 hover:scale-110 active:scale-95 touch-target-sm",
                                         userRating !== null && userRating !== undefined
                                             ? "bg-primary/20 border-primary/30 text-primary"
                                             : "bg-white/5 border-white/5 text-neutral-500"
                                     )}
                                     title="Senin puanın ve arkadaş puanları"
                                 >
-                                    <Star className={cn("w-2.5 h-2.5", userRating !== null && userRating !== undefined ? "fill-current" : "text-neutral-500")} />
-                                    <span className="text-[10px] font-black">
+                                    <Star className={cn("w-2 md:w-2.5 h-2 md:h-2.5", userRating !== null && userRating !== undefined ? "fill-current" : "text-neutral-500")} />
+                                    <span className="text-[9px] md:text-[10px] font-black">
                                         {userRating !== null && userRating !== undefined ? userRating.toFixed(1) : "-"}
                                     </span>
                                 </button>
@@ -246,12 +245,12 @@ export function MediaCard({
 
                     <div className={cn(
                         "font-black text-white transition-colors tracking-tight group-hover:text-primary leading-tight",
-                        type === "person" ? "text-[10px] md:text-xs" : compact ? "text-[11px] md:text-xs" : "text-sm md:text-base"
+                        type === "person" ? "text-[9px] md:text-xs" : compact ? "text-[10px] md:text-xs" : "text-xs md:text-base"
                     )}>
                         <AutoScrollText text={title} />
                     </div>
                     {originalTitle && originalTitle !== title && type !== "person" && (
-                        <p className="text-[9px] md:text-[10px] font-bold text-neutral-500 uppercase tracking-tight truncate opacity-80">
+                        <p className="text-[8px] md:text-[10px] font-bold text-neutral-500 uppercase tracking-tight truncate opacity-80">
                             {originalTitle}
                         </p>
                     )}

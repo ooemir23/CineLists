@@ -74,7 +74,7 @@ export default async function Page(props: Props) {
     }
 
     return (
-        <div className="max-w-[1600px] mx-auto px-4 sm:px-6 md:px-10 lg:px-16 py-10 min-h-screen pt-24">
+        <div className="max-w-[1600px] mx-auto px-4 sm:px-6 md:px-10 lg:px-16 py-10  pt-24">
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
                 <div>
                     <nav className="flex items-center gap-2 text-xs font-bold text-neutral-500 uppercase tracking-widest mb-3">

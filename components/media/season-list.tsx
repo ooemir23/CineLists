@@ -1,10 +1,9 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useEffect } from "react";
 import { ChevronDown, Loader2, Layers, CheckCircle2 } from "lucide-react";
 import EpisodeItem from "./episode-item";
 import { cn } from "@/lib/utils";
-import { useEffect, useState as useEState } from 'react';
 import { fetchSeasonEpisodes } from "@/lib/client-actions";
 import { markSeasonAsWatched } from "@/lib/tv-actions";
 import { useRouter } from "next/navigation";
@@ -26,10 +25,10 @@ type SeasonListProps = {
 };
 
 export default function SeasonList({ tmdbId, seasons, watchedEpisodes: initialWatchedEpisodes }: SeasonListProps) {
-    if (!seasons || seasons.length === 0) return null;
-    const validSeasons = seasons.filter(s => s.episode_count > 0 && s.season_number > 0);
+    // All hooks must be called unconditionally at the top level
     const [isAllVisible, setIsAllVisible] = useState(false);
     const [showMoreSeasons, setShowMoreSeasons] = useState(false);
+    const validSeasons = seasons?.filter(s => s.episode_count > 0 && s.season_number > 0) || [];
     const [expandedSeason, setExpandedSeason] = useState<number | null>(validSeasons[0]?.season_number || null);
     const [isPending, startTransition] = useTransition();
     const [watchedEpisodes, setWatchedEpisodes] = useState(initialWatchedEpisodes);
@@ -38,6 +37,9 @@ export default function SeasonList({ tmdbId, seasons, watchedEpisodes: initialWa
     useEffect(() => {
         setWatchedEpisodes(initialWatchedEpisodes);
     }, [initialWatchedEpisodes]);
+
+    // Early return after all hooks are called
+    if (!seasons || seasons.length === 0) return null;
 
     const handleMarkSeasonWatched = async (seasonNumber: number) => {
         // Get the season to find episode count
@@ -190,15 +192,15 @@ export default function SeasonList({ tmdbId, seasons, watchedEpisodes: initialWa
 }
 
 function SeasonEpisodes({ tmdbId, seasonNumber, watchedEpisodes }: { tmdbId: number, seasonNumber: number, watchedEpisodes: number[] }) {
-    const [episodes, setEpisodes] = useEState<any[]>([]);
-    const [loading, setLoading] = useEState(true);
-    const [showAll, setShowAll] = useEState(false);
+    const [episodes, setEpisodes] = useState<any[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [showAll, setShowAll] = useState(false);
 
-    const [refreshKey, setRefreshKey] = useEState(0);
+    const [refreshKey, setRefreshKey] = useState(0);
     const refresh = () => setRefreshKey(prev => prev + 1);
 
     useEffect(() => {
-        if (episodes.length === 0) setLoading(true);
+        setLoading(true);
         fetchSeasonEpisodes(tmdbId, seasonNumber).then(data => {
             setEpisodes(data.episodes || []);
             setLoading(false);

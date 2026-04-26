@@ -22,7 +22,24 @@ export async function getPersonalizedRecommendations(userId: string) {
 
     if (!user) return null;
 
-    // 2. Fetch high ratings (>= 8) to find preferred genres organically
+    // 2. Fetch watched and watchlist IDs to exclude them
+    const [watchedItems, watchlistItems] = await Promise.all([
+        prisma.watched.findMany({
+            where: { userId },
+            select: { media: { select: { tmdbId: true } } }
+        }),
+        prisma.toWatch.findMany({
+            where: { userId },
+            select: { media: { select: { tmdbId: true } } }
+        })
+    ]);
+
+    const excludeIds = new Set([
+        ...watchedItems.map(item => item.media.tmdbId),
+        ...watchlistItems.map(item => item.media.tmdbId)
+    ]);
+
+    // 3. Fetch high ratings (>= 8) to find preferred genres organically
     const highRatings = await prisma.watched.findMany({
         where: {
             userId,
@@ -38,6 +55,47 @@ export async function getPersonalizedRecommendations(userId: string) {
     highRatings.forEach((rating) => {
         rating.media.genres.forEach((genre) => ratedGenres.add(genre));
     });
+
+    // 4. Social Signal: What are friends watching?
+    const following = await prisma.follow.findMany({
+        where: { followerId: userId },
+        select: { followingId: true }
+    });
+    const followingIds = following.map(f => f.followingId);
+
+    let friendsPopularItems: any[] = [];
+    if (followingIds.length > 0) {
+        const friendsWatched = await prisma.watched.findMany({
+            where: {
+                userId: { in: followingIds },
+                watchedAt: { gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) } // Last 30 days
+            },
+            include: { media: true },
+            take: 20
+        });
+
+        // Count occurrences
+        const counts: Record<number, { count: number, media: any }> = {};
+        friendsWatched.forEach(w => {
+            if (!excludeIds.has(w.media.tmdbId)) {
+                if (!counts[w.media.tmdbId]) {
+                    counts[w.media.tmdbId] = { count: 0, media: w.media };
+                }
+                counts[w.media.tmdbId].count++;
+            }
+        });
+
+        friendsPopularItems = Object.values(counts)
+            .sort((a, b) => b.count - a.count)
+            .slice(0, 5)
+            .map(item => ({
+                ...item.media,
+                id: item.media.tmdbId,
+                mediaType: item.media.type.toLowerCase(),
+                isSocial: true,
+                socialCount: item.count
+            }));
+    }
 
     // 6. Fetch genres to map names to IDs if necessary
     const [movieGenres, tvGenres] = await Promise.all([
@@ -96,11 +154,18 @@ export async function getPersonalizedRecommendations(userId: string) {
         tmdb.discover("tv", params),
     ]);
 
-    // 8. Combine and shuffle/sort
+    // 8. Combine, filter out already watched, and shuffle/sort
     const combinedResults = [
+        ...friendsPopularItems,
         ...movies.results.map((m: any) => ({ ...m, mediaType: "movie" })),
         ...tv.results.map((t: any) => ({ ...t, mediaType: "tv" })),
-    ].sort((a, b) => b.popularity - a.popularity);
+    ]
+        .filter((m: any) => !excludeIds.has(m.id))
+        .sort((a, b) => {
+            if (a.isSocial && !b.isSocial) return -1;
+            if (!a.isSocial && b.isSocial) return 1;
+            return b.popularity - a.popularity;
+        });
 
     const ID_TO_PLATFORM_NAME: Record<string, string> = {
         "8": "Netflix",
@@ -127,6 +192,7 @@ export async function getPersonalizedRecommendations(userId: string) {
             favorites: favoriteGenreList,
             organic: organicGenreList as { id: number; name: string }[],
             platforms: providerIds.map(id => ID_TO_PLATFORM_NAME[id] || "Bilinmiyor"),
+            friendsCount: friendsPopularItems.length
         }
     };
 }

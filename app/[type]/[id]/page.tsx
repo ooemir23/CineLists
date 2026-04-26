@@ -150,7 +150,7 @@ export default async function DetailsPage(props: Props) {
     const year = releaseDate ? new Date(releaseDate).getFullYear() : "";
 
     return (
-        <div className="min-h-screen bg-neutral-950 text-neutral-100 font-sans pb-20">
+        <div className=" bg-neutral-950 text-neutral-100 font-sans pb-20">
             {/* Nav */}
             <div className="fixed top-0 left-0 w-full z-50 px-6 py-4 flex items-center justify-between pointer-events-none">
                 <Link href="/" className="pointer-events-auto p-2 bg-black/60 backdrop-blur-md rounded-full hover:bg-white/10 transition-colors border border-white/5">
@@ -312,10 +312,6 @@ export default async function DetailsPage(props: Props) {
                                         variant="standard"
                                     />
                                 </div>
-                                {/* Add to Custom List */}
-                                {!isGuest && dbMedia && (
-                                    <AddToListButton mediaId={dbMedia.id} />
-                                )}
                             </div>
 
                             {/* Overview (Desktop Only in Hero, Mobile moved below) */}

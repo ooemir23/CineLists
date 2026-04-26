@@ -8,15 +8,34 @@ import { motion, AnimatePresence } from "framer-motion";
 import { ExpandableImage } from "@/components/ui/expandable-image";
 import { cn } from "@/lib/utils";
 
+type Episode = {
+    id: string;
+    title?: string;
+    episode_number?: number;
+    overview?: string;
+    still_path?: string;
+    air_date?: string;
+    runtime?: number;
+    ratings?: Array<{ rating: number }>;
+    name?: string;
+};
+
+type Comment = {
+    id: string;
+    content: string;
+    createdAt: Date;
+    user: { name: string | null; image: string | null };
+};
+
 type EpisodeDetailsModalProps = {
     isOpen: boolean;
     onClose: () => void;
-    episode: any;
+    episode: Episode;
     isWatched: boolean;
     onToggleWatch: () => Promise<void>;
     onRate: (rating: number) => Promise<void>;
     onAddComment: (text: string, isSpoiler: boolean) => Promise<void>;
-    comments: any[];
+    comments: Comment[];
     isPending: boolean;
 };
 
@@ -36,7 +55,10 @@ export function EpisodeDetailsModal({
     const [mounted, setMounted] = useState(false);
 
     useEffect(() => {
-        setMounted(true);
+        // Only set mounted to true once
+        if (!mounted) {
+            setMounted(true);
+        }
         if (isOpen) {
             document.body.style.overflow = "hidden";
         } else {
@@ -45,7 +67,7 @@ export function EpisodeDetailsModal({
         return () => {
             document.body.style.overflow = "unset";
         };
-    }, [isOpen]);
+    }, [isOpen, mounted]);
 
     if (!episode || !mounted) return null;
 
@@ -85,7 +107,7 @@ export function EpisodeDetailsModal({
                                 {episode.still_path ? (
                                     <ExpandableImage
                                         src={`https://image.tmdb.org/t/p/original${episode.still_path}`}
-                                        alt={episode.name}
+                                        alt={episode.name || "Episode"}
                                         className="object-cover w-full h-full opacity-60 group-hover:opacity-100 transition-opacity duration-700"
                                     />
                                 ) : (

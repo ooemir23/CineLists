@@ -5,8 +5,14 @@ import { Play } from "lucide-react";
 import { TrailerModal } from "./trailer-modal";
 import { cn } from "@/lib/utils";
 
+type Video = {
+    key: string;
+    site: string;
+    type: string;
+};
+
 type TrailerButtonProps = {
-    videos: any[];
+    videos: Video[];
     title: string;
     className?: string;
 };

@@ -134,20 +134,8 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
   ]);
 
   return (
-    <div className="min-h-screen bg-[#101624] pb-20">
-      <div className="relative pt-16 pb-8">
-        <div className="absolute inset-0 bg-gradient-to-b from-primary/10 via-transparent to-transparent opacity-50" />
-        <div className="relative max-w-7xl mx-auto px-6">
-          <div className="flex flex-col items-center gap-4">
-            <h1 className="text-2xl md:text-4xl font-black text-white tracking-tighter flex items-center gap-3">
-              <Search className="w-6 h-6 text-primary" />
-              Ne Arıyorsun<span className="text-primary italic">?</span>
-            </h1>
-          </div>
-        </div>
-      </div>
-
-      <div className="max-w-7xl mx-auto px-6 mb-12">
+    <div className="bg-[#101624] pb-20 pt-4">
+      <div className="max-w-7xl mx-auto px-6 mb-4">
         <MediaFilter />
       </div>
 

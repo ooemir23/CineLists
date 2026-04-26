@@ -13,7 +13,7 @@ export default async function ListsPage() {
   const lists = await getUserLists(session.user.id);
 
   return (
-    <div className="max-w-7xl mx-auto px-6 md:px-10 lg:px-16 py-10 min-h-screen">
+    <div className="max-w-7xl mx-auto px-6 md:px-10 lg:px-16 py-10 ">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-end gap-2 md:gap-4 mb-6 md:mb-10">
         <div className="flex items-center gap-3">
