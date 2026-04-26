@@ -18,6 +18,7 @@ import {
   Calendar
 } from "lucide-react";
 import { handleSignOut } from "@/lib/auth-actions";
+import { cn } from "@/lib/utils";
 
 const dockBg = 'bg-slate-900/90 backdrop-blur-xl border-t border-white/10';
 const activeColor = 'text-amber-400';
