@@ -67,7 +67,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
                                 <label htmlFor="password" className="text-[10px] font-black text-neutral-500 uppercase tracking-widest">
                                     Şifre
                                 </label>
-                                <Link href="/forgot-password" size="sm" className="text-[10px] font-black text-amber-400 uppercase tracking-widest hover:underline">
+                                <Link href="/forgot-password" className="text-[10px] font-black text-amber-400 uppercase tracking-widest hover:underline">
                                     Şifremi Unuttum
                                 </Link>
                             </div>
