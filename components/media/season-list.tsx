@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 import { fetchSeasonEpisodes } from "@/lib/client-actions";
 import { markSeasonAsWatched } from "@/lib/tv-actions";
 import { useRouter } from "next/navigation";
+import { TvHeatmap } from "./tv-heatmap";
 
 type Season = {
     air_date: string;
@@ -187,6 +188,9 @@ export default function SeasonList({ tmdbId, seasons, watchedEpisodes: initialWa
                     )}
                 </div>
             )}
+
+            {/* Bölüm Isı Haritası */}
+            <TvHeatmap tmdbId={tmdbId} seasons={validSeasons} />
         </div>
     );
 }

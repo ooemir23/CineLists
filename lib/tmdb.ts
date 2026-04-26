@@ -60,22 +60,22 @@ export const tmdb = {
             const res = await fetch(url.toString(), fetchOptions);
 
             if (!res.ok) {
-                console.error(`TMDB API Error: ${res.status} ${res.statusText} at ${endpoint}`);
-                // Return empty results instead of throwing to prevent list pages from crashing
+                // Log only in dev or conditionally to avoid spamming prod logs
+                console.warn(`TMDB API Warning: ${res.status} ${res.statusText} at ${endpoint}`);
+                // Return empty results instead of throwing to prevent pages from crashing
                 if (isListEndpoint(endpoint)) {
                     return EMPTY_LIST_RESPONSE;
                 }
-                throw new Error(`TMDB Error: ${res.status} ${res.statusText}`);
+                return null; // Return null instead of throwing Error for detail endpoints
             }
 
             return res.json();
         } catch (error) {
-            console.error(`Network error fetching from TMDB (${endpoint}):`, error);
-            // If it's a results-based endpoint, return empty results to allow UI to render
+            console.warn(`Network error fetching from TMDB (${endpoint}):`, error);
             if (isListEndpoint(endpoint)) {
                 return EMPTY_LIST_RESPONSE;
             }
-            throw error;
+            return null;
         }
     },
 

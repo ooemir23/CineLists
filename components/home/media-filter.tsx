@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
-import { X, Sparkles, Check, Search, Film, Tv, Star } from "lucide-react";
+import { X, Sparkles, Check, Search, Film, Tv, Star, Camera, Loader2, Sparkle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
 import Image from "next/image";
@@ -44,6 +44,9 @@ export function MediaFilter() {
     const pathname = usePathname();
     const searchInputRef = useRef<HTMLInputElement>(null);
     const suggestionsRef = useRef<HTMLDivElement>(null);
+    const fileInputRef = useRef<HTMLInputElement>(null);
+
+    const [isOcrLoading, setIsOcrLoading] = useState(false);
 
     const [type, setType] = useState(searchParams.get("type") || "");
     const [year, setYear] = useState(searchParams.get("year") || "");
@@ -68,6 +71,44 @@ export function MediaFilter() {
     const [genres, setGenres] = useState<{ id: number; name: string }[]>([]);
     const [providers, setProviders] = useState<{ id: string; name: string; logo: string }[]>([]);
     const [loading, setLoading] = useState(true);
+
+    const handleImageCapture = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        try {
+            setIsOcrLoading(true);
+            
+            const formData = new FormData();
+            formData.append("image", file);
+
+            const res = await fetch("/api/ai/recognize", {
+                method: "POST",
+                body: formData,
+            });
+
+            const data = await res.json();
+
+            if (!res.ok) {
+                alert(data.error || "Görsel taranırken bir hata oluştu.");
+                return;
+            }
+            
+            if (data.result) {
+                setQuery(data.result);
+            } else {
+                alert("Yapay zeka görselde herhangi bir film veya dizi tespit edemedi.");
+            }
+        } catch (error) {
+            console.error("AI Error:", error);
+            alert("Görsel taranırken bir hata oluştu.");
+        } finally {
+            setIsOcrLoading(false);
+            if (fileInputRef.current) {
+                fileInputRef.current.value = "";
+            }
+        }
+    };
 
 
 
@@ -505,6 +546,32 @@ export function MediaFilter() {
                                     onChange={(e) => setQuery(e.target.value)}
                                     placeholder="Film, dizi veya kişi ara..."
                                     className="flex-1 bg-transparent outline-none text-white placeholder:text-neutral-500 text-sm md:text-base font-bold"
+                                />
+                                {isOcrLoading ? (
+                                    <div className="p-1.5 rounded-full relative" title="Yapay Zeka İnceliyor...">
+                                        <Loader2 className="w-5 h-5 text-amber-400 animate-spin" />
+                                        <Sparkle className="w-2 h-2 text-amber-400 absolute top-0 right-0 animate-ping" />
+                                    </div>
+                                ) : (
+                                    <button
+                                        type="button"
+                                        onClick={() => fileInputRef.current?.click()}
+                                        className="p-1.5 rounded-full hover:bg-white/10 transition-colors group/ai"
+                                        title="Yapay Zeka ile Görselden Bul"
+                                    >
+                                        <div className="relative">
+                                            <Camera className="w-5 h-5 text-neutral-400 group-hover/ai:text-amber-400 transition-colors" />
+                                            <Sparkles className="w-2.5 h-2.5 text-amber-400 absolute -top-1 -right-1 opacity-0 group-hover/ai:opacity-100 transition-opacity" />
+                                        </div>
+                                    </button>
+                                )}
+                                <input 
+                                    type="file" 
+                                    accept="image/*" 
+                                    capture="environment" 
+                                    ref={fileInputRef} 
+                                    className="hidden" 
+                                    onChange={handleImageCapture}
                                 />
                                 {query && (
                                     <button
