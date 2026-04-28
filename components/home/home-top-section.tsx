@@ -103,7 +103,7 @@ export async function HomeTopSection({ personalizedResults }: { personalizedResu
                         <div className="absolute inset-x-0 bottom-0 h-3 bg-gradient-to-t from-[#1A202C]/60 to-transparent z-10 pointer-events-none" />
 
                         <div className="p-3 space-y-3">
-                            <FriendsActivity compact={true} maxItems={3} />
+                            <FriendsActivity compact={true} />
                         </div>
                     </div>
                 </div>
