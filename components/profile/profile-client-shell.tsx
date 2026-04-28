@@ -10,6 +10,13 @@ import { RecentMedia } from "./recent-media";
 import { ProfileCompletion } from "./profile-completion";
 import { InsightsCard } from "./insights-card";
 import { SettingsModal } from "./settings-modal";
+import { AchievementsBadges } from "./achievements-badges";
+import { ActivityHeatmap } from "./activity-heatmap";
+import { CurrentlyWatching } from "./currently-watching";
+import { RandomSuggestion } from "./random-suggestion";
+import { WatchCountries } from "./watch-countries";
+import { PeriodStats } from "./period-stats";
+import { CustomListsPreview } from "./custom-lists-preview";
 
 type UserData = {
     id: string;
@@ -41,6 +48,9 @@ interface ProfileClientShellProps {
     allGenres: { id: number; name: string }[];
     thisMonthCount: number;
     averageRating: number;
+    watchedItems?: any[];
+    watchlistItems?: any[];
+    customLists?: any[];
 }
 
 export function ProfileClientShell({
@@ -50,6 +60,9 @@ export function ProfileClientShell({
     allGenres,
     thisMonthCount,
     averageRating,
+    watchedItems = [],
+    watchlistItems = [],
+    customLists = [],
 }: ProfileClientShellProps) {
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
@@ -123,6 +136,33 @@ export function ProfileClientShell({
                         />
                     </section>
                 )}
+
+                {/* Achievements */}
+                <AchievementsBadges
+                    achievements={[]}
+                    movieCount={stats.movieCount}
+                    showCount={stats.showCount}
+                    watchedCount={user._count.watched}
+                    averageRating={averageRating}
+                />
+
+                {/* Activity Heatmap */}
+                <ActivityHeatmap activities={user.activities} />
+
+                {/* Period Stats */}
+                <PeriodStats activities={user.activities} watchedItems={watchedItems} />
+
+                {/* Currently Watching */}
+                <CurrentlyWatching mediaItems={watchlistItems} maxDisplay={3} />
+
+                {/* Random Suggestion */}
+                <RandomSuggestion watchlistItems={watchlistItems} />
+
+                {/* Watch Countries */}
+                <WatchCountries watchedItems={watchedItems} />
+
+                {/* Custom Lists */}
+                <CustomListsPreview lists={customLists} />
 
                 {/* Two Column: Activities & Persons */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5 sm:gap-6">
