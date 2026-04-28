@@ -155,7 +155,7 @@ export function ProfileClientShell({
                         <ProfileActivity
                             activities={user.activities}
                             showActivities={user.showActivities}
-                            variant="list"
+                            variant="grid"
                             userId={user.id}
                         />
                     </section>

@@ -3,7 +3,7 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 import { ChevronLeft } from "lucide-react";
-import { ProfileActivity } from "@/components/profile/profile-activity";
+import { ActivityTimeline } from "@/components/profile/activity-timeline";
 
 interface ActivitiesPageProps {
   params: {
@@ -18,7 +18,7 @@ export default async function ActivitiesDetailPage({ params }: ActivitiesPagePro
     where: { id: params.id },
     include: {
       activities: {
-        take: 100,
+        take: 300,
         orderBy: { createdAt: "desc" },
         include: { media: true }
       }
@@ -44,23 +44,19 @@ export default async function ActivitiesDetailPage({ params }: ActivitiesPagePro
               <ChevronLeft className="w-5 h-5" />
             </Link>
             <div>
-              <h1 className="text-lg sm:text-2xl font-bold text-white">Son Aktiviteler</h1>
+              <h1 className="text-lg sm:text-2xl font-bold text-white">Aktivite Geçmişi</h1>
               <p className="text-xs sm:text-sm text-neutral-400">@{user.username}</p>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Activities List */}
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 py-4 sm:py-6">
-        <section className="space-y-3">
-          <ProfileActivity
-            activities={user.activities}
-            showActivities={user.showActivities}
-            variant="list"
-            userId={user.id}
-          />
-        </section>
+      {/* Activities Timeline */}
+      <div className="max-w-3xl mx-auto px-4 sm:px-6 py-4 sm:py-6">
+        <ActivityTimeline
+          activities={user.activities}
+          showActivities={user.showActivities}
+        />
       </div>
     </div>
   );
