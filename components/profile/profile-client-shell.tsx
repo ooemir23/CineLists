@@ -142,36 +142,33 @@ export function ProfileClientShell({
                 {/* Watch Countries */}
                 <WatchCountries watchedItems={watchedItems} />
 
-                {/* Two Column: Activities & Persons */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-5 sm:gap-6">
-                    {/* Recent Activities */}
-                    <section className="space-y-3">
-                        <Link
-                            href="/profile/activities"
-                            className="text-sm font-bold text-white tracking-tight uppercase hover:text-primary transition-colors inline-block"
-                        >
-                            Son Aktiviteler
-                        </Link>
-                        <ProfileActivity
-                            activities={user.activities}
-                            showActivities={user.showActivities}
-                            variant="grid"
-                            userId={user.id}
-                        />
-                    </section>
+                {/* Recent Activities - Carousel */}
+                <section className="space-y-3">
+                    <Link
+                        href="/profile/activities"
+                        className="text-sm font-bold text-white tracking-tight uppercase hover:text-primary transition-colors inline-block"
+                    >
+                        Son Aktiviteler
+                    </Link>
+                    <ProfileActivity
+                        activities={user.activities}
+                        showActivities={user.showActivities}
+                        variant="carousel"
+                        userId={user.id}
+                    />
+                </section>
 
-                    {/* Favorite Persons */}
-                    <section className="space-y-3">
-                        <h2 className="text-sm font-bold text-white tracking-tight uppercase">
-                            Favori Oyuncular
-                        </h2>
-                        <FavoritePersons
-                            persons={user.favoritePersons}
-                            maxDisplay={6}
-                            variant="grid"
-                        />
-                    </section>
-                </div>
+                {/* Favorite Persons */}
+                <section className="space-y-3">
+                    <h2 className="text-sm font-bold text-white tracking-tight uppercase">
+                        Favori Oyuncular
+                    </h2>
+                    <FavoritePersons
+                        persons={user.favoritePersons}
+                        maxDisplay={6}
+                        variant="grid"
+                    />
+                </section>
             </div>
 
             {/* Settings Modal */}

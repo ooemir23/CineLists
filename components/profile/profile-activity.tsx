@@ -25,7 +25,7 @@ interface Activity {
 interface ProfileActivityProps {
   activities: Activity[];
   showActivities: boolean;
-  variant?: "list" | "grid";
+  variant?: "list" | "grid" | "carousel";
   userId?: string;
 }
 
@@ -60,7 +60,11 @@ export function ProfileActivity({
 
   return (
     <div className={cn(
-      variant === "list" ? "space-y-3" : "grid grid-cols-1 md:grid-cols-2 gap-4"
+      variant === "carousel" 
+        ? "flex gap-3 overflow-x-auto pb-2 scrollbar-hide"
+        : variant === "list" 
+          ? "space-y-3" 
+          : "grid grid-cols-1 md:grid-cols-2 gap-4"
     )}>
       {activities.map((activity, index) => (
         <motion.div
@@ -68,19 +72,22 @@ export function ProfileActivity({
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: index * 0.05 }}
-          className="group"
+          className={cn(
+            "group",
+            variant === "carousel" && "flex-shrink-0"
+          )}
         >
           <Link
             href={`/media/${activity.media.id}`}
             className={cn(
               "flex gap-3 p-3 rounded-xl border border-white/5 backdrop-blur-sm transition-all hover:bg-white/5 hover:border-primary/20 active:scale-95",
-              variant === "list" ? "bg-white/2" : "flex-col bg-white/2"
+              variant === "list" ? "bg-white/2" : variant === "carousel" ? "flex-col bg-white/2 w-32" : "flex-col bg-white/2"
             )}
           >
             {/* Poster Image */}
             <div className={cn(
               "relative shrink-0 overflow-hidden rounded-lg shadow-lg bg-neutral-800",
-              variant === "list" ? "w-12 h-16" : "w-full h-32"
+              variant === "list" ? "w-12 h-16" : variant === "carousel" ? "w-full h-32" : "w-full h-32"
             )}>
               {activity.media.posterPath && !imageErrors.has(activity.media.id) ? (
                 <Image
