@@ -1,41 +1,113 @@
-import { auth } from "@/auth";
+import { tmdb } from "@/lib/tmdb";
 import Link from "next/link";
 import { ArrowRight, Rss } from "lucide-react";
 import { FriendsActivity } from "./friends-activity";
-import { HeroPersonalized } from "./hero-widgets/hero-personalized";
+import { HeroSlider } from "./hero-slider";
 import {
     getFavoriteActorsUpcoming,
     getWatchedShowsNextEpisodes,
     getFriendsViewingStats,
 } from "@/lib/hero-personalization-actions";
+import { UpcomingEpisodesCarousel } from "./carousels/upcoming-episodes-carousel";
+import { PersonalizedCarousel } from "./carousels/personalized-carousel";
+import { FriendsTopCarousel } from "./carousels/friends-top-carousel";
+import { FavoriteActorsCarousel } from "./carousels/favorite-actors-carousel";
 
 export async function HomeTopSection({ personalizedResults }: { personalizedResults?: any[] }) {
-    // Get user session for personalization
-    const session = await auth();
-    const userName = session?.user?.name || undefined;
-
-    // Fetch personalized data in parallel
-    const [favoriteActorProjects, upcomingEpisodes, friendStats] = await Promise.all([
+    // Fetch diverse content for the slider - use personalized data
+    const [trendingMovies, upcomingMovies, trendingTV, popularMovies, favoriteActorProjects, upcomingEpisodes, friendStats] = await Promise.all([
+        tmdb.getTrendingMovies(),
+        tmdb.getUpcomingMovies(),
+        tmdb.getTrendingTV(),
+        tmdb.getPopular("movie"),
         getFavoriteActorsUpcoming(),
         getWatchedShowsNextEpisodes(),
         getFriendsViewingStats(),
     ]);
 
+    // Build hero slider items with personalized content
+    const trendingMovie = trendingMovies?.results?.[0];
+    const upcomingMovie = upcomingMovies?.results?.[0];
+    const trendingTv = trendingTV?.results?.[0];
+    const popularMovie = popularMovies?.results?.[1] || popularMovies?.results?.[0];
+
+    const trendingItems = [
+        trendingMovie
+            ? {
+                ...trendingMovie,
+                media_type: "movie",
+                category: "trending"
+            }
+            : null,
+        upcomingMovie
+            ? {
+                ...upcomingMovie,
+                media_type: "movie",
+                category: "upcoming"
+            }
+            : null,
+        trendingTv
+            ? {
+                ...trendingTv,
+                title: trendingTv.name || trendingTv.title,
+                media_type: "tv",
+                category: "tv"
+            }
+            : null,
+        popularMovie
+            ? {
+                ...popularMovie,
+                media_type: "movie",
+                category: "popular"
+            }
+            : null,
+    ].filter((item): item is NonNullable<typeof item> => !!item && !!item.backdrop_path);
+
+    const personalizedItems = (personalizedResults || [])
+        .slice(0, 3)
+        .map(item => ({
+            ...item,
+            media_type: item.mediaType || "movie",
+            category: "personalized"
+        }))
+        .filter(item => !!item.backdrop_path);
+
+    const items = [...personalizedItems, ...trendingItems].slice(0, 5);
+
     return (
-        <section className="flex flex-col lg:flex-row lg:items-stretch gap-4 w-full">
-            {/* Left Column: Hero Personalized Dashboard */}
-            <div className="lg:w-[60%] xl:w-[65%] relative group">
-                <HeroPersonalized
-                    favoriteActorProjects={favoriteActorProjects}
-                    upcomingEpisodes={upcomingEpisodes}
-                    friendStats={friendStats}
-                    personalizedRecommendations={personalizedResults}
-                    userName={userName}
-                />
+        <section className="flex flex-col gap-4 w-full">
+            {/* Upcoming Episodes - Sticky at top */}
+            {upcomingEpisodes.length > 0 && (
+                <div className="sticky top-16 z-20 backdrop-blur-sm bg-black/40 rounded-2xl p-3 border border-white/5">
+                    <UpcomingEpisodesCarousel episodes={upcomingEpisodes} />
+                </div>
+            )}
+
+            {/* Main Hero Slider */}
+            <div className="w-full">
+                <HeroSlider items={items} />
+            </div>
+
+            {/* Scrollable Carousels */}
+            <div className="space-y-4">
+                {/* Personalized Recommendations */}
+                {personalizedResults && personalizedResults.length > 0 && (
+                    <PersonalizedCarousel items={personalizedResults} />
+                )}
+
+                {/* Friend's Top Picks */}
+                {friendStats.length > 0 && (
+                    <FriendsTopCarousel items={friendStats} />
+                )}
+
+                {/* Favorite Actors' Movies */}
+                {favoriteActorProjects.length > 0 && (
+                    <FavoriteActorsCarousel items={favoriteActorProjects} />
+                )}
             </div>
 
             {/* Right Column: Friends Activity (Designed for Home Page) */}
-            <div className="hidden lg:flex lg:w-[40%] xl:w-[35%] flex-col self-stretch h-full gap-4">
+            <div className="hidden lg:flex lg:flex-col self-stretch gap-4">
                 {/* Unified Panel */}
                 <div className="bg-[#1A202C]/60 backdrop-blur-xl rounded-[2.5rem] border border-white/5 overflow-hidden flex flex-col h-[65svh] md:h-[500px]">
 
