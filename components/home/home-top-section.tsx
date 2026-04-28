@@ -6,23 +6,19 @@ import { HeroSlider } from "./hero-slider";
 import {
     getFavoriteActorsUpcoming,
     getWatchedShowsNextEpisodes,
-    getFriendsViewingStats,
 } from "@/lib/hero-personalization-actions";
 import { UpcomingEpisodesCarousel } from "./carousels/upcoming-episodes-carousel";
-import { PersonalizedCarousel } from "./carousels/personalized-carousel";
-import { FriendsTopCarousel } from "./carousels/friends-top-carousel";
 import { FavoriteActorsCarousel } from "./carousels/favorite-actors-carousel";
 
 export async function HomeTopSection({ personalizedResults }: { personalizedResults?: any[] }) {
     // Fetch diverse content for the slider - use personalized data
-    const [trendingMovies, upcomingMovies, trendingTV, popularMovies, favoriteActorProjects, upcomingEpisodes, friendStats] = await Promise.all([
+    const [trendingMovies, upcomingMovies, trendingTV, popularMovies, favoriteActorProjects, upcomingEpisodes] = await Promise.all([
         tmdb.getTrendingMovies(),
         tmdb.getUpcomingMovies(),
         tmdb.getTrendingTV(),
         tmdb.getPopular("movie"),
         getFavoriteActorsUpcoming(),
         getWatchedShowsNextEpisodes(),
-        getFriendsViewingStats(),
     ]);
 
     // Build hero slider items with personalized content
@@ -92,16 +88,6 @@ export async function HomeTopSection({ personalizedResults }: { personalizedResu
 
                 {/* Scrollable Carousels */}
                 <div className="space-y-4">
-                    {/* Personalized Recommendations */}
-                    {personalizedResults && personalizedResults.length > 0 && (
-                        <PersonalizedCarousel items={personalizedResults} />
-                    )}
-
-                    {/* Friend's Top Picks */}
-                    {friendStats.length > 0 && (
-                        <FriendsTopCarousel items={friendStats} />
-                    )}
-
                     {/* Favorite Actors' Movies */}
                     {favoriteActorProjects.length > 0 && (
                         <FavoriteActorsCarousel items={favoriteActorProjects} />
