@@ -75,39 +75,42 @@ export async function HomeTopSection({ personalizedResults }: { personalizedResu
     const items = [...personalizedItems, ...trendingItems].slice(0, 5);
 
     return (
-        <section className="flex flex-col gap-4 w-full">
-            {/* Upcoming Episodes - Sticky at top */}
-            {upcomingEpisodes.length > 0 && (
-                <div className="sticky top-16 z-20 backdrop-blur-sm bg-black/40 rounded-2xl p-3 border border-white/5">
-                    <UpcomingEpisodesCarousel episodes={upcomingEpisodes} />
+        <section className="flex flex-col lg:flex-row gap-4 w-full">
+            {/* Left Column: Hero Slider + Carousels (Full mobile, 60% desktop) */}
+            <div className="w-full lg:w-[60%] xl:w-[65%] flex flex-col gap-4">
+                {/* Upcoming Episodes - Sticky at top */}
+                {upcomingEpisodes.length > 0 && (
+                    <div className="sticky top-16 z-20 backdrop-blur-sm bg-black/40 rounded-2xl p-3 border border-white/5">
+                        <UpcomingEpisodesCarousel episodes={upcomingEpisodes} />
+                    </div>
+                )}
+
+                {/* Main Hero Slider */}
+                <div className="w-full">
+                    <HeroSlider items={items} />
                 </div>
-            )}
 
-            {/* Main Hero Slider */}
-            <div className="w-full">
-                <HeroSlider items={items} />
+                {/* Scrollable Carousels */}
+                <div className="space-y-4">
+                    {/* Personalized Recommendations */}
+                    {personalizedResults && personalizedResults.length > 0 && (
+                        <PersonalizedCarousel items={personalizedResults} />
+                    )}
+
+                    {/* Friend's Top Picks */}
+                    {friendStats.length > 0 && (
+                        <FriendsTopCarousel items={friendStats} />
+                    )}
+
+                    {/* Favorite Actors' Movies */}
+                    {favoriteActorProjects.length > 0 && (
+                        <FavoriteActorsCarousel items={favoriteActorProjects} />
+                    )}
+                </div>
             </div>
 
-            {/* Scrollable Carousels */}
-            <div className="space-y-4">
-                {/* Personalized Recommendations */}
-                {personalizedResults && personalizedResults.length > 0 && (
-                    <PersonalizedCarousel items={personalizedResults} />
-                )}
-
-                {/* Friend's Top Picks */}
-                {friendStats.length > 0 && (
-                    <FriendsTopCarousel items={friendStats} />
-                )}
-
-                {/* Favorite Actors' Movies */}
-                {favoriteActorProjects.length > 0 && (
-                    <FavoriteActorsCarousel items={favoriteActorProjects} />
-                )}
-            </div>
-
-            {/* Right Column: Friends Activity (Designed for Home Page) */}
-            <div className="hidden lg:flex lg:flex-col self-stretch gap-4">
+            {/* Right Column: Friends Activity (40% on desktop, hidden on mobile) */}
+            <div className="hidden lg:flex lg:w-[40%] xl:w-[35%] flex-col self-stretch gap-4">
                 {/* Unified Panel */}
                 <div className="bg-[#1A202C]/60 backdrop-blur-xl rounded-[2.5rem] border border-white/5 overflow-hidden flex flex-col h-[65svh] md:h-[500px]">
 
