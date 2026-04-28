@@ -20,6 +20,7 @@ interface HeroItem {
 
 interface HeroSliderProps {
     items: HeroItem[];
+    friendPopularIds?: number[];
 }
 
 const CATEGORY_CONFIG = {
@@ -30,7 +31,7 @@ const CATEGORY_CONFIG = {
     personalized: { label: "Size Özel Öneri", icon: Trophy, color: "text-rose-400", bgColor: "bg-rose-400" },
 };
 
-export function HeroSlider({ items }: HeroSliderProps) {
+export function HeroSlider({ items, friendPopularIds = [] }: HeroSliderProps) {
     const [currentIndex, setCurrentIndex] = useState(0);
     const hasItems = items.length > 0;
 
@@ -78,6 +79,7 @@ export function HeroSlider({ items }: HeroSliderProps) {
     const currentItem = items[currentIndex];
     const config = CATEGORY_CONFIG[currentItem.category];
     const Icon = config.icon;
+    const isFriendsPopular = friendPopularIds.includes(currentItem.id);
 
     // Fallback backdrop
     const backdropUrl = currentItem.backdrop_path
@@ -142,6 +144,12 @@ export function HeroSlider({ items }: HeroSliderProps) {
                                 <HeroActions movieId={currentItem.id} mediaType={currentItem.media_type} />
 
                                 <div className="flex items-center gap-2">
+                                    {isFriendsPopular && (
+                                        <div className="flex items-center gap-1.5 text-white/90 bg-emerald-500/20 backdrop-blur-xl px-3 py-2 rounded-xl border border-emerald-400/30 shadow-lg mt-2">
+                                            <TrendingUp size={14} className="text-emerald-400" />
+                                            <span className="font-bold text-[10px] uppercase tracking-wider">Arkadaşlarında Popüler</span>
+                                        </div>
+                                    )}
                                     <div className="flex items-center gap-1.5 text-white/90 bg-white/10 backdrop-blur-xl px-3 py-2 rounded-xl border border-white/10 shadow-lg mt-2">
                                         <Icon size={14} className={cn("fill-current", config.color)} />
                                         <span className="font-bold text-[10px] uppercase tracking-wider">{config.label}</span>

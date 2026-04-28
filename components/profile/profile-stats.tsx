@@ -47,7 +47,7 @@ export function ProfileStats({
     },
     {
       value: watchlistCount,
-      label: "İzlenecek",
+      label: "Listem",
       icon: Bookmark,
       color: "text-pink-400",
       bgColor: "bg-pink-500/10",

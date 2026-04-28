@@ -109,7 +109,7 @@ export function TopNav({ user }: TopNavProps) {
               <span className="text-[10px] mt-0.5 font-bold uppercase tracking-wider">İzlenenler</span>
             </Link>
 
-            {/* New: İzlenecekler */}
+            {/* New: Listem */}
             <Link
               href="/watchlist"
               className={`flex flex-col items-center justify-center h-full transition-all duration-200 px-3 group ${activeView === 'watchlist' ? activeColor : inactiveColor}`}
@@ -117,7 +117,7 @@ export function TopNav({ user }: TopNavProps) {
               <div className={`p-1.5 rounded-xl transition-colors ${activeView === 'watchlist' ? 'bg-amber-400/10' : 'group-hover:bg-white/5'}`}>
                 <Bookmark size={22} />
               </div>
-              <span className="text-[10px] mt-0.5 font-bold uppercase tracking-wider">İzlenecek</span>
+              <span className="text-[10px] mt-0.5 font-bold uppercase tracking-wider">Listem</span>
             </Link>
 
             {/* Central Search Button with CORRECTED CURVED TEXT */}

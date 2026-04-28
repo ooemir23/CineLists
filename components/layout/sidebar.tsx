@@ -65,7 +65,7 @@ export function Sidebar({ user }: SidebarProps) {
                     )}
                 >
                     <Heart className={cn("w-5 h-5", pathname === "/watchlist" ? "text-primary" : "text-neutral-500 group-hover:text-white")} />
-                    İzlenecekler
+                    Listem
                 </Link>
                 <Link
                     href="/watched"

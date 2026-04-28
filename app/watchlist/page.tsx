@@ -17,9 +17,9 @@ export default async function WatchlistPage() {
             <div className="max-w-7xl mx-auto px-6 md:px-10 lg:px-16 py-10 ">
                 <div className="flex items-center gap-3 mb-12">
                     <span className="w-10 h-10 flex items-center justify-center rounded-full bg-primary text-white font-bold text-2xl">+</span>
-                    <h1 className="text-3xl md:text-5xl font-black text-white tracking-tight">İzlenecekler</h1>
+                    <h1 className="text-3xl md:text-5xl font-black text-white tracking-tight">Listem</h1>
                 </div>
-                <p className="text-neutral-400 text-center py-20">İzleme listesi oluşturmak için giriş yapmalısın.</p>
+                <p className="text-neutral-400 text-center py-20">Liste oluşturmak için giriş yapmalısın.</p>
             </div>
         );
     }
@@ -34,7 +34,7 @@ export default async function WatchlistPage() {
         <div className="max-w-7xl mx-auto px-6 md:px-10 lg:px-16 py-10 ">
             <div className="flex items-center gap-3 mb-12">
                 <span className="w-10 h-10 flex items-center justify-center rounded-full bg-primary text-white font-bold text-2xl">+</span>
-                <h1 className="text-3xl md:text-5xl font-black text-white tracking-tight">İzlenecekler</h1>
+                <h1 className="text-3xl md:text-5xl font-black text-white tracking-tight">Listem</h1>
             </div>
             <WatchlistSearchBarWrapper watchlist={watchlist} />
         </div>

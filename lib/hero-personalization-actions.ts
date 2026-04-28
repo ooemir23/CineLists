@@ -18,7 +18,11 @@ export interface UpcomingEpisode {
     showId: number;
     showTitle: string;
     nextEpisodeDate: string | null;
+    nextEpisodeTitle?: string | null;
+    nextEpisodeSeason?: number | null;
+    nextEpisodeNumber?: number | null;
     platforms: string[];
+    platformLogos?: { name: string; logoPath: string | null }[];
     posterPath: string | null;
     voteAverage: number;
 }
@@ -110,20 +114,30 @@ export async function getWatchedShowsNextEpisodes(): Promise<UpcomingEpisode[]> 
 
                 // Get next air date from show data
                 const nextEpisodeDate = showData.next_episode_to_air?.air_date;
+                const nextEpisodeTitle = showData.next_episode_to_air?.name ?? null;
+                const nextEpisodeSeason = showData.next_episode_to_air?.season_number ?? null;
+                const nextEpisodeNumber = showData.next_episode_to_air?.episode_number ?? null;
                 const networks = (showData.networks || []).map((n: any) => n.name);
 
                 // Get watch providers
                 const providers = await tmdb.getWatchProviders("tv", watched.media.tmdbId.toString());
-                const platformNames = (providers?.results?.TR?.flatrate || [])
-                    .map((p: any) => p.provider_name)
-                    .slice(0, 3);
+                const platformEntries = (providers?.results?.TR?.flatrate || []).slice(0, 3);
+                const platformNames = platformEntries.map((p: any) => p.provider_name);
+                const platformLogos = platformEntries.map((p: any) => ({
+                    name: p.provider_name,
+                    logoPath: p.logo_path || null,
+                }));
 
                 if (nextEpisodeDate || platformNames.length > 0) {
                     episodes.push({
                         showId: watched.media.tmdbId,
                         showTitle: watched.media.title,
                         nextEpisodeDate: nextEpisodeDate,
+                        nextEpisodeTitle: nextEpisodeTitle,
+                        nextEpisodeSeason: nextEpisodeSeason,
+                        nextEpisodeNumber: nextEpisodeNumber,
                         platforms: platformNames || networks,
+                        platformLogos: platformLogos,
                         posterPath: watched.media.posterPath,
                         voteAverage: watched.media.voteAverage || 0,
                     });

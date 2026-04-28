@@ -58,7 +58,7 @@ export function MediaActions({
 
     const handleToggleWatchlist = () => {
         if (isRestrictedUser) {
-            showAuthWarning("İzlenecek listesi için kayıt olmalısın!");
+            showAuthWarning("Listeye eklemek için kayıt olmalısın!");
             return;
         }
         setInWatchlist((prev) => !prev);
@@ -126,7 +126,7 @@ export function MediaActions({
                         <Plus className="w-5 h-5" />
                     )}
                     <span className={cn(isMinimal && "font-semibold")}>
-                        {inWatchlist ? "Listede" : "İzlenecek"}
+                        {inWatchlist ? "Listemde" : "Listeme Ekle"}
                     </span>
                 </button>
 

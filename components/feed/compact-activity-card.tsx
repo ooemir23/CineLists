@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import {
@@ -63,6 +64,12 @@ type CompactActivityCardProps = {
 };
 
 export function CompactActivityCard({ activity }: CompactActivityCardProps) {
+    const [timeLabel, setTimeLabel] = useState("");
+
+    useEffect(() => {
+        setTimeLabel(formatDistanceToNow(new Date(activity.createdAt), { addSuffix: true, locale: tr }));
+    }, [activity.createdAt]);
+
     const actionText = {
         WATCHED: "izledi",
         RATED: "puanladı",
@@ -147,7 +154,7 @@ export function CompactActivityCard({ activity }: CompactActivityCardProps) {
                         {/* Time & Stats */}
                         <div className="flex items-center justify-between text-xs">
                             <span className="text-neutral-500">
-                                {formatDistanceToNow(new Date(activity.createdAt), { addSuffix: true, locale: tr })}
+                                {timeLabel}
                             </span>
                             <div className="flex items-center gap-3 text-neutral-400">
                                 {activity.review && (

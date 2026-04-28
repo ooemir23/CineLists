@@ -85,7 +85,7 @@ export function MobileDock({ user }: MobileDockProps) {
                 <div className="w-8 h-8 rounded-lg bg-amber-500/10 flex items-center justify-center text-amber-400">
                   <Bookmark size={18} strokeWidth={2.5} />
                 </div>
-                <span className="font-bold">İzlenecekler</span>
+                <span className="font-bold">Listem</span>
               </Link>
               <Link href="/lists" className="flex items-center gap-3 px-4 py-3 text-sm text-white hover:bg-white/5 transition active:scale-95" onClick={() => setMenuOpen(false)}>
                 <div className="w-8 h-8 rounded-lg bg-blue-500/10 flex items-center justify-center text-blue-400">

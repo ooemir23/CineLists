@@ -25,7 +25,7 @@ export function RandomSuggestion({
         </h2>
         <div className="bg-white/[0.02] border border-white/5 border-dashed rounded-xl p-6 text-center">
           <p className="text-xs text-neutral-500 font-medium">
-            Önerileri görmek için watchlist'e içerik ekle
+            Önerileri görmek için listene içerik ekle
           </p>
         </div>
       </section>

@@ -6,19 +6,21 @@ import { HeroSlider } from "./hero-slider";
 import {
     getFavoriteActorsUpcoming,
     getWatchedShowsNextEpisodes,
+    getFriendsViewingStats,
 } from "@/lib/hero-personalization-actions";
 import { UpcomingEpisodesCarousel } from "./carousels/upcoming-episodes-carousel";
 import { FavoriteActorsCarousel } from "./carousels/favorite-actors-carousel";
 
 export async function HomeTopSection({ personalizedResults }: { personalizedResults?: any[] }) {
     // Fetch diverse content for the slider - use personalized data
-    const [trendingMovies, upcomingMovies, trendingTV, popularMovies, favoriteActorProjects, upcomingEpisodes] = await Promise.all([
+    const [trendingMovies, upcomingMovies, trendingTV, popularMovies, favoriteActorProjects, upcomingEpisodes, friendStats] = await Promise.all([
         tmdb.getTrendingMovies(),
         tmdb.getUpcomingMovies(),
         tmdb.getTrendingTV(),
         tmdb.getPopular("movie"),
         getFavoriteActorsUpcoming(),
         getWatchedShowsNextEpisodes(),
+        getFriendsViewingStats(),
     ]);
 
     // Build hero slider items with personalized content
@@ -69,6 +71,7 @@ export async function HomeTopSection({ personalizedResults }: { personalizedResu
         .filter(item => !!item.backdrop_path);
 
     const items = [...personalizedItems, ...trendingItems].slice(0, 5);
+    const friendPopularIds = friendStats.map(item => item.tmdbId);
 
     return (
         <section className="flex flex-col lg:flex-row gap-4 w-full">
@@ -76,14 +79,14 @@ export async function HomeTopSection({ personalizedResults }: { personalizedResu
             <div className="w-full lg:w-[60%] xl:w-[65%] flex flex-col gap-4">
                 {/* Upcoming Episodes - Sticky at top */}
                 {upcomingEpisodes.length > 0 && (
-                    <div className="sticky top-16 z-20 backdrop-blur-sm bg-black/40 rounded-2xl p-3 border border-white/5">
+                    <div className="relative z-20 backdrop-blur-sm bg-gradient-to-br from-[#0f1a2b]/80 via-[#0f1a2b]/60 to-[#0b1220]/70 rounded-2xl p-3 border border-white/10 shadow-lg">
                         <UpcomingEpisodesCarousel episodes={upcomingEpisodes} />
                     </div>
                 )}
 
                 {/* Main Hero Slider */}
                 <div className="w-full">
-                    <HeroSlider items={items} />
+                    <HeroSlider items={items} friendPopularIds={friendPopularIds} />
                 </div>
 
                 {/* Scrollable Carousels */}
@@ -98,7 +101,7 @@ export async function HomeTopSection({ personalizedResults }: { personalizedResu
             {/* Right Column: Friends Activity (40% on desktop, hidden on mobile) */}
             <div className="hidden lg:flex lg:w-[40%] xl:w-[35%] flex-col self-stretch gap-4">
                 {/* Unified Panel */}
-                <div className="bg-[#1A202C]/60 backdrop-blur-xl rounded-[2.5rem] border border-white/5 overflow-hidden flex flex-col h-[65svh] md:h-[500px]">
+                <div className="bg-[#1A202C]/60 backdrop-blur-xl rounded-[2.5rem] border border-white/5 overflow-hidden flex flex-col h-[65svh] md:h-[500px] lg:h-[calc(65svh+128px)] xl:h-[calc(65svh+128px)]">
 
                     {/* Header - Compact */}
                     <div className="px-5 py-3 border-b border-white/5 bg-white/5 flex items-center justify-between shrink-0">

@@ -136,41 +136,48 @@ export default async function FeedPage() {
     const allActivities = await getGroupedFeedActivities(session.user.id, followingIds);
 
     return (
-        <div className=" bg-[#101624] text-neutral-100 pb-20">
-            <div className="max-w-7xl mx-auto px-2 md:px-10 py-8 md:py-10">
-                {/* Minimal Header */}
-                <div className="flex flex-col md:flex-row md:items-end gap-2 md:gap-4 mb-6 md:mb-10 pl-2 md:pl-0">
+        <div className="bg-[#0f1424] text-neutral-100 pb-16">
+            <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
+                <div className="flex items-center justify-between gap-4 mb-5">
                     <div className="flex items-center gap-3">
-                        <Sparkles className="w-8 h-8 md:w-10 md:h-10 text-primary" />
-                        <h1 className="text-2xl md:text-4xl font-black text-white tracking-tight">Aktivite Akışı</h1>
+                        <div className="w-10 h-10 rounded-2xl bg-primary/15 border border-primary/20 flex items-center justify-center">
+                            <Sparkles className="w-5 h-5 text-primary" />
+                        </div>
+                        <div>
+                            <h1 className="text-xl sm:text-2xl font-black text-white tracking-tight">Akış</h1>
+                            <p className="text-[11px] text-neutral-500 font-medium">Arkadaşların ne izliyor?</p>
+                        </div>
                     </div>
-                    <p className="text-neutral-500 text-xs md:text-sm font-medium pb-1 md:pb-1.5">
-                        Arkadaşlarının neler izlediğini keşfet.
-                    </p>
+                    <Link
+                        href="/community"
+                        className="hidden sm:inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-bold text-neutral-200 transition-all"
+                    >
+                        <Search className="w-4 h-4" />
+                        Takip Et
+                    </Link>
                 </div>
-                <div className="flex flex-col lg:flex-row gap-8 items-start">
 
-                    {/* Main Feed Column */}
-                    <div className="flex-1 w-full space-y-4 md:space-y-12 mb-20 max-w-2xl mx-auto lg:mx-0">
+                <div className="flex flex-col lg:flex-row gap-6 items-start">
+                    <div className="flex-1 w-full space-y-3">
                         {allActivities.length === 0 ? (
-                            <div className="flex flex-col items-center justify-center py-32 bg-white/5 backdrop-blur-md rounded-[2.5rem] border border-white/5 text-center px-10 shadow-2xl">
-                                <div className="p-6 bg-primary/10 rounded-full mb-6">
-                                    <Users className="w-12 h-12 text-primary" />
+                            <div className="flex flex-col items-center justify-center py-20 bg-white/5 backdrop-blur-md rounded-3xl border border-white/5 text-center px-8 shadow-xl">
+                                <div className="p-4 bg-primary/10 rounded-full mb-4">
+                                    <Users className="w-8 h-8 text-primary" />
                                 </div>
-                                <h2 className="text-2xl font-bold text-white mb-3">Henüz Bir Şey Yok</h2>
-                                <p className="text-neutral-400 mb-8 max-w-xs mx-auto text-sm">
-                                    Takip ettiğin kişilerin aktivitelerini burada görebilirsin. Kimseyi takip etmiyor musun?
+                                <h2 className="text-lg font-bold text-white mb-2">Akış Boş</h2>
+                                <p className="text-neutral-400 mb-5 max-w-xs mx-auto text-xs">
+                                    Yeni içerikler görmek için takip etmeye başla.
                                 </p>
                                 <Link
                                     href="/community"
-                                    className="px-8 py-4 bg-primary text-background font-black rounded-2xl hover:bg-primary/90 transition-all hover:scale-105 shadow-xl shadow-primary/20 flex items-center gap-2"
+                                    className="px-5 py-2.5 bg-primary text-background font-black rounded-xl hover:bg-primary/90 transition-all shadow-lg shadow-primary/20 flex items-center gap-2 text-xs"
                                 >
-                                    <Search className="w-5 h-5" />
-                                    Arkadaşlarını Bul
+                                    <Search className="w-4 h-4" />
+                                    Arkadaş Bul
                                 </Link>
                             </div>
                         ) : (
-                            <div className="space-y-4 md:space-y-12">
+                            <div className="space-y-3">
                                 {allActivities.map(activity => (
                                     <ActivityPost key={activity.id} activity={activity as any} />
                                 ))}
@@ -178,53 +185,49 @@ export default async function FeedPage() {
                         )}
                     </div>
 
-                    {/* Sidebar / Recommendations (Hidden on Mobile) */}
-                    <div className="hidden lg:block w-80 shrink-0 space-y-8 sticky top-24">
-                        {/* Summary Widget */}
-                        <div className="bg-white/5 backdrop-blur-lg border border-white/10 rounded-3xl p-6 shadow-xl">
-                            <h3 className="font-bold text-white mb-6 flex items-center gap-2">
-                                <Activity className="w-5 h-5 text-primary" />
-                                Senin Aktiviten
+                    <div className="hidden lg:block w-72 shrink-0 space-y-4 sticky top-24">
+                        <div className="bg-white/5 backdrop-blur-lg border border-white/10 rounded-2xl p-4 shadow-lg">
+                            <h3 className="text-sm font-bold text-white mb-4 flex items-center gap-2">
+                                <Activity className="w-4 h-4 text-primary" />
+                                Özet
                             </h3>
-                            <div className="space-y-4">
-                                <div className="flex items-center justify-between group">
-                                    <span className="text-neutral-400 text-sm font-medium group-hover:text-white transition-colors">Takip Ettiklerin</span>
-                                    <span className="bg-white/5 px-3 py-1 rounded-full text-xs font-bold text-white border border-white/5">
+                            <div className="space-y-3">
+                                <div className="flex items-center justify-between">
+                                    <span className="text-neutral-400 text-xs font-medium">Takip Ettiklerin</span>
+                                    <span className="bg-white/5 px-2 py-1 rounded-full text-[10px] font-bold text-white border border-white/5">
                                         {followingIds.length}
                                     </span>
                                 </div>
-                                <div className="flex items-center justify-between group">
-                                    <span className="text-neutral-400 text-sm font-medium group-hover:text-white transition-colors">Toplam Aktivite</span>
-                                    <span className="bg-white/5 px-3 py-1 rounded-full text-xs font-bold text-white border border-white/5">
+                                <div className="flex items-center justify-between">
+                                    <span className="text-neutral-400 text-xs font-medium">Toplam Aktivite</span>
+                                    <span className="bg-white/5 px-2 py-1 rounded-full text-[10px] font-bold text-white border border-white/5">
                                         {allActivities.length}
                                     </span>
                                 </div>
                             </div>
                             <Link
                                 href="/profile"
-                                className="mt-8 block w-full text-center py-3 bg-white/5 hover:bg-white/10 rounded-2xl text-xs font-bold border border-white/5 transition-all text-neutral-300 hover:text-white"
+                                className="mt-4 block w-full text-center py-2 bg-white/5 hover:bg-white/10 rounded-xl text-[10px] font-bold border border-white/5 transition-all text-neutral-300 hover:text-white"
                             >
-                                Profiline Git
+                                Profil
                             </Link>
                         </div>
 
-                        {/* Social Tip */}
-                        <div className="bg-gradient-to-br from-primary/20 to-blue-500/10 border border-primary/10 rounded-3xl p-6 relative overflow-hidden group">
+                        <div className="bg-gradient-to-br from-primary/15 to-blue-500/5 border border-primary/10 rounded-2xl p-4 relative overflow-hidden">
                             <div className="relative z-10">
-                                <h3 className="text-white font-bold mb-2">Daha fazla aktivite?</h3>
-                                <p className="text-neutral-300 text-xs leading-relaxed mb-4">
-                                    Keşfet sayfasından yeni insanlar bulup takip ederek akışını zenginleştirebilirsin.
+                                <h3 className="text-white font-bold text-sm mb-1">Daha fazla aktivite</h3>
+                                <p className="text-neutral-300 text-[11px] leading-relaxed mb-3">
+                                    Yeni insanları takip ederek akışını güçlendir.
                                 </p>
-                                <Link href="/community" className="text-primary font-bold text-xs flex items-center gap-1 group-hover:gap-2 transition-all">
-                                    Topluluğa Göz At <Plus className="w-3 h-3" />
+                                <Link href="/community" className="text-primary font-bold text-[11px] flex items-center gap-1">
+                                    Topluluk <Plus className="w-3 h-3" />
                                 </Link>
                             </div>
-                            <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-                                <Users className="w-16 h-16" />
+                            <div className="absolute top-0 right-0 p-3 opacity-10">
+                                <Users className="w-14 h-14" />
                             </div>
                         </div>
                     </div>
-
                 </div>
             </div>
         </div>
