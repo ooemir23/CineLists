@@ -12,11 +12,10 @@ import { InsightsCard } from "./insights-card";
 import { SettingsModal } from "./settings-modal";
 import { AchievementsBadges } from "./achievements-badges";
 import { ActivityHeatmap } from "./activity-heatmap";
-
-import { RandomSuggestion } from "./random-suggestion";
 import { WatchCountries } from "./watch-countries";
 import { PeriodStats } from "./period-stats";
-import { CustomListsPreview } from "./custom-lists-preview";
+import Link from "next/link";
+
 
 type UserData = {
     id: string;
@@ -69,7 +68,7 @@ export function ProfileClientShell({
     const totalHours = Math.round((stats.movieCount * 1.5) + (stats.episodeCount * 0.75));
 
     return (
-        <div className="w-full min-h-screen bg-neutral-950">
+        <div className="w-full min-h-screen bg-background">
             {/* Compact Header - No Cover */}
             <ProfileHeader
                 name={user.name}
@@ -137,6 +136,15 @@ export function ProfileClientShell({
                     </section>
                 )}
 
+                {/* Insights */}
+                <InsightsCard
+                    totalHours={totalHours}
+                    streakDays={0}
+                    averageRating={averageRating}
+                    thisMonthCount={thisMonthCount}
+                    userId={user.id}
+                />
+
                 {/* Achievements */}
                 <AchievementsBadges
                     achievements={[]}
@@ -147,31 +155,29 @@ export function ProfileClientShell({
                 />
 
                 {/* Activity Heatmap */}
-                <ActivityHeatmap activities={user.activities} />
+                <ActivityHeatmap activities={user.activities} userId={user.id} />
 
                 {/* Period Stats */}
-                <PeriodStats activities={user.activities} watchedItems={watchedItems} />
-
-                {/* Random Suggestion */}
-                <RandomSuggestion watchlistItems={watchlistItems} />
+                <PeriodStats activities={user.activities} watchedItems={watchedItems} userId={user.id} />
 
                 {/* Watch Countries */}
                 <WatchCountries watchedItems={watchedItems} />
-
-                {/* Custom Lists */}
-                <CustomListsPreview lists={customLists} />
 
                 {/* Two Column: Activities & Persons */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5 sm:gap-6">
                     {/* Recent Activities */}
                     <section className="space-y-3">
-                        <h2 className="text-sm font-bold text-white tracking-tight uppercase">
+                        <Link
+                            href="/profile/activities"
+                            className="text-sm font-bold text-white tracking-tight uppercase hover:text-primary transition-colors inline-block"
+                        >
                             Son Aktiviteler
-                        </h2>
+                        </Link>
                         <ProfileActivity
                             activities={user.activities}
                             showActivities={user.showActivities}
                             variant="list"
+                            userId={user.id}
                         />
                     </section>
 

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { TrendingUp, Calendar } from "lucide-react";
+import Link from "next/link";
 import { cn } from "@/lib/utils";
 
 type Period = "week" | "month" | "year";
@@ -9,9 +10,10 @@ type Period = "week" | "month" | "year";
 interface PeriodStatsProps {
   activities?: any[];
   watchedItems?: any[];
+  userId?: string;
 }
 
-export function PeriodStats({ activities = [], watchedItems = [] }: PeriodStatsProps) {
+export function PeriodStats({ activities = [], watchedItems = [], userId }: PeriodStatsProps) {
   const [period, setPeriod] = useState<Period>("month");
 
   const getPeriodData = (p: Period) => {
@@ -69,12 +71,15 @@ export function PeriodStats({ activities = [], watchedItems = [] }: PeriodStatsP
   return (
     <section className="space-y-3">
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
+        <Link
+          href={userId ? `/profile/${userId}/stats` : "/profile/stats"}
+          className="flex items-center gap-2 hover:opacity-80 transition-opacity"
+        >
           <TrendingUp className="w-4 h-4 text-primary" />
           <h2 className="text-sm font-bold text-white tracking-tight uppercase">
             {periodLabel} Özeti
           </h2>
-        </div>
+        </Link>
 
         {/* Period Tabs */}
         <div className="flex gap-1 bg-white/[0.03] p-0.5 rounded-lg border border-white/5">

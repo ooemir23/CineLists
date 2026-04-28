@@ -26,12 +26,14 @@ interface ProfileActivityProps {
   activities: Activity[];
   showActivities: boolean;
   variant?: "list" | "grid";
+  userId?: string;
 }
 
 export function ProfileActivity({
   activities,
   showActivities,
   variant = "list",
+  userId,
 }: ProfileActivityProps) {
   const [imageErrors, setImageErrors] = useState<Set<string>>(new Set());
 

@@ -1,14 +1,16 @@
 "use client";
 
 import { Activity } from "lucide-react";
+import Link from "next/link";
 import { cn } from "@/lib/utils";
 
 interface ActivityHeatmapProps {
   activities?: any[];
   title?: string;
+  userId?: string;
 }
 
-export function ActivityHeatmap({ activities = [], title = "Son 30 Gün" }: ActivityHeatmapProps) {
+export function ActivityHeatmap({ activities = [], title = "Son 30 Gün", userId }: ActivityHeatmapProps) {
   // Generate last 30 days grid
   const today = new Date();
   const days: { date: Date; count: number }[] = [];
@@ -59,12 +61,15 @@ export function ActivityHeatmap({ activities = [], title = "Son 30 Gün" }: Acti
   return (
     <section className="space-y-3">
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
+        <Link
+          href={userId ? `/profile/${userId}/activities` : "/profile/activities"}
+          className="flex items-center gap-2 hover:opacity-80 transition-opacity"
+        >
           <Activity className="w-4 h-4 text-primary" />
           <h2 className="text-sm font-bold text-white tracking-tight uppercase">
             {title}
           </h2>
-        </div>
+        </Link>
         <div className="text-xs text-neutral-400 font-medium">
           {totalActivities} aktivite
         </div>

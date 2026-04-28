@@ -2,12 +2,14 @@
 
 import { Flame, Clock, TrendingUp, Calendar } from "lucide-react";
 import { cn } from "@/lib/utils";
+import Link from "next/link";
 
 interface InsightsCardProps {
   totalHours?: number;
   streakDays?: number;
   averageRating?: number;
   thisMonthCount?: number;
+  userId?: string;
 }
 
 export function InsightsCard({
@@ -15,6 +17,7 @@ export function InsightsCard({
   streakDays = 0,
   averageRating = 0,
   thisMonthCount = 0,
+  userId,
 }: InsightsCardProps) {
   const insights = [
     {
@@ -57,9 +60,14 @@ export function InsightsCard({
 
   return (
     <section className="space-y-3">
-      <h2 className="text-sm font-bold text-white tracking-tight uppercase">
-        Öne Çıkanlar
-      </h2>
+      <div className="flex items-center justify-between">
+        <Link
+          href={userId ? `/profile/${userId}/insights` : "/profile/insights"}
+          className="text-sm font-bold text-white tracking-tight uppercase hover:text-primary transition-colors"
+        >
+          Öne Çıkanlar
+        </Link>
+      </div>
       <div className={cn("grid gap-2", visible.length === 4 ? "grid-cols-2 sm:grid-cols-4" : "grid-cols-2 sm:grid-cols-3")}>
         {visible.map((insight) => {
           const Icon = insight.icon;

@@ -9,10 +9,10 @@ import { GenreTags } from "./genre-tags";
 import { RecentMedia } from "./recent-media";
 import { AchievementsBadges } from "./achievements-badges";
 import { ActivityHeatmap } from "./activity-heatmap";
-import { RandomSuggestion } from "./random-suggestion";
+
 import { WatchCountries } from "./watch-countries";
 import { PeriodStats } from "./period-stats";
-import { CustomListsPreview } from "./custom-lists-preview";
+
 import { FollowButton } from "@/components/social/follow-button";
 import Link from "next/link";
 import { Mail } from "lucide-react";
@@ -72,9 +72,9 @@ export function PublicProfileShell({
   const totalHours = Math.round(stats.movieCount * 1.5 + stats.episodeCount * 0.75);
 
   return (
-    <div className="w-full min-h-screen bg-neutral-950">
+    <div className="w-full min-h-screen bg-background">
       {/* Header with Follow/Message Buttons */}
-      <div className="border-b border-white/5 bg-neutral-950/50 backdrop-blur-sm sticky top-0 z-40">
+      <div className="border-b border-white/5 bg-background/50 backdrop-blur-sm sticky top-0 z-40">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 py-3">
           <div className="flex items-center justify-between">
             <div>
@@ -138,15 +138,12 @@ export function PublicProfileShell({
         />
 
         {/* Activity Heatmap */}
-        {user.showActivities && <ActivityHeatmap activities={user.activities} />}
+        {user.showActivities && <ActivityHeatmap activities={user.activities} userId={user.id} />}
 
         {/* Period Stats */}
         {user.showStats && (
-          <PeriodStats activities={user.activities} watchedItems={watchedItems} />
+          <PeriodStats activities={user.activities} watchedItems={watchedItems} userId={user.id} />
         )}
-
-        {/* Random Suggestion */}
-        <RandomSuggestion watchlistItems={watchlistItems} />
 
         {/* Watch Countries */}
         {user.showStats && <WatchCountries watchedItems={watchedItems} />}
@@ -175,23 +172,22 @@ export function PublicProfileShell({
           </section>
         )}
 
-        {/* Custom Lists */}
-        {customLists.length > 0 && (
-          <CustomListsPreview lists={customLists} />
-        )}
-
         {/* Two Column: Activities & Persons */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5 sm:gap-6">
           {/* Recent Activities */}
           {user.showActivities && (
             <section className="space-y-3">
-              <h2 className="text-sm font-bold text-white tracking-tight uppercase">
+              <Link
+                href={`/profile/${user.id}/activities`}
+                className="text-sm font-bold text-white tracking-tight uppercase hover:text-primary transition-colors inline-block"
+              >
                 Son Aktiviteler
-              </h2>
+              </Link>
               <ProfileActivity
                 activities={user.activities}
                 showActivities={user.showActivities}
                 variant="list"
+                userId={user.id}
               />
             </section>
           )}
