@@ -103,7 +103,7 @@ export async function HomeTopSection({ personalizedResults }: { personalizedResu
                         <div className="absolute inset-x-0 bottom-0 h-12 bg-gradient-to-t from-[#1A202C] to-transparent z-10 pointer-events-none" />
 
                         <div className="h-full overflow-y-auto custom-scrollbar p-4 space-y-4">
-                            <FriendsActivity compact={true} />
+                            <FriendsActivity compact={true} maxItems={3} />
                         </div>
                     </div>
                 </div>
