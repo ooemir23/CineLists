@@ -6,16 +6,17 @@ import { ChevronLeft } from "lucide-react";
 import { ActivityTimeline } from "@/components/profile/activity-timeline";
 
 interface ActivitiesPageProps {
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
 }
 
 export default async function ActivitiesDetailPage({ params }: ActivitiesPageProps) {
+  const { id } = await params;
   const session = await auth();
   
   const user = await prisma.user.findUnique({
-    where: { id: params.id },
+    where: { id },
     include: {
       activities: {
         take: 300,

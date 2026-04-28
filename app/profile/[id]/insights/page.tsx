@@ -6,16 +6,17 @@ import { ChevronLeft } from "lucide-react";
 import { InsightsCard } from "@/components/profile/insights-card";
 
 interface InsightsPageProps {
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
 }
 
 export default async function InsightsDetailPage({ params }: InsightsPageProps) {
+  const { id } = await params;
   const session = await auth();
   
   const user = await prisma.user.findUnique({
-    where: { id: params.id },
+    where: { id },
     include: {
       watched: {
         select: { rating: true, watchedAt: true }

@@ -6,16 +6,17 @@ import { ChevronLeft } from "lucide-react";
 import { PeriodStats } from "@/components/profile/period-stats";
 
 interface StatsPageProps {
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
 }
 
 export default async function StatsDetailPage({ params }: StatsPageProps) {
+  const { id } = await params;
   const session = await auth();
   
   const user = await prisma.user.findUnique({
-    where: { id: params.id },
+    where: { id },
     include: {
       activities: {
         take: 100,
