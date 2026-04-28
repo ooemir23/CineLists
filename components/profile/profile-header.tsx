@@ -44,7 +44,7 @@ export function ProfileHeader({
   ];
 
   return (
-    <div className="w-full bg-neutral-950 border-b border-white/5">
+    <div className="w-full bg-background border-b border-white/5">
       <div className="max-w-5xl mx-auto px-4 sm:px-6 py-4 sm:py-6">
         <div className="flex items-start sm:items-center gap-4 sm:gap-8">
           {/* Profile Picture */}

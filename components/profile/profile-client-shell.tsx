@@ -110,17 +110,8 @@ export function ProfileClientShell({
                     streakDays={0}
                     averageRating={averageRating}
                     thisMonthCount={thisMonthCount}
+                    userId={user.id}
                 />
-
-                {/* Recent Watched - Poster Grid */}
-                {recentMediaItems.length > 0 && (
-                    <RecentMedia
-                        items={recentMediaItems}
-                        title="Son İzlenenler"
-                        viewAllHref="/watched"
-                        maxItems={6}
-                    />
-                )}
 
                 {/* Favorite Genres */}
                 {user.favoriteGenres.length > 0 && (
@@ -136,15 +127,6 @@ export function ProfileClientShell({
                     </section>
                 )}
 
-                {/* Insights */}
-                <InsightsCard
-                    totalHours={totalHours}
-                    streakDays={0}
-                    averageRating={averageRating}
-                    thisMonthCount={thisMonthCount}
-                    userId={user.id}
-                />
-
                 {/* Achievements */}
                 <AchievementsBadges
                     achievements={[]}
@@ -153,9 +135,6 @@ export function ProfileClientShell({
                     watchedCount={user._count.watched}
                     averageRating={averageRating}
                 />
-
-                {/* Activity Heatmap */}
-                <ActivityHeatmap activities={user.activities} userId={user.id} />
 
                 {/* Period Stats */}
                 <PeriodStats activities={user.activities} watchedItems={watchedItems} userId={user.id} />

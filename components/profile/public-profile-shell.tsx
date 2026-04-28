@@ -137,9 +137,6 @@ export function PublicProfileShell({
           averageRating={averageRating}
         />
 
-        {/* Activity Heatmap */}
-        {user.showActivities && <ActivityHeatmap activities={user.activities} userId={user.id} />}
-
         {/* Period Stats */}
         {user.showStats && (
           <PeriodStats activities={user.activities} watchedItems={watchedItems} userId={user.id} />
@@ -147,16 +144,6 @@ export function PublicProfileShell({
 
         {/* Watch Countries */}
         {user.showStats && <WatchCountries watchedItems={watchedItems} />}
-
-        {/* Recent Watched - Poster Grid */}
-        {recentMediaItems.length > 0 && (
-          <RecentMedia
-            items={recentMediaItems}
-            title="Son İzlenenler"
-            viewAllHref={`/profile/${user.id}/watched`}
-            maxItems={6}
-          />
-        )}
 
         {/* Favorite Genres */}
         {user.favoriteGenres.length > 0 && user.showStats && (
