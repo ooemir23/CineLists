@@ -7,6 +7,7 @@ import { tr } from "date-fns/locale";
 import { Star, Eye } from "lucide-react";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
+import { useState } from "react";
 
 interface Activity {
   id: string;
@@ -32,6 +33,11 @@ export function ProfileActivity({
   showActivities,
   variant = "list",
 }: ProfileActivityProps) {
+  const [imageErrors, setImageErrors] = useState<Set<string>>(new Set());
+
+  const handleImageError = (mediaId: string) => {
+    setImageErrors(prev => new Set([...prev, mediaId]));
+  };
   if (!showActivities) {
     return (
       <div className="w-full bg-white/5 border border-white/5 border-dashed rounded-2xl p-8 text-center flex flex-col items-center gap-3 backdrop-blur-sm">
@@ -71,16 +77,18 @@ export function ProfileActivity({
           >
             {/* Poster Image */}
             <div className={cn(
-              "relative shrink-0 overflow-hidden rounded-lg shadow-lg",
+              "relative shrink-0 overflow-hidden rounded-lg shadow-lg bg-neutral-800",
               variant === "list" ? "w-12 h-16" : "w-full h-32"
             )}>
-              {activity.media.posterPath ? (
+              {activity.media.posterPath && !imageErrors.has(activity.media.id) ? (
                 <Image
                   src={`https://image.tmdb.org/t/p/w200${activity.media.posterPath}`}
                   alt={activity.media.title}
                   fill
                   className="object-cover group-hover:scale-110 transition-transform duration-300"
                   sizes={variant === "list" ? "48px" : "100%"}
+                  loading="lazy"
+                  onError={() => handleImageError(activity.media.id)}
                 />
               ) : (
                 <div className="w-full h-full bg-gradient-to-br from-neutral-800 to-neutral-900 flex items-center justify-center text-2xl">

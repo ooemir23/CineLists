@@ -301,3 +301,37 @@ a,
 .animate-fade-in-up {
   animation: fade-in-up 0.2s ease-out forwards;
 }
+
+/* Performance Optimizations */
+@layer utilities {
+  .image-loading {
+    @apply bg-neutral-800 animate-pulse;
+  }
+
+  .will-change-transform {
+    will-change: transform;
+  }
+
+  /* Optimize animations for reduced motion preference */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+
+  /* GPU acceleration for smooth animations */
+  .gpu-accelerate {
+    transform: translateZ(0);
+    backface-visibility: hidden;
+  }
+
+  /* Optimize scrolling performance */
+  .scroll-smooth-gpu {
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+  }
+}

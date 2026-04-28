@@ -43,6 +43,7 @@ export function ProfileHeader({
             className="object-cover"
             priority
             sizes="100vw"
+            loading="eager"
             onError={() => setImageError(true)}
           />
         ) : (
@@ -79,6 +80,7 @@ export function ProfileHeader({
                   className="object-cover group-hover:scale-105 transition-transform duration-300"
                   priority
                   sizes="(max-width: 640px) 128px, (max-width: 768px) 160px, 192px"
+                  loading="eager"
                   onError={() => setImageError(true)}
                 />
               ) : (
