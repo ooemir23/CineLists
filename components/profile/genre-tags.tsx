@@ -57,10 +57,7 @@ export function GenreTags({
   const hiddenCount = favoriteGenres.length - maxDisplay;
 
   return (
-    <div className="w-full space-y-2 sm:space-y-3">
-      <h3 className="text-xs sm:text-sm font-bold text-neutral-400 uppercase tracking-wider">
-        Favori Türler
-      </h3>
+    <div className="w-full">
       <div className="flex flex-wrap gap-1.5 sm:gap-2">
         {displayedGenres.map((genre, index) => (
           <motion.div

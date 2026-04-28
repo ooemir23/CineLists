@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { Heart, Users, Mail, Share2, UserPlus, MoreHorizontal } from "lucide-react";
+import { Mail, Share2, UserPlus, MoreHorizontal, Settings, CheckCircle2 } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 
@@ -10,11 +10,14 @@ interface ProfileHeaderProps {
   username: string;
   bio: string | null;
   image: string | null;
-  coverImage?: string | null;
   followedBy: number;
   following: number;
+  watchedCount?: number;
   isPrivate?: boolean;
   isOwnProfile?: boolean;
+  isVerified?: boolean;
+  joinedAt?: Date | null;
+  onSettingsClick?: () => void;
 }
 
 export function ProfileHeader({
@@ -22,56 +25,31 @@ export function ProfileHeader({
   username,
   bio,
   image,
-  coverImage,
   followedBy,
   following,
+  watchedCount = 0,
   isPrivate = false,
   isOwnProfile = false,
+  isVerified = false,
+  joinedAt,
+  onSettingsClick,
 }: ProfileHeaderProps) {
   const [isFollowing, setIsFollowing] = useState(false);
   const [imageError, setImageError] = useState(false);
 
+  const stats = [
+    { label: "Gönderi", value: watchedCount },
+    { label: "Takipçi", value: followedBy },
+    { label: "Takip", value: following },
+  ];
+
   return (
-    <div className="w-full bg-gradient-to-b from-neutral-900 via-neutral-900/95 to-neutral-950 border-b border-white/5 overflow-hidden">
-      {/* Cover Image */}
-      <div className="relative h-32 sm:h-40 md:h-56 lg:h-72 w-full overflow-hidden bg-gradient-to-br from-primary/20 to-purple-900/20">
-        {coverImage && !imageError ? (
-          <Image
-            src={coverImage}
-            alt="Cover"
-            fill
-            className="object-cover"
-            priority
-            sizes="100vw"
-            loading="eager"
-            onError={() => setImageError(true)}
-          />
-        ) : (
-          <div className="absolute inset-0 bg-gradient-to-br from-primary/30 via-purple-900/20 to-neutral-900/50 backdrop-blur-sm" />
-        )}
-
-        {/* Overlay Gradient */}
-        <div className="absolute inset-0 bg-gradient-to-t from-neutral-950 via-transparent to-transparent" />
-
-        {/* Action Buttons (Top Right) */}
-        {!isOwnProfile && (
-          <div className="absolute top-2 sm:top-3 md:top-4 right-2 sm:right-3 md:right-4 flex gap-2 z-10">
-            <button className="p-1.5 sm:p-2 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/20 transition-all active:scale-95">
-              <Share2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white" />
-            </button>
-            <button className="p-1.5 sm:p-2 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/20 transition-all active:scale-95">
-              <MoreHorizontal className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white" />
-            </button>
-          </div>
-        )}
-      </div>
-
-      {/* Profile Content */}
-      <div className="relative px-3 sm:px-6 md:px-8 lg:px-12 pb-6 md:pb-8">
-        {/* Profile Image - Negative Margin for Overlay */}
-        <div className="flex flex-col sm:flex-row sm:items-end gap-4 sm:gap-6 md:gap-8">
-          <div className="flex-shrink-0 -mt-16 sm:-mt-20 md:-mt-24">
-            <div className="relative w-32 h-32 sm:w-40 sm:h-40 md:w-48 md:h-48 rounded-lg sm:rounded-xl md:rounded-2xl overflow-hidden ring-4 ring-neutral-950 shadow-2xl group">
+    <div className="w-full bg-neutral-950 border-b border-white/5">
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 py-4 sm:py-6">
+        <div className="flex items-start sm:items-center gap-4 sm:gap-8">
+          {/* Profile Picture */}
+          <div className="flex-shrink-0">
+            <div className="relative w-20 h-20 sm:w-28 sm:h-28 md:w-32 md:h-32 rounded-full overflow-hidden ring-2 ring-white/10 group">
               {image && !imageError ? (
                 <Image
                   src={image}
@@ -79,76 +57,109 @@ export function ProfileHeader({
                   fill
                   className="object-cover group-hover:scale-105 transition-transform duration-300"
                   priority
-                  sizes="(max-width: 640px) 128px, (max-width: 768px) 160px, 192px"
-                  loading="eager"
+                  sizes="(max-width: 640px) 80px, (max-width: 768px) 112px, 128px"
                   onError={() => setImageError(true)}
                 />
               ) : (
-                <div className="w-full h-full bg-gradient-to-br from-primary/30 to-purple-900/30 flex items-center justify-center text-5xl sm:text-5xl md:text-6xl">
-                  👤
+                <div className="w-full h-full bg-gradient-to-br from-primary/20 to-purple-900/20 flex items-center justify-center text-3xl sm:text-4xl">
+                  {name?.charAt(0)?.toUpperCase() || "👤"}
                 </div>
               )}
             </div>
           </div>
 
-          {/* Profile Info */}
-          <div className="flex-1 flex flex-col justify-end gap-3 sm:gap-4 pb-0 sm:pb-2">
-            <div className="space-y-1 sm:space-y-2">
-              <h1 className="text-2xl sm:text-3xl md:text-4xl font-black text-white tracking-tight truncate">
-                {name || "Kullanıcı"}
-              </h1>
-              <p className="text-neutral-400 text-sm sm:text-base font-bold truncate">@{username}</p>
+          {/* Profile Info & Actions */}
+          <div className="flex-1 min-w-0">
+            {/* Top: Username + Actions */}
+            <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-3 sm:mb-4">
+              <div className="flex items-center gap-2 min-w-0">
+                <h1 className="text-xl sm:text-2xl font-bold text-white tracking-tight truncate">
+                  {username || "kullanici"}
+                </h1>
+                {isVerified && (
+                  <CheckCircle2 className="w-5 h-5 text-primary fill-primary flex-shrink-0" />
+                )}
+                {isPrivate && (
+                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-white/10 text-neutral-400 font-bold uppercase tracking-wide">
+                    Gizli
+                  </span>
+                )}
+              </div>
 
+              <div className="flex items-center gap-2 flex-shrink-0">
+                {isOwnProfile ? (
+                  <>
+                    <button
+                      onClick={onSettingsClick}
+                      className="px-4 py-1.5 bg-white/10 hover:bg-white/15 text-white text-xs sm:text-sm font-semibold rounded-lg transition-all active:scale-95 flex items-center gap-1.5"
+                    >
+                      <Settings className="w-3.5 h-3.5" />
+                      Profili Düzenle
+                    </button>
+                    <button className="p-1.5 bg-white/10 hover:bg-white/15 text-white rounded-lg transition-all active:scale-95">
+                      <Share2 className="w-3.5 h-3.5" />
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <button
+                      onClick={() => setIsFollowing(!isFollowing)}
+                      className={cn(
+                        "px-4 py-1.5 text-xs sm:text-sm font-semibold rounded-lg transition-all active:scale-95 flex items-center gap-1.5",
+                        isFollowing
+                          ? "bg-white/10 hover:bg-white/15 text-white"
+                          : "bg-primary text-black hover:bg-primary/90"
+                      )}
+                    >
+                      <UserPlus className="w-3.5 h-3.5" />
+                      {isFollowing ? "Takip Ediliyor" : "Takip Et"}
+                    </button>
+                    <button className="px-3 py-1.5 bg-white/10 hover:bg-white/15 text-white text-xs sm:text-sm font-semibold rounded-lg transition-all active:scale-95 flex items-center gap-1.5">
+                      <Mail className="w-3.5 h-3.5" />
+                      Mesaj
+                    </button>
+                    <button className="p-1.5 bg-white/10 hover:bg-white/15 text-white rounded-lg transition-all active:scale-95">
+                      <MoreHorizontal className="w-3.5 h-3.5" />
+                    </button>
+                  </>
+                )}
+              </div>
+            </div>
+
+            {/* Stats Row - Instagram Style */}
+            <div className="hidden sm:flex items-center gap-6 mb-3">
+              {stats.map((stat) => (
+                <div key={stat.label} className="flex items-center gap-1.5">
+                  <span className="text-base font-bold text-white">{stat.value}</span>
+                  <span className="text-sm text-neutral-400">{stat.label}</span>
+                </div>
+              ))}
+            </div>
+
+            {/* Name & Bio */}
+            <div className="space-y-0.5">
+              {name && (
+                <h2 className="text-sm font-semibold text-white">{name}</h2>
+              )}
               {bio && (
-                <p className="text-neutral-300 text-xs sm:text-sm leading-relaxed max-w-2xl line-clamp-2">
+                <p className="text-sm text-neutral-300 leading-relaxed line-clamp-3 max-w-2xl">
                   {bio}
                 </p>
               )}
             </div>
-
-            {/* Follow Stats - Inline */}
-            <div className="flex gap-6 sm:gap-8 pt-2">
-              <div className="flex flex-col">
-                <span className="text-lg sm:text-xl md:text-2xl font-black text-white tracking-tight">
-                  {followedBy}
-                </span>
-                <span className="text-[9px] sm:text-xs font-bold text-neutral-500 uppercase tracking-widest">
-                  Takipçi
-                </span>
-              </div>
-              <div className="flex flex-col">
-                <span className="text-lg sm:text-xl md:text-2xl font-black text-white tracking-tight">
-                  {following}
-                </span>
-                <span className="text-[9px] sm:text-xs font-bold text-neutral-500 uppercase tracking-widest">
-                  Takip Edilen
-                </span>
-              </div>
-            </div>
           </div>
+        </div>
 
-          {/* Action Buttons */}
-          {!isOwnProfile && (
-            <div className="flex gap-2 sm:gap-3 w-full sm:w-auto flex-row sm:flex-col sm:flex-shrink-0">
-              <button className="flex-1 sm:flex-none flex items-center justify-center gap-1 sm:gap-2 px-3 sm:px-6 py-2.5 sm:py-3 bg-primary text-white font-black text-xs sm:text-sm rounded-lg sm:rounded-xl hover:bg-primary/90 transition-all active:scale-95 shadow-lg shadow-primary/20 whitespace-nowrap">
-                <Mail className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                <span className="hidden sm:inline">Mesaj</span>
-              </button>
-              <button
-                onClick={() => setIsFollowing(!isFollowing)}
-                className={cn(
-                  "flex-1 sm:flex-none flex items-center justify-center gap-1 sm:gap-2 px-3 sm:px-6 py-2.5 sm:py-3 font-black text-xs sm:text-sm rounded-lg sm:rounded-xl transition-all active:scale-95 shadow-lg whitespace-nowrap",
-                  isFollowing
-                    ? "bg-white/10 text-white border border-white/20 hover:bg-white/20"
-                    : "bg-white text-black hover:bg-neutral-200 shadow-white/10"
-                )}
-              >
-                <UserPlus className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                <span className="hidden sm:inline">{isFollowing ? "Takip Ediliyor" : "Takip Et"}</span>
-                <span className="sm:hidden">{isFollowing ? "Ediliyor" : "Takip"}</span>
-              </button>
+        {/* Mobile Stats - Bottom Row */}
+        <div className="flex sm:hidden items-center justify-around mt-4 pt-4 border-t border-white/5">
+          {stats.map((stat) => (
+            <div key={stat.label} className="flex flex-col items-center">
+              <span className="text-base font-bold text-white">{stat.value}</span>
+              <span className="text-[10px] text-neutral-400 uppercase tracking-wider">
+                {stat.label}
+              </span>
             </div>
-          )}
+          ))}
         </div>
       </div>
     </div>
