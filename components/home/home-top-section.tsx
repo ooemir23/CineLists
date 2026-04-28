@@ -1,74 +1,37 @@
-import { tmdb } from "@/lib/tmdb";
+import { auth } from "@/auth";
 import Link from "next/link";
-import { Activity, ArrowRight, Rss } from "lucide-react";
+import { ArrowRight, Rss } from "lucide-react";
 import { FriendsActivity } from "./friends-activity";
-import { HeroSlider } from "./hero-slider";
+import { HeroPersonalized } from "./hero-widgets/hero-personalized";
+import {
+    getFavoriteActorsUpcoming,
+    getWatchedShowsNextEpisodes,
+    getFriendsViewingStats,
+} from "@/lib/hero-personalization-actions";
 
 export async function HomeTopSection({ personalizedResults }: { personalizedResults?: any[] }) {
-    // Fetch diverse content for the slider
-    const [trendingMovies, upcomingMovies, trendingTV, popularMovies] = await Promise.all([
-        tmdb.getTrendingMovies(),
-        tmdb.getUpcomingMovies(),
-        tmdb.getTrendingTV(),
-        tmdb.getPopular("movie")
+    // Get user session for personalization
+    const session = await auth();
+    const userName = session?.user?.name || undefined;
+
+    // Fetch personalized data in parallel
+    const [favoriteActorProjects, upcomingEpisodes, friendStats] = await Promise.all([
+        getFavoriteActorsUpcoming(),
+        getWatchedShowsNextEpisodes(),
+        getFriendsViewingStats(),
     ]);
-
-    const trendingMovie = trendingMovies?.results?.[0];
-    const upcomingMovie = upcomingMovies?.results?.[0];
-    const trendingTv = trendingTV?.results?.[0];
-    const popularMovie = popularMovies?.results?.[1] || popularMovies?.results?.[0];
-
-    // Prepare items safely; TMDB can be unavailable in local env
-    const trendingItems = [
-        trendingMovie
-            ? {
-                ...trendingMovie,
-                media_type: "movie",
-                category: "trending"
-            }
-            : null,
-        upcomingMovie
-            ? {
-                ...upcomingMovie,
-                media_type: "movie",
-                category: "upcoming"
-            }
-            : null,
-        trendingTv
-            ? {
-                ...trendingTv,
-                title: trendingTv.name || trendingTv.title,
-                media_type: "tv",
-                category: "tv"
-            }
-            : null,
-        popularMovie
-            ? {
-                ...popularMovie,
-                media_type: "movie",
-                category: "popular"
-            }
-            : null,
-    ].filter((item): item is NonNullable<typeof item> => !!item && !!item.backdrop_path);
-
-    // Personalized items mapping
-    const personalizedItems = (personalizedResults || [])
-        .slice(0, 3)
-        .map(item => ({
-            ...item,
-            media_type: item.mediaType || "movie", // Handle the field name from getPersonalizedRecommendations
-            category: "personalized"
-        }))
-        .filter(item => !!item.backdrop_path);
-
-    // Combine: Personalized first, then trending
-    const items = [...personalizedItems, ...trendingItems].slice(0, 5);
 
     return (
         <section className="flex flex-col lg:flex-row lg:items-stretch gap-4 w-full">
-            {/* Left Column: Hero Slider */}
+            {/* Left Column: Hero Personalized Dashboard */}
             <div className="lg:w-[60%] xl:w-[65%] relative group">
-                <HeroSlider items={items} />
+                <HeroPersonalized
+                    favoriteActorProjects={favoriteActorProjects}
+                    upcomingEpisodes={upcomingEpisodes}
+                    friendStats={friendStats}
+                    personalizedRecommendations={personalizedResults}
+                    userName={userName}
+                />
             </div>
 
             {/* Right Column: Friends Activity (Designed for Home Page) */}

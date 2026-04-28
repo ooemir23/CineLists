@@ -171,4 +171,16 @@ export const tmdb = {
     async getPersonCombinedCredits(id: string) {
         return this.fetch(`/person/${id}/combined_credits`);
     },
+
+    async getPersonUpcoming(id: number) {
+        return this.fetch(`/person/${id}/movie_credits`, {
+            params: { sort_by: "release_date.asc" }
+        });
+    },
+
+    async getTVShow(id: string) {
+        return this.fetch(`/tv/${id}`, {
+            params: { append_to_response: "networks,next_episode_to_air" }
+        });
+    },
 };
