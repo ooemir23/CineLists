@@ -12,7 +12,7 @@ import { InsightsCard } from "./insights-card";
 import { SettingsModal } from "./settings-modal";
 import { AchievementsBadges } from "./achievements-badges";
 import { ActivityHeatmap } from "./activity-heatmap";
-import { CurrentlyWatching } from "./currently-watching";
+
 import { RandomSuggestion } from "./random-suggestion";
 import { WatchCountries } from "./watch-countries";
 import { PeriodStats } from "./period-stats";
@@ -151,9 +151,6 @@ export function ProfileClientShell({
 
                 {/* Period Stats */}
                 <PeriodStats activities={user.activities} watchedItems={watchedItems} />
-
-                {/* Currently Watching */}
-                <CurrentlyWatching mediaItems={watchlistItems} maxDisplay={3} />
 
                 {/* Random Suggestion */}
                 <RandomSuggestion watchlistItems={watchlistItems} />
