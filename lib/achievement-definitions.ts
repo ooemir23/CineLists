@@ -47,10 +47,7 @@ export const ACHIEVEMENT_DEFINITIONS: AchievementDefinition[] = [
   { type: "COMMENTER_10", label: "Sohbetçi", description: "10 yorum yap", icon: "💬", color: "from-teal-400 to-cyan-600", category: "social" },
   { type: "COMMENTER_50", label: "Tartışmacı", description: "50 yorum yap", icon: "💬", color: "from-cyan-400 to-blue-600", category: "social" },
 
-  // Liste rozetleri
-  { type: "LIST_CREATOR", label: "Liste Yapıcı", description: "İlk listeyi oluştur", icon: "📋", color: "from-lime-400 to-green-600", category: "list" },
-  { type: "LIST_MASTER", label: "Liste Ustası", description: "5 liste oluştur", icon: "📊", color: "from-green-400 to-emerald-600", category: "list" },
-  { type: "CURATOR", label: "Küratör", description: "Bir listeye 25+ içerik ekle", icon: "🎨", color: "from-emerald-400 to-teal-600", category: "list" },
+
 
   // Özel rozetler
   { type: "EARLY_BIRD", label: "Erken Kuş", description: "Platformun erken kullanıcısı", icon: "🌅", color: "from-orange-400 to-red-600", category: "special" },

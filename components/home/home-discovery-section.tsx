@@ -31,7 +31,7 @@ const categoryOptions = [
     { id: "popular", label: "Popüler", icon: Star },
     { id: "now_playing", label: "Vizyonda", icon: PlayCircle },
     { id: "top_rated", label: "En İyiler", icon: Check },
-    { id: "upcoming", label: "Yakında", icon: Calendar },
+    { id: "upcoming", label: "Takvim", icon: Calendar },
     { id: "random", label: "Rastgele", icon: Shuffle },
     { id: "friends", label: "Arkadaşlar", icon: Users },
 ] as const;
@@ -41,7 +41,7 @@ const HOME_CATEGORY_LABELS: Record<string, string> = {
     popular: "Popüler",
     now_playing: "Vizyondaki",
     top_rated: "En İyi",
-    upcoming: "Gelecek",
+    upcoming: "Takvim",
     random: "Rastgele",
     friends: "Arkadaşların İzlediği",
 };

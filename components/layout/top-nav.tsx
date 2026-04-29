@@ -7,22 +7,23 @@ import { usePathname } from "next/navigation";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  Home,
+  Film,
+  Search,
+  Bookmark,
+  Check,
+  Compass,
+  BarChart3,
+  LogOut,
   User,
   MessageCircle,
-  Film,
-  Compass,
-  List,
-  Check,
-  Bookmark,
-  BarChart3,
-  Users,
-  Bell,
-  Search,
-  LogOut
 } from "lucide-react";
 import { NotificationBell } from "./notification-bell";
 import { handleSignOut } from "@/lib/auth-actions";
+import {
+  libraryNavItems,
+  profileNavItems,
+  guestNavItems,
+} from "@/components/layout/nav-items";
 
 interface TopNavProps {
   user?: {
@@ -55,14 +56,16 @@ export function TopNav({ user }: TopNavProps) {
     if (pathname === "/") return "home";
     if (pathname.startsWith("/messages")) return "messages";
     if (pathname.startsWith("/feed")) return "feed";
-    if (pathname.startsWith("/explore")) return "explore";
+    if (pathname.startsWith("/search")) return "explore";
     if (pathname.startsWith("/profile")) return "profile";
     if (pathname.startsWith("/watched")) return "watched";
     if (pathname.startsWith("/watchlist")) return "watchlist";
+    if (pathname.startsWith("/achievements")) return "achievements";
     if (pathname.startsWith("/stats")) return "stats";
     return "";
   };
   const activeView = getActiveView();
+  const desktopLibraryItems = libraryNavItems.filter((item) => !["watchlist", "watched"].includes(item.key));
 
   return (
     <>
@@ -98,7 +101,7 @@ export function TopNav({ user }: TopNavProps) {
           <div className="flex items-center justify-center gap-1 md:gap-2 lg:gap-4 relative h-full">
 
 
-            {/* New: İzlenenler */}
+            {/* İzlenenler */}
             <Link
               href="/watched"
               className={`flex flex-col items-center justify-center h-full transition-all duration-200 px-3 group ${activeView === 'watched' ? activeColor : inactiveColor}`}
@@ -109,7 +112,7 @@ export function TopNav({ user }: TopNavProps) {
               <span className="text-[10px] mt-0.5 font-bold uppercase tracking-wider">İzlenenler</span>
             </Link>
 
-            {/* New: Listem */}
+            {/* Listem */}
             <Link
               href="/watchlist"
               className={`flex flex-col items-center justify-center h-full transition-all duration-200 px-3 group ${activeView === 'watchlist' ? activeColor : inactiveColor}`}
@@ -119,6 +122,8 @@ export function TopNav({ user }: TopNavProps) {
               </div>
               <span className="text-[10px] mt-0.5 font-bold uppercase tracking-wider">Listem</span>
             </Link>
+
+
 
             {/* Central Search Button with CORRECTED CURVED TEXT */}
             <div className="flex flex-col items-center justify-center h-full relative px-2 mx-2">
@@ -163,7 +168,7 @@ export function TopNav({ user }: TopNavProps) {
               </Link>
             </div>
 
-            {/* Akış Link */}
+            {/* Akış */}
             <Link
               href="/feed"
               className={`flex flex-col items-center justify-center h-full transition-all duration-200 px-3 group ${activeView === 'feed' ? activeColor : inactiveColor}`}
@@ -174,7 +179,7 @@ export function TopNav({ user }: TopNavProps) {
               <span className="text-[10px] mt-0.5 font-bold uppercase tracking-wider">Akış</span>
             </Link>
 
-            {/* New: İstatistikler */}
+            {/* İstatistikler */}
             <Link
               href="/stats"
               className={`flex flex-col items-center justify-center h-full transition-all duration-200 px-3 group ${activeView === 'stats' ? activeColor : inactiveColor}`}
@@ -184,6 +189,19 @@ export function TopNav({ user }: TopNavProps) {
               </div>
               <span className="text-[10px] mt-0.5 font-bold uppercase tracking-wider">İstatistik</span>
             </Link>
+
+            {desktopLibraryItems.map((item) => (
+              <Link
+                key={item.key}
+                href={item.href}
+                className={`flex flex-col items-center justify-center h-full transition-all duration-200 px-3 group ${activeView === item.key ? activeColor : inactiveColor}`}
+              >
+                <div className={`p-1.5 rounded-xl transition-colors ${activeView === item.key ? 'bg-amber-400/10' : 'group-hover:bg-white/5'}`}>
+                  <item.icon size={22} />
+                </div>
+                <span className="text-[10px] mt-0.5 font-bold uppercase tracking-wider">{item.label}</span>
+              </Link>
+            ))}
 
           </div>
 
@@ -252,24 +270,19 @@ export function TopNav({ user }: TopNavProps) {
                       <p className="text-[10px] text-amber-400 font-black uppercase tracking-[0.2em] mb-1">Hesap</p>
                       <p className="text-sm text-white font-black truncate">{user?.name || "Kullanıcı"}</p>
                     </div>
-                    <Link href="/profile" className="flex items-center gap-3 px-5 py-3.5 text-sm text-slate-300 hover:text-white hover:bg-amber-400/10 transition-all group" onClick={() => setProfileMenuOpen(false)}>
-                      <div className="w-9 h-9 rounded-xl bg-white/5 flex items-center justify-center group-hover:bg-amber-400/20 transition-colors">
-                        <User size={20} className="text-amber-400" />
-                      </div>
-                      <span className="font-bold">Profilini Gör</span>
-                    </Link>
-                    <Link href="/messages" className="flex items-center gap-3 px-5 py-3.5 text-sm text-slate-300 hover:text-white hover:bg-amber-400/10 transition-all group" onClick={() => setProfileMenuOpen(false)}>
-                      <div className="w-9 h-9 rounded-xl bg-white/5 flex items-center justify-center group-hover:bg-amber-400/20 transition-colors">
-                        <MessageCircle size={20} className="text-amber-400" />
-                      </div>
-                      <span className="font-bold">Mesajlar</span>
-                    </Link>
-                    <Link href="/community" className="flex items-center gap-3 px-5 py-3.5 text-sm text-slate-300 hover:text-white hover:bg-amber-400/10 transition-all group" onClick={() => setProfileMenuOpen(false)}>
-                      <div className="w-9 h-9 rounded-xl bg-white/5 flex items-center justify-center group-hover:bg-amber-400/20 transition-colors">
-                        <Users size={20} className="text-amber-400" />
-                      </div>
-                      <span className="font-bold">Topluluk</span>
-                    </Link>
+                    {profileNavItems.map((item) => (
+                      <Link
+                        key={item.key}
+                        href={item.href}
+                        className="flex items-center gap-3 px-5 py-3.5 text-sm text-slate-300 hover:text-white hover:bg-amber-400/10 transition-all group"
+                        onClick={() => setProfileMenuOpen(false)}
+                      >
+                        <div className="w-9 h-9 rounded-xl bg-white/5 flex items-center justify-center group-hover:bg-amber-400/20 transition-colors">
+                          <item.icon size={20} className="text-amber-400" />
+                        </div>
+                        <span className="font-bold">{item.label}</span>
+                      </Link>
+                    ))}
                     <div className="h-[1px] bg-white/5 my-2 mx-3" />
                     <form action={handleSignOut}>
                       <button type="submit" className="w-full flex items-center gap-3 px-5 py-3.5 text-sm text-rose-400 hover:bg-rose-500/10 transition-all group text-left">
@@ -286,18 +299,19 @@ export function TopNav({ user }: TopNavProps) {
                       <p className="text-[10px] text-amber-400 font-black uppercase tracking-[0.2em] mb-1">Ziyaretçi</p>
                       <p className="text-sm text-white font-black truncate">Giriş Yapılmadı</p>
                     </div>
-                    <Link href="/login" className="flex items-center gap-3 px-5 py-3.5 text-sm text-slate-300 hover:text-white hover:bg-amber-400/10 transition-all group" onClick={() => setProfileMenuOpen(false)}>
-                      <div className="w-9 h-9 rounded-xl bg-white/5 flex items-center justify-center group-hover:bg-amber-400/20 transition-colors">
-                        <User size={20} className="text-amber-400" />
-                      </div>
-                      <span className="font-bold">Giriş Yap</span>
-                    </Link>
-                    <Link href="/register" className="flex items-center gap-3 px-5 py-3.5 text-sm text-amber-400 hover:bg-amber-400/20 transition-all group" onClick={() => setProfileMenuOpen(false)}>
-                      <div className="w-9 h-9 rounded-xl bg-amber-400/10 flex items-center justify-center group-hover:bg-amber-400/30 transition-colors">
-                        <Compass size={20} />
-                      </div>
-                      <span className="font-black">Kayıt Ol</span>
-                    </Link>
+                    {guestNavItems.map((item) => (
+                      <Link
+                        key={item.key}
+                        href={item.href}
+                        className={`flex items-center gap-3 px-5 py-3.5 text-sm hover:text-white hover:bg-amber-400/10 transition-all group ${item.key === "register" ? "text-amber-400" : "text-slate-300"}`}
+                        onClick={() => setProfileMenuOpen(false)}
+                      >
+                        <div className="w-9 h-9 rounded-xl bg-white/5 flex items-center justify-center group-hover:bg-amber-400/20 transition-colors">
+                          <item.icon size={20} className="text-amber-400" />
+                        </div>
+                        <span className={item.key === "register" ? "font-black" : "font-bold"}>{item.label}</span>
+                      </Link>
+                    ))}
                   </>
                 )}
               </motion.div>

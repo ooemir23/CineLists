@@ -51,26 +51,26 @@ export function UpcomingEpisodesCarousel({ episodes }: UpcomingEpisodesCarouselP
     };
 
     return (
-        <div className="flex items-center gap-3">
-            <Link href="/upcoming-episodes" className="flex items-center gap-2 flex-shrink-0 group">
+        <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-3 w-full min-w-0">
+            <Link href="/upcoming-episodes" className="flex items-center gap-2 flex-shrink-0 group px-1">
                 <Calendar size={18} className="text-blue-400 group-hover:text-blue-300 transition-colors" />
-                <span className="text-sm font-bold text-white whitespace-nowrap group-hover:text-blue-200 transition-colors">Yakında</span>
+                <span className="text-sm font-bold text-white whitespace-nowrap group-hover:text-blue-200 transition-colors">Takvim</span>
             </Link>
 
             {/* Horizontal scroll */}
-            <div className="flex-1 overflow-x-auto scrollbar-hide">
-                <div className="flex gap-3 pb-1">
+            <div className="flex-1 w-full min-w-0 overflow-x-auto scrollbar-hide">
+                <div className="flex gap-3 pb-1 px-1">
                     {episodes.slice(0, 6).map((episode, idx) => (
                         <Link
                             key={idx}
                             href={`/tv/${episode.showId}`}
-                            className="group flex-shrink-0 w-64 flex gap-3 p-2.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 hover:border-blue-400/50 transition-all"
+                            className="group flex-shrink-0 w-[85vw] sm:w-72 flex gap-3 p-2.5 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/10 hover:border-blue-400/50 transition-all"
                         >
                             {/* Mini poster */}
                             {episode.posterPath && (
-                                <div className="relative w-14 h-20 rounded-lg overflow-hidden flex-shrink-0">
+                                <div className="relative w-16 h-24 rounded-xl overflow-hidden flex-shrink-0">
                                     <Image
-                                        src={`https://image.tmdb.org/t/p/w92${episode.posterPath}`}
+                                        src={`https://image.tmdb.org/t/p/w185${episode.posterPath}`}
                                         alt={episode.showTitle}
                                         fill
                                         className="object-cover group-hover:scale-110 transition-transform"
@@ -81,22 +81,24 @@ export function UpcomingEpisodesCarousel({ episodes }: UpcomingEpisodesCarouselP
                             {/* Info */}
                             <div className="flex-1 min-w-0 flex flex-col justify-between gap-2">
                                 <div className="min-w-0">
-                                    <h4 className="text-xs font-bold text-white line-clamp-1 group-hover:text-blue-400 transition-colors">
+                                    <h4 className="text-sm font-black text-white line-clamp-1 group-hover:text-blue-400 transition-colors">
                                         {episode.showTitle}
                                     </h4>
-                                    <p className="text-[10px] text-blue-200/80 mt-1 line-clamp-1">
+                                    <p className="text-xs text-blue-200/90 mt-0.5 line-clamp-1 font-bold">
                                         {formatEpisodeInfo(episode)}
                                     </p>
-                                    <p className="text-[10px] text-neutral-400 mt-1 line-clamp-1">
+                                    <p className="text-sm text-white font-black tracking-tight mt-1 line-clamp-1">
                                         {formatFullDate(episode.nextEpisodeDate)}
                                     </p>
                                 </div>
 
                                 <div className="min-w-0">
                                     <div className="flex items-center gap-2">
-                                        <div className="flex items-center gap-1 text-[10px] text-neutral-300">
+                                        <div className="flex items-center gap-1 text-xs text-neutral-200">
                                             <Clock3 className="w-3 h-3 text-blue-300" />
-                                            <span>{formatDaysLeft(episode.nextEpisodeDate) || "Tarih yok"}</span>
+                                            <span className="font-bold text-blue-200">
+                                                {formatDaysLeft(episode.nextEpisodeDate) || "Tarih yok"}
+                                            </span>
                                         </div>
                                     </div>
                                 </div>
@@ -124,7 +126,7 @@ export function UpcomingEpisodesCarousel({ episodes }: UpcomingEpisodesCarouselP
                                                 ))}
                                             </div>
                                         )}
-                                        <div className="text-[8px] text-blue-300 font-bold truncate">
+                                        <div className="text-[9px] text-blue-300 font-bold truncate">
                                             {episode.platforms.join(" · ")}
                                         </div>
                                     </div>

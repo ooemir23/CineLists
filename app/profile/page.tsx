@@ -26,7 +26,7 @@ export default async function ProfilePage() {
     }
 
     // Fetch user stats & data
-    const [user, stats, movieGenres, tvGenres, recentWatched, allWatched, toWatch, customLists] = await Promise.all([
+    const [user, stats, movieGenres, tvGenres, recentWatched, allWatched, toWatch] = await Promise.all([
         prisma.user.findUnique({
             where: { id: session.user.id },
             include: {
@@ -35,11 +35,6 @@ export default async function ProfilePage() {
                     take: 30,
                     orderBy: { createdAt: "desc" },
                     include: { media: true }
-                },
-                customLists: {
-                    take: 4,
-                    orderBy: { createdAt: "desc" },
-                    include: { _count: { select: { items: true } } },
                 },
                 _count: {
                     select: {
@@ -71,12 +66,6 @@ export default async function ProfilePage() {
             take: 12,
             orderBy: { addedAt: "desc" },
             include: { media: true },
-        }),
-        prisma.customList.findMany({
-            where: { userId: session.user.id },
-            take: 4,
-            orderBy: { createdAt: "desc" },
-            include: { _count: { select: { items: true } } },
         }),
     ]);
 
@@ -125,15 +114,7 @@ export default async function ProfilePage() {
         ? ratedItems.reduce((sum: number, w: any) => sum + (w.rating || 0), 0) / ratedItems.length
         : 0;
 
-    // Format custom lists
-    const formattedLists = (customLists || user.customLists || []).map((list: any) => ({
-        id: list.id,
-        name: list.name,
-        description: list.description,
-        itemCount: list._count?.items || 0,
-        isPublic: list.isPublic,
-        createdAt: list.createdAt,
-    }));
+
 
     return (
         <ProfileClientShell
@@ -145,7 +126,6 @@ export default async function ProfilePage() {
             averageRating={averageRating}
             watchedItems={allWatched}
             watchlistItems={toWatch}
-            customLists={formattedLists}
         />
     );
 }

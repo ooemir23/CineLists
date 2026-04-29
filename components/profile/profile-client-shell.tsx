@@ -49,7 +49,7 @@ interface ProfileClientShellProps {
     averageRating: number;
     watchedItems?: any[];
     watchlistItems?: any[];
-    customLists?: any[];
+
 }
 
 export function ProfileClientShell({
@@ -61,7 +61,7 @@ export function ProfileClientShell({
     averageRating,
     watchedItems = [],
     watchlistItems = [],
-    customLists = [],
+
 }: ProfileClientShellProps) {
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 

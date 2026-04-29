@@ -29,8 +29,6 @@ export async function checkAndUnlockAchievements(userId: string) {
     following,
     followers,
     recommendations,
-    lists,
-    listItems,
     genres,
   ] = await Promise.all([
     prisma.watched.count({
@@ -46,14 +44,6 @@ export async function checkAndUnlockAchievements(userId: string) {
     prisma.follow.count({ where: { followerId: userId } }),
     prisma.follow.count({ where: { followingId: userId } }),
     prisma.recommendation.count({ where: { senderId: userId } }),
-    prisma.customList.count({ where: { userId } }),
-    prisma.customListItem.groupBy({
-      by: ["listId"],
-      where: { list: { userId } },
-      _count: { id: true },
-      orderBy: { _count: { id: "desc" } },
-      take: 1,
-    }),
     prisma.watched.findMany({
       where: { userId },
       include: { media: { select: { genres: true } } },
@@ -72,7 +62,6 @@ export async function checkAndUnlockAchievements(userId: string) {
   const hasGenreMaster = Object.values(genreCounts).some((c) => c >= 20);
 
   const totalWatched = watchedMovies + watchedTVShows;
-  const maxListItems = listItems[0]?._count?.id || 0;
 
   // Rozet kontrolleri
   const checks: [string, boolean][] = [
@@ -103,9 +92,6 @@ export async function checkAndUnlockAchievements(userId: string) {
     ["RECOMMENDER", recommendations >= 5],
     ["COMMENTER_10", comments >= 10],
     ["COMMENTER_50", comments >= 50],
-    ["LIST_CREATOR", lists >= 1],
-    ["LIST_MASTER", lists >= 5],
-    ["CURATOR", maxListItems >= 25],
   ];
 
   // Gece kuşu kontrolü

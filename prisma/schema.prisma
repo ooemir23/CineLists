@@ -57,11 +57,11 @@ model User {
   activityRecommendations Activity[]       @relation("ActivityRecommendations")
   activities              Activity[]
   comments                Comment[]
-  customLists             CustomList[]
+
   favoritePersons         FavoritePerson[]
   following               Follow[]         @relation("following")
   followedBy              Follow[]         @relation("followedBy")
-  likedLists              ListLike[]
+
   notifications           Indicates[]
   receivedMessages        Message[]        @relation("receivedMessages")
   sentMessages            Message[]        @relation("sentMessages")
@@ -118,7 +118,7 @@ model MediaItem {
   voteAverage     Float?
   runtime         Int?
   activities      Activity[]
-  customListItems CustomListItem[]
+
   episodes        Episode[]
   recommendations Recommendation[]
   toWatchBy       ToWatch[]
@@ -261,7 +261,7 @@ enum ActivityType {
   WATCHED
   RATED
   REVIEWED
-  ADDED_TO_LIST
+
 }
 
 enum NotificationType {
@@ -272,50 +272,7 @@ enum NotificationType {
   FRIEND_ACTIVITY
 }
 
-// ============================================
-// CUSTOM LISTS / KOLEKSİYONLAR
-// ============================================
 
-model CustomList {
-  id          String   @id @default(cuid())
-  title       String
-  description String?
-  isPublic    Boolean  @default(true)
-  coverImage  String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  userId      String
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  items       CustomListItem[]
-  likes       ListLike[]
-
-  @@index([userId])
-}
-
-model CustomListItem {
-  id         String   @id @default(cuid())
-  listId     String
-  mediaId    String
-  order      Int      @default(0)
-  addedAt    DateTime @default(now())
-  note       String?
-  list       CustomList @relation(fields: [listId], references: [id], onDelete: Cascade)
-  media      MediaItem @relation(fields: [mediaId], references: [id])
-
-  @@unique([listId, mediaId])
-  @@index([listId])
-}
-
-model ListLike {
-  id        String   @id @default(cuid())
-  listId    String
-  userId    String
-  createdAt DateTime @default(now())
-  list      CustomList @relation(fields: [listId], references: [id], onDelete: Cascade)
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([listId, userId])
-}
 
 // ============================================
 // ACHIEVEMENT / ROZET SİSTEMİ
@@ -369,10 +326,7 @@ enum AchievementType {
   COMMENTER_10         // 10 yorum yap
   COMMENTER_50         // 50 yorum yap
   
-  // Liste rozetleri
-  LIST_CREATOR         // İlk listeyi oluştur
-  LIST_MASTER          // 5 liste oluştur
-  CURATOR              // Bir listeye 25+ içerik ekle
+
   
   // Özel rozetler
   EARLY_BIRD           // Platformun erken kullanıcısı

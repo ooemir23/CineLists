@@ -49,7 +49,7 @@ interface PublicProfileShellProps {
   averageRating: number;
   watchedItems?: any[];
   watchlistItems?: any[];
-  customLists?: any[];
+
   isFollowing: boolean;
   currentUserId?: string;
 }
@@ -63,7 +63,7 @@ export function PublicProfileShell({
   averageRating,
   watchedItems = [],
   watchlistItems = [],
-  customLists = [],
+
   isFollowing: initialIsFollowing,
   currentUserId,
 }: PublicProfileShellProps) {

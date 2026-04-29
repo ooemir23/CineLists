@@ -14,7 +14,6 @@ import { ActivityHeatmap } from "@/components/profile/activity-heatmap";
 import { RandomSuggestion } from "@/components/profile/random-suggestion";
 import { WatchCountries } from "@/components/profile/watch-countries";
 import { PeriodStats } from "@/components/profile/period-stats";
-import { CustomListsPreview } from "@/components/profile/custom-lists-preview";
 import { PublicProfileShell } from "@/components/profile/public-profile-shell";
 import { getFollowStatus } from "@/lib/social-actions";
 
@@ -35,8 +34,7 @@ export default async function PublicProfilePage({
   }
 
   // Fetch user data
-  const [user, stats, movieGenres, tvGenres, recentWatched, allWatched, toWatch, customLists, isFollowing] =
-    await Promise.all([
+    const [user, stats, movieGenres, tvGenres, recentWatched, allWatched, toWatch, isFollowing] = await Promise.all([
       prisma.user.findUnique({
         where: { id: userId },
         include: {
@@ -45,11 +43,6 @@ export default async function PublicProfilePage({
             take: 30,
             orderBy: { createdAt: "desc" },
             include: { media: true },
-          },
-          customLists: {
-            take: 4,
-            orderBy: { createdAt: "desc" },
-            include: { _count: { select: { items: true } } },
           },
           _count: {
             select: {
@@ -81,12 +74,6 @@ export default async function PublicProfilePage({
         take: 12,
         orderBy: { addedAt: "desc" },
         include: { media: true },
-      }),
-      prisma.customList.findMany({
-        where: { userId },
-        take: 4,
-        orderBy: { createdAt: "desc" },
-        include: { _count: { select: { items: true } } },
       }),
       session?.user?.id ? getFollowStatus(userId) : false,
     ]);
@@ -134,15 +121,7 @@ export default async function PublicProfilePage({
       ? ratedItems.reduce((sum: number, w: any) => sum + (w.rating || 0), 0) / ratedItems.length
       : 0;
 
-  // Format custom lists
-  const formattedLists = (customLists || user.customLists || []).map((list: any) => ({
-    id: list.id,
-    name: list.name,
-    description: list.description,
-    itemCount: list._count?.items || 0,
-    isPublic: list.isPublic,
-    createdAt: list.createdAt,
-  }));
+
 
   return (
     <PublicProfileShell
@@ -154,7 +133,6 @@ export default async function PublicProfilePage({
       averageRating={averageRating}
       watchedItems={allWatched}
       watchlistItems={toWatch}
-      customLists={formattedLists}
       isFollowing={isFollowing}
       currentUserId={session?.user?.id}
     />

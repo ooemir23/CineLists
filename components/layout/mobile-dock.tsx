@@ -5,20 +5,18 @@ import { usePathname } from "next/navigation";
 import {
   Home,
   User,
-  MessageCircle,
-  Compass,
-  List,
-  Check,
-  Bookmark,
-  BarChart3,
-  Bell,
   Search,
   LogOut,
-  Award,
-  Calendar
+  List,
+  Compass,
 } from "lucide-react";
 import { handleSignOut } from "@/lib/auth-actions";
 import { cn } from "@/lib/utils";
+import {
+  libraryNavItems,
+  profileNavItems,
+  guestNavItems,
+} from "@/components/layout/nav-items";
 
 const dockBg = 'bg-slate-900/90 backdrop-blur-xl border-t border-white/10';
 const activeColor = 'text-amber-400';
@@ -75,37 +73,20 @@ export function MobileDock({ user }: MobileDockProps) {
               <div className="px-4 py-2 mb-1">
                 <span className="text-[10px] font-black text-amber-400/50 uppercase tracking-widest">Kütüphanem</span>
               </div>
-              <Link href="/watched" className="flex items-center gap-3 px-4 py-3 text-sm text-white hover:bg-white/5 transition active:scale-95" onClick={() => setMenuOpen(false)}>
-                <div className="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-400">
-                  <Check size={18} strokeWidth={2.5} />
-                </div>
-                <span className="font-bold">İzlenenler</span>
-              </Link>
-              <Link href="/watchlist" className="flex items-center gap-3 px-4 py-3 text-sm text-white hover:bg-white/5 transition active:scale-95" onClick={() => setMenuOpen(false)}>
-                <div className="w-8 h-8 rounded-lg bg-amber-500/10 flex items-center justify-center text-amber-400">
-                  <Bookmark size={18} strokeWidth={2.5} />
-                </div>
-                <span className="font-bold">Listem</span>
-              </Link>
-              <Link href="/lists" className="flex items-center gap-3 px-4 py-3 text-sm text-white hover:bg-white/5 transition active:scale-95" onClick={() => setMenuOpen(false)}>
-                <div className="w-8 h-8 rounded-lg bg-blue-500/10 flex items-center justify-center text-blue-400">
-                  <List size={18} strokeWidth={2.5} />
-                </div>
-                <span className="font-bold">Listelerim</span>
-              </Link>
+              {libraryNavItems.map((item) => (
+                <Link
+                  key={item.key}
+                  href={item.href}
+                  className="flex items-center gap-3 px-4 py-3 text-sm text-white hover:bg-white/5 transition active:scale-95"
+                  onClick={() => setMenuOpen(false)}
+                >
+                  <div className={cn("w-8 h-8 rounded-lg flex items-center justify-center", item.iconBgClass, item.iconTextClass)}>
+                    <item.icon size={18} strokeWidth={2.5} />
+                  </div>
+                  <span className="font-bold">{item.label}</span>
+                </Link>
+              ))}
               <div className="h-[1px] bg-white/5 my-2 mx-4" />
-              <Link href="/calendar" className="flex items-center gap-3 px-4 py-3 text-sm text-white hover:bg-white/5 transition active:scale-95" onClick={() => setMenuOpen(false)}>
-                <div className="w-8 h-8 rounded-lg bg-purple-500/10 flex items-center justify-center text-purple-400">
-                  <Calendar size={18} strokeWidth={2.5} />
-                </div>
-                <span className="font-bold">Takvim</span>
-              </Link>
-              <Link href="/achievements" className="flex items-center gap-3 px-4 py-3 text-sm text-white hover:bg-white/5 transition active:scale-95" onClick={() => setMenuOpen(false)}>
-                <div className="w-8 h-8 rounded-lg bg-yellow-500/10 flex items-center justify-center text-yellow-400">
-                  <Award size={18} strokeWidth={2.5} />
-                </div>
-                <span className="font-bold">Rozetler</span>
-              </Link>
             </div>
           )}
 
@@ -160,24 +141,19 @@ export function MobileDock({ user }: MobileDockProps) {
             <div className="absolute bottom-20 right-0 w-52 bg-slate-900/95 backdrop-blur-2xl rounded-3xl shadow-2xl flex flex-col py-3 z-50 border border-white/10 overflow-hidden animate-in slide-in-from-bottom-4 zoom-in-95 duration-200">
               {user ? (
                 <>
-                  <Link href="/profile" className="flex items-center gap-3 px-4 py-3 text-sm text-white hover:bg-white/5 transition active:scale-95" onClick={() => setProfileMenuOpen(false)}>
-                    <div className="w-8 h-8 rounded-lg bg-amber-400/10 flex items-center justify-center text-amber-400">
-                      <User size={18} strokeWidth={2.5} />
-                    </div>
-                    <span className="font-bold">Profilim</span>
-                  </Link>
-                  <Link href="/messages" className="flex items-center gap-3 px-4 py-3 text-sm text-white hover:bg-white/5 transition active:scale-95" onClick={() => setProfileMenuOpen(false)}>
-                    <div className="w-8 h-8 rounded-lg bg-blue-400/10 flex items-center justify-center text-blue-400">
-                      <MessageCircle size={18} strokeWidth={2.5} />
-                    </div>
-                    <span className="font-bold">Mesajlar</span>
-                  </Link>
-                  <Link href="/notifications" className="flex items-center gap-3 px-4 py-3 text-sm text-white hover:bg-white/5 transition active:scale-95" onClick={() => setProfileMenuOpen(false)}>
-                    <div className="w-8 h-8 rounded-lg bg-rose-400/10 flex items-center justify-center text-rose-400">
-                      <Bell size={18} strokeWidth={2.5} />
-                    </div>
-                    <span className="font-bold">Bildirimler</span>
-                  </Link>
+                  {profileNavItems.map((item) => (
+                    <Link
+                      key={item.key}
+                      href={item.href}
+                      className="flex items-center gap-3 px-4 py-3 text-sm text-white hover:bg-white/5 transition active:scale-95"
+                      onClick={() => setProfileMenuOpen(false)}
+                    >
+                      <div className={cn("w-8 h-8 rounded-lg flex items-center justify-center", item.iconBgClass, item.iconTextClass)}>
+                        <item.icon size={18} strokeWidth={2.5} />
+                      </div>
+                      <span className="font-bold">{item.label}</span>
+                    </Link>
+                  ))}
                   <div className="h-[1px] bg-white/5 my-2 mx-4" />
                   <form action={handleSignOut}>
                     <button type="submit" className="w-full flex items-center gap-3 px-4 py-3 text-sm text-rose-400 hover:bg-rose-500/10 transition active:scale-95">
@@ -190,18 +166,22 @@ export function MobileDock({ user }: MobileDockProps) {
                 </>
               ) : (
                 <>
-                  <Link href="/login" className="flex items-center gap-3 px-4 py-3 text-sm text-white hover:bg-white/5 transition active:scale-95" onClick={() => setProfileMenuOpen(false)}>
-                    <div className="w-8 h-8 rounded-lg bg-amber-400/10 flex items-center justify-center text-amber-400">
-                      <User size={18} strokeWidth={2.5} />
-                    </div>
-                    <span className="font-bold">Giriş Yap</span>
-                  </Link>
-                  <Link href="/register" className="flex items-center gap-3 px-4 py-3 text-sm text-amber-400 hover:bg-amber-400/10 transition active:scale-95" onClick={() => setProfileMenuOpen(false)}>
-                    <div className="w-8 h-8 rounded-lg bg-amber-400/20 flex items-center justify-center text-amber-400">
-                      <Compass size={18} strokeWidth={2.5} />
-                    </div>
-                    <span className="font-black uppercase tracking-tight">Kayıt Ol</span>
-                  </Link>
+                  {guestNavItems.map((item) => (
+                    <Link
+                      key={item.key}
+                      href={item.href}
+                      className={cn(
+                        "flex items-center gap-3 px-4 py-3 text-sm hover:bg-white/5 transition active:scale-95",
+                        item.key === "register" ? "text-amber-400" : "text-white"
+                      )}
+                      onClick={() => setProfileMenuOpen(false)}
+                    >
+                      <div className={cn("w-8 h-8 rounded-lg flex items-center justify-center", item.iconBgClass, item.iconTextClass)}>
+                        <item.icon size={18} strokeWidth={2.5} />
+                      </div>
+                      <span className={item.key === "register" ? "font-black uppercase tracking-tight" : "font-bold"}>{item.label}</span>
+                    </Link>
+                  ))}
                 </>
               )}
             </div>

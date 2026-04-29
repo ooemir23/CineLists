@@ -35,7 +35,7 @@ import { addActivityComment, getActivityComments } from "@/lib/comment-actions";
 type ActivityPostProps = {
     activity: {
         id: string;
-        type: "WATCHED" | "RATED" | "REVIEWED" | "ADDED_TO_LIST";
+        type: "WATCHED" | "RATED" | "REVIEWED";
         createdAt: Date;
         rating: number | null;
         review: string | null;
@@ -147,7 +147,7 @@ export function ActivityPost({ activity }: ActivityPostProps) {
         WATCHED: "izledi",
         RATED: "puan verdi",
         REVIEWED: "inceledi",
-        ADDED_TO_LIST: "listesine ekledi",
+
     }[activity.type];
 
     const formatRuntime = (minutes: number) => {

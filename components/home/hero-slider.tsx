@@ -27,7 +27,7 @@ interface HeroSliderProps {
 
 const CATEGORY_CONFIG = {
     trending: { label: "Günün En Gözdesi", icon: Star, color: "text-amber-400", bgColor: "bg-amber-400" },
-    upcoming: { label: "Yakında Vizyonda", icon: Calendar, color: "text-blue-400", bgColor: "bg-blue-400" },
+    upcoming: { label: "Takvim", icon: Calendar, color: "text-blue-400", bgColor: "bg-blue-400" },
     tv: { label: "Popüler Dizi", icon: TrendingUp, color: "text-emerald-400", bgColor: "bg-emerald-400" },
     popular: { label: "Haftanın Filmi", icon: Trophy, color: "text-purple-400", bgColor: "bg-purple-400" },
     personalized: { label: "Size Özel Öneri", icon: Trophy, color: "text-rose-400", bgColor: "bg-rose-400" },
