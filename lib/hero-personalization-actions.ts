@@ -88,7 +88,7 @@ export async function getFavoriteActorsUpcoming(): Promise<UpcomingActorProject[
 
         for (const person of favoritePersons) {
             try {
-                const data = await tmdb.getPersonCombinedCredits(person.tmdbId);
+                const data = await tmdb.getPersonCombinedCredits(person.tmdbId.toString());
                 const upcomingItems = (data.cast || [])
                     .filter((item: any) => item.media_type && (item.media_type === "movie" || item.media_type === "tv"))
                     .map((item: any) => ({
