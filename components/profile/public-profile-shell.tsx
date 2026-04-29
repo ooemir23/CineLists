@@ -177,6 +177,22 @@ export function PublicProfileShell({
           </section>
         )}
 
+        {/* Followed Content */}
+        <RecentMedia
+          items={watchlistItems.map((item: any) => ({
+            id: item.media.id,
+            title: item.media.title,
+            posterPath: item.media.posterPath,
+            rating: item.media.voteAverage || 0,
+            type: item.media.type,
+            watchedAt: item.addedAt,
+          }))}
+          title="Listesi"
+          emptyMessage="Listesine eklenen bir içerik yok"
+          viewAllHref="/watchlist"
+          maxItems={6}
+        />
+
         {/* Favorite Persons */}
         <section className="space-y-3">
           <h2 className="text-sm font-bold text-white tracking-tight uppercase">

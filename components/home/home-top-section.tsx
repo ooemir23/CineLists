@@ -1,4 +1,6 @@
 import { tmdb } from "@/lib/tmdb";
+import { auth } from "@/auth";
+import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 import { ArrowRight, Rss } from "lucide-react";
 import { FriendsActivity } from "./friends-activity";
@@ -7,13 +9,18 @@ import {
     getFavoriteActorsUpcoming,
     getWatchedShowsNextEpisodes,
     getFriendsViewingStats,
+    getFollowedHighlights,
+    getPlatformHighlights,
+    getTodayHighlights,
+    getContinueWatchingHighlights,
+    getFriendsTrendingHighlights,
 } from "@/lib/hero-personalization-actions";
 import { UpcomingEpisodesCarousel } from "./carousels/upcoming-episodes-carousel";
 import { FavoriteActorsCarousel } from "./carousels/favorite-actors-carousel";
 
 export async function HomeTopSection({ personalizedResults }: { personalizedResults?: any[] }) {
     // Fetch diverse content for the slider - use personalized data
-    const [trendingMovies, upcomingMovies, trendingTV, popularMovies, favoriteActorProjects, upcomingEpisodes, friendStats] = await Promise.all([
+    const [trendingMovies, upcomingMovies, trendingTV, popularMovies, favoriteActorProjects, upcomingEpisodes, friendStats, followedHighlights, platformHighlights, todayHighlights, continueHighlights, friendsTrendingHighlights, userPreferences] = await Promise.all([
         tmdb.getTrendingMovies(),
         tmdb.getUpcomingMovies(),
         tmdb.getTrendingTV(),
@@ -21,6 +28,19 @@ export async function HomeTopSection({ personalizedResults }: { personalizedResu
         getFavoriteActorsUpcoming(),
         getWatchedShowsNextEpisodes(),
         getFriendsViewingStats(),
+        getFollowedHighlights(),
+        getPlatformHighlights(),
+        getTodayHighlights(),
+        getContinueWatchingHighlights(),
+        getFriendsTrendingHighlights(),
+        (async () => {
+            const session = await auth();
+            if (!session?.user?.id) return { favoriteGenres: [], platforms: [] };
+            return prisma.user.findUnique({
+                where: { id: session.user.id },
+                select: { favoriteGenres: true, platforms: true },
+            }) || { favoriteGenres: [], platforms: [] };
+        })(),
     ]);
 
     // Build hero slider items with personalized content
@@ -66,11 +86,140 @@ export async function HomeTopSection({ personalizedResults }: { personalizedResu
         .map(item => ({
             ...item,
             media_type: item.mediaType || "movie",
-            category: "personalized"
+            category: "personalized",
+            genreIds: item.genreIds || [],
         }))
         .filter(item => !!item.backdrop_path);
 
-    const items = [...personalizedItems, ...trendingItems].slice(0, 5);
+    const followedItems = (followedHighlights || []).map(item => ({
+        id: item.tmdbId,
+        title: item.title,
+        overview: item.overview,
+        backdrop_path: item.backdropPath,
+        vote_average: item.voteAverage,
+        media_type: item.mediaType,
+        category: "followed" as const,
+        eventLabel: item.eventLabel,
+        genreIds: item.genreIds || [],
+        metaLabel: item.metaLabel,
+    }));
+
+    const platformItems = (platformHighlights || []).map(item => ({
+        id: item.tmdbId,
+        title: item.title,
+        overview: item.overview,
+        backdrop_path: item.backdropPath,
+        vote_average: item.voteAverage,
+        media_type: item.mediaType,
+        category: "followed" as const,
+        eventLabel: item.eventLabel,
+        genreIds: item.genreIds || [],
+        metaLabel: item.metaLabel,
+    }));
+
+    const todayItems = (todayHighlights || []).map(item => ({
+        id: item.tmdbId,
+        title: item.title,
+        overview: item.overview,
+        backdrop_path: item.backdropPath,
+        vote_average: item.voteAverage,
+        media_type: item.mediaType,
+        category: "followed" as const,
+        eventLabel: item.eventLabel,
+        genreIds: item.genreIds || [],
+        metaLabel: item.metaLabel,
+    }));
+
+    const continueItems = (continueHighlights || []).map(item => ({
+        id: item.tmdbId,
+        title: item.title,
+        overview: item.overview,
+        backdrop_path: item.backdropPath,
+        vote_average: item.voteAverage,
+        media_type: item.mediaType,
+        category: "followed" as const,
+        eventLabel: item.eventLabel,
+        genreIds: item.genreIds || [],
+        metaLabel: item.metaLabel,
+    }));
+
+    const friendsTrendingItems = (friendsTrendingHighlights || []).map(item => ({
+        id: item.tmdbId,
+        title: item.title,
+        overview: item.overview,
+        backdrop_path: item.backdropPath,
+        vote_average: item.voteAverage,
+        media_type: item.mediaType,
+        category: "followed" as const,
+        eventLabel: item.eventLabel,
+        genreIds: item.genreIds || [],
+        metaLabel: item.metaLabel,
+    }));
+
+    const mergedItems = [
+        ...followedItems,
+        ...platformItems,
+        ...todayItems,
+        ...continueItems,
+        ...friendsTrendingItems,
+        ...personalizedItems,
+        ...trendingItems,
+    ];
+
+    const priorityByEvent: Record<string, number> = {
+        "Yeni Bolum": 1,
+        "Bolum Yakinda": 2,
+        "Bugun Yayinda": 3,
+        "Vizyona Girdi": 4,
+        "Platformunda Yeni": 5,
+        "Platformda Yayinda": 6,
+        "Devam Et": 7,
+        "Arkadaslarinda Yukseldi": 8,
+    };
+
+    const priorityByCategory: Record<string, number> = {
+        followed: 1,
+        personalized: 2,
+        trending: 3,
+        upcoming: 4,
+        tv: 5,
+        popular: 6,
+    };
+
+    const preferredGenres = (userPreferences?.favoriteGenres || [])
+        .map((g: string) => Number(g))
+        .filter((g) => !Number.isNaN(g));
+    const preferredGenreSet = new Set(preferredGenres);
+
+    const deduped = Array.from(
+        new Map(mergedItems.map((item) => [`${item.media_type}-${item.id}`, item])).values()
+    );
+
+    const computeBehaviorScore = (item: any) => {
+        const genres = item.genreIds || [];
+        const matching = genres.filter((id: number) => preferredGenreSet.has(id)).length;
+        const genreScore = matching > 0 ? 30 + matching * 10 : 0;
+        const typeScore = item.media_type === "tv" ? 6 : 0;
+        return genreScore + typeScore;
+    };
+
+    const items = deduped
+        .sort((a, b) => {
+            const aEvent = a.eventLabel ? priorityByEvent[a.eventLabel] ?? 99 : 99;
+            const bEvent = b.eventLabel ? priorityByEvent[b.eventLabel] ?? 99 : 99;
+            if (aEvent !== bEvent) return aEvent - bEvent;
+
+            const aBehavior = computeBehaviorScore(a);
+            const bBehavior = computeBehaviorScore(b);
+            if (aBehavior !== bBehavior) return bBehavior - aBehavior;
+
+            const aCategory = priorityByCategory[a.category] ?? 99;
+            const bCategory = priorityByCategory[b.category] ?? 99;
+            if (aCategory !== bCategory) return aCategory - bCategory;
+
+            return (b.vote_average || 0) - (a.vote_average || 0);
+        })
+        .slice(0, 10);
     const friendPopularIds = friendStats.map(item => item.tmdbId);
 
     return (

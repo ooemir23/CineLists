@@ -126,7 +126,7 @@ export function MediaActions({
                         <Plus className="w-5 h-5" />
                     )}
                     <span className={cn(isMinimal && "font-semibold")}>
-                        {inWatchlist ? "Listemde" : "Listeme Ekle"}
+                        {inWatchlist ? "Takiptesin" : "Takip Et"}
                     </span>
                 </button>
 

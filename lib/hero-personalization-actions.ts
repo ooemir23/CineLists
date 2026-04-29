@@ -12,6 +12,7 @@ export interface UpcomingActorProject {
     voteAverage: number;
     mediaType: "movie" | "tv";
     actorName: string;
+    actorProfilePath?: string | null;
 }
 
 export interface UpcomingEpisode {
@@ -36,6 +37,34 @@ export interface FriendStats {
     voteAverage: number;
 }
 
+export interface FollowedHighlight {
+    tmdbId: number;
+    title: string;
+    overview: string;
+    backdropPath: string | null;
+    mediaType: "movie" | "tv";
+    voteAverage: number;
+    eventLabel: string;
+    genreIds?: number[];
+    metaLabel?: string;
+}
+
+const PROVIDER_IDS: Record<string, number> = {
+    netflix: 8,
+    "amazon prime video": 9,
+    primevideo: 9,
+    "disney plus": 337,
+    "disney+": 337,
+    "apple tv": 350,
+    "apple tv+": 350,
+    "hbo max": 384,
+    max: 384,
+    "paramount+": 531,
+    "mubi": 11,
+    "blutv": 252,
+    "gain": 546,
+};
+
 /**
  * Get upcoming projects from favorite actors
  */
@@ -55,20 +84,33 @@ export async function getFavoriteActorsUpcoming(): Promise<UpcomingActorProject[
         // Fetch upcoming projects for each actor
         const projects: UpcomingActorProject[] = [];
 
+        const today = new Date();
+
         for (const person of favoritePersons) {
             try {
-                const data = await tmdb.getPersonUpcoming(person.tmdbId);
-                const upcomingItems = (data.results || [])
+                const data = await tmdb.getPersonCombinedCredits(person.tmdbId);
+                const upcomingItems = (data.cast || [])
                     .filter((item: any) => item.media_type && (item.media_type === "movie" || item.media_type === "tv"))
-                    .slice(0, 2) // Top 2 per actor
+                    .map((item: any) => ({
+                        ...item,
+                        releaseDate: item.release_date || item.first_air_date || null,
+                    }))
+                    .filter((item: any) => {
+                        if (!item.releaseDate) return false;
+                        const date = new Date(item.releaseDate);
+                        return date >= today;
+                    })
+                    .sort((a: any, b: any) => new Date(a.releaseDate).getTime() - new Date(b.releaseDate).getTime())
+                    .slice(0, 2)
                     .map((item: any) => ({
                         id: item.id,
                         title: item.title || item.name,
                         posterPath: item.poster_path,
-                        releaseDate: item.release_date || item.first_air_date,
+                        releaseDate: item.releaseDate,
                         voteAverage: item.vote_average || 0,
                         mediaType: item.media_type as "movie" | "tv",
                         actorName: person.name,
+                        actorProfilePath: person.profilePath || null,
                     }));
 
                 projects.push(...upcomingItems);
@@ -213,6 +255,246 @@ export async function getFriendsViewingStats(): Promise<FriendStats[]> {
         return topStats;
     } catch (error) {
         console.error("Error getting friends viewing stats:", error);
+        return [];
+    }
+}
+
+const isWithinDays = (dateStr: string | null | undefined, days: number) => {
+    if (!dateStr) return false;
+    const now = new Date();
+    const target = new Date(dateStr);
+    const diffMs = now.getTime() - target.getTime();
+    const diffDays = diffMs / (1000 * 60 * 60 * 24);
+    return diffDays >= 0 && diffDays <= days;
+};
+
+const isWithinNextDays = (dateStr: string | null | undefined, days: number) => {
+    if (!dateStr) return false;
+    const now = new Date();
+    const target = new Date(dateStr);
+    const diffMs = target.getTime() - now.getTime();
+    const diffDays = diffMs / (1000 * 60 * 60 * 24);
+    return diffDays >= 0 && diffDays <= days;
+};
+
+const matchesPlatforms = (providers: any[] = [], preferred: string[] = []) => {
+    if (providers.length === 0) return false;
+    if (preferred.length === 0) return true;
+    const normalizedPreferred = preferred.map(p => p.toLowerCase());
+    return providers.some((p) => normalizedPreferred.includes((p.provider_name || "").toLowerCase()));
+};
+
+export async function getFollowedHighlights(): Promise<FollowedHighlight[]> {
+    try {
+        const session = await auth();
+        if (!session?.user?.id) return [];
+
+        const [user, followedItems] = await Promise.all([
+            prisma.user.findUnique({
+                where: { id: session.user.id },
+                select: { platforms: true },
+            }),
+            prisma.toWatch.findMany({
+                where: { userId: session.user.id },
+                take: 6,
+                orderBy: { addedAt: "desc" },
+                include: { media: true },
+            }),
+        ]);
+
+        if (!followedItems.length) return [];
+
+        const preferredPlatforms = user?.platforms || [];
+
+        const highlights = await Promise.all(
+            followedItems.map(async (item) => {
+                const mediaType = item.media.type === "TV" ? "tv" : "movie";
+                const data = await tmdb.getDetails(mediaType, item.media.tmdbId.toString()).catch(() => null);
+                if (!data) return null;
+
+                const providers = await tmdb.getWatchProviders(mediaType, item.media.tmdbId.toString()).catch(() => null);
+                const flatrate = providers?.results?.TR?.flatrate || [];
+
+                let eventLabel: string | null = null;
+
+                if (mediaType === "tv") {
+                    const lastEpisodeDate = data.last_episode_to_air?.air_date || null;
+                    const nextEpisodeDate = data.next_episode_to_air?.air_date || null;
+                    if (isWithinDays(lastEpisodeDate, 7)) {
+                        eventLabel = "Yeni Bolum";
+                    } else if (isWithinNextDays(nextEpisodeDate, 7)) {
+                        eventLabel = "Yeni Bolum Yakinda";
+                    }
+                }
+
+                if (!eventLabel && mediaType === "movie") {
+                    const releaseDate = data.release_date || null;
+                    if (isWithinDays(releaseDate, 30)) {
+                        eventLabel = "Vizyona Girdi";
+                    }
+                }
+
+                if (!eventLabel && matchesPlatforms(flatrate, preferredPlatforms)) {
+                    eventLabel = "Platformda Yayinda";
+                }
+
+                if (!eventLabel) return null;
+
+                return {
+                    tmdbId: data.id,
+                    title: data.title || data.name || item.media.title,
+                    overview: data.overview || "",
+                    backdropPath: data.backdrop_path || null,
+                    mediaType,
+                    voteAverage: data.vote_average || 0,
+                    eventLabel,
+                } as FollowedHighlight;
+            })
+        );
+
+        return highlights.filter((item): item is FollowedHighlight => !!item && !!item.backdropPath).slice(0, 3);
+    } catch (error) {
+        console.error("Error getting followed highlights:", error);
+        return [];
+    }
+}
+
+const normalizeProvider = (name: string) => name.toLowerCase().replace(/\s+/g, " ").trim();
+
+const mapProvidersToIds = (providers: string[]) => {
+    const ids = providers
+        .map((p) => PROVIDER_IDS[normalizeProvider(p)])
+        .filter((id): id is number => typeof id === "number");
+    return Array.from(new Set(ids));
+};
+
+const buildHighlight = (data: any, eventLabel: string, metaLabel?: string): FollowedHighlight | null => {
+    if (!data?.backdrop_path) return null;
+    const genreIds = Array.isArray(data.genre_ids)
+        ? data.genre_ids
+        : Array.isArray(data.genres)
+            ? data.genres.map((g: any) => g.id).filter((id: any) => typeof id === "number")
+            : [];
+    return {
+        tmdbId: data.id,
+        title: data.title || data.name || "",
+        overview: data.overview || "",
+        backdropPath: data.backdrop_path || null,
+        mediaType: data.media_type === "tv" || data.name ? "tv" : "movie",
+        voteAverage: data.vote_average || 0,
+        eventLabel,
+        genreIds,
+        metaLabel,
+    };
+};
+
+export async function getPlatformHighlights(): Promise<FollowedHighlight[]> {
+    try {
+        const session = await auth();
+        if (!session?.user?.id) return [];
+
+        const user = await prisma.user.findUnique({
+            where: { id: session.user.id },
+            select: { platforms: true },
+        });
+
+        const userPlatforms = user?.platforms || [];
+        const providerIds = mapProvidersToIds(userPlatforms);
+        if (providerIds.length === 0) return [];
+
+        const primaryPlatform = userPlatforms[0] || "";
+        const primaryId = mapProvidersToIds(primaryPlatform ? [primaryPlatform] : []);
+        const providerParam = (primaryId.length > 0 ? primaryId : providerIds).join("|");
+
+        const [movies, tv] = await Promise.all([
+            tmdb.discover("movie", {
+                sort_by: "popularity.desc",
+                watch_region: "TR",
+                with_watch_providers: providerParam,
+            }),
+            tmdb.discover("tv", {
+                sort_by: "popularity.desc",
+                watch_region: "TR",
+                with_watch_providers: providerParam,
+            }),
+        ]);
+
+        const items = [
+            ...(movies.results || []).map((item: any) => ({ ...item, media_type: "movie" })),
+            ...(tv.results || []).map((item: any) => ({ ...item, media_type: "tv" })),
+        ]
+            .map((item: any) => buildHighlight(item, "Platformunda Yeni", primaryPlatform || undefined))
+            .filter((item): item is FollowedHighlight => !!item)
+            .slice(0, 3);
+
+        return items;
+    } catch (error) {
+        console.error("Error getting platform highlights:", error);
+        return [];
+    }
+}
+
+export async function getTodayHighlights(): Promise<FollowedHighlight[]> {
+    try {
+        const [movies, tv] = await Promise.all([
+            tmdb.getNowPlayingMovies(),
+            tmdb.getAiringTodayTV(),
+        ]);
+
+        const items = [
+            ...(movies.results || []).map((item: any) => ({ ...item, media_type: "movie" })),
+            ...(tv.results || []).map((item: any) => ({ ...item, media_type: "tv" })),
+        ]
+            .map((item: any) => buildHighlight(item, "Bugun Yayinda"))
+            .filter((item): item is FollowedHighlight => !!item)
+            .slice(0, 3);
+
+        return items;
+    } catch (error) {
+        console.error("Error getting today highlights:", error);
+        return [];
+    }
+}
+
+export async function getContinueWatchingHighlights(): Promise<FollowedHighlight[]> {
+    try {
+        const upcomingEpisodes = await getWatchedShowsNextEpisodes();
+        if (upcomingEpisodes.length === 0) return [];
+
+        const items = await Promise.all(
+            upcomingEpisodes.map(async (episode) => {
+                const data = await tmdb.getDetails("tv", episode.showId.toString()).catch(() => null);
+                const metaLabel = episode.nextEpisodeSeason && episode.nextEpisodeNumber
+                    ? `S${episode.nextEpisodeSeason} B${episode.nextEpisodeNumber}`
+                    : episode.nextEpisodeSeason
+                        ? `S${episode.nextEpisodeSeason}`
+                        : undefined;
+                return buildHighlight(data, "Devam Et", metaLabel);
+            })
+        );
+
+        return items.filter((item): item is FollowedHighlight => !!item).slice(0, 3);
+    } catch (error) {
+        console.error("Error getting continue watching highlights:", error);
+        return [];
+    }
+}
+
+export async function getFriendsTrendingHighlights(): Promise<FollowedHighlight[]> {
+    try {
+        const stats = await getFriendsViewingStats();
+        if (stats.length === 0) return [];
+
+        const items = await Promise.all(
+            stats.map(async (item) => {
+                const data = await tmdb.getDetails(item.mediaType, item.tmdbId.toString()).catch(() => null);
+                return buildHighlight(data, "Arkadaslarinda Yukseldi");
+            })
+        );
+
+        return items.filter((item): item is FollowedHighlight => !!item).slice(0, 3);
+    } catch (error) {
+        console.error("Error getting friends trending highlights:", error);
         return [];
     }
 }

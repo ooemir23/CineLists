@@ -52,10 +52,10 @@ export function UpcomingEpisodesCarousel({ episodes }: UpcomingEpisodesCarouselP
 
     return (
         <div className="flex items-center gap-3">
-            <div className="flex items-center gap-2 flex-shrink-0">
-                <Calendar size={18} className="text-blue-400" />
-                <span className="text-sm font-bold text-white whitespace-nowrap">Yakında</span>
-            </div>
+            <Link href="/upcoming-episodes" className="flex items-center gap-2 flex-shrink-0 group">
+                <Calendar size={18} className="text-blue-400 group-hover:text-blue-300 transition-colors" />
+                <span className="text-sm font-bold text-white whitespace-nowrap group-hover:text-blue-200 transition-colors">Yakında</span>
+            </Link>
 
             {/* Horizontal scroll */}
             <div className="flex-1 overflow-x-auto scrollbar-hide">

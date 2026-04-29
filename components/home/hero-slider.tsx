@@ -2,11 +2,11 @@
 
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Star, Calendar, TrendingUp, Trophy } from "lucide-react";
+import { Star, Calendar, TrendingUp, Trophy, ChevronLeft, ChevronRight } from "lucide-react";
 import { HeroActions } from "./hero-actions";
 import { cn } from "@/lib/utils";
 
-type CategoryType = "trending" | "upcoming" | "tv" | "popular" | "personalized";
+type CategoryType = "trending" | "upcoming" | "tv" | "popular" | "personalized" | "followed";
 
 interface HeroItem {
     id: number;
@@ -16,6 +16,8 @@ interface HeroItem {
     vote_average: number;
     media_type: "movie" | "tv";
     category: CategoryType;
+    eventLabel?: string;
+    metaLabel?: string;
 }
 
 interface HeroSliderProps {
@@ -29,10 +31,23 @@ const CATEGORY_CONFIG = {
     tv: { label: "Popüler Dizi", icon: TrendingUp, color: "text-emerald-400", bgColor: "bg-emerald-400" },
     popular: { label: "Haftanın Filmi", icon: Trophy, color: "text-purple-400", bgColor: "bg-purple-400" },
     personalized: { label: "Size Özel Öneri", icon: Trophy, color: "text-rose-400", bgColor: "bg-rose-400" },
+    followed: { label: "Takip Ettiklerin", icon: Star, color: "text-cyan-300", bgColor: "bg-cyan-400" },
+};
+
+const EVENT_LABELS: Record<string, { label: string; icon: typeof TrendingUp; color: string }> = {
+    "Yeni Bolum": { label: "Yeni Bolum", icon: TrendingUp, color: "text-emerald-400" },
+    "Yeni Bolum Yakinda": { label: "Bolum Yakinda", icon: Calendar, color: "text-blue-400" },
+    "Vizyona Girdi": { label: "Vizyona Girdi", icon: Star, color: "text-amber-400" },
+    "Platformda Yayinda": { label: "Platformda Yayinda", icon: TrendingUp, color: "text-cyan-400" },
+    "Platformunda Yeni": { label: "Platformunda Yeni", icon: TrendingUp, color: "text-cyan-400" },
+    "Bugun Yayinda": { label: "Bugun Yayinda", icon: Star, color: "text-amber-300" },
+    "Devam Et": { label: "Devam Et", icon: TrendingUp, color: "text-emerald-300" },
+    "Arkadaslarinda Yukseldi": { label: "Arkadaslarinda Yukseldi", icon: TrendingUp, color: "text-rose-300" },
 };
 
 export function HeroSlider({ items, friendPopularIds = [] }: HeroSliderProps) {
     const [currentIndex, setCurrentIndex] = useState(0);
+    const [isManual, setIsManual] = useState(false);
     const hasItems = items.length > 0;
 
     // Auto-advance slide
@@ -48,7 +63,20 @@ export function HeroSlider({ items, friendPopularIds = [] }: HeroSliderProps) {
 
     // Reset timer on interaction
     const handleManualChange = (index: number) => {
+        setIsManual(true);
         setCurrentIndex(index);
+    };
+
+    const goPrev = () => {
+        if (!hasItems) return;
+        setIsManual(true);
+        setCurrentIndex((prev) => (prev === 0 ? items.length - 1 : prev - 1));
+    };
+
+    const goNext = () => {
+        if (!hasItems) return;
+        setIsManual(true);
+        setCurrentIndex((prev) => (prev + 1) % items.length);
     };
 
     const handleDragEnd = (event: any, info: any) => {
@@ -56,10 +84,10 @@ export function HeroSlider({ items, friendPopularIds = [] }: HeroSliderProps) {
 
         if (info.offset.x > 50) {
             // Swipe Right (Previous)
-            setCurrentIndex((prev) => (prev === 0 ? items.length - 1 : prev - 1));
+            goPrev();
         } else if (info.offset.x < -50) {
             // Swipe Left (Next)
-            setCurrentIndex((prev) => (prev + 1) % items.length);
+            goNext();
         }
     };
 
@@ -80,6 +108,9 @@ export function HeroSlider({ items, friendPopularIds = [] }: HeroSliderProps) {
     const config = CATEGORY_CONFIG[currentItem.category];
     const Icon = config.icon;
     const isFriendsPopular = friendPopularIds.includes(currentItem.id);
+    const eventMeta = currentItem.eventLabel ? EVENT_LABELS[currentItem.eventLabel] : null;
+    const EventIcon = eventMeta?.icon;
+    const metaLabel = currentItem.metaLabel;
 
     // Fallback backdrop
     const backdropUrl = currentItem.backdrop_path
@@ -91,11 +122,12 @@ export function HeroSlider({ items, friendPopularIds = [] }: HeroSliderProps) {
             <div className="w-full h-[65svh] md:h-[500px] rounded-[32px] md:rounded-[40px] overflow-hidden shadow-2xl border border-white/10 relative group">
                 <AnimatePresence mode="wait">
                     <motion.div
-                        key={`${currentItem.id}-${currentItem.category}`}
+                        key={`${currentItem.id}-${currentItem.category}-${isManual ? "manual" : "auto"}`}
+                        onAnimationComplete={() => setIsManual(false)}
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        transition={{ duration: 1.5, ease: "easeInOut" }}
+                        transition={{ duration: isManual ? 0 : 1.5, ease: "easeInOut" }}
                         className="absolute inset-0 touch-pan-y"
                         drag="x"
                         dragConstraints={{ left: 0, right: 0 }}
@@ -120,7 +152,7 @@ export function HeroSlider({ items, friendPopularIds = [] }: HeroSliderProps) {
                                 <motion.h2
                                     initial={{ y: 20, opacity: 0 }}
                                     animate={{ y: 0, opacity: 1 }}
-                                    transition={{ delay: 0.3, duration: 0.5 }}
+                                    transition={{ delay: isManual ? 0 : 0.3, duration: isManual ? 0 : 0.5 }}
                                     className="text-3xl md:text-5xl lg:text-6xl font-black text-white leading-[1.1] tracking-tighter drop-shadow-2xl line-clamp-2 md:line-clamp-2"
                                 >
                                     {currentItem.title}
@@ -128,7 +160,7 @@ export function HeroSlider({ items, friendPopularIds = [] }: HeroSliderProps) {
                                 <motion.p
                                     initial={{ y: 20, opacity: 0 }}
                                     animate={{ y: 0, opacity: 1 }}
-                                    transition={{ delay: 0.4, duration: 0.5 }}
+                                    transition={{ delay: isManual ? 0 : 0.4, duration: isManual ? 0 : 0.5 }}
                                     className="text-neutral-300 text-xs md:text-sm line-clamp-3 md:line-clamp-2 font-medium leading-relaxed drop-shadow-md max-w-lg"
                                 >
                                     {currentItem.overview}
@@ -138,7 +170,7 @@ export function HeroSlider({ items, friendPopularIds = [] }: HeroSliderProps) {
                             <motion.div
                                 initial={{ y: 20, opacity: 0 }}
                                 animate={{ y: 0, opacity: 1 }}
-                                transition={{ delay: 0.5, duration: 0.5 }}
+                                transition={{ delay: isManual ? 0 : 0.5, duration: isManual ? 0 : 0.5 }}
                                 className="flex flex-wrap items-center gap-3 mt-1"
                             >
                                 <HeroActions movieId={currentItem.id} mediaType={currentItem.media_type} />
@@ -148,6 +180,17 @@ export function HeroSlider({ items, friendPopularIds = [] }: HeroSliderProps) {
                                         <div className="flex items-center gap-1.5 text-white/90 bg-emerald-500/20 backdrop-blur-xl px-3 py-2 rounded-xl border border-emerald-400/30 shadow-lg mt-2">
                                             <TrendingUp size={14} className="text-emerald-400" />
                                             <span className="font-bold text-[10px] uppercase tracking-wider">Arkadaşlarında Popüler</span>
+                                        </div>
+                                    )}
+                                    {eventMeta && EventIcon && (
+                                        <div className="flex items-center gap-1.5 text-white/90 bg-white/10 backdrop-blur-xl px-3 py-2 rounded-xl border border-white/10 shadow-lg mt-2">
+                                            <EventIcon size={14} className={eventMeta.color} />
+                                            <span className="font-bold text-[10px] uppercase tracking-wider">{eventMeta.label}</span>
+                                        </div>
+                                    )}
+                                    {metaLabel && (
+                                        <div className="flex items-center gap-1.5 text-white/90 bg-white/10 backdrop-blur-xl px-3 py-2 rounded-xl border border-white/10 shadow-lg mt-2">
+                                            <span className="font-bold text-[10px] uppercase tracking-wider">{metaLabel}</span>
                                         </div>
                                     )}
                                     <div className="flex items-center gap-1.5 text-white/90 bg-white/10 backdrop-blur-xl px-3 py-2 rounded-xl border border-white/10 shadow-lg mt-2">
@@ -164,6 +207,26 @@ export function HeroSlider({ items, friendPopularIds = [] }: HeroSliderProps) {
                         </div>
                     </motion.div>
                 </AnimatePresence>
+
+                {/* Slider Navigation Arrows */}
+                <div className="absolute inset-y-0 left-4 hidden md:flex items-center z-20">
+                    <button
+                        onClick={goPrev}
+                        className="w-10 h-10 rounded-full bg-black/40 hover:bg-black/60 border border-white/10 backdrop-blur-md flex items-center justify-center text-white/80 hover:text-white transition-all"
+                        aria-label="Onceki"
+                    >
+                        <ChevronLeft className="w-5 h-5" />
+                    </button>
+                </div>
+                <div className="absolute inset-y-0 right-4 hidden md:flex items-center z-20">
+                    <button
+                        onClick={goNext}
+                        className="w-10 h-10 rounded-full bg-black/40 hover:bg-black/60 border border-white/10 backdrop-blur-md flex items-center justify-center text-white/80 hover:text-white transition-all"
+                        aria-label="Sonraki"
+                    >
+                        <ChevronRight className="w-5 h-5" />
+                    </button>
+                </div>
 
                 {/* Slider Navigation Dots - Mobile Optimized */}
                 <div className="absolute top-4 right-4 md:bottom-6 md:right-8 md:top-auto flex items-center gap-2 z-20">

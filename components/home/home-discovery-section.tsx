@@ -106,6 +106,7 @@ const COUNTRY_OPTIONS = [
 
 export function HomeDiscoverySection() {
     const headerRef = useRef<HTMLDivElement>(null);
+    const userTriggeredRef = useRef(false);
     const [activeType, setActiveType] = useState<MenuType>("movie");
     const [activeCategory, setActiveCategory] = useState<MenuCategory>("trending");
     const [activeTimeWindow, setActiveTimeWindow] = useState<"day" | "week" | "month">("day");
@@ -124,11 +125,15 @@ export function HomeDiscoverySection() {
     const [isLoading, setIsLoading] = useState(false);
     const [isMoreLoading, setIsMoreLoading] = useState(false);
 
+    const markUserTriggered = () => {
+        userTriggeredRef.current = true;
+    };
+
     // Reset page when filters change
     useEffect(() => {
         setPage(1);
         
-        if (headerRef.current) {
+        if (headerRef.current && userTriggeredRef.current) {
             const yOffset = -80; // Offset for TopNav
             const y = headerRef.current.getBoundingClientRect().top + window.pageYOffset + yOffset;
             window.scrollTo({ top: y, behavior: "smooth" });
@@ -207,7 +212,10 @@ export function HomeDiscoverySection() {
                             {["day", "week", "month"].map((tw) => (
                                 <button
                                     key={tw}
-                                    onClick={() => setActiveTimeWindow(tw as any)}
+                                    onClick={() => {
+                                        markUserTriggered();
+                                        setActiveTimeWindow(tw as any);
+                                    }}
                                     className={cn(
                                         "flex-1 py-3 rounded-xl text-xs font-black uppercase tracking-tight transition-all",
                                         activeTimeWindow === tw ? "bg-amber-400 text-black shadow-lg" : "text-neutral-400"
@@ -234,7 +242,10 @@ export function HomeDiscoverySection() {
                                 <div className="relative">
                                     <select 
                                         value={filter.value} 
-                                        onChange={(e) => filter.setter(e.target.value)}
+                                        onChange={(e) => {
+                                            markUserTriggered();
+                                            filter.setter(e.target.value);
+                                        }}
                                         className={cn(
                                             "w-full bg-white/5 border border-white/10 rounded-2xl px-4 py-3.5 text-sm font-bold appearance-none outline-none focus:border-amber-400/50 transition-colors",
                                             filter.value ? "text-amber-400 border-amber-400/20" : "text-neutral-300"
@@ -281,7 +292,10 @@ export function HomeDiscoverySection() {
                         {["all", "movie", "tv"].map((t) => (
                             <button
                                 key={t}
-                                onClick={() => setActiveType(t as any)}
+                                onClick={() => {
+                                    markUserTriggered();
+                                    setActiveType(t as any);
+                                }}
                                 className={cn(
                                     "flex-1 lg:flex-none flex items-center justify-center gap-1.5 px-3 py-2 md:px-6 md:py-3 rounded-full md:rounded-[1.4rem] text-[10px] md:text-sm font-black transition-all uppercase tracking-tight",
                                     activeType === t ? "bg-amber-400 text-black shadow-lg" : "text-neutral-400 hover:text-white"
@@ -299,7 +313,10 @@ export function HomeDiscoverySection() {
                             {categoryOptions.map((opt) => (
                                 <button
                                     key={opt.id}
-                                    onClick={() => setActiveCategory(opt.id as MenuCategory)}
+                                    onClick={() => {
+                                        markUserTriggered();
+                                        setActiveCategory(opt.id as MenuCategory);
+                                    }}
                                     className={cn(
                                         "flex-none flex items-center justify-center gap-1.5 px-3 py-2 md:px-5 md:py-3 rounded-full md:rounded-[1.4rem] text-[9px] md:text-xs font-black transition-all uppercase tracking-widest whitespace-nowrap",
                                         activeCategory === opt.id
@@ -334,7 +351,10 @@ export function HomeDiscoverySection() {
                 <div className="hidden lg:flex flex-col lg:flex-row items-stretch lg:items-center gap-2 md:gap-3 relative z-10">
                     <div className="flex bg-[#1b2334]/90 p-1 rounded-full md:rounded-[2rem] border border-white/10 backdrop-blur-xl lg:w-auto w-full">
                         {["day", "week", "month"].map(tw => (
-                            <button key={tw} onClick={() => setActiveTimeWindow(tw as any)} className={cn("flex-1 lg:flex-none flex items-center justify-center px-3 py-2 md:px-6 md:py-3 rounded-full md:rounded-[1.4rem] text-[10px] md:text-sm font-black transition-all uppercase tracking-tight whitespace-nowrap", activeTimeWindow === tw ? "bg-amber-400 text-black" : "text-neutral-400 hover:text-white")}>
+                            <button key={tw} onClick={() => {
+                                markUserTriggered();
+                                setActiveTimeWindow(tw as any);
+                            }} className={cn("flex-1 lg:flex-none flex items-center justify-center px-3 py-2 md:px-6 md:py-3 rounded-full md:rounded-[1.4rem] text-[10px] md:text-sm font-black transition-all uppercase tracking-tight whitespace-nowrap", activeTimeWindow === tw ? "bg-amber-400 text-black" : "text-neutral-400 hover:text-white")}>
                                 {tw === "day" ? "Günün" : tw === "week" ? "Haftanın" : "Ayın"}
                             </button>
                         ))}
@@ -349,7 +369,10 @@ export function HomeDiscoverySection() {
                             { value: language, setter: setLanguage, options: LANGUAGE_OPTIONS },
                             { value: country, setter: setCountry, options: COUNTRY_OPTIONS },
                         ].map((filter, idx) => (
-                            <select key={idx} value={filter.value} onChange={(e) => filter.setter(e.target.value)} className={cn("bg-transparent text-[9px] md:text-sm font-black px-2 py-2 md:px-6 md:py-3 outline-none cursor-pointer uppercase tracking-tight appearance-none text-center hover:bg-white/5 rounded-xl md:rounded-[1.2rem] transition-colors shrink-0", filter.value !== "" ? "text-amber-400" : "text-neutral-500 hover:text-white")}>
+                            <select key={idx} value={filter.value} onChange={(e) => {
+                                markUserTriggered();
+                                filter.setter(e.target.value);
+                            }} className={cn("bg-transparent text-[9px] md:text-sm font-black px-2 py-2 md:px-6 md:py-3 outline-none cursor-pointer uppercase tracking-tight appearance-none text-center hover:bg-white/5 rounded-xl md:rounded-[1.2rem] transition-colors shrink-0", filter.value !== "" ? "text-amber-400" : "text-neutral-500 hover:text-white")}>
                                 {filter.options.map(opt => <option key={opt.id} value={opt.id} className="bg-[#1b2334] text-white">{opt.label}</option>)}
                             </select>
                         ))}
