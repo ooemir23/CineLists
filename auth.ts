@@ -12,7 +12,9 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
     trustHost: true,
     session: { strategy: "jwt" },
     providers: [
-        Google, // Auth.js v5 automatically looks for AUTH_GOOGLE_ID and AUTH_GOOGLE_SECRET
+        Google({
+            allowDangerousEmailAccountLinking: true,
+        }),
         Credentials({
             id: "email",
             name: "Email",

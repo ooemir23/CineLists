@@ -1,25 +1,32 @@
-import { loginUser } from "@/lib/auth-actions";
-import { Film, Mail, Lock, ArrowRight } from "lucide-react";
+import { Film, Lock, ArrowRight, ArrowLeft } from "lucide-react";
 import Link from "next/link";
-import { SocialAuth } from "@/components/auth/social-auth";
 import { PosterBackground } from "@/components/auth/poster-background";
+import { resetPassword } from "@/lib/auth-actions";
 
-type LoginPageProps = {
-    searchParams: Promise<{ error?: string }>;
+type ResetPasswordPageProps = {
+    searchParams: Promise<{ token?: string; error?: string }>;
 };
 
-export default async function LoginPage({ searchParams }: LoginPageProps) {
+export default async function ResetPasswordPage({ searchParams }: ResetPasswordPageProps) {
     const params = await searchParams;
+    const token = params.token;
     const errorMessage =
         params.error === "invalid"
-            ? "E-posta veya şifre hatalı."
-            : params.error === "missing"
-                ? "E-posta ve şifre zorunludur."
-                : null;
+            ? "Geçersiz veya süresi dolmuş sıfırlama bağlantısı."
+            : params.error === "mismatch"
+                ? "Şifreler birbiriyle eşleşmiyor."
+                : params.error === "weak"
+                    ? "Şifre en az 6 karakter olmalıdır."
+                    : null;
 
-    const successMessage = params.reset === "success"
-        ? "Şifreniz başarıyla güncellendi. Yeni şifrenizle giriş yapabilirsiniz."
-        : null;
+    if (!token && !errorMessage) {
+        return (
+            <div className="flex flex-col items-center justify-center min-h-screen text-white">
+                <p>Geçersiz sıfırlama bağlantısı.</p>
+                <Link href="/login" className="text-amber-400 mt-4 underline">Giriş'e Dön</Link>
+            </div>
+        );
+    }
 
     return (
         <div className="relative min-h-[calc(100svh-72px)] flex items-center justify-center px-4 py-12 overflow-hidden bg-[#020617]">
@@ -34,8 +41,8 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
                         </div>
                         <span className="text-3xl font-black text-white tracking-tighter uppercase italic">CineLists</span>
                     </Link>
-                    <h1 className="text-3xl font-black text-white tracking-tight uppercase mb-2">Tekrar Hoş Geldin</h1>
-                    <p className="text-neutral-400 font-medium">Sinema dünyasına kaldığın yerden devam et.</p>
+                    <h1 className="text-3xl font-black text-white tracking-tight uppercase mb-2">Yeni Şifre Oluştur</h1>
+                    <p className="text-neutral-400 font-medium">Lütfen hesabın için yeni ve güvenli bir şifre belirle.</p>
                 </div>
 
                 {/* Main Card */}
@@ -48,39 +55,13 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
                         </div>
                     )}
 
-                    {successMessage && (
-                        <div className="mb-6 rounded-2xl border border-emerald-500/30 bg-emerald-500/10 text-emerald-200 text-xs font-black uppercase tracking-widest px-4 py-4 text-center animate-in fade-in duration-500">
-                            {successMessage}
-                        </div>
-                    )}
-
-                    <form action={loginUser} className="space-y-5">
+                    <form action={resetPassword} className="space-y-5">
+                        <input type="hidden" name="token" value={token || ""} />
+                        
                         <div className="space-y-1.5">
-                            <label htmlFor="email" className="text-[10px] font-black text-neutral-500 uppercase tracking-widest ml-4">
-                                E-posta Adresi
+                            <label htmlFor="password" className="text-[10px] font-black text-neutral-500 uppercase tracking-widest ml-4">
+                                Yeni Şifre
                             </label>
-                            <div className="relative group/input">
-                                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-neutral-500 group-focus-within/input:text-amber-400 transition-colors" />
-                                <input
-                                    id="email"
-                                    name="email"
-                                    type="email"
-                                    placeholder="ornek@mail.com"
-                                    required
-                                    className="w-full pl-12 pr-4 py-4 bg-white/5 border border-white/10 rounded-2xl text-white placeholder-neutral-600 focus:outline-none focus:border-amber-400/50 focus:ring-4 focus:ring-amber-400/10 transition-all font-bold"
-                                />
-                            </div>
-                        </div>
-
-                        <div className="space-y-1.5">
-                            <div className="flex items-center justify-between px-4">
-                                <label htmlFor="password" className="text-[10px] font-black text-neutral-500 uppercase tracking-widest">
-                                    Şifre
-                                </label>
-                                <Link href="/forgot-password" className="text-[10px] font-black text-amber-400 uppercase tracking-widest hover:underline">
-                                    Şifremi Unuttum
-                                </Link>
-                            </div>
                             <div className="relative group/input">
                                 <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-neutral-500 group-focus-within/input:text-amber-400 transition-colors" />
                                 <input
@@ -95,33 +76,40 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
                             </div>
                         </div>
 
+                        <div className="space-y-1.5">
+                            <label htmlFor="confirmPassword" className="text-[10px] font-black text-neutral-500 uppercase tracking-widest ml-4">
+                                Şifreyi Onayla
+                            </label>
+                            <div className="relative group/input">
+                                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-neutral-500 group-focus-within/input:text-amber-400 transition-colors" />
+                                <input
+                                    id="confirmPassword"
+                                    name="confirmPassword"
+                                    type="password"
+                                    placeholder="••••••••"
+                                    required
+                                    minLength={6}
+                                    className="w-full pl-12 pr-4 py-4 bg-white/5 border border-white/10 rounded-2xl text-white placeholder-neutral-600 focus:outline-none focus:border-amber-400/50 focus:ring-4 focus:ring-amber-400/10 transition-all font-bold"
+                                />
+                            </div>
+                        </div>
+
                         <button
                             type="submit"
                             className="w-full bg-amber-400 text-slate-950 font-black py-4 rounded-2xl hover:bg-amber-300 transition-all active:scale-[0.98] shadow-xl shadow-amber-400/20 flex items-center justify-center gap-2 uppercase tracking-widest text-xs"
                         >
-                            Giriş Yap
+                            Şifreyi Güncelle
                             <ArrowRight className="w-4 h-4" />
                         </button>
                     </form>
 
-                    <div className="relative my-8">
-                        <div className="absolute inset-0 flex items-center">
-                            <span className="w-full border-t border-white/5" />
-                        </div>
-                        <div className="relative flex justify-center text-[10px] font-black uppercase tracking-[0.2em]">
-                            <span className="bg-[#121a2c] px-4 text-neutral-500">Veya Bunlarla</span>
-                        </div>
+                    <div className="mt-8 text-center">
+                        <Link href="/login" className="inline-flex items-center gap-2 text-[10px] font-black text-neutral-500 uppercase tracking-widest hover:text-white transition-colors">
+                            <ArrowLeft className="w-3 h-3" />
+                            Vazgeç ve Giriş'e Dön
+                        </Link>
                     </div>
-
-                    <SocialAuth />
                 </div>
-
-                <p className="mt-8 text-center text-sm font-bold text-neutral-400">
-                    Henüz bir hesabın yok mu?{" "}
-                    <Link href="/register" className="text-amber-400 hover:text-amber-300 transition-colors font-black uppercase tracking-tight ml-1">
-                        Kayıt Ol
-                    </Link>
-                </p>
             </div>
         </div>
     );

@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef } from "react";
 import Link from "next/link";
-import { Film, Tv, TrendingUp, Star, Check, Calendar, Filter, PlayCircle, Shuffle, LayoutGrid, List as ListIcon, Clock, Frown, RefreshCcw, Users, Grid3X3 } from "lucide-react";
+import { Film, Tv, TrendingUp, Star, Check, Calendar, Filter, PlayCircle, Shuffle, LayoutGrid, List as ListIcon, Clock, Frown, RefreshCcw, Users, Grid3X3, ArrowRight, ChevronRight, ChevronLeft } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { MediaCard } from "@/components/media/media-card";
 
@@ -187,6 +187,8 @@ export function HomeDiscoverySection() {
 
     const [isFilterSheetOpen, setIsFilterSheetOpen] = useState(false);
 
+    const hasFilters = genre || year || rating || provider || language || country;
+
     return (
         <section id="home-discover" ref={headerRef} className="max-w-[1600px] mx-auto px-3 sm:px-6 md:px-8 lg:px-12 mt-4 md:mt-5">
             {/* Filter Bottom Sheet for Mobile */}
@@ -287,29 +289,31 @@ export function HomeDiscoverySection() {
                 
                 {/* Primary Discovery Bar */}
                 <div className="flex flex-col lg:flex-row gap-2 lg:items-center mb-2 md:mb-3 relative z-10">
-                    {/* Type Switcher */}
-                    <div className="flex bg-[#1b2334]/90 p-1 md:p-1.5 rounded-full md:rounded-[2rem] border border-white/10 backdrop-blur-xl lg:w-auto w-full">
-                        {["all", "movie", "tv"].map((t) => (
-                            <button
-                                key={t}
-                                onClick={() => {
-                                    markUserTriggered();
-                                    setActiveType(t as any);
-                                }}
-                                className={cn(
-                                    "flex-1 lg:flex-none flex items-center justify-center gap-1.5 px-3 py-2 md:px-6 md:py-3 rounded-full md:rounded-[1.4rem] text-[10px] md:text-sm font-black transition-all uppercase tracking-tight",
-                                    activeType === t ? "bg-amber-400 text-black shadow-lg" : "text-neutral-400 hover:text-white"
-                                )}
-                            >
-                                {t === "movie" ? <Film size={14} className="md:w-[18px] md:h-[18px]" /> : t === "tv" ? <Tv size={14} className="md:w-[18px] md:h-[18px]" /> : null}
-                                {t === "all" ? "Tümü" : t === "movie" ? "Film" : "Dizi"}
-                            </button>
-                        ))}
+                    {/* Left: Type Switcher */}
+                    <div className="lg:w-[320px] shrink-0">
+                        <div className="flex bg-[#1b2334]/90 p-1.5 rounded-full border border-white/10 backdrop-blur-xl w-full">
+                            {["all", "movie", "tv"].map((t) => (
+                                <button
+                                    key={t}
+                                    onClick={() => {
+                                        markUserTriggered();
+                                        setActiveType(t as any);
+                                    }}
+                                    className={cn(
+                                        "flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-full text-[10px] md:text-sm font-black transition-all uppercase tracking-tight",
+                                        activeType === t ? "bg-amber-400 text-black shadow-lg" : "text-neutral-400 hover:text-white"
+                                    )}
+                                >
+                                    {t === "movie" ? <Film size={14} className="md:w-[18px] md:h-[18px]" /> : t === "tv" ? <Tv size={14} className="md:w-[18px] md:h-[18px]" /> : null}
+                                    {t === "all" ? "Tümü" : t === "movie" ? "Film" : "Dizi"}
+                                </button>
+                            ))}
+                        </div>
                     </div>
 
-                    {/* Category Options & Filter Button */}
-                    <div className="flex items-center gap-2 lg:flex-1">
-                        <div className="flex-1 flex bg-[#1b2334]/90 p-1 md:p-1.5 rounded-full md:rounded-3xl border border-white/10 backdrop-blur-xl gap-1 overflow-x-auto hide-scrollbar">
+                    {/* Middle: Category Options */}
+                    <div className="flex items-center gap-4 md:gap-6 flex-1 min-w-0 overflow-hidden">
+                        <div className="flex-1 flex bg-[#1b2334]/90 p-1.5 rounded-full border border-white/10 backdrop-blur-xl gap-1 overflow-x-auto hide-scrollbar">
                             {categoryOptions.map((opt) => (
                                 <button
                                     key={opt.id}
@@ -318,7 +322,7 @@ export function HomeDiscoverySection() {
                                         setActiveCategory(opt.id as MenuCategory);
                                     }}
                                     className={cn(
-                                        "flex-none flex items-center justify-center gap-1.5 px-3 py-2 md:px-5 md:py-3 rounded-full md:rounded-[1.4rem] text-[9px] md:text-xs font-black transition-all uppercase tracking-widest whitespace-nowrap",
+                                        "flex-none flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-full text-[9px] md:text-xs font-black transition-all uppercase tracking-widest whitespace-nowrap",
                                         activeCategory === opt.id
                                             ? "bg-white/10 text-white border border-white/15"
                                             : "text-neutral-500 hover:text-white"
@@ -339,43 +343,84 @@ export function HomeDiscoverySection() {
                         </button>
                     </div>
 
-                    {/* View Mode Toggles - Desktop Only */}
-                    <div className="hidden md:flex bg-[#1b2334]/90 p-1 rounded-full border border-white/10 backdrop-blur-xl shrink-0">
-                        <button onClick={() => setViewMode("grid")} className={cn("p-2 rounded-lg transition-all", viewMode === "grid" ? "bg-amber-400 text-black shadow-lg" : "text-neutral-400 hover:text-white")} title="Izgara"><LayoutGrid size={18} /></button>
-                        <button onClick={() => setViewMode("compact")} className={cn("p-2 rounded-lg transition-all", viewMode === "compact" ? "bg-amber-400 text-black shadow-lg" : "text-neutral-400 hover:text-white")} title="Kompakt"><Grid3X3 size={18} /></button>
-                        <button onClick={() => setViewMode("list")} className={cn("p-2 rounded-lg transition-all", viewMode === "list" ? "bg-amber-400 text-black shadow-lg" : "text-neutral-400 hover:text-white")} title="Liste"><ListIcon size={18} /></button>
+                    {/* Right: View Mode Toggles */}
+                    <div className="hidden lg:flex lg:w-[260px] justify-end shrink-0 pl-4">
+                        <div className="flex bg-[#1b2334]/90 p-1.5 rounded-full border border-white/10 backdrop-blur-xl w-full">
+                            {[
+                                { id: "grid", icon: LayoutGrid, label: "Izgara" },
+                                { id: "compact", icon: Grid3X3, label: "Kompakt" },
+                                { id: "list", icon: ListIcon, label: "Liste" },
+                            ].map((mode) => (
+                                <button
+                                    key={mode.id}
+                                    onClick={() => setViewMode(mode.id as any)}
+                                    className={cn(
+                                        "flex-1 flex items-center justify-center gap-2 py-2.5 rounded-full text-[10px] font-black uppercase tracking-tight transition-all",
+                                        viewMode === mode.id 
+                                            ? "bg-amber-400 text-black shadow-lg shadow-amber-400/20" 
+                                            : "text-neutral-500 hover:text-white hover:bg-white/5"
+                                    )}
+                                    title={mode.label}
+                                >
+                                    <mode.icon size={16} />
+                                    <span className="hidden 2xl:inline">{mode.label}</span>
+                                </button>
+                            ))}
+                        </div>
                     </div>
                 </div>
 
                 {/* Desktop-only Filters Row */}
                 <div className="hidden lg:flex flex-col lg:flex-row items-stretch lg:items-center gap-2 md:gap-3 relative z-10">
-                    <div className="flex bg-[#1b2334]/90 p-1 rounded-full md:rounded-[2rem] border border-white/10 backdrop-blur-xl lg:w-auto w-full">
-                        {["day", "week", "month"].map(tw => (
-                            <button key={tw} onClick={() => {
-                                markUserTriggered();
-                                setActiveTimeWindow(tw as any);
-                            }} className={cn("flex-1 lg:flex-none flex items-center justify-center px-3 py-2 md:px-6 md:py-3 rounded-full md:rounded-[1.4rem] text-[10px] md:text-sm font-black transition-all uppercase tracking-tight whitespace-nowrap", activeTimeWindow === tw ? "bg-amber-400 text-black" : "text-neutral-400 hover:text-white")}>
-                                {tw === "day" ? "Günün" : tw === "week" ? "Haftanın" : "Ayın"}
-                            </button>
-                        ))}
+                    {/* Left: Time Switcher */}
+                    <div className="lg:w-[320px] shrink-0">
+                        <div className="flex bg-[#1b2334]/90 p-1.5 rounded-full border border-white/10 backdrop-blur-xl w-full">
+                            {["day", "week", "month"].map(tw => (
+                                <button key={tw} onClick={() => {
+                                    markUserTriggered();
+                                    setActiveTimeWindow(tw as any);
+                                }} className={cn("flex-1 flex items-center justify-center px-3 py-2.5 rounded-full text-[10px] md:text-sm font-black transition-all uppercase tracking-tight whitespace-nowrap", activeTimeWindow === tw ? "bg-amber-400 text-black" : "text-neutral-400 hover:text-white")}>
+                                    {tw === "day" ? "Günün" : tw === "week" ? "Haftanın" : "Ayın"}
+                                </button>
+                            ))}
+                        </div>
                     </div>
 
-                    <div className="flex bg-[#1b2334]/90 p-1 rounded-2xl md:rounded-3xl border border-white/10 backdrop-blur-xl gap-0.5 md:gap-1 items-center overflow-x-auto hide-scrollbar">
-                        {[
-                            { value: genre, setter: setGenre, options: GENRE_OPTIONS },
-                            { value: year, setter: setYear, options: YEAR_OPTIONS.map(y => ({ id: y, label: y || "Yıl" })) },
-                            { value: rating, setter: setRating, options: RATING_OPTIONS },
-                            { value: provider, setter: setProvider, options: PROVIDER_OPTIONS },
-                            { value: language, setter: setLanguage, options: LANGUAGE_OPTIONS },
-                            { value: country, setter: setCountry, options: COUNTRY_OPTIONS },
-                        ].map((filter, idx) => (
-                            <select key={idx} value={filter.value} onChange={(e) => {
-                                markUserTriggered();
-                                filter.setter(e.target.value);
-                            }} className={cn("bg-transparent text-[9px] md:text-sm font-black px-2 py-2 md:px-6 md:py-3 outline-none cursor-pointer uppercase tracking-tight appearance-none text-center hover:bg-white/5 rounded-xl md:rounded-[1.2rem] transition-colors shrink-0", filter.value !== "" ? "text-amber-400" : "text-neutral-500 hover:text-white")}>
-                                {filter.options.map(opt => <option key={opt.id} value={opt.id} className="bg-[#1b2334] text-white">{opt.label}</option>)}
-                            </select>
-                        ))}
+                    {/* Middle: Filters */}
+                    <div className="flex items-center gap-4 md:gap-6 flex-1 min-w-0 overflow-hidden">
+                        <div className="flex-1 flex bg-[#1b2334]/90 p-1.5 rounded-full border border-white/10 backdrop-blur-xl gap-0.5 md:gap-1 items-center overflow-x-auto hide-scrollbar">
+                            {[
+                                { value: genre, setter: setGenre, options: GENRE_OPTIONS },
+                                { value: year, setter: setYear, options: YEAR_OPTIONS.map(y => ({ id: y, label: y || "Yıl" })) },
+                                { value: rating, setter: setRating, options: RATING_OPTIONS },
+                                { value: provider, setter: setProvider, options: PROVIDER_OPTIONS },
+                                { value: language, setter: setLanguage, options: LANGUAGE_OPTIONS },
+                                { value: country, setter: setCountry, options: COUNTRY_OPTIONS },
+                            ].map((filter, idx) => (
+                                <select key={idx} value={filter.value} onChange={(e) => {
+                                    markUserTriggered();
+                                    filter.setter(e.target.value);
+                                }} className={cn("bg-transparent text-[9px] md:text-sm font-black px-2 py-2.5 outline-none cursor-pointer uppercase tracking-tight appearance-none text-center hover:bg-white/5 rounded-full transition-colors shrink-0", filter.value !== "" ? "text-amber-400" : "text-neutral-500 hover:text-white")}>
+                                    {filter.options.map(opt => <option key={opt.id} value={opt.id} className="bg-[#1b2334] text-white">{opt.label}</option>)}
+                                </select>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* Right: Reset Button Container */}
+                    <div className="lg:w-[260px] flex justify-end shrink-0 pl-4">
+                        {hasFilters && (
+                            <button
+                                onClick={() => {
+                                    setGenre(""); setYear(""); setRating(""); setProvider(""); setLanguage(""); setCountry("");
+                                    markUserTriggered();
+                                }}
+                                className="w-full flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-gradient-to-r from-rose-500/10 to-rose-600/20 hover:from-rose-500/20 hover:to-rose-600/30 text-rose-500 border border-rose-500/20 transition-all font-black text-xs uppercase tracking-[0.1em] shadow-lg shadow-rose-500/5 hover:scale-[1.02] active:scale-95 animate-in fade-in slide-in-from-right-4 duration-300"
+                            >
+                                <RefreshCcw size={16} />
+                                Seçimleri Sıfırla
+                            </button>
+                        )}
                     </div>
                 </div>
             </div>
@@ -420,6 +465,8 @@ export function HomeDiscoverySection() {
                             setRating("");
                             setProvider("");
                             setLanguage("");
+                            setCountry("");
+                            markUserTriggered();
                         }}
                         className="mt-10 flex items-center gap-3 px-10 py-4 rounded-full bg-amber-400 text-black font-black text-xs uppercase tracking-[0.2em] hover:scale-110 active:scale-95 transition-all shadow-2xl shadow-amber-400/30 hover:shadow-amber-400/50"
                     >

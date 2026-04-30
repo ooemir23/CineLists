@@ -6,6 +6,8 @@ import bcrypt from "bcryptjs";
 import { AuthError } from "next-auth";
 import { redirect } from "next/navigation";
 import { Prisma } from "@prisma/client";
+import { sendPasswordResetEmail } from "./mail";
+import crypto from "crypto";
 
 function isPrismaConnectionError(error: unknown) {
     if (error instanceof Prisma.PrismaClientInitializationError) return true;
@@ -116,5 +118,104 @@ export async function handleSignOut() {
 
 export async function signInWithGoogle() {
     await signIn("google", { redirectTo: "/onboarding" });
+}
+
+export async function requestPasswordReset(formData: FormData) {
+    const email = String(formData.get("email") || "").trim();
+
+    if (!email) {
+        redirect("/forgot-password?error=missing");
+    }
+
+    try {
+        const user = await prisma.user.findUnique({
+            where: { email },
+        });
+
+        if (!user) {
+            // Güvenlik nedeniyle e-posta gönderildi mesajı veriyoruz
+            redirect("/forgot-password?success=sent");
+        }
+
+        // 1 saat geçerli bir token oluştur
+        const token = crypto.randomBytes(32).toString("hex");
+        const expires = new Date(Date.now() + 3600 * 1000);
+
+        // Eski tokenları temizle ve yenisini kaydet
+        await prisma.verificationToken.deleteMany({
+            where: { identifier: email }
+        });
+
+        await prisma.verificationToken.create({
+            data: {
+                identifier: email,
+                token,
+                expires
+            }
+        });
+
+        // E-posta gönder
+        await sendPasswordResetEmail(email, token);
+        
+        redirect("/forgot-password?success=sent");
+    } catch (error) {
+        if (error instanceof Error && error.message.includes("NEXT_REDIRECT")) {
+            throw error;
+        }
+        console.error("Password reset request error:", error);
+        redirect("/forgot-password?error=db");
+    }
+}
+
+export async function resetPassword(formData: FormData) {
+    const password = String(formData.get("password") || "");
+    const confirmPassword = String(formData.get("confirmPassword") || "");
+    const token = String(formData.get("token") || "");
+
+    if (!password || !confirmPassword || !token) {
+        redirect(`/reset-password?token=${token}&error=missing`);
+    }
+
+    if (password !== confirmPassword) {
+        redirect(`/reset-password?token=${token}&error=mismatch`);
+    }
+
+    if (password.length < 6) {
+        redirect(`/reset-password?token=${token}&error=weak`);
+    }
+
+    try {
+        // Token'ı doğrula
+        const verificationToken = await prisma.verificationToken.findUnique({
+            where: { token }
+        });
+
+        if (!verificationToken || verificationToken.expires < new Date()) {
+            redirect(`/reset-password?token=${token}&error=invalid`);
+        }
+
+        const hashedPassword = await bcrypt.hash(password, 12);
+        
+        // Şifreyi güncelle
+        await prisma.user.update({
+            where: { email: verificationToken.identifier },
+            data: { password: hashedPassword }
+        });
+
+        // Kullanılan token'ı sil
+        await prisma.verificationToken.delete({
+            where: { token }
+        });
+
+        console.log(`Password reset successfully for user: ${verificationToken.identifier}`);
+        
+        redirect("/login?reset=success");
+    } catch (error) {
+        if (error instanceof Error && error.message.includes("NEXT_REDIRECT")) {
+            throw error;
+        }
+        console.error("Password reset error:", error);
+        redirect(`/reset-password?token=${token}&error=db`);
+    }
 }
 

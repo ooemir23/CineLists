@@ -118,143 +118,140 @@ export function HeroSlider({ items, friendPopularIds = [] }: HeroSliderProps) {
         : "/placeholder-hero.jpg";
 
     return (
-        <div className="flex flex-col gap-6">
-            <div className="w-full h-[65svh] md:h-[500px] rounded-[32px] md:rounded-[40px] overflow-hidden shadow-2xl border border-white/10 relative group">
-                <AnimatePresence mode="wait">
-                    <motion.div
-                        key={`${currentItem.id}-${currentItem.category}-${isManual ? "manual" : "auto"}`}
-                        onAnimationComplete={() => setIsManual(false)}
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        transition={{ duration: isManual ? 0 : 1.5, ease: "easeInOut" }}
-                        className="absolute inset-0 touch-pan-y"
-                        drag="x"
-                        dragConstraints={{ left: 0, right: 0 }}
-                        dragElastic={0.2}
-                        onDragEnd={handleDragEnd}
-                    >
-                        {/* Background Backdrop */}
-                        <div
-                            className="absolute inset-0 bg-cover bg-center bg-no-repeat transition-transform duration-[10s] ease-out scale-110 motion-reduce:scale-100"
-                            style={{ backgroundImage: `url(${backdropUrl})` }}
-                        />
+        <div className="w-full h-[65svh] md:h-[500px] rounded-[32px] md:rounded-[40px] overflow-hidden shadow-2xl border border-white/10 relative group">
+            <AnimatePresence mode="wait">
+                <motion.div
+                    key={`${currentItem.id}-${currentItem.category}-${isManual ? "manual" : "auto"}`}
+                    onAnimationComplete={() => setIsManual(false)}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: isManual ? 0 : 1.5, ease: "easeInOut" }}
+                    className="absolute inset-0 touch-pan-y"
+                    drag="x"
+                    dragConstraints={{ left: 0, right: 0 }}
+                    dragElastic={0.2}
+                    onDragEnd={handleDragEnd}
+                >
+                    {/* Background Backdrop */}
+                    <div
+                        className="absolute inset-0 bg-cover bg-center bg-no-repeat transition-transform duration-[10s] ease-out scale-110 motion-reduce:scale-100"
+                        style={{ backgroundImage: `url(${backdropUrl})` }}
+                    />
 
-                        {/* Multi-layered Gradient for better text readability */}
-                        <div className="absolute inset-0 bg-gradient-to-t from-[#020617] via-[#020617]/40 to-transparent" />
-                        <div className="absolute inset-0 bg-gradient-to-r from-[#020617]/60 via-transparent to-transparent" />
+                    {/* Multi-layered Gradient for better text readability */}
+                    <div className="absolute inset-0 bg-gradient-to-t from-[#020617] via-[#020617]/40 to-transparent" />
+                    <div className="absolute inset-0 bg-gradient-to-r from-[#020617]/60 via-transparent to-transparent" />
 
-                        {/* Content Over the Backdrop */}
-                        <div className="absolute inset-0 flex flex-col justify-end p-6 md:p-10 gap-3 md:gap-4 pb-16 md:pb-10">
+                    {/* Content Over the Backdrop */}
+                    <div className="absolute inset-0 flex flex-col justify-end p-6 md:p-10 gap-3 md:gap-4 pb-16 md:pb-10">
 
-                            <div className="space-y-2 max-w-2xl pt-10">
-
-                                <motion.h2
-                                    initial={{ y: 20, opacity: 0 }}
-                                    animate={{ y: 0, opacity: 1 }}
-                                    transition={{ delay: isManual ? 0 : 0.3, duration: isManual ? 0 : 0.5 }}
-                                    className="text-3xl md:text-5xl lg:text-6xl font-black text-white leading-[1.1] tracking-tighter drop-shadow-2xl line-clamp-2 md:line-clamp-2"
-                                >
-                                    {currentItem.title}
-                                </motion.h2>
-                                <motion.p
-                                    initial={{ y: 20, opacity: 0 }}
-                                    animate={{ y: 0, opacity: 1 }}
-                                    transition={{ delay: isManual ? 0 : 0.4, duration: isManual ? 0 : 0.5 }}
-                                    className="text-neutral-300 text-xs md:text-sm line-clamp-3 md:line-clamp-2 font-medium leading-relaxed drop-shadow-md max-w-lg"
-                                >
-                                    {currentItem.overview}
-                                </motion.p>
-                            </div>
-
-                            <motion.div
+                        <div className="space-y-2 max-w-2xl pt-10">
+                            <motion.h2
                                 initial={{ y: 20, opacity: 0 }}
                                 animate={{ y: 0, opacity: 1 }}
-                                transition={{ delay: isManual ? 0 : 0.5, duration: isManual ? 0 : 0.5 }}
-                                className="flex flex-wrap items-center gap-3 mt-1"
+                                transition={{ delay: isManual ? 0 : 0.3, duration: isManual ? 0 : 0.5 }}
+                                className="text-3xl md:text-5xl lg:text-6xl font-black text-white leading-[1.1] tracking-tighter drop-shadow-2xl line-clamp-2 md:line-clamp-2"
                             >
-                                <HeroActions movieId={currentItem.id} mediaType={currentItem.media_type} />
-
-                                <div className="flex items-center gap-2">
-                                    {isFriendsPopular && (
-                                        <div className="flex items-center gap-1.5 text-white/90 bg-emerald-500/20 backdrop-blur-xl px-3 py-2 rounded-xl border border-emerald-400/30 shadow-lg mt-2">
-                                            <TrendingUp size={14} className="text-emerald-400" />
-                                            <span className="font-bold text-[10px] uppercase tracking-wider">Arkadaşlarında Popüler</span>
-                                        </div>
-                                    )}
-                                    {eventMeta && EventIcon && (
-                                        <div className="flex items-center gap-1.5 text-white/90 bg-white/10 backdrop-blur-xl px-3 py-2 rounded-xl border border-white/10 shadow-lg mt-2">
-                                            <EventIcon size={14} className={eventMeta.color} />
-                                            <span className="font-bold text-[10px] uppercase tracking-wider">{eventMeta.label}</span>
-                                        </div>
-                                    )}
-                                    {metaLabel && (
-                                        <div className="flex items-center gap-1.5 text-white/90 bg-white/10 backdrop-blur-xl px-3 py-2 rounded-xl border border-white/10 shadow-lg mt-2">
-                                            <span className="font-bold text-[10px] uppercase tracking-wider">{metaLabel}</span>
-                                        </div>
-                                    )}
-                                    <div className="flex items-center gap-1.5 text-white/90 bg-white/10 backdrop-blur-xl px-3 py-2 rounded-xl border border-white/10 shadow-lg mt-2">
-                                        <Icon size={14} className={cn("fill-current", config.color)} />
-                                        <span className="font-bold text-[10px] uppercase tracking-wider">{config.label}</span>
-                                    </div>
-
-                                    <div className="flex items-center gap-1.5 text-white/90 bg-white/10 backdrop-blur-xl px-3 py-2 rounded-xl border border-white/10 shadow-lg mt-2">
-                                        <Star size={14} className="fill-current text-amber-400" />
-                                        <span className="font-bold text-sm tabular-nums">{currentItem.vote_average.toFixed(1)}</span>
-                                    </div>
-                                </div>
-                            </motion.div>
+                                {currentItem.title}
+                            </motion.h2>
+                            <motion.p
+                                initial={{ y: 20, opacity: 0 }}
+                                animate={{ y: 0, opacity: 1 }}
+                                transition={{ delay: isManual ? 0 : 0.4, duration: isManual ? 0 : 0.5 }}
+                                className="text-neutral-300 text-xs md:text-sm line-clamp-3 md:line-clamp-2 font-medium leading-relaxed drop-shadow-md max-w-lg"
+                            >
+                                {currentItem.overview}
+                            </motion.p>
                         </div>
-                    </motion.div>
-                </AnimatePresence>
 
-                {/* Slider Navigation Arrows */}
-                <div className="absolute inset-y-0 left-4 hidden md:flex items-center z-20">
+                        <motion.div
+                            initial={{ y: 20, opacity: 0 }}
+                            animate={{ y: 0, opacity: 1 }}
+                            transition={{ delay: isManual ? 0 : 0.5, duration: isManual ? 0 : 0.5 }}
+                            className="flex flex-wrap items-center gap-3 mt-1"
+                        >
+                            <HeroActions movieId={currentItem.id} mediaType={currentItem.media_type} />
+
+                            <div className="flex items-center gap-2">
+                                {isFriendsPopular && (
+                                    <div className="flex items-center gap-1.5 text-white/90 bg-emerald-500/20 backdrop-blur-xl px-3 py-2 rounded-xl border border-emerald-400/30 shadow-lg mt-2">
+                                        <TrendingUp size={14} className="text-emerald-400" />
+                                        <span className="font-bold text-[10px] uppercase tracking-wider">Arkadaşlarında Popüler</span>
+                                    </div>
+                                )}
+                                {eventMeta && EventIcon && (
+                                    <div className="flex items-center gap-1.5 text-white/90 bg-white/10 backdrop-blur-xl px-3 py-2 rounded-xl border border-white/10 shadow-lg mt-2">
+                                        <EventIcon size={14} className={eventMeta.color} />
+                                        <span className="font-bold text-[10px] uppercase tracking-wider">{eventMeta.label}</span>
+                                    </div>
+                                )}
+                                {metaLabel && (
+                                    <div className="flex items-center gap-1.5 text-white/90 bg-white/10 backdrop-blur-xl px-3 py-2 rounded-xl border border-white/10 shadow-lg mt-2">
+                                        <span className="font-bold text-[10px] uppercase tracking-wider">{metaLabel}</span>
+                                    </div>
+                                )}
+                                <div className="flex items-center gap-1.5 text-white/90 bg-white/10 backdrop-blur-xl px-3 py-2 rounded-xl border border-white/10 shadow-lg mt-2">
+                                    <Icon size={14} className={cn("fill-current", config.color)} />
+                                    <span className="font-bold text-[10px] uppercase tracking-wider">{config.label}</span>
+                                </div>
+
+                                <div className="flex items-center gap-1.5 text-white/90 bg-white/10 backdrop-blur-xl px-3 py-2 rounded-xl border border-white/10 shadow-lg mt-2">
+                                    <Star size={14} className="fill-current text-amber-400" />
+                                    <span className="font-bold text-sm tabular-nums">{currentItem.vote_average.toFixed(1)}</span>
+                                </div>
+                            </div>
+                        </motion.div>
+                    </div>
+                </motion.div>
+            </AnimatePresence>
+
+            {/* Slider Navigation Arrows */}
+            <div className="absolute inset-y-0 left-4 hidden md:flex items-center z-20">
+                <button
+                    onClick={goPrev}
+                    className="w-10 h-10 rounded-full bg-black/40 hover:bg-black/60 border border-white/10 backdrop-blur-md flex items-center justify-center text-white/80 hover:text-white transition-all"
+                    aria-label="Onceki"
+                >
+                    <ChevronLeft className="w-5 h-5" />
+                </button>
+            </div>
+            <div className="absolute inset-y-0 right-4 hidden md:flex items-center z-20">
+                <button
+                    onClick={goNext}
+                    className="w-10 h-10 rounded-full bg-black/40 hover:bg-black/60 border border-white/10 backdrop-blur-md flex items-center justify-center text-white/80 hover:text-white transition-all"
+                    aria-label="Sonraki"
+                >
+                    <ChevronRight className="w-5 h-5" />
+                </button>
+            </div>
+
+            {/* Slider Navigation Dots - Mobile Optimized */}
+            <div className="absolute top-4 right-4 md:bottom-6 md:right-8 md:top-auto flex items-center gap-2 z-20">
+                {items.map((_, index) => (
                     <button
-                        onClick={goPrev}
-                        className="w-10 h-10 rounded-full bg-black/40 hover:bg-black/60 border border-white/10 backdrop-blur-md flex items-center justify-center text-white/80 hover:text-white transition-all"
-                        aria-label="Onceki"
-                    >
-                        <ChevronLeft className="w-5 h-5" />
-                    </button>
-                </div>
-                <div className="absolute inset-y-0 right-4 hidden md:flex items-center z-20">
-                    <button
-                        onClick={goNext}
-                        className="w-10 h-10 rounded-full bg-black/40 hover:bg-black/60 border border-white/10 backdrop-blur-md flex items-center justify-center text-white/80 hover:text-white transition-all"
-                        aria-label="Sonraki"
-                    >
-                        <ChevronRight className="w-5 h-5" />
-                    </button>
-                </div>
-
-                {/* Slider Navigation Dots - Mobile Optimized */}
-                <div className="absolute top-4 right-4 md:bottom-6 md:right-8 md:top-auto flex items-center gap-2 z-20">
-                    {items.map((_, index) => (
-                        <button
-                            key={index}
-                            onClick={() => setCurrentIndex(index)}
-                            className={cn(
-                                "transition-all duration-300 shadow-lg border border-white/10 backdrop-blur-sm",
-                                index === currentIndex
-                                    ? "bg-white w-6 h-1.5 rounded-full"
-                                    : "bg-white/20 w-1.5 h-1.5 rounded-full hover:bg-white/40"
-                            )}
-                            aria-label={`Go to slide ${index + 1}`}
-                        />
-                    ))}
-                </div>
-
-                {/* Progress Bar */}
-                <div className="absolute bottom-0 left-0 h-1 bg-white/10 w-full z-20">
-                    <motion.div
-                        key={currentIndex}
-                        initial={{ width: "0%" }}
-                        animate={{ width: "100%" }}
-                        transition={{ duration: 10, ease: "linear" }}
-                        className={cn("h-full", config.bgColor)}
+                        key={index}
+                        onClick={() => setCurrentIndex(index)}
+                        className={cn(
+                            "transition-all duration-300 shadow-lg border border-white/10 backdrop-blur-sm",
+                            index === currentIndex
+                                ? "bg-white w-6 h-1.5 rounded-full"
+                                : "bg-white/20 w-1.5 h-1.5 rounded-full hover:bg-white/40"
+                        )}
+                        aria-label={`Go to slide ${index + 1}`}
                     />
-                </div>
+                ))}
+            </div>
+
+            {/* Progress Bar */}
+            <div className="absolute bottom-0 left-0 h-1 bg-white/10 w-full z-20">
+                <motion.div
+                    key={currentIndex}
+                    initial={{ width: "0%" }}
+                    animate={{ width: "100%" }}
+                    transition={{ duration: 10, ease: "linear" }}
+                    className={cn("h-full", config.bgColor)}
+                />
             </div>
         </div>
     );

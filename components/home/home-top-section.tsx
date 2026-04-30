@@ -6,7 +6,6 @@ import { ArrowRight, Rss } from "lucide-react";
 import { FriendsActivity } from "./friends-activity";
 import { HeroSlider } from "./hero-slider";
 import {
-    getFavoriteActorsUpcoming,
     getWatchedShowsNextEpisodes,
     getFriendsViewingStats,
     getFollowedHighlights,
@@ -16,16 +15,16 @@ import {
     getFriendsTrendingHighlights,
 } from "@/lib/hero-personalization-actions";
 import { UpcomingEpisodesCarousel } from "./carousels/upcoming-episodes-carousel";
-import { FavoriteActorsCarousel } from "./carousels/favorite-actors-carousel";
 
 export async function HomeTopSection({ personalizedResults }: { personalizedResults?: any[] }) {
+    const session = await auth();
+
     // Fetch diverse content for the slider - use personalized data
-    const [trendingMovies, upcomingMovies, trendingTV, popularMovies, favoriteActorProjects, upcomingEpisodes, friendStats, followedHighlights, platformHighlights, todayHighlights, continueHighlights, friendsTrendingHighlights, userPreferences] = await Promise.all([
+    const [trendingMovies, upcomingMovies, trendingTV, popularMovies, upcomingEpisodes, friendStats, followedHighlights, platformHighlights, todayHighlights, continueHighlights, friendsTrendingHighlights, userPreferences] = await Promise.all([
         tmdb.getTrendingMovies(),
         tmdb.getUpcomingMovies(),
         tmdb.getTrendingTV(),
         tmdb.getPopular("movie"),
-        getFavoriteActorsUpcoming(),
         getWatchedShowsNextEpisodes(),
         getFriendsViewingStats(),
         getFollowedHighlights(),
@@ -34,7 +33,6 @@ export async function HomeTopSection({ personalizedResults }: { personalizedResu
         getContinueWatchingHighlights(),
         getFriendsTrendingHighlights(),
         (async () => {
-            const session = await auth();
             if (!session?.user?.id) return { favoriteGenres: [], platforms: [] };
             return prisma.user.findUnique({
                 where: { id: session.user.id },
@@ -217,41 +215,68 @@ export async function HomeTopSection({ personalizedResults }: { personalizedResu
             const bCategory = priorityByCategory[b.category] ?? 99;
             if (aCategory !== bCategory) return aCategory - bCategory;
 
+
             return (b.vote_average || 0) - (a.vote_average || 0);
         })
         .slice(0, 10);
     const friendPopularIds = friendStats.map(item => item.tmdbId);
 
     return (
-        <section className="flex flex-col lg:flex-row gap-4 w-full">
-            {/* Left Column: Hero Slider + Carousels (Full mobile, 60% desktop) */}
-            <div className="w-full lg:w-[60%] xl:w-[65%] flex flex-col gap-4">
-                {/* Upcoming Episodes - Sticky at top */}
-                {upcomingEpisodes.length > 0 && (
-                    <div className="relative z-20 backdrop-blur-sm bg-gradient-to-br from-[#0f1a2b]/80 via-[#0f1a2b]/60 to-[#0b1220]/70 rounded-2xl p-3 border border-white/10 shadow-lg">
-                        <UpcomingEpisodesCarousel episodes={upcomingEpisodes} />
-                    </div>
-                )}
-
-                {/* Main Hero Slider */}
+        <section className="w-full grid grid-cols-1 lg:grid-cols-12 gap-4 items-stretch">
+            {/* Left Column: CTA (Row 1) & Hero Slider (Row 2) */}
+            <div className="lg:col-span-7 xl:col-span-8 flex flex-col gap-4">
+                {/* Top Section: Upcoming Episodes or Auth CTA */}
                 <div className="w-full">
-                    <HeroSlider items={items} friendPopularIds={friendPopularIds} />
+                    {upcomingEpisodes.length > 0 ? (
+                        <div className="relative z-20 backdrop-blur-sm bg-gradient-to-br from-[#0f1a2b]/80 via-[#0f1a2b]/60 to-[#0b1220]/70 rounded-2xl p-3 border border-white/10 shadow-lg">
+                            <UpcomingEpisodesCarousel episodes={upcomingEpisodes} />
+                        </div>
+                    ) : !session ? (
+                        <div className="relative z-20 backdrop-blur-sm bg-gradient-to-br from-[#0f1a2b]/80 via-[#0f1a2b]/60 to-[#0b1220]/70 rounded-2xl p-4 border border-white/10 shadow-lg overflow-hidden group">
+                            {/* Decorative elements */}
+                            <div className="absolute top-0 right-0 w-32 h-32 bg-amber-400/5 blur-3xl rounded-full -mr-16 -mt-16 group-hover:bg-amber-400/10 transition-colors" />
+                            <div className="absolute bottom-0 left-0 w-24 h-24 bg-blue-400/5 blur-2xl rounded-full -ml-12 -mb-12 group-hover:bg-blue-400/10 transition-colors" />
+
+                            <div className="relative flex flex-col md:flex-row items-center justify-between gap-4">
+                                <div className="flex flex-col gap-1 text-center md:text-left">
+                                    <div className="flex items-center justify-center md:justify-start gap-2">
+                                        <span className="flex h-2 w-2 rounded-full bg-amber-400 animate-pulse" />
+                                        <h3 className="text-sm font-black text-white uppercase tracking-tight">Kişisel Deneyimini Başlat</h3>
+                                    </div>
+                                    <p className="text-xs text-neutral-400 font-bold max-w-sm">
+                                        İzlediğin dizileri takip etmek, sana özel öneriler almak ve arkadaşlarınla etkileşime geçmek için hemen katıl.
+                                    </p>
+                                </div>
+
+                                <div className="flex items-center gap-3">
+                                    <Link
+                                        href="/login"
+                                        className="px-6 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-white text-xs font-black uppercase tracking-wider border border-white/10 transition-all hover:scale-105 active:scale-95"
+                                    >
+                                        Giriş Yap
+                                    </Link>
+                                    <Link
+                                        href="/register"
+                                        className="px-6 py-2.5 rounded-xl bg-amber-400 hover:bg-amber-500 text-slate-950 text-xs font-black uppercase tracking-wider transition-all hover:scale-105 active:scale-95 shadow-lg shadow-amber-400/20"
+                                    >
+                                        Kayıt Ol
+                                    </Link>
+                                </div>
+                            </div>
+                        </div>
+                    ) : null}
                 </div>
 
-                {/* Scrollable Carousels */}
-                <div className="space-y-4">
-                    {/* Favorite Actors' Movies */}
-                    {favoriteActorProjects.length > 0 && (
-                        <FavoriteActorsCarousel items={favoriteActorProjects} />
-                    )}
+                {/* Hero Slider Section */}
+                <div className="w-full flex-1 min-h-[400px] lg:min-h-0">
+                    <HeroSlider items={items} friendPopularIds={friendPopularIds} />
                 </div>
             </div>
 
-            {/* Right Column: Friends Activity (40% on desktop, hidden on mobile) */}
-            <div className="hidden lg:flex lg:w-[40%] xl:w-[35%] flex-col self-stretch gap-4">
-                {/* Unified Panel */}
-                <div className="bg-[#1A202C]/60 backdrop-blur-xl rounded-[2.5rem] border border-white/5 overflow-hidden flex flex-col h-[65svh] md:h-[500px] lg:h-[calc(65svh+128px)] xl:h-[calc(65svh+128px)]">
-
+            {/* Right Column: Friends Activity (Hidden on mobile) */}
+            <div className="hidden lg:flex lg:col-span-5 xl:col-span-4 flex-col overflow-hidden">
+                {/* Unified Panel - Matches total height of left column */}
+                <div className="bg-[#1A202C]/60 backdrop-blur-xl rounded-[2.5rem] border border-white/5 overflow-hidden flex flex-col h-full">
                     {/* Header - Compact */}
                     <div className="px-5 py-3 border-b border-white/5 bg-white/5 flex items-center justify-between shrink-0">
                         <Link href="/feed" className="flex items-center gap-2 group">

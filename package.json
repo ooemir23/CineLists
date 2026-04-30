@@ -36,6 +36,7 @@
     "react": "19.2.3",
     "react-dom": "19.2.3",
     "react-image-crop": "^11.0.10",
+    "resend": "^6.12.2",
     "tailwind-merge": "^3.4.0",
     "tesseract.js": "^7.0.0",
     "use-debounce": "^10.1.0",

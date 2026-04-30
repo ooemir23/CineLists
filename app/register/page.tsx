@@ -24,7 +24,7 @@ export default async function RegisterPage({ searchParams }: RegisterPageProps) 
                     : null;
 
     return (
-        <div className=" relative flex items-center justify-center px-4 py-12 overflow-hidden bg-slate-950">
+        <div className="relative min-h-[calc(100svh-72px)] flex items-center justify-center px-4 py-12 overflow-hidden bg-[#020617]">
             <PosterBackground />
 
             <div className="w-full max-w-md relative z-20 animate-in fade-in zoom-in-95 duration-500">

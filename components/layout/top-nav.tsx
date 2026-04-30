@@ -48,7 +48,7 @@ export function TopNav({ user }: TopNavProps) {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  const navBg = 'bg-slate-900/90 backdrop-blur-xl border-b border-white/10';
+  const navBg = 'bg-slate-900/90 backdrop-blur-xl';
   const activeColor = 'text-amber-400';
   const inactiveColor = 'text-slate-400 hover:text-white';
 
@@ -98,45 +98,44 @@ export function TopNav({ user }: TopNavProps) {
           </div>
 
           {/* Navigation Middle Group */}
-          <div className="flex items-center justify-center gap-1 md:gap-2 lg:gap-4 relative h-full">
+          <div className="flex items-center justify-center relative h-full flex-grow">
+            {/* Left Items Wrapper */}
+            <div className="flex-1 flex justify-end gap-1 md:gap-2 lg:gap-4">
+              {/* İzlenenler */}
+              <Link
+                href="/watched"
+                className={`flex flex-col items-center justify-center h-full transition-all duration-200 px-3 group ${activeView === 'watched' ? activeColor : inactiveColor}`}
+              >
+                <div className={`p-1.5 rounded-xl transition-colors ${activeView === 'watched' ? 'bg-amber-400/10' : 'group-hover:bg-white/5'}`}>
+                  <Check size={22} />
+                </div>
+                <span className="text-[10px] mt-0.5 font-bold uppercase tracking-wider">İzlenenler</span>
+              </Link>
 
+              {/* Listem */}
+              <Link
+                href="/watchlist"
+                className={`flex flex-col items-center justify-center h-full transition-all duration-200 px-3 group ${activeView === 'watchlist' ? activeColor : inactiveColor}`}
+              >
+                <div className={`p-1.5 rounded-xl transition-colors ${activeView === 'watchlist' ? 'bg-amber-400/10' : 'group-hover:bg-white/5'}`}>
+                  <Bookmark size={22} />
+                </div>
+                <span className="text-[10px] mt-0.5 font-bold uppercase tracking-wider">Listem</span>
+              </Link>
+            </div>
 
-            {/* İzlenenler */}
-            <Link
-              href="/watched"
-              className={`flex flex-col items-center justify-center h-full transition-all duration-200 px-3 group ${activeView === 'watched' ? activeColor : inactiveColor}`}
-            >
-              <div className={`p-1.5 rounded-xl transition-colors ${activeView === 'watched' ? 'bg-amber-400/10' : 'group-hover:bg-white/5'}`}>
-                <Check size={22} />
-              </div>
-              <span className="text-[10px] mt-0.5 font-bold uppercase tracking-wider">İzlenenler</span>
-            </Link>
-
-            {/* Listem */}
-            <Link
-              href="/watchlist"
-              className={`flex flex-col items-center justify-center h-full transition-all duration-200 px-3 group ${activeView === 'watchlist' ? activeColor : inactiveColor}`}
-            >
-              <div className={`p-1.5 rounded-xl transition-colors ${activeView === 'watchlist' ? 'bg-amber-400/10' : 'group-hover:bg-white/5'}`}>
-                <Bookmark size={22} />
-              </div>
-              <span className="text-[10px] mt-0.5 font-bold uppercase tracking-wider">Listem</span>
-            </Link>
-
-
-
-            {/* Central Search Button with CORRECTED CURVED TEXT */}
-            <div className="flex flex-col items-center justify-center h-full relative px-2 mx-2">
+            {/* Search/Explore Button (Center) */}
+            <div className="flex flex-col items-center justify-center h-full relative px-4 mx-2 flex-shrink-0">
               <Link
                 href="/search"
                 className="group relative flex items-center justify-center"
                 style={{ marginTop: 15 }}
               >
-                <div className="absolute inset-0 bg-amber-400 rounded-full blur-md opacity-20 group-hover:opacity-40 transition-all duration-500" />
+                {/* Glowing Aura Effect */}
+                <div className="absolute inset-0 bg-amber-400/20 blur-2xl rounded-full scale-150 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
 
                 <div
-                  className="relative flex items-center justify-center rounded-full border-4 border-slate-950 transition-all duration-500 bg-amber-400 text-slate-950 shadow-xl group-hover:scale-110 group-hover:rotate-3 active:scale-95 z-20"
-                  style={{ width: 66, height: 66 }}
+                  className="relative z-10 w-14 h-14 md:w-16 md:h-16 bg-amber-400 rounded-full flex items-center justify-center shadow-lg shadow-amber-400/20 group-hover:shadow-amber-400/40 group-hover:scale-110 transition-all duration-300 text-slate-950"
                 >
                   <Search size={32} strokeWidth={3} />
                 </div>
@@ -155,10 +154,10 @@ export function TopNav({ user }: TopNavProps) {
                     ease: "easeInOut"
                   }}
                 >
-                  <svg viewBox="0 0 120 50" className="w-full h-full overflow-visible">
-                    {/* Wider path to accommodate all letters */}
-                    <path id="curve-path" d="M 10,15 Q 60,45 110,15" fill="transparent" />
-                    <text className="text-[8px] font-black fill-amber-400 tracking-[0.1em] uppercase drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]">
+                  <svg viewBox="0 0 160 60" className="w-full h-full overflow-visible">
+                    {/* Wider path to accommodate all letters and ensure perfect centering */}
+                    <path id="curve-path" d="M 20,15 Q 80,55 140,15" fill="transparent" />
+                    <text className="text-[9px] font-black fill-amber-400 tracking-[0.1em] uppercase drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]">
                       <textPath href="#curve-path" startOffset="50%" textAnchor="middle">
                         Ara • Keşfet • İzle
                       </textPath>
@@ -168,41 +167,43 @@ export function TopNav({ user }: TopNavProps) {
               </Link>
             </div>
 
-            {/* Akış */}
-            <Link
-              href="/feed"
-              className={`flex flex-col items-center justify-center h-full transition-all duration-200 px-3 group ${activeView === 'feed' ? activeColor : inactiveColor}`}
-            >
-              <div className={`p-1.5 rounded-xl transition-colors ${activeView === 'feed' ? 'bg-amber-400/10' : 'group-hover:bg-white/5'}`}>
-                <Compass size={22} />
-              </div>
-              <span className="text-[10px] mt-0.5 font-bold uppercase tracking-wider">Akış</span>
-            </Link>
-
-            {/* İstatistikler */}
-            <Link
-              href="/stats"
-              className={`flex flex-col items-center justify-center h-full transition-all duration-200 px-3 group ${activeView === 'stats' ? activeColor : inactiveColor}`}
-            >
-              <div className={`p-1.5 rounded-xl transition-colors ${activeView === 'stats' ? 'bg-amber-400/10' : 'group-hover:bg-white/5'}`}>
-                <BarChart3 size={22} />
-              </div>
-              <span className="text-[10px] mt-0.5 font-bold uppercase tracking-wider">İstatistik</span>
-            </Link>
-
-            {desktopLibraryItems.map((item) => (
+            {/* Right Items Wrapper */}
+            <div className="flex-1 flex justify-start gap-1 md:gap-2 lg:gap-4">
+              {/* Akış */}
               <Link
-                key={item.key}
-                href={item.href}
-                className={`flex flex-col items-center justify-center h-full transition-all duration-200 px-3 group ${activeView === item.key ? activeColor : inactiveColor}`}
+                href="/feed"
+                className={`flex flex-col items-center justify-center h-full transition-all duration-200 px-3 group ${activeView === 'feed' ? activeColor : inactiveColor}`}
               >
-                <div className={`p-1.5 rounded-xl transition-colors ${activeView === item.key ? 'bg-amber-400/10' : 'group-hover:bg-white/5'}`}>
-                  <item.icon size={22} />
+                <div className={`p-1.5 rounded-xl transition-colors ${activeView === 'feed' ? 'bg-amber-400/10' : 'group-hover:bg-white/5'}`}>
+                  <Compass size={22} />
                 </div>
-                <span className="text-[10px] mt-0.5 font-bold uppercase tracking-wider">{item.label}</span>
+                <span className="text-[10px] mt-0.5 font-bold uppercase tracking-wider">Akış</span>
               </Link>
-            ))}
 
+              {/* İstatistikler */}
+              <Link
+                href="/stats"
+                className={`flex flex-col items-center justify-center h-full transition-all duration-200 px-3 group ${activeView === 'stats' ? activeColor : inactiveColor}`}
+              >
+                <div className={`p-1.5 rounded-xl transition-colors ${activeView === 'stats' ? 'bg-amber-400/10' : 'group-hover:bg-white/5'}`}>
+                  <BarChart3 size={22} />
+                </div>
+                <span className="text-[10px] mt-0.5 font-bold uppercase tracking-wider">İstatistik</span>
+              </Link>
+
+              {desktopLibraryItems.map((item) => (
+                <Link
+                  key={item.key}
+                  href={item.href}
+                  className={`flex flex-col items-center justify-center h-full transition-all duration-200 px-3 group ${activeView === item.key ? activeColor : inactiveColor}`}
+                >
+                  <div className={`p-1.5 rounded-xl transition-colors ${activeView === item.key ? 'bg-amber-400/10' : 'group-hover:bg-white/5'}`}>
+                    <item.icon size={22} />
+                  </div>
+                  <span className="text-[10px] mt-0.5 font-bold uppercase tracking-wider">{item.label}</span>
+                </Link>
+              ))}
+            </div>
           </div>
 
           {/* Right Section - Profile and Utilities */}
@@ -244,6 +245,29 @@ export function TopNav({ user }: TopNavProps) {
               </button>
             </div>
           </div>
+        </div>
+
+        {/* Custom Curved Border & Fill */}
+        <div className="absolute top-[71px] left-0 w-full flex items-start pointer-events-none overflow-visible">
+          <div className="flex-1 h-[1px] bg-white/10" />
+          <div className="flex-shrink-0 w-[240px] h-[60px] relative">
+            <svg width="240" height="60" viewBox="0 0 240 60" className="overflow-visible">
+              {/* Fill Area */}
+              <path 
+                d="M 0 0 Q 120 70 240 0" 
+                fill="#0f172a" 
+                className="opacity-95"
+              />
+              {/* Border Line */}
+              <path 
+                d="M 0 0 Q 120 70 240 0" 
+                fill="none" 
+                stroke="rgba(255,255,255,0.1)" 
+                strokeWidth="1.5" 
+              />
+            </svg>
+          </div>
+          <div className="flex-1 h-[1px] bg-white/10" />
         </div>
       </header>
 
