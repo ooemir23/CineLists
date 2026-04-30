@@ -5,7 +5,7 @@ import { SocialAuth } from "@/components/auth/social-auth";
 import { PosterBackground } from "@/components/auth/poster-background";
 
 type LoginPageProps = {
-    searchParams: Promise<{ error?: string }>;
+    searchParams: Promise<{ error?: string; reset?: string }>;
 };
 
 export default async function LoginPage({ searchParams }: LoginPageProps) {
