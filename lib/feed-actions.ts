@@ -5,10 +5,11 @@ import { prisma } from "@/lib/prisma";
 
 export type FeedActivity = {
     id: string;
-    type: "WATCHED" | "RATED" | "REVIEWED";
+    type: "WATCHED" | "RATED" | "REVIEWED" | "COMMENTED" | "LISTED";
     createdAt: Date;
     rating: number | null;
     review: string | null;
+    content?: string | null; // For comments
     user: {
         id: string;
         name: string | null;
@@ -52,7 +53,6 @@ export async function getFriendsActivity(): Promise<FeedActivity[]> {
         return [];
     }
 
-    // 1. Get IDs of people I follow
     const following = await prisma.follow.findMany({
         where: { followerId: session.user.id },
         select: { followingId: true },
@@ -64,82 +64,112 @@ export async function getFriendsActivity(): Promise<FeedActivity[]> {
         return [];
     }
 
-    // 2. Fetch recent activities from these users
-    const activities = await prisma.activity.findMany({
-        where: {
-            userId: { in: followingIds },
-        },
-        include: {
-            user: {
-                select: {
-                    id: true,
-                    name: true,
-                    image: true,
-                },
+    // Fetch from multiple sources
+    const [activities, comments, watchlist] = await Promise.all([
+        // 1. Regular Activities
+        prisma.activity.findMany({
+            where: { userId: { in: followingIds } },
+            include: {
+                user: { select: { id: true, name: true, image: true } },
+                media: true,
+                episode: { select: { id: true, seasonNumber: true, episodeNumber: true, title: true } },
+                recommendedBy: { select: { id: true, name: true } },
+                _count: { select: { comments: true } }
             },
-            media: true,
-            episode: {
-                select: {
-                    id: true,
-                    seasonNumber: true,
-                    episodeNumber: true,
-                    title: true,
-                }
+            orderBy: { createdAt: "desc" },
+            take: 40,
+        }),
+        // 2. Comments
+        prisma.comment.findMany({
+            where: { userId: { in: followingIds } },
+            include: {
+                user: { select: { id: true, name: true, image: true } },
+                activity: { include: { media: true, episode: { select: { id: true, seasonNumber: true, episodeNumber: true, title: true } } } },
+                episode: { include: { media: true } }
             },
-            recommendedBy: {
-                select: {
-                    id: true,
-                    name: true,
-                }
+            orderBy: { createdAt: "desc" },
+            take: 20,
+        }),
+        // 3. Watchlist (ToWatch)
+        prisma.toWatch.findMany({
+            where: { userId: { in: followingIds } },
+            include: {
+                user: { select: { id: true, name: true, image: true } },
+                media: true
             },
-            _count: {
-                select: { comments: true }
-            }
-        },
-        orderBy: {
-            createdAt: "desc",
-        },
-        take: 100, // Fetch more to group properly
-    });
+            orderBy: { addedAt: "desc" },
+            take: 20,
+        })
+    ]);
 
-    // 3. Group consecutive episode watches
+    // Map everything to FeedActivity
+    const mappedActivities: FeedActivity[] = activities.map(a => a as unknown as FeedActivity);
+
+    const mappedComments: FeedActivity[] = comments.map(c => {
+        const media = c.episode?.media || c.activity?.media;
+        const episode = c.episode || c.activity?.episode;
+
+        if (!media) return null;
+
+        return {
+            id: c.id,
+            type: "COMMENTED",
+            createdAt: c.createdAt,
+            content: c.content,
+            user: c.user,
+            media: media as any,
+            episode: episode as any,
+            _count: { comments: 0 }
+        } as FeedActivity;
+    }).filter((a): a is FeedActivity => a !== null);
+
+    const mappedWatchlist: FeedActivity[] = watchlist.map(w => ({
+        id: w.id,
+        type: "LISTED",
+        createdAt: w.addedAt,
+        user: w.user,
+        media: w.media as any,
+        _count: { comments: 0 }
+    } as FeedActivity));
+
+    // Combine and sort
+    const allActivities = [...mappedActivities, ...mappedComments, ...mappedWatchlist]
+        .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
+    // 3. Group consecutive episode watches (only for activities)
     const groupedActivities: FeedActivity[] = [];
     const processed = new Set<string>();
 
-    for (let i = 0; i < activities.length; i++) {
-        const activity = activities[i];
+    for (let i = 0; i < allActivities.length; i++) {
+        const activity = allActivities[i];
 
         if (processed.has(activity.id)) continue;
 
-        // If this is not a TV episode watch, add it as-is
-        if (!activity.episode || activity.type !== "WATCHED") {
-            groupedActivities.push(activity as unknown as FeedActivity);
+        // Grouping logic only for WATCHED activities
+        if (activity.type !== "WATCHED" || !activity.episode) {
+            groupedActivities.push(activity);
             processed.add(activity.id);
             continue;
         }
 
-        // Find consecutive episodes from same user, same show, same season
         const relatedEpisodes = [activity];
         processed.add(activity.id);
 
-        // Look for episodes within 5 minutes of this one
-        const timeWindow = 5 * 60 * 1000; // 5 minutes
+        const timeWindow = 10 * 60 * 1000; // Expanded to 10 minutes for grouping
         const activityTime = new Date(activity.createdAt).getTime();
 
-        for (let j = i + 1; j < activities.length; j++) {
-            const nextActivity = activities[j];
+        for (let j = i + 1; j < allActivities.length; j++) {
+            const nextActivity = allActivities[j];
 
-            if (processed.has(nextActivity.id)) continue;
+            if (processed.has(nextActivity.id) || nextActivity.type !== "WATCHED" || !nextActivity.episode) continue;
 
             const nextTime = new Date(nextActivity.createdAt).getTime();
             const timeDiff = Math.abs(activityTime - nextTime);
 
-            // Check if it's the same user, same media, same season, and within time window
             if (
-                nextActivity.userId === activity.userId &&
-                nextActivity.mediaId === activity.mediaId &&
-                nextActivity.episode?.seasonNumber === activity.episode.seasonNumber &&
-                nextActivity.type === "WATCHED" &&
+                nextActivity.user.id === activity.user.id &&
+                nextActivity.media.id === activity.media.id &&
+                nextActivity.episode.seasonNumber === activity.episode.seasonNumber &&
                 timeDiff <= timeWindow
             ) {
                 relatedEpisodes.push(nextActivity);
@@ -147,7 +177,6 @@ export async function getFriendsActivity(): Promise<FeedActivity[]> {
             }
         }
 
-        // If we found multiple episodes, create a grouped activity
         if (relatedEpisodes.length > 1) {
             const episodeNumbers = relatedEpisodes
                 .map(a => a.episode!.episodeNumber)
@@ -164,12 +193,11 @@ export async function getFriendsActivity(): Promise<FeedActivity[]> {
                     toEpisode: maxEpisode,
                     count: relatedEpisodes.length
                 }
-            } as unknown as FeedActivity);
+            });
         } else {
-            // Single episode
-            groupedActivities.push(activity as unknown as FeedActivity);
+            groupedActivities.push(activity);
         }
     }
 
-    return groupedActivities.slice(0, 20);
+    return groupedActivities.slice(0, 30);
 }

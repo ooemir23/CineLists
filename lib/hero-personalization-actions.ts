@@ -42,6 +42,7 @@ export interface FollowedHighlight {
     title: string;
     overview: string;
     backdropPath: string | null;
+    posterPath: string | null;
     mediaType: "movie" | "tv";
     voteAverage: number;
     eventLabel: string;
@@ -345,6 +346,7 @@ export async function getFollowedHighlights(): Promise<FollowedHighlight[]> {
                     title: data.title || data.name || item.media.title,
                     overview: data.overview || "",
                     backdropPath: data.backdrop_path || null,
+                    posterPath: data.poster_path || null,
                     mediaType,
                     voteAverage: data.vote_average || 0,
                     eventLabel,
@@ -380,6 +382,7 @@ const buildHighlight = (data: any, eventLabel: string, metaLabel?: string): Foll
         title: data.title || data.name || "",
         overview: data.overview || "",
         backdropPath: data.backdrop_path || null,
+        posterPath: data.poster_path || null,
         mediaType: data.media_type === "tv" || data.name ? "tv" : "movie",
         voteAverage: data.vote_average || 0,
         eventLabel,

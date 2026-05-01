@@ -170,7 +170,7 @@ export function MediaCard({
                                 src={`${IMAGE_BASE_URL}${posterPath}`}
                                 alt={title}
                                 fill
-                                className="object-cover transition-all duration-500 group-hover:scale-110 group-hover:rotate-1"
+                                className="object-fill transition-all duration-500 group-hover:scale-110 group-hover:rotate-1"
                                 sizes="(max-width: 768px) 45vw, (max-width: 1200px) 33vw, 20vw"
                             />
                         ) : (

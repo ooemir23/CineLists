@@ -21,10 +21,11 @@ import { cn } from "@/lib/utils";
 type CompactActivityCardProps = {
     activity: {
         id: string;
-        type: "WATCHED" | "RATED" | "REVIEWED";
+        type: "WATCHED" | "RATED" | "REVIEWED" | "COMMENTED" | "LISTED";
         createdAt: Date;
         rating: number | null;
         review: string | null;
+        content?: string | null;
         watchedWith: string | null;
         recommendedByText: string | null;
         recommendedBy?: {
@@ -74,6 +75,8 @@ export function CompactActivityCard({ activity }: CompactActivityCardProps) {
         WATCHED: "izledi",
         RATED: "puanladı",
         REVIEWED: "inceledi",
+        COMMENTED: "yorum yaptı",
+        LISTED: "listesine ekledi"
 
     }[activity.type];
 

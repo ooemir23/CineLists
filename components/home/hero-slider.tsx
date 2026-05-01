@@ -13,6 +13,7 @@ interface HeroItem {
     title: string;
     overview: string;
     backdrop_path: string | null;
+    poster_path: string | null;
     vote_average: number;
     media_type: "movie" | "tv";
     category: CategoryType;
@@ -93,7 +94,7 @@ export function HeroSlider({ items, friendPopularIds = [] }: HeroSliderProps) {
 
     if (!hasItems) {
         return (
-            <div className="w-full h-[65svh] md:h-[500px] rounded-[32px] md:rounded-[40px] overflow-hidden shadow-2xl border border-white/10 relative bg-gradient-to-br from-[#111827] to-[#0b1220] flex items-center justify-center p-8 text-center">
+            <div className="w-full h-[65svh] md:h-full rounded-[32px] md:rounded-[40px] overflow-hidden shadow-2xl border border-white/10 relative bg-gradient-to-br from-[#111827] to-[#0b1220] flex items-center justify-center p-8 text-center">
                 <div className="max-w-md space-y-3">
                     <h3 className="text-xl md:text-2xl font-black text-white tracking-tight">İçerikler Yüklenemedi</h3>
                     <p className="text-sm text-neutral-300 font-medium">
@@ -112,13 +113,17 @@ export function HeroSlider({ items, friendPopularIds = [] }: HeroSliderProps) {
     const EventIcon = eventMeta?.icon;
     const metaLabel = currentItem.metaLabel;
 
-    // Fallback backdrop
+    // Fallback images
     const backdropUrl = currentItem.backdrop_path
         ? `https://image.tmdb.org/t/p/original${currentItem.backdrop_path}`
         : "/placeholder-hero.jpg";
 
+    const posterUrl = currentItem.poster_path
+        ? `https://image.tmdb.org/t/p/w500${currentItem.poster_path}`
+        : null;
+
     return (
-        <div className="w-full h-[65svh] md:h-[500px] rounded-[32px] md:rounded-[40px] overflow-hidden shadow-2xl border border-white/10 relative group">
+        <div className="w-full h-[65svh] md:h-full rounded-[32px] md:rounded-[40px] overflow-hidden shadow-2xl border border-white/10 relative group">
             <AnimatePresence mode="wait">
                 <motion.div
                     key={`${currentItem.id}-${currentItem.category}-${isManual ? "manual" : "auto"}`}
@@ -135,7 +140,7 @@ export function HeroSlider({ items, friendPopularIds = [] }: HeroSliderProps) {
                 >
                     {/* Background Backdrop */}
                     <div
-                        className="absolute inset-0 bg-cover bg-center bg-no-repeat transition-transform duration-[10s] ease-out scale-110 motion-reduce:scale-100"
+                        className="absolute inset-0 bg-cover bg-center bg-no-repeat transition-transform duration-[10s] ease-out"
                         style={{ backgroundImage: `url(${backdropUrl})` }}
                     />
 
@@ -145,24 +150,41 @@ export function HeroSlider({ items, friendPopularIds = [] }: HeroSliderProps) {
 
                     {/* Content Over the Backdrop */}
                     <div className="absolute inset-0 flex flex-col justify-end p-6 md:p-10 gap-3 md:gap-4 pb-16 md:pb-10">
+                        <div className="flex flex-col md:flex-row items-end gap-6 pt-10">
+                            {/* Portrait Poster - Added to show the "afiş" fully */}
+                            {posterUrl && (
+                                <motion.div
+                                    initial={{ x: -20, opacity: 0 }}
+                                    animate={{ x: 0, opacity: 1 }}
+                                    transition={{ delay: isManual ? 0 : 0.4, duration: 0.5 }}
+                                    className="hidden md:block w-32 lg:w-40 xl:w-48 aspect-[2/3] rounded-2xl overflow-hidden shadow-2xl border border-white/10 shrink-0 mb-2"
+                                >
+                                    <img
+                                        src={posterUrl}
+                                        alt={currentItem.title}
+                                        className="w-full h-full object-cover"
+                                    />
+                                </motion.div>
+                            )}
 
-                        <div className="space-y-2 max-w-2xl pt-10">
-                            <motion.h2
-                                initial={{ y: 20, opacity: 0 }}
-                                animate={{ y: 0, opacity: 1 }}
-                                transition={{ delay: isManual ? 0 : 0.3, duration: isManual ? 0 : 0.5 }}
-                                className="text-3xl md:text-5xl lg:text-6xl font-black text-white leading-[1.1] tracking-tighter drop-shadow-2xl line-clamp-2 md:line-clamp-2"
-                            >
-                                {currentItem.title}
-                            </motion.h2>
-                            <motion.p
-                                initial={{ y: 20, opacity: 0 }}
-                                animate={{ y: 0, opacity: 1 }}
-                                transition={{ delay: isManual ? 0 : 0.4, duration: isManual ? 0 : 0.5 }}
-                                className="text-neutral-300 text-xs md:text-sm line-clamp-3 md:line-clamp-2 font-medium leading-relaxed drop-shadow-md max-w-lg"
-                            >
-                                {currentItem.overview}
-                            </motion.p>
+                            <div className="space-y-2 flex-1 min-w-0">
+                                <motion.h2
+                                    initial={{ y: 20, opacity: 0 }}
+                                    animate={{ y: 0, opacity: 1 }}
+                                    transition={{ delay: isManual ? 0 : 0.3, duration: isManual ? 0 : 0.5 }}
+                                    className="text-3xl md:text-5xl lg:text-6xl font-black text-white leading-[1.1] tracking-tighter drop-shadow-2xl line-clamp-2 md:line-clamp-2"
+                                >
+                                    {currentItem.title}
+                                </motion.h2>
+                                <motion.p
+                                    initial={{ y: 20, opacity: 0 }}
+                                    animate={{ y: 0, opacity: 1 }}
+                                    transition={{ delay: isManual ? 0 : 0.4, duration: isManual ? 0 : 0.5 }}
+                                    className="text-neutral-300 text-xs md:text-sm line-clamp-3 md:line-clamp-2 font-medium leading-relaxed drop-shadow-md max-w-lg"
+                                >
+                                    {currentItem.overview}
+                                </motion.p>
+                            </div>
                         </div>
 
                         <motion.div

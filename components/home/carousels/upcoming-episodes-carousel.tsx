@@ -73,7 +73,7 @@ export function UpcomingEpisodesCarousel({ episodes }: UpcomingEpisodesCarouselP
                                         src={`https://image.tmdb.org/t/p/w185${episode.posterPath}`}
                                         alt={episode.showTitle}
                                         fill
-                                        className="object-cover group-hover:scale-110 transition-transform"
+                                        className="object-fill group-hover:scale-110 transition-transform"
                                     />
                                 </div>
                             )}
