@@ -130,7 +130,7 @@ export function HeroSlider({ items, friendPopularIds = [] }: HeroSliderProps) {
 
                     {/* Content Layer */}
                     <div className="absolute inset-0 z-20 flex flex-col justify-end p-8 md:p-12 lg:p-16">
-                        <div className="flex flex-col lg:flex-row items-end gap-10">
+                        <div className="flex flex-col items-start gap-10">
                             
                             {/* Text Content */}
                             <div className="flex-1 max-w-3xl space-y-6">
@@ -191,26 +191,6 @@ export function HeroSlider({ items, friendPopularIds = [] }: HeroSliderProps) {
                                     <HeroActions movieId={currentItem.id} mediaType={currentItem.media_type} />
                                 </motion.div>
                             </div>
-
-                            {/* Floating Poster (Hidden on Mobile) */}
-                            <motion.div
-                                initial={{ x: 50, opacity: 0, rotate: 5 }}
-                                animate={{ x: 0, opacity: 1, rotate: 0 }}
-                                transition={{ delay: 0.4, duration: 0.8, type: "spring" }}
-                                className="hidden xl:block relative w-56 h-80 rounded-[2rem] overflow-hidden shadow-2xl border border-white/10 rotate-2 hover:rotate-0 transition-transform duration-500 group/poster"
-                            >
-                                {posterUrl ? (
-                                    <Image
-                                        src={posterUrl}
-                                        alt={currentItem.title}
-                                        fill
-                                        className="object-cover"
-                                    />
-                                ) : (
-                                    <div className="w-full h-full bg-slate-900 flex items-center justify-center text-4xl">🎬</div>
-                                )}
-                                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover/poster:opacity-100 transition-opacity" />
-                            </motion.div>
                         </div>
                     </div>
                 </motion.div>
