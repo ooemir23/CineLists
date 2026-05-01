@@ -171,7 +171,7 @@ export function WatchProviders({ providers, isGlobal, isGuest }: WatchProvidersP
                                 </div>
                             )}
 
-                            {providers.flatrate && providers.flatrate.length > 0 && (
+                            {providers?.flatrate && providers.flatrate.length > 0 && (
                                 <div className="space-y-4">
                                     <h4 className="text-[10px] font-black text-neutral-500 uppercase tracking-[0.2em] px-1">Abonelik İle İzle</h4>
                                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
@@ -196,11 +196,11 @@ export function WatchProviders({ providers, isGlobal, isGuest }: WatchProvidersP
                                 </div>
                             )}
 
-                            {(providers.buy || providers.rent) && (
+                            {(providers?.buy || providers?.rent) && (
                                 <div className="space-y-4">
                                     <h4 className="text-[10px] font-black text-neutral-500 uppercase tracking-[0.2em] px-1">Satın Al veya Kirala</h4>
                                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                                        {[...(providers.buy || []), ...(providers.rent || [])].reduce((acc: Provider[], curr) => {
+                                        {[...(providers?.buy || []), ...(providers?.rent || [])].reduce((acc: Provider[], curr) => {
                                             if (!acc.find(p => p.provider_id === curr.provider_id)) acc.push(curr);
                                             return acc;
                                         }, []).map((p) => (
