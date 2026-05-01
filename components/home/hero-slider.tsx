@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { Star, Calendar, TrendingUp, Trophy, ChevronLeft, ChevronRight, Play, Info } from "lucide-react";
 import { HeroActions } from "./hero-actions";
@@ -20,6 +21,8 @@ interface HeroItem {
     category: CategoryType;
     eventLabel?: string;
     metaLabel?: string;
+    platforms?: string[];
+    platformLogos?: { name: string; logoPath: string | null }[];
 }
 
 interface HeroSliderProps {
@@ -33,7 +36,7 @@ const CATEGORY_CONFIG = {
     tv: { label: "Popüler Dizi", icon: TrendingUp, color: "text-emerald-400", bgColor: "bg-emerald-400" },
     popular: { label: "Haftanın Filmi", icon: Trophy, color: "text-purple-400", bgColor: "bg-purple-400" },
     personalized: { label: "Size Özel Öneri", icon: Trophy, color: "text-rose-400", bgColor: "bg-rose-400" },
-    followed: { label: "Takip Ettiklerin", icon: Star, color: "text-cyan-300", bgColor: "bg-cyan-400" },
+    followed: { label: "Senin İçin", icon: Star, color: "text-cyan-300", bgColor: "bg-cyan-400" },
 };
 
 const EVENT_LABELS: Record<string, { label: string; icon: any; color: string; bgColor: string }> = {
@@ -99,10 +102,6 @@ export function HeroSlider({ items, friendPopularIds = [] }: HeroSliderProps) {
         ? `https://image.tmdb.org/t/p/original${currentItem.backdrop_path}`
         : "/placeholder-hero.jpg";
 
-    const posterUrl = currentItem.poster_path
-        ? `https://image.tmdb.org/t/p/w500${currentItem.poster_path}`
-        : null;
-
     return (
         <div className="relative w-full h-full group overflow-hidden rounded-[2.5rem] border border-white/5 bg-slate-950 shadow-2xl">
             <AnimatePresence initial={false} custom={direction} mode="popLayout">
@@ -114,7 +113,6 @@ export function HeroSlider({ items, friendPopularIds = [] }: HeroSliderProps) {
                     transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
                     className="absolute inset-0"
                 >
-                    {/* Immersive Backdrop with Ken Burns Effect */}
                     <motion.div
                         initial={{ scale: 1 }}
                         animate={{ scale: 1.15 }}
@@ -123,98 +121,133 @@ export function HeroSlider({ items, friendPopularIds = [] }: HeroSliderProps) {
                         style={{ backgroundImage: `url(${backdropUrl})` }}
                     />
 
-                    {/* Gradient Overlays for Depth */}
                     <div className="absolute inset-0 bg-gradient-to-t from-[#020617] via-[#020617]/40 to-transparent z-10" />
                     <div className="absolute inset-0 bg-gradient-to-r from-[#020617]/80 via-[#020617]/20 to-transparent z-10" />
                     <div className="absolute inset-0 bg-black/20 z-10" />
 
-                    {/* Content Layer */}
-                    <div className="absolute inset-0 z-20 flex flex-col justify-end p-8 md:p-12 lg:p-16">
-                        <div className="flex flex-col items-start gap-10">
-                            
-                            {/* Text Content */}
-                            <div className="flex-1 max-w-3xl space-y-6">
-                                <motion.div
-                                    initial={{ y: 30, opacity: 0 }}
-                                    animate={{ y: 0, opacity: 1 }}
-                                    transition={{ delay: 0.2, duration: 0.6 }}
-                                    className="flex flex-wrap gap-2 items-center"
-                                >
-                                    {eventMeta && (
-                                        <span className={cn(
-                                            "px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border border-white/10 backdrop-blur-md",
+                    <div className="absolute inset-0 z-20 flex flex-col p-6 md:p-8 lg:p-10">
+                        {/* Top Metadata Tags (Now Clickable) */}
+                        <motion.div
+                            initial={{ y: -20, opacity: 0 }}
+                            animate={{ y: 0, opacity: 1 }}
+                            transition={{ delay: 0.2, duration: 0.6 }}
+                            className="flex flex-wrap items-center gap-3"
+                        >
+                            <div className="flex flex-wrap gap-2 items-center">
+                                {eventMeta && (
+                                    <Link 
+                                        href={`/${currentItem.media_type}/${currentItem.id}`}
+                                        className={cn(
+                                            "px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border border-white/10 backdrop-blur-md transition-all hover:scale-105 active:scale-95 hover:brightness-125",
                                             eventMeta.bgColor, eventMeta.color
-                                        )}>
-                                            {eventMeta.label}
-                                        </span>
-                                    )}
-                                    <span className="px-4 py-1.5 rounded-full bg-white/10 text-white/90 text-[10px] font-black uppercase tracking-widest border border-white/10 backdrop-blur-md flex items-center gap-2">
-                                        <categoryConfig.icon className={cn("w-3 h-3", categoryConfig.color)} />
-                                        {categoryConfig.label}
-                                    </span>
-                                    {isFriendsPopular && (
-                                        <span className="px-4 py-1.5 rounded-full bg-emerald-500/20 text-emerald-400 text-[10px] font-black uppercase tracking-widest border border-emerald-500/20 backdrop-blur-md">
-                                            Arkadaşlarında Popüler
-                                        </span>
-                                    )}
-                                    <span className="px-4 py-1.5 rounded-full bg-amber-400/20 text-amber-400 text-[10px] font-black uppercase tracking-widest border border-amber-400/20 backdrop-blur-md flex items-center gap-1.5">
-                                        <Star className="w-3 h-3 fill-current" />
-                                        {currentItem.vote_average.toFixed(1)}
-                                    </span>
-                                </motion.div>
-
-                                <div className="space-y-4">
-                                    <motion.h2
-                                        initial={{ y: 30, opacity: 0 }}
-                                        animate={{ y: 0, opacity: 1 }}
-                                        transition={{ delay: 0.3, duration: 0.6 }}
-                                        className="text-4xl md:text-6xl lg:text-7xl font-black text-white leading-tight tracking-tighter drop-shadow-2xl italic uppercase"
+                                        )}
                                     >
-                                        {currentItem.title}
-                                    </motion.h2>
-                                    <motion.p
-                                        initial={{ y: 30, opacity: 0 }}
-                                        animate={{ y: 0, opacity: 1 }}
-                                        transition={{ delay: 0.4, duration: 0.6 }}
-                                        className="text-lg text-neutral-300 font-bold max-w-xl line-clamp-3 leading-relaxed drop-shadow-md border-l-4 border-amber-400 pl-6"
-                                    >
-                                        {currentItem.overview}
-                                    </motion.p>
-                                </div>
-
-                                <motion.div
-                                    initial={{ y: 30, opacity: 0 }}
-                                    animate={{ y: 0, opacity: 1 }}
-                                    transition={{ delay: 0.5, duration: 0.6 }}
-                                    className="pt-4"
+                                        {eventMeta.label}
+                                    </Link>
+                                )}
+                                <Link 
+                                    href={currentItem.category === 'upcoming' ? '/calendar' : `/${currentItem.media_type}`}
+                                    className="px-4 py-1.5 rounded-full bg-white/10 text-white/90 text-[10px] font-black uppercase tracking-widest border border-white/10 backdrop-blur-md flex items-center gap-2 transition-all hover:scale-105 active:scale-95 hover:bg-white/20"
                                 >
-                                    <HeroActions movieId={currentItem.id} mediaType={currentItem.media_type} />
-                                </motion.div>
+                                    <categoryConfig.icon className={cn("w-3 h-3", categoryConfig.color)} />
+                                    {categoryConfig.label}
+                                </Link>
+                                {isFriendsPopular && (
+                                    <Link 
+                                        href="/community"
+                                        className="px-4 py-1.5 rounded-full bg-emerald-500/20 text-emerald-400 text-[10px] font-black uppercase tracking-widest border border-emerald-500/20 backdrop-blur-md transition-all hover:scale-105 active:scale-95 hover:bg-emerald-500/30"
+                                    >
+                                        Arkadaşlarında Popüler
+                                    </Link>
+                                )}
+                                <Link 
+                                    href={`/${currentItem.media_type}/${currentItem.id}`}
+                                    className="px-4 py-1.5 rounded-full bg-amber-400/20 text-amber-400 text-[10px] font-black uppercase tracking-widest border border-amber-400/20 backdrop-blur-md flex items-center gap-1.5 transition-all hover:scale-105 active:scale-95 hover:bg-amber-400/30"
+                                >
+                                    <Star className="w-3 h-3 fill-current" />
+                                    {currentItem.vote_average.toFixed(1)}
+                                </Link>
+                            </div>
+
+                            {/* Watch Platforms */}
+                            {(currentItem.platformLogos && currentItem.platformLogos.length > 0) && (
+                                <div className="flex items-center gap-1.5 bg-black/40 backdrop-blur-xl px-3 py-1.5 rounded-full border border-white/10 ml-auto md:ml-0 transition-all hover:bg-black/60 cursor-pointer">
+                                    <span className="text-[9px] font-black text-white/40 uppercase tracking-widest mr-1">İzle:</span>
+                                    <div className="flex -space-x-2">
+                                        {currentItem.platformLogos.map((p, i) => (
+                                            <div key={i} className="relative w-5 h-5 rounded-full overflow-hidden border border-white/20 shadow-lg ring-1 ring-black/50" title={p.name}>
+                                                {p.logoPath ? (
+                                                    <Image
+                                                        src={`https://image.tmdb.org/t/p/w92${p.logoPath}`}
+                                                        alt={p.name}
+                                                        fill
+                                                        className="object-cover"
+                                                    />
+                                                ) : (
+                                                    <div className="w-full h-full bg-slate-800 flex items-center justify-center text-[8px]">{p.name[0]}</div>
+                                                )}
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+                        </motion.div>
+
+                        <div className="flex-1 flex flex-col justify-center">
+                            <div className="flex flex-col items-start gap-8">
+                                <div className="max-w-4xl space-y-6">
+                                    <div className="space-y-4">
+                                        <motion.h2
+                                            initial={{ y: 30, opacity: 0 }}
+                                            animate={{ y: 0, opacity: 1 }}
+                                            transition={{ delay: 0.3, duration: 0.6 }}
+                                            className="text-4xl md:text-5xl lg:text-6xl font-black text-white leading-tight tracking-tighter drop-shadow-2xl italic uppercase"
+                                        >
+                                            {currentItem.title}
+                                        </motion.h2>
+                                        <motion.p
+                                            initial={{ y: 30, opacity: 0 }}
+                                            animate={{ y: 0, opacity: 1 }}
+                                            transition={{ delay: 0.4, duration: 0.6 }}
+                                            className="text-lg text-neutral-300 font-bold max-w-2xl line-clamp-3 leading-relaxed drop-shadow-md border-l-4 border-amber-400 pl-6"
+                                        >
+                                            {currentItem.overview}
+                                        </motion.p>
+                                    </div>
+
+                                    <motion.div
+                                        initial={{ y: 30, opacity: 0 }}
+                                        animate={{ y: 0, opacity: 1 }}
+                                        transition={{ delay: 0.5, duration: 0.6 }}
+                                        className="pt-4"
+                                    >
+                                        <HeroActions movieId={currentItem.id} mediaType={currentItem.media_type} />
+                                    </motion.div>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </motion.div>
             </AnimatePresence>
 
-            {/* Premium Controls */}
-            <div className="absolute inset-y-0 left-0 right-0 z-30 pointer-events-none flex items-center justify-between px-6">
+            {/* Premium Controls (Now on edges and visible on hover) */}
+            <div className="absolute inset-y-0 left-0 right-0 z-30 pointer-events-none flex items-center justify-between px-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                 <button
                     onClick={(e) => { e.stopPropagation(); goPrev(); setIsManual(true); }}
-                    className="w-14 h-14 rounded-full bg-black/20 hover:bg-amber-400 border border-white/10 hover:border-amber-400 backdrop-blur-xl flex items-center justify-center text-white hover:text-slate-950 transition-all pointer-events-auto hover:scale-110 active:scale-95 group/btn"
+                    className="w-12 h-12 rounded-full bg-black/40 hover:bg-amber-400 border border-white/10 hover:border-amber-400 backdrop-blur-2xl flex items-center justify-center text-white hover:text-slate-950 transition-all pointer-events-auto hover:scale-110 active:scale-95 group/btn shadow-2xl"
                     aria-label="Önceki"
                 >
-                    <ChevronLeft className="w-6 h-6 group-hover/btn:-translate-x-1 transition-transform" />
+                    <ChevronLeft className="w-5 h-5 group-hover/btn:-translate-x-1 transition-transform" />
                 </button>
                 <button
                     onClick={(e) => { e.stopPropagation(); goNext(); setIsManual(true); }}
-                    className="w-14 h-14 rounded-full bg-black/20 hover:bg-amber-400 border border-white/10 hover:border-amber-400 backdrop-blur-xl flex items-center justify-center text-white hover:text-slate-950 transition-all pointer-events-auto hover:scale-110 active:scale-95 group/btn"
+                    className="w-12 h-12 rounded-full bg-black/40 hover:bg-amber-400 border border-white/10 hover:border-amber-400 backdrop-blur-2xl flex items-center justify-center text-white hover:text-slate-950 transition-all pointer-events-auto hover:scale-110 active:scale-95 group/btn shadow-2xl"
                     aria-label="Sonraki"
                 >
-                    <ChevronRight className="w-6 h-6 group-hover/btn:translate-x-1 transition-transform" />
+                    <ChevronRight className="w-5 h-5 group-hover/btn:translate-x-1 transition-transform" />
                 </button>
             </div>
 
-            {/* Slider Dots & Progress */}
             <div className="absolute bottom-8 right-12 z-30 flex items-center gap-4">
                 <div className="flex items-center gap-2 px-4 py-2 bg-black/40 backdrop-blur-2xl rounded-full border border-white/10 shadow-2xl">
                     {items.map((_, index) => (
@@ -236,7 +269,6 @@ export function HeroSlider({ items, friendPopularIds = [] }: HeroSliderProps) {
                 </div>
             </div>
 
-            {/* Visual Progress Bar (Bottom Edge) */}
             <div className="absolute bottom-0 left-0 w-full h-1.5 bg-white/5 z-40 overflow-hidden">
                 <motion.div
                     key={currentIndex}

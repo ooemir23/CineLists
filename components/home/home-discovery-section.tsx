@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef } from "react";
 import Link from "next/link";
-import { Film, Tv, TrendingUp, Star, Check, Calendar, Filter, PlayCircle, Shuffle, LayoutGrid, List as ListIcon, Clock, Frown, RefreshCcw, Users, Grid3X3, ArrowRight, ChevronRight, ChevronLeft } from "lucide-react";
+import { Film, Tv, TrendingUp, Star, Check, Calendar, Filter, PlayCircle, Shuffle, LayoutGrid, List as ListIcon, Clock, Frown, RefreshCcw, Users, Grid3X3, ArrowRight, ChevronRight, ChevronLeft, Sparkles, Search, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { MediaCard } from "@/components/media/media-card";
 
@@ -111,19 +111,79 @@ export function HomeDiscoverySection() {
     const [activeCategory, setActiveCategory] = useState<MenuCategory>("trending");
     const [activeTimeWindow, setActiveTimeWindow] = useState<"day" | "week" | "month">("day");
     
-    // Filter states
-    const [genre, setGenre] = useState("");
-    const [year, setYear] = useState("");
-    const [rating, setRating] = useState("");
-    const [provider, setProvider] = useState("");
-    const [language, setLanguage] = useState("");
-    const [country, setCountry] = useState("");
+    // Dynamic options from TMDB
+    const [genreOptions, setGenreOptions] = useState(GENRE_OPTIONS);
+    const [providerOptions, setProviderOptions] = useState(PROVIDER_OPTIONS);
+    const [languageOptions, setLanguageOptions] = useState(LANGUAGE_OPTIONS);
+    const [countryOptions, setCountryOptions] = useState(COUNTRY_OPTIONS);
+
+    // Filter states - updated for multi-selection
+    const [genres, setGenres] = useState<string[]>([]);
+    const [years, setYears] = useState<string[]>([]);
+    const [ratings, setRatings] = useState<string[]>([]);
+    const [providers, setProviders] = useState<string[]>([]);
+    const [languages, setLanguages] = useState<string[]>([]);
+    const [countries, setCountries] = useState<string[]>([]);
     const [viewMode, setViewMode] = useState<"grid" | "list" | "compact">("grid");
 
     const [items, setItems] = useState<DiscoverItem[]>([]);
     const [page, setPage] = useState(1);
     const [isLoading, setIsLoading] = useState(false);
     const [isMoreLoading, setIsMoreLoading] = useState(false);
+
+    // Fetch dynamic filters from TMDB
+    useEffect(() => {
+        const fetchFilters = async () => {
+            try {
+                const res = await fetch("/api/tmdb/filters");
+                const data = await res.json();
+                if (data.genres) setGenreOptions([{ id: "", label: "Tür" }, ...data.genres]);
+                if (data.providers) setProviderOptions([{ id: "", label: "Platform" }, ...data.providers]);
+                if (data.languages) setLanguageOptions([{ id: "", label: "Dil" }, ...data.languages]);
+                if (data.countries) setCountryOptions([{ id: "", label: "Ülke" }, ...data.countries]);
+            } catch (err) {
+                console.error("Error fetching dynamic filters:", err);
+            }
+        };
+        fetchFilters();
+    }, []);
+
+    const toggleFilter = (current: string[], setter: (val: string[]) => void, value: string) => {
+        markUserTriggered();
+        if (value === "") {
+            setter([]);
+            return;
+        }
+        if (current.includes(value)) {
+            setter(current.filter(v => v !== value));
+        } else {
+            setter([...current, value]);
+        }
+    };
+
+    const applyPersonalizedFilters = async () => {
+        markUserTriggered();
+        try {
+            const res = await fetch("/api/user/preferences");
+            const data = await res.json();
+            if (data.favoriteGenres) {
+                const genreIds = data.favoriteGenres.map((gName: string) => {
+                    const opt = genreOptions.find(o => o.label.toLowerCase() === gName.toLowerCase());
+                    return opt?.id;
+                }).filter(Boolean) as string[];
+                setGenres(genreIds);
+            }
+            if (data.platforms) {
+                const providerIds = data.platforms.map((pName: string) => {
+                    const opt = providerOptions.find(o => o.label.toLowerCase() === pName.toLowerCase());
+                    return opt?.id;
+                }).filter(Boolean) as string[];
+                setProviders(providerIds);
+            }
+        } catch (err) {
+            console.error("Personalized filters error:", err);
+        }
+    };
 
     const markUserTriggered = () => {
         userTriggeredRef.current = true;
@@ -138,7 +198,7 @@ export function HomeDiscoverySection() {
             const y = headerRef.current.getBoundingClientRect().top + window.pageYOffset + yOffset;
             window.scrollTo({ top: y, behavior: "smooth" });
         }
-    }, [activeType, activeCategory, activeTimeWindow, genre, year, rating, provider, language, country]);
+    }, [activeType, activeCategory, activeTimeWindow, genres, years, ratings, providers, languages, countries]);
 
     useEffect(() => {
         const controller = new AbortController();
@@ -153,12 +213,13 @@ export function HomeDiscoverySection() {
                 url.searchParams.set("category", activeCategory);
                 url.searchParams.set("timeWindow", activeTimeWindow);
                 url.searchParams.set("page", page.toString());
-                if (genre) url.searchParams.set("genre", genre);
-                if (year) url.searchParams.set("year", year);
-                if (rating) url.searchParams.set("rating", rating);
-                if (provider) url.searchParams.set("provider", provider);
-                if (language) url.searchParams.append("language", language);
-                if (country) url.searchParams.append("country", country);
+                
+                if (genres.length > 0) url.searchParams.set("genre", genres.join(","));
+                if (years.length > 0) url.searchParams.set("year", years.join(","));
+                if (ratings.length > 0) url.searchParams.set("rating", Math.min(...ratings.map(Number)).toString()); // Take lowest rating for gte
+                if (providers.length > 0) url.searchParams.set("provider", providers.join("|")); // TMDB uses | for OR
+                if (languages.length > 0) url.searchParams.set("language", languages.join(","));
+                if (countries.length > 0) url.searchParams.set("country", countries.join(","));
 
                 const res = await fetch(url.toString(), {
                     signal: controller.signal,
@@ -183,11 +244,42 @@ export function HomeDiscoverySection() {
 
         fetchData();
         return () => controller.abort();
-    }, [activeType, activeCategory, activeTimeWindow, genre, year, rating, provider, language, country, page]);
+    }, [activeType, activeCategory, activeTimeWindow, genres, years, ratings, providers, languages, countries, page]);
 
     const [isFilterSheetOpen, setIsFilterSheetOpen] = useState(false);
 
-    const hasFilters = genre || year || rating || provider || language || country;
+    const hasFilters = genres.length > 0 || years.length > 0 || ratings.length > 0 || providers.length > 0 || languages.length > 0 || countries.length > 0;
+
+    // Helper to get labels for selected IDs
+    const getSelectedLabels = () => {
+        const selected: { category: string, id: string, label: string, setter: (v: string[]) => void, current: string[] }[] = [];
+        
+        genres.forEach(id => {
+            const opt = genreOptions.find(o => o.id === id);
+            if (opt) selected.push({ category: "Tür", id, label: opt.label, setter: setGenres, current: genres });
+        });
+        years.forEach(id => {
+            if (id) selected.push({ category: "Yıl", id, label: id, setter: setYears, current: years });
+        });
+        ratings.forEach(id => {
+            const opt = RATING_OPTIONS.find(o => o.id === id);
+            if (opt) selected.push({ category: "Puan", id, label: opt.label, setter: setRatings, current: ratings });
+        });
+        providers.forEach(id => {
+            const opt = providerOptions.find(o => o.id === id);
+            if (opt) selected.push({ category: "Platform", id, label: opt.label, setter: setProviders, current: providers });
+        });
+        languages.forEach(id => {
+            const opt = languageOptions.find(o => o.id === id);
+            if (opt) selected.push({ category: "Dil", id, label: opt.label, setter: setLanguages, current: languages });
+        });
+        countries.forEach(id => {
+            const opt = countryOptions.find(o => o.id === id);
+            if (opt) selected.push({ category: "Ülke", id, label: opt.label, setter: setCountries, current: countries });
+        });
+        
+        return selected;
+    };
 
     return (
         <section id="home-discover" ref={headerRef} className="max-w-[1600px] mx-auto px-3 sm:px-6 md:px-8 lg:px-12 mt-4 md:mt-5">
@@ -204,58 +296,44 @@ export function HomeDiscoverySection() {
             )}>
                 <div className="w-12 h-1.5 bg-white/20 rounded-full mx-auto mb-8" />
                 
-                <h3 className="text-xl font-black text-white uppercase tracking-tighter mb-6">İçerikleri Filtrele</h3>
+                <div className="flex items-center justify-between mb-6">
+                    <h3 className="text-xl font-black text-white uppercase tracking-tighter">İçerikleri Filtrele</h3>
+                    <button 
+                        onClick={applyPersonalizedFilters}
+                        className="flex items-center gap-2 px-4 py-2 rounded-xl bg-amber-400/20 text-amber-400 border border-amber-400/30 text-[10px] font-black uppercase tracking-widest"
+                    >
+                        <Sparkles size={14} />
+                        Sana Özel
+                    </button>
+                </div>
                 
                 <div className="flex flex-col gap-6 max-h-[60vh] overflow-y-auto pr-2 no-scrollbar">
-                    {/* Time Window in Sheet */}
-                    <div className="space-y-3">
-                        <span className="text-[10px] font-black text-amber-400 uppercase tracking-widest px-2">Zaman Aralığı</span>
-                        <div className="flex bg-white/5 p-1 rounded-2xl border border-white/5">
-                            {["day", "week", "month"].map((tw) => (
-                                <button
-                                    key={tw}
-                                    onClick={() => {
-                                        markUserTriggered();
-                                        setActiveTimeWindow(tw as any);
-                                    }}
-                                    className={cn(
-                                        "flex-1 py-3 rounded-xl text-xs font-black uppercase tracking-tight transition-all",
-                                        activeTimeWindow === tw ? "bg-amber-400 text-black shadow-lg" : "text-neutral-400"
-                                    )}
-                                >
-                                    {tw === "day" ? "Günün" : tw === "week" ? "Haftanın" : "Ayın"}
-                                </button>
-                            ))}
-                        </div>
-                    </div>
-
                     {/* Detailed Filters in Sheet */}
                     <div className="grid grid-cols-2 gap-4">
                         {[
-                            { label: "Tür", value: genre, setter: setGenre, options: GENRE_OPTIONS },
-                            { label: "Yıl", value: year, setter: setYear, options: YEAR_OPTIONS.map(y => ({ id: y, label: y || "Hepsi" })) },
-                            { label: "Puan", value: rating, setter: setRating, options: RATING_OPTIONS },
-                            { label: "Platform", value: provider, setter: setProvider, options: PROVIDER_OPTIONS },
-                            { label: "Dil", value: language, setter: setLanguage, options: LANGUAGE_OPTIONS },
-                            { label: "Ülke", value: country, setter: setCountry, options: COUNTRY_OPTIONS },
+                            { label: "Tür", value: genres, setter: setGenres, options: genreOptions },
+                            { label: "Yıl", value: years, setter: setYears, options: YEAR_OPTIONS.map(y => ({ id: y, label: y || "Hepsi" })) },
+                            { label: "Puan", value: ratings, setter: setRatings, options: RATING_OPTIONS },
+                            { label: "Platform", value: providers, setter: setProviders, options: providerOptions },
+                            { label: "Dil", value: languages, setter: setLanguages, options: languageOptions },
+                            { label: "Ülke", value: countries, setter: setCountries, options: countryOptions },
                         ].map((filter, idx) => (
                             <div key={idx} className="space-y-2">
-                                <span className="text-[10px] font-black text-neutral-500 uppercase tracking-widest px-2">{filter.label}</span>
+                                <span className="text-[10px] font-black text-neutral-500 uppercase tracking-widest px-2">{filter.label} {filter.value.length > 0 && `(${filter.value.length})`}</span>
                                 <div className="relative">
                                     <select 
-                                        value={filter.value} 
+                                        value={filter.value[0] || ""} 
                                         onChange={(e) => {
-                                            markUserTriggered();
-                                            filter.setter(e.target.value);
+                                            toggleFilter(filter.value, filter.setter, e.target.value);
                                         }}
                                         className={cn(
                                             "w-full bg-white/5 border border-white/10 rounded-2xl px-4 py-3.5 text-sm font-bold appearance-none outline-none focus:border-amber-400/50 transition-colors",
-                                            filter.value ? "text-amber-400 border-amber-400/20" : "text-neutral-300"
+                                            filter.value.length > 0 ? "text-amber-400 border-amber-400/20" : "text-neutral-300"
                                         )}
                                     >
                                         {filter.options.map(opt => (
                                             <option key={opt.id} value={opt.id} className="bg-[#0f172a] text-white">
-                                                {opt.label}
+                                                {filter.value.includes(opt.id) ? `✓ ${opt.label}` : opt.label}
                                             </option>
                                         ))}
                                     </select>
@@ -269,7 +347,7 @@ export function HomeDiscoverySection() {
                 <div className="mt-8 flex gap-3">
                     <button 
                         onClick={() => {
-                            setGenre(""); setYear(""); setRating(""); setProvider(""); setLanguage(""); setCountry("");
+                            setGenres([]); setYears([]); setRatings([]); setProviders([]); setLanguages([]); setCountries([]);
                         }}
                         className="flex-1 py-4 rounded-2xl bg-white/5 border border-white/10 text-white font-black text-xs uppercase tracking-widest active:scale-95 transition-all"
                     >
@@ -387,24 +465,34 @@ export function HomeDiscoverySection() {
                     </div>
 
                     {/* Middle: Filters */}
-                    <div className="flex items-center gap-4 md:gap-6 flex-1 min-w-0 overflow-hidden">
-                        <div className="flex-1 flex bg-[#1b2334]/90 p-1.5 rounded-full border border-white/10 backdrop-blur-xl gap-0.5 md:gap-1 items-center overflow-x-auto hide-scrollbar">
+                    <div className="flex items-center gap-2 flex-1 min-w-0">
+                        <div className="flex-1 flex bg-[#1b2334]/90 p-1.5 rounded-full border border-white/10 backdrop-blur-xl gap-0.5 md:gap-1 items-center lg:overflow-visible overflow-x-auto hide-scrollbar">
                             {[
-                                { value: genre, setter: setGenre, options: GENRE_OPTIONS },
-                                { value: year, setter: setYear, options: YEAR_OPTIONS.map(y => ({ id: y, label: y || "Yıl" })) },
-                                { value: rating, setter: setRating, options: RATING_OPTIONS },
-                                { value: provider, setter: setProvider, options: PROVIDER_OPTIONS },
-                                { value: language, setter: setLanguage, options: LANGUAGE_OPTIONS },
-                                { value: country, setter: setCountry, options: COUNTRY_OPTIONS },
+                                { label: "Tür", value: genres, setter: setGenres, options: genreOptions },
+                                { label: "Yıl", value: years, setter: setYears, options: YEAR_OPTIONS.map(y => ({ id: y, label: y || "Yıl" })) },
+                                { label: "Puan", value: ratings, setter: setRatings, options: RATING_OPTIONS },
+                                { label: "Platform", value: providers, setter: setProviders, options: providerOptions },
+                                { label: "Dil", value: languages, setter: setLanguages, options: languageOptions },
+                                { label: "Ülke", value: countries, setter: setCountries, options: countryOptions },
                             ].map((filter, idx) => (
-                                <select key={idx} value={filter.value} onChange={(e) => {
-                                    markUserTriggered();
-                                    filter.setter(e.target.value);
-                                }} className={cn("bg-transparent text-[9px] md:text-sm font-black px-2 py-2.5 outline-none cursor-pointer uppercase tracking-tight appearance-none text-center hover:bg-white/5 rounded-full transition-colors shrink-0", filter.value !== "" ? "text-amber-400" : "text-neutral-500 hover:text-white")}>
-                                    {filter.options.map(opt => <option key={opt.id} value={opt.id} className="bg-[#1b2334] text-white">{opt.label}</option>)}
-                                </select>
+                                <FilterDropdown 
+                                    key={idx}
+                                    label={filter.label}
+                                    selected={filter.value}
+                                    options={filter.options}
+                                    onToggle={(val) => toggleFilter(filter.value, filter.setter, val)}
+                                />
                             ))}
                         </div>
+
+                        {/* "Sana Özel" Button - Now distinct and outside the main bar */}
+                        <button
+                            onClick={applyPersonalizedFilters}
+                            className="flex items-center gap-2 px-6 py-3 rounded-full bg-amber-400/10 hover:bg-amber-400/20 text-amber-400 border-2 border-amber-400/30 hover:border-amber-400 transition-all font-black text-[10px] md:text-xs uppercase tracking-[0.2em] shrink-0 shadow-lg shadow-amber-400/5 group"
+                        >
+                            <Sparkles size={16} className="group-hover:rotate-12 transition-transform" />
+                            Sana Özel
+                        </button>
                     </div>
 
                     {/* Right: Reset Button Container */}
@@ -412,7 +500,7 @@ export function HomeDiscoverySection() {
                         {hasFilters && (
                             <button
                                 onClick={() => {
-                                    setGenre(""); setYear(""); setRating(""); setProvider(""); setLanguage(""); setCountry("");
+                                    setGenres([]); setYears([]); setRatings([]); setProviders([]); setLanguages([]); setCountries([]);
                                     markUserTriggered();
                                 }}
                                 className="w-full flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-gradient-to-r from-rose-500/10 to-rose-600/20 hover:from-rose-500/20 hover:to-rose-600/30 text-rose-500 border border-rose-500/20 transition-all font-black text-xs uppercase tracking-[0.1em] shadow-lg shadow-rose-500/5 hover:scale-[1.02] active:scale-95 animate-in fade-in slide-in-from-right-4 duration-300"
@@ -423,6 +511,23 @@ export function HomeDiscoverySection() {
                         )}
                     </div>
                 </div>
+
+                {/* Active Filter Tags */}
+                {hasFilters && (
+                    <div className="hidden lg:flex flex-wrap gap-2 mt-4 animate-in fade-in slide-in-from-top-2 duration-500">
+                        {getSelectedLabels().map((tag, idx) => (
+                            <button
+                                key={`${tag.id}-${idx}`}
+                                onClick={() => tag.setter(tag.current.filter(id => id !== tag.id))}
+                                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 hover:border-red-500/40 transition-all text-[10px] font-black uppercase tracking-widest group"
+                            >
+                                <span className="text-red-500/50">{tag.category}:</span>
+                                <span>{tag.label}</span>
+                                <X size={12} className="group-hover:scale-125 transition-transform" />
+                            </button>
+                        ))}
+                    </div>
+                )}
             </div>
 
             {isLoading ? (
@@ -460,12 +565,12 @@ export function HomeDiscoverySection() {
                     </p>
                     <button 
                         onClick={() => {
-                            setGenre("");
-                            setYear("");
-                            setRating("");
-                            setProvider("");
-                            setLanguage("");
-                            setCountry("");
+                            setGenres([]);
+                            setYears([]);
+                            setRatings([]);
+                            setProviders([]);
+                            setLanguages([]);
+                            setCountries([]);
                             markUserTriggered();
                         }}
                         className="mt-10 flex items-center gap-3 px-10 py-4 rounded-full bg-amber-400 text-black font-black text-xs uppercase tracking-[0.2em] hover:scale-110 active:scale-95 transition-all shadow-2xl shadow-amber-400/30 hover:shadow-amber-400/50"
@@ -594,5 +699,100 @@ export function HomeDiscoverySection() {
                 </>
             )}
         </section>
+    );
+}
+
+// Inner Component for Searchable Filter Dropdown
+function FilterDropdown({ label, selected, options, onToggle }: { label: string, selected: string[], options: { id: string, label: string }[], onToggle: (val: string) => void }) {
+    const [isOpen, setIsOpen] = useState(false);
+    const [searchTerm, setSearchTerm] = useState("");
+    const dropdownRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+                setIsOpen(false);
+            }
+        };
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => document.removeEventListener("mousedown", handleClickOutside);
+    }, []);
+
+    const filteredOptions = options.filter(opt => 
+        opt.label.toLowerCase().includes(searchTerm.toLowerCase())
+    ).slice(0, 100); // Limit to 100 for performance
+
+    return (
+        <div className="relative shrink-0 flex-1 min-w-[80px]" ref={dropdownRef}>
+            <button
+                onClick={() => setIsOpen(!isOpen)}
+                className={cn(
+                    "w-full bg-transparent font-black px-1 py-1.5 md:py-2 outline-none cursor-pointer uppercase tracking-tight text-center hover:bg-white/5 rounded-full transition-all flex flex-col items-center justify-center leading-none min-h-[40px] md:min-h-[44px]",
+                    selected.length > 0 ? "text-amber-400" : "text-neutral-500 hover:text-white"
+                )}
+            >
+                {selected.length > 0 ? (
+                    <>
+                        <span className="text-[8px] md:text-[11px] mb-0.5">{selected.length} {label}</span>
+                        <span className="text-[7px] md:text-[9px] opacity-70 font-bold">Seçili</span>
+                    </>
+                ) : (
+                    <span className="text-[9px] md:text-sm">{label}</span>
+                )}
+            </button>
+
+            {isOpen && (
+                <div className="absolute top-full left-0 mt-2 w-64 bg-[#1b2334] border border-white/10 rounded-2xl shadow-2xl z-50 p-3 animate-in fade-in slide-in-from-top-2 duration-200">
+                    <div className="relative mb-3">
+                        <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500" />
+                        <input 
+                            autoFocus
+                            type="text"
+                            placeholder="Ara..."
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            className="w-full bg-white/5 border border-white/10 rounded-xl pl-9 pr-4 py-2.5 text-xs font-bold text-white placeholder:text-neutral-600 outline-none focus:border-amber-400/50 transition-colors"
+                        />
+                    </div>
+
+                    {selected.length > 0 && (
+                        <button
+                            onClick={() => onToggle("")}
+                            className="w-full mb-3 py-2 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-500 text-[10px] font-black uppercase tracking-widest transition-all border border-rose-500/10 flex items-center justify-center gap-2"
+                        >
+                            <X size={12} />
+                            {selected.length} Seçimi Kaldır
+                        </button>
+                    )}
+                    
+                    <div className="max-h-64 overflow-y-auto pr-1 space-y-1 custom-scrollbar">
+                        {filteredOptions.length > 0 ? (
+                            filteredOptions.map((opt) => (
+                                <button
+                                    key={opt.id}
+                                    onClick={() => {
+                                        onToggle(opt.id);
+                                        setSearchTerm(""); // Clear search on selection
+                                    }}
+                                    className={cn(
+                                        "w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-bold transition-all",
+                                        selected.includes(opt.id) 
+                                            ? "bg-amber-400 text-black" 
+                                            : "text-neutral-400 hover:bg-white/5 hover:text-white"
+                                    )}
+                                >
+                                    <span>{opt.label}</span>
+                                    {selected.includes(opt.id) && <Check size={14} />}
+                                </button>
+                            ))
+                        ) : (
+                            <div className="py-8 text-center">
+                                <p className="text-[10px] font-black text-neutral-600 uppercase tracking-widest">Sonuç Bulunamadı</p>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            )}
+        </div>
     );
 }

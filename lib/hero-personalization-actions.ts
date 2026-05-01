@@ -48,6 +48,7 @@ export interface FollowedHighlight {
     eventLabel: string;
     genreIds?: number[];
     metaLabel?: string;
+    platformLogos?: { name: string; logoPath: string | null }[];
 }
 
 const PROVIDER_IDS: Record<string, number> = {
@@ -370,7 +371,7 @@ const mapProvidersToIds = (providers: string[]) => {
     return Array.from(new Set(ids));
 };
 
-const buildHighlight = (data: any, eventLabel: string, metaLabel?: string): FollowedHighlight | null => {
+const buildHighlight = (data: any, eventLabel: string, metaLabel?: string, platformLogos?: { name: string; logoPath: string | null }[]): FollowedHighlight | null => {
     if (!data?.backdrop_path) return null;
     const genreIds = Array.isArray(data.genre_ids)
         ? data.genre_ids
@@ -388,6 +389,7 @@ const buildHighlight = (data: any, eventLabel: string, metaLabel?: string): Foll
         eventLabel,
         genreIds,
         metaLabel,
+        platformLogos,
     };
 };
 
@@ -422,15 +424,21 @@ export async function getPlatformHighlights(): Promise<FollowedHighlight[]> {
             }),
         ]);
 
-        const items = [
+        const rawItems = [
             ...(movies.results || []).map((item: any) => ({ ...item, media_type: "movie" })),
             ...(tv.results || []).map((item: any) => ({ ...item, media_type: "tv" })),
-        ]
-            .map((item: any) => buildHighlight(item, "Platformunda Yeni", primaryPlatform || undefined))
-            .filter((item): item is FollowedHighlight => !!item)
-            .slice(0, 3);
+        ].slice(0, 6);
 
-        return items;
+        const itemsWithPlatforms = await Promise.all(rawItems.map(async (item) => {
+            const providers = await tmdb.getWatchProviders(item.media_type, item.id.toString()).catch(() => null);
+            const flatrate = (providers?.results?.TR?.flatrate || []).slice(0, 3).map((p: any) => ({
+                name: p.provider_name,
+                logoPath: p.logo_path
+            }));
+            return buildHighlight(item, "Platformunda Yeni", primaryPlatform || undefined, flatrate);
+        }));
+
+        return itemsWithPlatforms.filter((item): item is FollowedHighlight => !!item).slice(0, 3);
     } catch (error) {
         console.error("Error getting platform highlights:", error);
         return [];
@@ -444,15 +452,21 @@ export async function getTodayHighlights(): Promise<FollowedHighlight[]> {
             tmdb.getAiringTodayTV(),
         ]);
 
-        const items = [
+        const rawItems = [
             ...(movies.results || []).map((item: any) => ({ ...item, media_type: "movie" })),
             ...(tv.results || []).map((item: any) => ({ ...item, media_type: "tv" })),
-        ]
-            .map((item: any) => buildHighlight(item, "Bugun Yayinda"))
-            .filter((item): item is FollowedHighlight => !!item)
-            .slice(0, 3);
+        ].slice(0, 6);
 
-        return items;
+        const itemsWithPlatforms = await Promise.all(rawItems.map(async (item) => {
+            const providers = await tmdb.getWatchProviders(item.media_type, item.id.toString()).catch(() => null);
+            const flatrate = (providers?.results?.TR?.flatrate || []).slice(0, 3).map((p: any) => ({
+                name: p.provider_name,
+                logoPath: p.logo_path
+            }));
+            return buildHighlight(item, "Bugun Yayinda", undefined, flatrate);
+        }));
+
+        return itemsWithPlatforms.filter((item): item is FollowedHighlight => !!item).slice(0, 3);
     } catch (error) {
         console.error("Error getting today highlights:", error);
         return [];
