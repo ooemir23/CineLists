@@ -128,18 +128,15 @@ export async function requestPasswordReset(formData: FormData) {
     }
 
     try {
-        console.log("Şifre sıfırlama isteği alındı, e-posta:", email);
         const user = await prisma.user.findUnique({
             where: { email },
         });
 
         if (!user) {
-            console.log("Kullanıcı bulunamadı:", email);
             // Güvenlik nedeniyle e-posta gönderildi mesajı veriyoruz
             redirect("/forgot-password?success=sent");
         }
 
-        console.log("Kullanıcı bulundu, token oluşturuluyor...");
         // 1 saat geçerli bir token oluştur
         const token = crypto.randomBytes(32).toString("hex");
         const expires = new Date(Date.now() + 3600 * 1000);
@@ -157,10 +154,8 @@ export async function requestPasswordReset(formData: FormData) {
             }
         });
 
-        console.log("Token veritabanına kaydedildi, e-posta gönderiliyor...");
         // E-posta gönder
         await sendPasswordResetEmail(email, token);
-        console.log("E-posta gönderim fonksiyonu tamamlandı.");
         
         redirect("/forgot-password?success=sent");
     } catch (error) {
