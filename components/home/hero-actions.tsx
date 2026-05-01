@@ -38,21 +38,13 @@ export function HeroActions({ movieId, mediaType = "movie" }: HeroActionsProps) 
 
     return (
         <>
-            <div className="flex flex-wrap items-center gap-4 mt-2">
-                <Link
-                    href={`/${mediaType}/${movieId}`}
-                    className="group relative flex items-center gap-3 bg-amber-400 hover:bg-amber-300 text-slate-950 px-8 py-4 rounded-2xl font-black text-xs uppercase tracking-widest transition-all shadow-[0_10px_20px_rgba(251,191,36,0.2)] hover:shadow-[0_15px_30px_rgba(251,191,36,0.3)] hover:-translate-y-1 active:scale-95"
-                >
-                    <Play className="w-4 h-4 fill-current" />
-                    Detayları İncele
-                </Link>
-
+            <div className="flex items-center gap-4">
                 <button
                     onClick={openTrailer}
-                    className="group flex items-center gap-3 bg-white/5 hover:bg-white/10 text-white border border-white/10 px-8 py-4 rounded-2xl font-black text-xs uppercase tracking-widest backdrop-blur-xl transition-all hover:-translate-y-1 active:scale-95 shadow-2xl"
+                    className="group flex items-center gap-2.5 bg-white/10 hover:bg-amber-400 hover:text-slate-950 text-white border border-white/20 px-5 py-2.5 rounded-full font-black text-[10px] uppercase tracking-[0.2em] backdrop-blur-xl transition-all hover:scale-105 active:scale-95 shadow-2xl"
                 >
-                    <Info className="w-4 h-4 text-amber-400" />
-                    Fragman İzle
+                    <Play className="w-3.5 h-3.5 fill-current" />
+                    Fragman
                 </button>
             </div>
 

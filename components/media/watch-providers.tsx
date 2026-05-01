@@ -41,12 +41,10 @@ const PLATFORM_URLS: Record<string, string> = {
 export function WatchProviders({ providers, isGlobal, isGuest }: WatchProvidersProps) {
     const [isOpen, setIsOpen] = useState(false);
 
-    if (!providers || (!providers.flatrate && !providers.rent && !providers.buy)) return null;
-
     const allProviders = [
-        ...(providers.flatrate || []),
-        ...(providers.buy || []),
-        ...(providers.rent || [])
+        ...(providers?.flatrate || []),
+        ...(providers?.buy || []),
+        ...(providers?.rent || [])
     ];
 
     // Remove duplicates by provider_id
@@ -55,53 +53,79 @@ export function WatchProviders({ providers, isGlobal, isGuest }: WatchProvidersP
     const extraCount = uniqueProviders.length - 2;
 
     const getProviderUrl = (name: string) => {
-        return PLATFORM_URLS[name] || providers.link || "#";
+        return PLATFORM_URLS[name] || providers?.link || "#";
     };
+
+    const hasProviders = uniqueProviders.length > 0;
+    const showRed = isGlobal || !hasProviders;
 
     return (
         <>
-            {/* Minimalist Trigger Badge */}
+            {/* ── Trigger ── */}
             <button
                 onClick={() => setIsOpen(true)}
-                className="relative flex flex-col items-center bg-neutral-900/60 backdrop-blur-md border border-white/10 px-4 py-3 rounded-2xl hover:bg-neutral-800 hover:border-primary/30 transition-all group shadow-xl min-w-[110px] h-[80px] justify-between overflow-hidden"
+                className={cn(
+                    "relative flex items-center gap-2 px-3 py-2 rounded-2xl transition-all group overflow-hidden border",
+                    showRed 
+                        ? "bg-red-500/10 border-red-500/20 hover:bg-red-500/20 hover:border-red-500/30" 
+                        : "bg-white/[0.06] border-white/10 hover:bg-white/[0.10] hover:border-white/20"
+                )}
             >
-                <div className={cn("w-full h-full flex flex-col justify-between transition-all duration-500", isGuest && "blur-md scale-95 opacity-50 select-none pointer-events-none")}>
-                    <p className="text-[9px] font-black text-primary uppercase tracking-[0.2em] opacity-80 group-hover:opacity-100 transition-opacity border-b border-white/10 w-full pb-1 text-center mb-auto">
-                        Platformlar
-                    </p>
-                    <div className="flex items-center justify-center gap-4">
-                        {displayProviders.map((p) => (
-                            <div key={p.provider_id} className="flex flex-col items-center gap-1">
-                                <div className="relative w-5 h-5 rounded-md overflow-hidden border border-black/40 shadow-sm transition-transform group-hover:scale-110">
-                                    <Image src={`https://image.tmdb.org/t/p/original${p.logo_path}`} alt={p.provider_name} fill className="object-cover" />
-                                </div>
-                                <span className="text-[7px] font-black text-neutral-500 group-hover:text-neutral-300 transition-colors uppercase tracking-tighter leading-none">
-                                    {p.provider_name.split(' ')[0]}
-                                </span>
+                {isGuest ? (
+                    <div className="flex items-center gap-2 blur-sm select-none pointer-events-none">
+                        <Tv className={cn("w-4 h-4", showRed ? "text-red-400/30" : "text-white/30")} />
+                        <span className={cn("text-xs font-black uppercase tracking-wider", showRed ? "text-red-400/30" : "text-white/30")}>Platform</span>
+                    </div>
+                ) : (
+                    <div className="flex items-center gap-2">
+                        {/* Platform logos */}
+                        {hasProviders ? (
+                            <div className="flex items-center -space-x-1.5">
+                                {displayProviders.map((p) => (
+                                    <div
+                                        key={p.provider_id}
+                                        className={cn(
+                                            "relative w-7 h-7 rounded-full overflow-hidden border-2 shadow-md flex-shrink-0 group-hover:scale-105 transition-transform",
+                                            showRed ? "border-red-900/50" : "border-[#0f1623]"
+                                        )}
+                                        title={p.provider_name}
+                                    >
+                                        <Image
+                                            src={`https://image.tmdb.org/t/p/original${p.logo_path}`}
+                                            alt={p.provider_name}
+                                            fill
+                                            className="object-cover"
+                                        />
+                                    </div>
+                                ))}
+                                {extraCount > 0 && (
+                                    <div className={cn(
+                                        "relative w-7 h-7 rounded-full border-2 flex items-center justify-center text-[10px] font-black flex-shrink-0",
+                                        showRed ? "bg-red-500/20 border-red-900/50 text-red-400/60" : "bg-white/10 border-[#0f1623] text-white/60"
+                                    )}>
+                                        +{extraCount}
+                                    </div>
+                                )}
                             </div>
-                        ))}
-                        {extraCount > 0 && (
-                            <div className="flex flex-col items-center gap-1 opacity-40">
-                                <div className="w-5 h-5 rounded-md bg-neutral-800 flex items-center justify-center text-[9px] font-bold text-neutral-400">
-                                    +{extraCount}
-                                </div>
-                                <span className="text-[7px] font-black uppercase tracking-tighter leading-none">Daha</span>
+                        ) : (
+                            <div className="flex items-center gap-1.5 text-red-400">
+                                <Tv className="w-3.5 h-3.5" />
+                                <span className="text-[10px] font-black uppercase tracking-wider">Yok</span>
                             </div>
                         )}
+                        
+                        <Tv className={cn(
+                            "w-3.5 h-3.5 transition-colors",
+                            showRed ? "text-red-400/40 group-hover:text-red-400/60" : "text-white/25 group-hover:text-white/50"
+                        )} />
                     </div>
-                </div>
+                )}
 
                 {isGuest && (
-                    <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/60 backdrop-blur-[4px] z-10 p-1.5 text-center leading-none">
-                        <span className="text-[7px] font-black text-white/50 uppercase tracking-widest mb-1">PLATFORMLAR İÇİN</span>
-                        <div className="flex flex-col gap-1 w-full">
-                            <Link href="/login" className="bg-primary text-white text-[9px] font-black py-1.5 rounded-lg uppercase tracking-wider shadow-lg hover:scale-105 active:scale-95 transition-all text-center">
-                                Giriş Yap
-                            </Link>
-                            <Link href="/register" className="bg-white/10 hover:bg-white/20 text-white text-[9px] font-black py-1.5 rounded-lg uppercase tracking-wider backdrop-blur-md transition-all text-center border border-white/10">
-                                Kayıt Ol
-                            </Link>
-                        </div>
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/50 backdrop-blur-[2px] z-10">
+                        <Link href="/login" className="text-[10px] font-black text-white/60 hover:text-white uppercase tracking-widest transition-colors">
+                            Giriş Yap
+                        </Link>
                     </div>
                 )}
             </button>

@@ -7,54 +7,33 @@ import { prisma } from "@/lib/prisma";
 import { getToWatchStatus } from "@/lib/actions";
 import { getWatchStatus } from "@/lib/activity-actions";
 import { getWatchedEpisodes } from "@/lib/tv-actions";
-import { MediaRow } from "@/components/media/media-row";
-import { CastList } from "@/components/media/cast-list";
 import { MediaActions } from "@/components/media/media-actions";
 import { WatchProviders } from "@/components/media/watch-providers";
 import { RatingDisplay } from "@/components/media/rating-display";
-import SeasonList from "@/components/media/season-list";
-import { CommentsSection } from "@/components/media/comments";
 import { GenreList } from "@/components/media/genre-list";
 import { getReceivedRecommendation } from "@/lib/recommendation-actions";
-import { Star, Calendar, Clock, ArrowLeft, Play, Info, Tv, Globe } from "lucide-react";
+import { Star, Clock, ArrowLeft, Globe, Film, Tv, Calendar, Users } from "lucide-react";
 import { ExpandableImage } from "@/components/ui/expandable-image";
 import { TrailerButton } from "@/components/media/trailer-button";
+import { DetailTabs } from "@/components/media/detail-tabs";
 import { Metadata } from "next";
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const { type, id } = await params;
     const data = await tmdb.getDetails(type as "movie" | "tv", id).catch(() => null);
-
     if (!data) return { title: "İçerik Bulunamadı" };
-
     const title = data.title || data.name;
-    const description = data.overview || `${title} içeriği hakkında detaylar, puanlar ve yorumlar.`;
+    const description = data.overview || `${title} hakkında detaylar.`;
     const image = data.poster_path ? `https://image.tmdb.org/t/p/w500${data.poster_path}` : null;
-
     return {
         title,
         description,
-        openGraph: {
-            title,
-            description,
-            images: image ? [{ url: image }] : [],
-            type: "video.movie",
-        },
-        twitter: {
-            card: "summary_large_image",
-            title,
-            description,
-            images: image ? [image] : [],
-        }
+        openGraph: { title, description, images: image ? [{ url: image }] : [], type: "video.movie" },
+        twitter: { card: "summary_large_image", title, description, images: image ? [image] : [] }
     };
 }
 
-type Props = {
-    params: Promise<{
-        type: string;
-        id: string;
-    }>;
-};
+type Props = { params: Promise<{ type: string; id: string }> };
 
 export default async function DetailsPage(props: Props) {
     const params = await props.params;
@@ -64,346 +43,296 @@ export default async function DetailsPage(props: Props) {
     const isAuthenticated = !!session?.user?.id;
     const isGuest = (session?.user as any)?.isGuest;
 
-    const withFallback = async <T,>(promise: Promise<T>, fallback: T): Promise<T> => {
-        try {
-            return await promise;
-        } catch (error) {
-            console.error("Details page fallback:", error);
-            return fallback;
-        }
+    const safe = async <T,>(p: Promise<T>, fb: T): Promise<T> => {
+        try { return await p; } catch { return fb; }
     };
 
-    if (type !== "movie" && type !== "tv") {
-        notFound();
-    }
+    if (type !== "movie" && type !== "tv") notFound();
 
     const [
-        data,
-        inWatchlist,
-        watchStatus,
-        watchedEpisodes,
-        providersData,
-        userRating,
-        friendsRatings,
-        activeRecommendation,
-        dbMedia
+        data, inWatchlist, watchStatus, watchedEpisodes,
+        providersData, userRating, friendsRatings,
+        activeRecommendation, dbMedia
     ] = await Promise.all([
         tmdb.getDetails(type as "movie" | "tv", id).catch(() => null),
-        withFallback(getToWatchStatus(mediaId), false),
-        withFallback(getWatchStatus(mediaId), null),
-        type === "tv" ? withFallback(getWatchedEpisodes(mediaId), []) : Promise.resolve([]),
+        safe(getToWatchStatus(mediaId), false),
+        safe(getWatchStatus(mediaId), null),
+        type === "tv" ? safe(getWatchedEpisodes(mediaId), []) : Promise.resolve([]),
         tmdb.getWatchProviders(type as "movie" | "tv", id).catch(() => null),
-        withFallback((async () => {
-            const { getUserRating } = await import("@/lib/rating-actions");
-            return getUserRating(mediaId, type as "movie" | "tv");
-        })(), null),
-        withFallback((async () => {
-            const { getFriendsRatings } = await import("@/lib/rating-actions");
-            return getFriendsRatings(mediaId, type as "movie" | "tv");
-        })(), []),
-        withFallback(getReceivedRecommendation(mediaId), null),
-        withFallback(prisma.mediaItem.findUnique({
+        safe((async () => { const { getUserRating } = await import("@/lib/rating-actions"); return getUserRating(mediaId, type as "movie" | "tv"); })(), null),
+        safe((async () => { const { getFriendsRatings } = await import("@/lib/rating-actions"); return getFriendsRatings(mediaId, type as "movie" | "tv"); })(), []),
+        safe(getReceivedRecommendation(mediaId), null),
+        safe(prisma.mediaItem.findUnique({
             where: { tmdbId: mediaId },
-            include: {
-                activities: {
-                    where: { type: "REVIEWED" },
-                    include: { user: true },
-                    orderBy: { createdAt: "desc" }
-                }
-            }
+            include: { activities: { where: { type: "REVIEWED" }, include: { user: true }, orderBy: { createdAt: "desc" } } }
         }), null)
     ]) as [any, boolean, any, any, any, number | null, any[], any, any];
 
     if (!data) notFound();
 
     const comments = dbMedia?.activities.map((a: any) => ({
-        id: a.id,
-        content: a.review || "",
-        createdAt: a.createdAt,
+        id: a.id, content: a.review || "", createdAt: a.createdAt,
         user: { name: a.user.name, image: a.user.image }
     })) || [];
 
     let trProviders = providersData?.results?.TR || null;
     let isGlobal = false;
-
     if (!trProviders || (!trProviders.flatrate && !trProviders.buy)) {
-        const otherCountries = Object.entries(providersData?.results || {}).find(
-            ([key, value]: [string, any]) => value.flatrate || value.buy
-        );
-        if (otherCountries) {
-            trProviders = otherCountries[1];
-            isGlobal = true;
-        }
+        const other = Object.entries(providersData?.results || {}).find(([, v]: [string, any]) => v.flatrate || v.buy);
+        if (other) { trProviders = other[1]; isGlobal = true; }
     }
 
     const title = data.title || data.name;
     const releaseDate = data.release_date || data.first_air_date;
-
-    // Improved runtime logic for both movies and TV shows
-    const runtime = data.runtime ||
-        (data.episode_run_time && data.episode_run_time.length > 0 ? data.episode_run_time[0] : null) ||
-        (data.last_episode_to_air?.runtime) ||
-        null;
-
-    const backdrop = data.backdrop_path ? `https://image.tmdb.org/t/p/original${data.backdrop_path}` : null;
+    const runtime = data.runtime || (data.episode_run_time?.[0]) || (data.last_episode_to_air?.runtime) || null;
+    const runtimeFmt = runtime
+        ? (Math.floor(runtime / 60) > 0 ? `${Math.floor(runtime / 60)}s ${runtime % 60}dk` : `${runtime}dk`)
+        : null;
+    const voteCount = data.vote_count ? data.vote_count.toLocaleString("tr-TR") : null;
     const year = releaseDate ? new Date(releaseDate).getFullYear() : "";
+    const backdrop = data.backdrop_path ? `https://image.tmdb.org/t/p/original${data.backdrop_path}` : null;
+    const directors = data.credits?.crew?.filter((c: any) => c.job === "Director").slice(0, 2) || [];
+    const creators = (data.created_by || []).slice(0, 2);
+
+    const statusMap: Record<string, { label: string; cls: string }> = {
+        "Released":         { label: "Yayınlandı",          cls: "text-neutral-400 border-neutral-500/20 bg-neutral-500/10" },
+        "Ended":            { label: "Tamamlandı",           cls: "text-neutral-400 border-neutral-500/20 bg-neutral-500/10" },
+        "Returning Series": { label: "Devam Ediyor",         cls: "text-emerald-400 border-emerald-500/20 bg-emerald-500/10" },
+        "In Production":    { label: "Yapım Aşamasında",    cls: "text-sky-400 border-sky-500/20 bg-sky-500/10" },
+    };
+    const statusInfo = data.status ? (statusMap[data.status] ?? { label: data.status, cls: "text-white/40 border-white/10 bg-white/5" }) : null;
 
     return (
-        <div className=" bg-neutral-950 text-neutral-100 font-sans pb-20">
-            {/* Nav */}
-            <div className="fixed top-0 left-0 w-full z-50 px-6 py-4 flex items-center justify-between pointer-events-none">
-                <Link href="/" className="pointer-events-auto p-2 bg-black/60 backdrop-blur-md rounded-full hover:bg-white/10 transition-colors border border-white/5">
-                    <ArrowLeft className="w-5 h-5 text-white" />
-                </Link>
+        <div className="relative min-h-screen">
+
+            {/* ── BACKGROUND (sadece üst header bölgesi) ── */}
+            <div className="absolute top-0 left-0 right-0 h-[520px] z-0 pointer-events-none overflow-hidden">
+                {(backdrop || data.poster_path) && (
+                    <Image
+                        src={backdrop ?? `https://image.tmdb.org/t/p/original${data.poster_path}`}
+                        alt=""
+                        fill
+                        priority
+                        className="object-cover object-top"
+                        style={{ filter: "brightness(0.32) saturate(1.2) blur(3px)", transform: "scale(1.06)" }}
+                    />
+                )}
+                <div className="absolute inset-0 bg-gradient-to-b from-[#070c16]/60 via-[#070c16]/70 to-[#070c16]" />
+                <div className="absolute inset-0 bg-gradient-to-r from-[#070c16]/50 via-transparent to-[#070c16]/50" />
             </div>
 
-            {/* Hero Section (Responsive Redesign) */}
-            <div className="relative w-full overflow-hidden border-b border-white/5 md:min-h-[600px] md:flex md:items-center pb-8 pt-0 md:py-20">
+            {/* ── LAYOUT ── */}
+            <div className="relative z-10">
 
-                {/* Mobile Background (Poster) - Takes up space now */}
-                <div className="relative z-0 md:hidden w-full h-[55vh]">
-                    {data.poster_path ? (
-                        <Image
-                            src={`https://image.tmdb.org/t/p/original${data.poster_path}`}
-                            alt=""
-                            fill
-                            className="object-cover object-top opacity-100"
-                            priority
-                        />
-                    ) : (
-                        <div className="w-full h-full bg-neutral-900" />
-                    )}
-                    {/* Shadow overlay for text readability */}
-                    <div className="absolute inset-0 bg-gradient-to-t from-neutral-950 via-transparent to-transparent opacity-80" />
+                {/* ════ TOP HEADER ════════════════════════════════════ */}
+                <div className="flex-shrink-0 px-4 md:px-6 lg:px-10 pt-4 pb-5 border-b border-white/[0.05]">
 
-                    {/* Sharp Transition Gradient */}
-                    <div className="absolute inset-x-0 bottom-0 h-48 bg-gradient-to-t from-neutral-950 via-neutral-950/90 to-transparent" />
-                </div>
+                    {/* ── Mobile only ── */}
+                    <div className="md:hidden">
+                        {/* Backdrop-style poster on mobile */}
+                        <div className="relative w-full rounded-2xl overflow-hidden shadow-2xl ring-1 ring-white/10 mb-4" style={{ aspectRatio: "16/10" }}>
+                            {(backdrop || data.poster_path) ? (
+                                <Image
+                                    src={backdrop ?? `https://image.tmdb.org/t/p/w780${data.poster_path}`}
+                                    alt={title} fill className="object-cover object-top" priority
+                                />
+                            ) : (
+                                <div className="w-full h-full bg-neutral-800/50 flex items-center justify-center">
+                                    {type === "movie" ? <Film className="w-12 h-12 text-white/10" /> : <Tv className="w-12 h-12 text-white/10" />}
+                                </div>
+                            )}
+                            <div className="absolute inset-0 bg-gradient-to-t from-[#070c16] via-transparent to-transparent" />
+                            <div className="absolute top-3 left-3 right-3 flex items-center justify-between z-10">
+                                <Link href="/" className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-black/50 backdrop-blur-sm text-[11px] font-black uppercase tracking-widest text-white/70 hover:text-white transition-colors group">
+                                    <ArrowLeft className="w-3 h-3 group-hover:-translate-x-0.5 transition-transform" />Geri
+                                </Link>
+                                <span className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border ${type === "movie" ? "bg-amber-400/20 border-amber-400/30 text-amber-400" : "bg-emerald-400/20 border-emerald-400/30 text-emerald-400"}`}>
+                                    {type === "movie" ? <Film className="w-3 h-3" /> : <Tv className="w-3 h-3" />}
+                                    {type === "movie" ? "Film" : "Dizi"}
+                                </span>
+                            </div>
+                        </div>
+                        <div className="flex flex-col gap-3">
+                            <div className="flex flex-wrap gap-1.5">
+                                {(data.genres || []).slice(0, 4).map((g: any) => (
+                                    <span key={g.id} className="px-2.5 py-1 rounded-full text-[11px] font-black border bg-white/5 border-white/10 text-white/60">{g.name}</span>
+                                ))}
+                                {statusInfo && <span className={`px-2.5 py-1 rounded-full text-[11px] font-black uppercase tracking-wide border ${statusInfo.cls}`}>{statusInfo.label}</span>}
+                            </div>
+                            <div>
+                                <h1 className="text-3xl font-black tracking-tighter leading-none text-white">{title}</h1>
+                                {(data.original_title || data.original_name) && (data.original_title || data.original_name) !== title && (
+                                    <p className="mt-1 text-xs text-white/35 italic">{data.original_title || data.original_name}</p>
+                                )}
+                            </div>
+                            <div className="flex flex-wrap items-center gap-2">
+                                <div className="flex items-center gap-1.5"><Star className="w-4 h-4 text-amber-400 fill-amber-400" /><span className="text-base font-black text-amber-400">{data.vote_average?.toFixed(1)}</span><span className="text-xs text-white/35">/ 10</span></div>
+                                {voteCount && <><span className="text-white/20">·</span><span className="text-xs text-white/45">{voteCount} oy</span></>}
+                                <div className="flex items-center gap-1"><Globe className="w-3.5 h-3.5 text-sky-400" /><RatingDisplay userRating={userRating} friendsRatings={friendsRatings} mediaTitle={title} /></div>
+                                {year && <><span className="text-white/20">·</span><span className="text-xs text-white/55 font-bold">{year}</span></>}
+                                {runtimeFmt && <><span className="text-white/20">·</span><span className="text-xs text-white/55 font-bold">{runtimeFmt}</span></>}
+                                {data.number_of_seasons && <><span className="text-white/20">·</span><span className="text-xs text-white/55 font-bold">{data.number_of_seasons} Sezon</span></>}
+                            </div>
+                            {data.overview && (
+                                <p className="text-sm text-white/65 leading-relaxed line-clamp-3 border-l-2 border-amber-400/35 pl-3">{data.overview}</p>
+                            )}
+                            <div className="flex flex-wrap gap-2 items-center">
+                                <TrailerButton videos={data.videos?.results || []} title={title} />
+                                <WatchProviders providers={trProviders} isGlobal={isGlobal} isGuest={isGuest} />
+                                <MediaActions tmdbId={data.id} type={type as "movie" | "tv"} title={title} posterPath={data.poster_path} initialInWatchlist={inWatchlist} initialStatus={watchStatus} initialRating={userRating} initialRecommendation={activeRecommendation?.sender ? { id: activeRecommendation.sender.id, name: activeRecommendation.sender.name || "Bilinmiyor" } : undefined} isAuthenticated={isAuthenticated} isGuest={isGuest} variant="minimal" />
+                            </div>
+                        </div>
+                    </div>
 
-                {/* Desktop Background (Backdrop) */}
-                <div className="absolute inset-0 z-0 hidden md:block">
-                    {backdrop && (
-                        <>
-                            <Image
-                                src={backdrop}
-                                alt=""
-                                fill
-                                className="object-cover object-top opacity-50"
-                                priority
-                            />
-                            <div
-                                className="absolute inset-0"
-                                style={{
-                                    background: `linear-gradient(to right, rgba(10, 10, 10, 1) 20%, rgba(10, 10, 10, 0.7) 50%, rgba(10, 10, 10, 0.4) 100%)`
-                                }}
-                            />
-                            <div className="absolute inset-0 bg-gradient-to-t from-neutral-950 via-neutral-950/40 to-transparent" />
-                        </>
-                    )}
-                </div>
-
-                {/* Content Container */}
-                <div className="relative z-10 max-w-7xl mx-auto px-6 md:px-10 w-full flex flex-col justify-end h-full -mt-32 md:mt-0">
-                    <div className="flex flex-col md:flex-row gap-6 md:gap-10 lg:gap-16 items-center md:items-start text-center md:text-left">
-
-                        {/* Poster Column (Hidden on Mobile) */}
-                        <div className="shrink-0 w-52 md:w-72 lg:w-80 hidden md:block">
-                            <div className="shadow-2xl rounded-2xl overflow-hidden ring-1 ring-white/10 group/poster relative aspect-[2/3]">
+                    {/* ── Desktop (md+): poster left, info right ── */}
+                    <div className="hidden md:flex md:items-start gap-6 lg:gap-8">
+                        {/* Poster */}
+                        <div className="flex-shrink-0 w-[200px] lg:w-[240px] xl:w-[280px]">
+                            <div className="relative w-full rounded-xl overflow-hidden shadow-[0_12px_40px_rgba(0,0,0,0.7)] ring-1 ring-white/10" style={{ aspectRatio: "2/3" }}>
                                 {data.poster_path ? (
-                                    <ExpandableImage
-                                        src={`https://image.tmdb.org/t/p/w780${data.poster_path}`}
-                                        alt={title}
-                                        priority={true}
-                                    />
+                                    <ExpandableImage src={`https://image.tmdb.org/t/p/w780${data.poster_path}`} alt={title} priority />
                                 ) : (
-                                    <div className="w-full h-full flex items-center justify-center bg-neutral-800 text-neutral-500">Poster</div>
+                                    <div className="w-full h-full bg-neutral-800/50 flex items-center justify-center">
+                                        {type === "movie" ? <Film className="w-8 h-8 text-white/10" /> : <Tv className="w-8 h-8 text-white/10" />}
+                                    </div>
+                                )}
+                            </div>
+                            {/* Trailer + Watch Providers — yan yana */}
+                            <div className="mt-2 flex gap-2">
+                                <TrailerButton videos={data.videos?.results || []} title={title} className="flex-1" />
+                                <WatchProviders providers={trProviders} isGlobal={isGlobal} isGuest={isGuest} />
+                            </div>
+                        </div>
+
+                        {/* Info column */}
+                        <div className="flex-1 min-w-0 flex flex-col gap-2.5">
+
+                            {/* Row 1: Back + type badge */}
+                            <div className="flex items-center gap-3">
+                                <Link
+                                    href="/"
+                                    className="flex items-center gap-1 text-[10px] font-black uppercase tracking-widest text-white/25 hover:text-white/60 transition-colors group"
+                                >
+                                    <ArrowLeft className="w-3 h-3 group-hover:-translate-x-0.5 transition-transform" />
+                                    Geri
+                                </Link>
+                                <span className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-widest border ${
+                                    type === "movie"
+                                        ? "bg-amber-400/15 border-amber-400/25 text-amber-400"
+                                        : "bg-emerald-400/15 border-emerald-400/25 text-emerald-400"
+                                }`}>
+                                    {type === "movie" ? <Film className="w-2.5 h-2.5" /> : <Tv className="w-2.5 h-2.5" />}
+                                    {type === "movie" ? "Film" : "Dizi"}
+                                </span>
+                            </div>
+
+                            {/* Row 2: Genres + status */}
+                            <div className="flex flex-wrap gap-1.5 items-center">
+                                {(data.genres || []).slice(0, 4).map((g: any) => (
+                                    <span key={g.id} className="px-2.5 py-1 rounded-full text-xs font-black border bg-white/5 border-white/10 text-white/60 hover:text-white/90 hover:border-white/20 transition-colors">
+                                        {g.name}
+                                    </span>
+                                ))}
+                                {statusInfo && (
+                                    <span className={`px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider border ${statusInfo.cls}`}>
+                                        {statusInfo.label}
+                                    </span>
                                 )}
                             </div>
 
-                            <TrailerButton
-                                videos={data.videos?.results || []}
-                                title={title}
-                            />
-                        </div>
-
-                        {/* Info Column */}
-                        <div className="flex-1 space-y-4 md:space-y-8 pt-2 w-full">
-                            <div className="space-y-2 md:space-y-3">
-                                <h1 className="text-3xl md:text-6xl font-black text-white tracking-tighter leading-[1.1] drop-shadow-2xl">
-                                    {title} <span className="text-neutral-400 md:text-neutral-500 font-light ml-2 text-xl md:text-6xl">({year})</span>
+                            {/* Row 3: Title */}
+                            <div>
+                                <h1 className="text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-black tracking-tighter leading-none text-white">
+                                    {title}
                                 </h1>
                                 {(data.original_title || data.original_name) && (data.original_title || data.original_name) !== title && (
-                                    <p className="text-neutral-400 md:text-neutral-400 text-sm md:text-xl font-medium tracking-tight italic drop-shadow-md">
+                                    <p className="mt-1 text-sm text-white/40 font-medium italic">
                                         {data.original_title || data.original_name}
                                     </p>
                                 )}
                             </div>
 
-                            {/* Meta Data Row */}
-                            <div className="flex flex-wrap items-center justify-center md:justify-start gap-3 md:gap-5 text-sm font-bold text-neutral-200 md:text-neutral-300">
-                                {/* Rating Block */}
-                                <div className="flex items-center gap-1.5 md:gap-2 bg-white/5 px-2 py-1 md:px-3 md:py-1.5 rounded-lg border border-white/10">
-                                    <div className="flex items-center gap-1.5">
-                                        <Globe className="w-3.5 h-3.5 md:w-4 md:h-4 text-sky-400" />
-                                        <span className="text-base md:text-lg text-white font-black">{data.vote_average.toFixed(1)}</span>
-                                    </div>
-                                    <div className="w-[1px] h-3 md:h-4 bg-white/20 mx-1" />
-                                    <RatingDisplay
-                                        userRating={userRating}
-                                        friendsRatings={friendsRatings}
-                                        mediaTitle={title}
-                                    />
+                            {/* Row 4: Score + meta inline */}
+                            <div className="flex items-center gap-3 flex-wrap">
+                                <div className="flex items-center gap-2">
+                                    <Star className="w-4 h-4 text-amber-400 fill-amber-400" />
+                                    <span className="text-base font-black text-amber-400">{data.vote_average?.toFixed(1)}</span>
+                                    <span className="text-xs text-white/40 font-medium">/ 10</span>
                                 </div>
-
-                                <span className="flex items-center gap-2 bg-transparent px-2 py-1 rounded-lg">
-                                    <Clock className="w-4 h-4 text-neutral-500" />
-                                    {runtime && (Math.floor(runtime / 60) > 0
-                                        ? `${Math.floor(runtime / 60)}s ${runtime % 60}dk`
-                                        : `${runtime}dk`)}
-                                </span>
+                                {voteCount && (
+                                    <>
+                                        <span className="text-white/25">·</span>
+                                        <span className="text-xs text-white/50 font-semibold">{voteCount} oy</span>
+                                    </>
+                                )}
+                                <div className="flex items-center gap-1.5">
+                                    <Globe className="w-3.5 h-3.5 text-sky-400" />
+                                    <RatingDisplay userRating={userRating} friendsRatings={friendsRatings} mediaTitle={title} />
+                                </div>
+                                {year && <><span className="text-white/25">·</span><span className="text-xs text-white/60 font-bold">{year}</span></>}
+                                {runtimeFmt && <><span className="text-white/25">·</span><span className="text-xs text-white/60 font-bold">{runtimeFmt}</span></>}
+                                {data.number_of_seasons && <><span className="text-white/25">·</span><span className="text-xs text-white/60 font-bold">{data.number_of_seasons} Sezon</span></>}
+                                {(directors.length > 0 || creators.length > 0) && (
+                                    <>
+                                        <span className="text-white/25">·</span>
+                                        {directors.slice(0, 1).map((p: any) => (
+                                            <span key={p.id} className="text-xs text-white/60 font-bold">{p.name}</span>
+                                        ))}
+                                        {creators.slice(0, 1).map((p: any) => (
+                                            <span key={p.id} className="text-xs text-white/60 font-bold">{p.name}</span>
+                                        ))}
+                                    </>
+                                )}
                             </div>
 
-                            {/* Feature Row (Platforms & Genres) */}
-                            <div className="flex flex-wrap items-center justify-center md:justify-start gap-4">
-                                <WatchProviders
-                                    providers={trProviders}
-                                    isGlobal={isGlobal}
-                                    isGuest={isGuest}
-                                />
-                                <GenreList genres={data.genres} type={type as "movie" | "tv"} />
-                            </div>
-
-                            {/* Actions Row */}
-                            <div className="flex flex-wrap items-center justify-center md:justify-start gap-4 pb-4 md:pb-0 w-full md:w-auto">
-                                <div className="md:hidden w-full">
-                                    <MediaActions
-                                        tmdbId={data.id}
-                                        type={type as "movie" | "tv"}
-                                        title={title}
-                                        posterPath={data.poster_path}
-                                        initialInWatchlist={inWatchlist}
-                                        initialStatus={watchStatus}
-                                        initialRating={userRating}
-                                        initialRecommendation={activeRecommendation?.sender ? {
-                                            id: activeRecommendation.sender.id,
-                                            name: activeRecommendation.sender.name || "Bilinmiyor"
-                                        } : undefined}
-                                        isAuthenticated={isAuthenticated}
-                                        isGuest={isGuest}
-                                        variant="minimal"
-                                    />
-                                </div>
-                                <div className="hidden md:block">
-                                    <MediaActions
-                                        tmdbId={data.id}
-                                        type={type as "movie" | "tv"}
-                                        title={title}
-                                        posterPath={data.poster_path}
-                                        initialInWatchlist={inWatchlist}
-                                        initialStatus={watchStatus}
-                                        initialRating={userRating}
-                                        initialRecommendation={activeRecommendation?.sender ? {
-                                            id: activeRecommendation.sender.id,
-                                            name: activeRecommendation.sender.name || "Bilinmiyor"
-                                        } : undefined}
-                                        isAuthenticated={isAuthenticated}
-                                        isGuest={isGuest}
-                                        variant="standard"
-                                    />
-                                </div>
-                            </div>
-
-                            {/* Overview (Desktop Only in Hero, Mobile moved below) */}
-                            <div className="hidden md:block max-w-3xl space-y-3">
-                                <h3 className="text-lg font-black text-amber-500 uppercase tracking-widest italic opacity-80 underline decoration-amber-500/20 underline-offset-8 decoration-2">Özet</h3>
-                                <p className="text-neutral-200 leading-relaxed text-lg font-medium drop-shadow-sm">
-                                    {data.overview || "Özet bulunmuyor."}
+                            {/* Row 5: Overview (2 lines max) */}
+                            {data.overview && (
+                                <p className="text-sm text-white/70 leading-relaxed max-w-3xl line-clamp-3 border-l-2 border-amber-400/40 pl-4">
+                                    {data.overview}
                                 </p>
+                            )}
+
+                            {/* Row 6: Actions only */}
+                            <div className="flex flex-wrap items-center gap-2 pt-0.5">
+                                <MediaActions
+                                    tmdbId={data.id}
+                                    type={type as "movie" | "tv"}
+                                    title={title}
+                                    posterPath={data.poster_path}
+                                    initialInWatchlist={inWatchlist}
+                                    initialStatus={watchStatus}
+                                    initialRating={userRating}
+                                    initialRecommendation={activeRecommendation?.sender ? {
+                                        id: activeRecommendation.sender.id,
+                                        name: activeRecommendation.sender.name || "Bilinmiyor"
+                                    } : undefined}
+                                    isAuthenticated={isAuthenticated}
+                                    isGuest={isGuest}
+                                    variant="minimal"
+                                />
                             </div>
                         </div>
                     </div>
                 </div>
-            </div>
 
-            {/* Extra Details Body */}
-            <div className="max-w-7xl mx-auto px-6 md:px-10 mt-6 md:mt-12 space-y-12 md:space-y-16">
-
-                {/* Mobile Overview (Moved from Hero) */}
-                <div className="md:hidden space-y-3">
-                    <h3 className="text-sm font-black text-amber-500 uppercase tracking-widest italic opacity-80 underline decoration-amber-500/20 underline-offset-8 decoration-2">Özet</h3>
-                    <p className="text-neutral-300 leading-relaxed text-base font-medium">
-                        {data.overview || "Özet bulunmuyor."}
-                    </p>
+                {/* ════ BOTTOM: FULL-WIDTH TABS ════════════════════════ */}
+                <div className="px-6 lg:px-10 pt-4 pb-10 bg-[#070c16]">
+                    <DetailTabs
+                        cast={data.credits?.cast || []}
+                        seasons={data.seasons}
+                        tmdbId={data.id}
+                        type={type as "movie" | "tv"}
+                        images={data.images?.backdrops || []}
+                        title={title}
+                        posterPath={data.poster_path}
+                        initialComments={comments}
+                        recommendations={data.recommendations?.results || []}
+                        watchedEpisodes={watchedEpisodes}
+                    />
                 </div>
-
-                {/* Providers (Compact) */}
-
-                {/* Seasons */}
-                <SeasonList
-                    tmdbId={data.id}
-                    seasons={data.seasons}
-                    watchedEpisodes={watchedEpisodes}
-                />
-
-                {/* Cast */}
-                <section>
-                    <div className="flex items-center justify-between mb-6 border-b border-white/5 pb-4">
-                        <h3 className="text-2xl font-bold text-white">Oyuncular</h3>
-                        <Link href={`/cast/${type}/${id}`} className="text-sm text-primary hover:text-primary/80 transition-colors">
-                            Tümünü Gör
-                        </Link>
-                    </div>
-                    {/* Assuming CastList handles its own scroll container, but we removed the header inside it */}
-                    <div className="-mx-6 md:-mx-10 px-6 md:px-10">
-                        <CastList cast={data.credits?.cast} />
-                    </div>
-                </section>
-
-                {/* Additional Images Gallery */}
-                {data.images?.backdrops?.length > 0 && (
-                    <section>
-                        <div className="flex items-center justify-between mb-6 border-b border-white/5 pb-4">
-                            <h3 className="text-2xl font-bold text-white">Görseller</h3>
-                            <span className="text-xs font-bold text-neutral-500 uppercase tracking-widest">{data.images.backdrops.length} Resim</span>
-                        </div>
-                        <div className="flex gap-4 overflow-x-auto pb-4 -mx-6 md:-mx-10 px-6 md:px-10 no-scrollbar custom-scrollbar">
-                            {data.images.backdrops.slice(0, 10).map((img: any, idx: number) => (
-                                <div key={idx} className="flex-none w-64 md:w-80 rounded-xl overflow-hidden shadow-lg hover:shadow-primary/10 transition-shadow">
-                                    <ExpandableImage
-                                        src={`https://image.tmdb.org/t/p/w780${img.file_path}`}
-                                        alt={`${title} Görsel ${idx + 1}`}
-                                        aspectRatio="video"
-                                    />
-                                </div>
-                            ))}
-                        </div>
-                    </section>
-                )}
-
-                {/* Reviews & Ratings */}
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-12" id="comments">
-                    <div className="lg:col-span-3">
-                        <CommentsSection
-                            mediaId={data.id}
-                            type={type as "movie" | "tv"}
-                            initialComments={comments}
-                            mediaTitle={title}
-                            mediaPosterPath={data.poster_path}
-                        />
-                    </div>
-                </div>
-
-                {/* Recommendations */}
-                {data.recommendations?.results?.length > 0 && (
-                    <div className="pt-12 border-t border-white/5">
-                        <MediaRow
-                            title="Önerilenler"
-                            items={data.recommendations.results}
-                            type={type as "movie" | "tv"}
-                        />
-                    </div>
-                )}
             </div>
-        </div >
+        </div>
     );
 }
+
+

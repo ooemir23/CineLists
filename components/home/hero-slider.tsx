@@ -126,12 +126,12 @@ export function HeroSlider({ items, friendPopularIds = [] }: HeroSliderProps) {
                     <div className="absolute inset-0 bg-black/20 z-10" />
 
                     <div className="absolute inset-0 z-20 flex flex-col p-6 md:p-8 lg:p-10">
-                        {/* Top Metadata Tags (Now Clickable) */}
+                        {/* Top Metadata Tags */}
                         <motion.div
                             initial={{ y: -20, opacity: 0 }}
                             animate={{ y: 0, opacity: 1 }}
                             transition={{ delay: 0.2, duration: 0.6 }}
-                            className="flex flex-wrap items-center gap-3"
+                            className="flex flex-wrap items-center justify-between gap-3 w-full"
                         >
                             <div className="flex flex-wrap gap-2 items-center">
                                 {eventMeta && (
@@ -152,14 +152,6 @@ export function HeroSlider({ items, friendPopularIds = [] }: HeroSliderProps) {
                                     <categoryConfig.icon className={cn("w-3 h-3", categoryConfig.color)} />
                                     {categoryConfig.label}
                                 </Link>
-                                {isFriendsPopular && (
-                                    <Link 
-                                        href="/community"
-                                        className="px-4 py-1.5 rounded-full bg-emerald-500/20 text-emerald-400 text-[10px] font-black uppercase tracking-widest border border-emerald-500/20 backdrop-blur-md transition-all hover:scale-105 active:scale-95 hover:bg-emerald-500/30"
-                                    >
-                                        Arkadaşlarında Popüler
-                                    </Link>
-                                )}
                                 <Link 
                                     href={`/${currentItem.media_type}/${currentItem.id}`}
                                     className="px-4 py-1.5 rounded-full bg-amber-400/20 text-amber-400 text-[10px] font-black uppercase tracking-widest border border-amber-400/20 backdrop-blur-md flex items-center gap-1.5 transition-all hover:scale-105 active:scale-95 hover:bg-amber-400/30"
@@ -169,39 +161,44 @@ export function HeroSlider({ items, friendPopularIds = [] }: HeroSliderProps) {
                                 </Link>
                             </div>
 
-                            {/* Watch Platforms */}
-                            {(currentItem.platformLogos && currentItem.platformLogos.length > 0) && (
-                                <div className="flex items-center gap-1.5 bg-black/40 backdrop-blur-xl px-3 py-1.5 rounded-full border border-white/10 ml-auto md:ml-0 transition-all hover:bg-black/60 cursor-pointer">
-                                    <span className="text-[9px] font-black text-white/40 uppercase tracking-widest mr-1">İzle:</span>
-                                    <div className="flex -space-x-2">
-                                        {currentItem.platformLogos.map((p, i) => (
-                                            <div key={i} className="relative w-5 h-5 rounded-full overflow-hidden border border-white/20 shadow-lg ring-1 ring-black/50" title={p.name}>
-                                                {p.logoPath ? (
-                                                    <Image
-                                                        src={`https://image.tmdb.org/t/p/w92${p.logoPath}`}
-                                                        alt={p.name}
-                                                        fill
-                                                        className="object-cover"
-                                                    />
-                                                ) : (
-                                                    <div className="w-full h-full bg-slate-800 flex items-center justify-center text-[8px]">{p.name[0]}</div>
-                                                )}
-                                            </div>
-                                        ))}
+                            <div className="flex items-center gap-3">
+                                {/* Watch Platforms */}
+                                {(currentItem.platformLogos && currentItem.platformLogos.length > 0) && (
+                                    <div className="hidden md:flex items-center gap-1.5 bg-black/40 backdrop-blur-xl px-3 py-1.5 rounded-full border border-white/10 transition-all hover:bg-black/60 cursor-pointer">
+                                        <span className="text-[9px] font-black text-white/40 uppercase tracking-widest mr-1">İzle:</span>
+                                        <div className="flex -space-x-2">
+                                            {currentItem.platformLogos.map((p, i) => (
+                                                <div key={i} className="relative w-5 h-5 rounded-full overflow-hidden border border-white/20 shadow-lg ring-1 ring-black/50" title={p.name}>
+                                                    {p.logoPath ? (
+                                                        <Image
+                                                            src={`https://image.tmdb.org/t/p/w92${p.logoPath}`}
+                                                            alt={p.name}
+                                                            fill
+                                                            className="object-cover"
+                                                        />
+                                                    ) : (
+                                                        <div className="w-full h-full bg-slate-800 flex items-center justify-center text-[8px]">{p.name[0]}</div>
+                                                    )}
+                                                </div>
+                                            ))}
+                                        </div>
                                     </div>
-                                </div>
-                            )}
+                                )}
+
+                                {/* Trailer Button moved to top right */}
+                                <HeroActions movieId={currentItem.id} mediaType={currentItem.media_type} />
+                            </div>
                         </motion.div>
 
                         <div className="flex-1 flex flex-col justify-center">
                             <div className="flex flex-col items-start gap-8">
                                 <div className="max-w-4xl space-y-6">
-                                    <div className="space-y-4">
+                                    <Link href={`/${currentItem.media_type}/${currentItem.id}`} className="space-y-4 block group/content">
                                         <motion.h2
                                             initial={{ y: 30, opacity: 0 }}
                                             animate={{ y: 0, opacity: 1 }}
                                             transition={{ delay: 0.3, duration: 0.6 }}
-                                            className="text-4xl md:text-5xl lg:text-6xl font-black text-white leading-tight tracking-tighter drop-shadow-2xl italic uppercase"
+                                            className="text-4xl md:text-5xl lg:text-6xl font-black text-white leading-tight tracking-tighter drop-shadow-2xl italic uppercase group-hover/content:text-amber-400 transition-colors"
                                         >
                                             {currentItem.title}
                                         </motion.h2>
@@ -209,20 +206,11 @@ export function HeroSlider({ items, friendPopularIds = [] }: HeroSliderProps) {
                                             initial={{ y: 30, opacity: 0 }}
                                             animate={{ y: 0, opacity: 1 }}
                                             transition={{ delay: 0.4, duration: 0.6 }}
-                                            className="text-lg text-neutral-300 font-bold max-w-2xl line-clamp-3 leading-relaxed drop-shadow-md border-l-4 border-amber-400 pl-6"
+                                            className="text-lg text-neutral-300 font-bold max-w-2xl line-clamp-3 leading-relaxed drop-shadow-md border-l-4 border-amber-400 pl-6 group-hover/content:border-white transition-colors"
                                         >
                                             {currentItem.overview}
                                         </motion.p>
-                                    </div>
-
-                                    <motion.div
-                                        initial={{ y: 30, opacity: 0 }}
-                                        animate={{ y: 0, opacity: 1 }}
-                                        transition={{ delay: 0.5, duration: 0.6 }}
-                                        className="pt-4"
-                                    >
-                                        <HeroActions movieId={currentItem.id} mediaType={currentItem.media_type} />
-                                    </motion.div>
+                                    </Link>
                                 </div>
                             </div>
                         </div>
