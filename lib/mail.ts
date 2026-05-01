@@ -13,7 +13,7 @@ export const sendPasswordResetEmail = async (email: string, token: string) => {
 
     try {
         await resend.emails.send({
-            from: "CineLists <onboarding@resend.dev>", // Alan adınızı doğruladıktan sonra burayı güncelleyebilirsiniz
+            from: "CineLists <info@cinelists.com>",
             to: email,
             subject: "Şifrenizi Sıfırlayın",
             html: `
