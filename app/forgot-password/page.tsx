@@ -17,7 +17,7 @@ export default async function ForgotPasswordPage({ searchParams }: ForgotPasswor
                 : null;
     
     const successMessage = params.success === "sent" 
-        ? "Şifre sıfırlama bağlantısı e-posta adresinize gönderildi (Simüle edildi)." 
+        ? "Şifre sıfırlama bağlantısı e-posta adresinize gönderildi." 
         : null;
 
     return (

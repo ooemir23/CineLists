@@ -1,18 +1,21 @@
 import { Resend } from "resend";
 
 const resendApiKey = process.env.RESEND_API_KEY;
+console.log("Resend API Key mevcut mu?:", !!resendApiKey);
 const resend = resendApiKey ? new Resend(resendApiKey) : null;
 
 export const sendPasswordResetEmail = async (email: string, token: string) => {
+    console.log("E-posta gönderimi başlatılıyor:", email);
     if (!resend) {
         console.error("RESEND_API_KEY eksik! Lütfen .env dosyanızı kontrol edin.");
         return;
     }
     const domain = process.env.AUTH_URL || process.env.NEXTAUTH_URL || "http://localhost:3000";
     const resetLink = `${domain}/reset-password?token=${token}`;
+    console.log("Sıfırlama bağlantısı:", resetLink);
 
     try {
-        await resend.emails.send({
+        const data = await resend.emails.send({
             from: "CineLists <info@cinelists.com>",
             to: email,
             subject: "Şifrenizi Sıfırlayın",
