@@ -35,7 +35,9 @@ const PLATFORM_URLS: Record<string, string> = {
     "MUBI": "https://mubi.com",
     "Tod": "https://www.todtv.com.tr",
     "Exxen": "https://www.exxen.com",
-    "Gain": "https://www.gain.tv"
+    "Gain": "https://www.gain.tv",
+    "TV+": "https://tvplus.com.tr",
+    "Turkcell TV+": "https://tvplus.com.tr"
 };
 
 export function WatchProviders({ providers, isGlobal, isGuest }: WatchProvidersProps) {
@@ -47,7 +49,6 @@ export function WatchProviders({ providers, isGlobal, isGuest }: WatchProvidersP
         ...(providers?.rent || [])
     ];
 
-    // Remove duplicates by provider_id
     const uniqueProviders = Array.from(new Map(allProviders.map(p => [p.provider_id, p])).values());
     const displayProviders = uniqueProviders.slice(0, 2);
     const extraCount = uniqueProviders.length - 2;
@@ -59,11 +60,21 @@ export function WatchProviders({ providers, isGlobal, isGuest }: WatchProvidersP
     const hasProviders = uniqueProviders.length > 0;
     const showRed = isGlobal || !hasProviders;
 
+    const handleTriggerClick = (e: React.MouseEvent) => {
+        if (isGuest) return; // Guest handle by Link inside
+        
+        if (uniqueProviders.length === 1) {
+            window.open(getProviderUrl(uniqueProviders[0].provider_name), "_blank");
+        } else {
+            setIsOpen(true);
+        }
+    };
+
     return (
         <>
             {/* ── Trigger ── */}
             <button
-                onClick={() => setIsOpen(true)}
+                onClick={handleTriggerClick}
                 className={cn(
                     "relative flex items-center gap-2 px-3 py-2 rounded-2xl transition-all group overflow-hidden border",
                     showRed 

@@ -47,7 +47,7 @@ export function TrailerButton({ videos, title, className }: TrailerButtonProps) 
                 <div className="w-7 h-7 rounded-full bg-amber-400 flex items-center justify-center shadow-lg shadow-amber-400/20 group-hover:scale-110 transition-transform flex-shrink-0">
                     <Play size={12} className="text-slate-950 fill-current ml-0.5" />
                 </div>
-                <span>Fragman İzle</span>
+                <span>Fragman</span>
             </button>
 
             <TrailerModal

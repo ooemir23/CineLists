@@ -88,7 +88,7 @@ export function DetailTabs({
                                 <Link
                                     key={person.id}
                                     href={`/person/${person.id}`}
-                                    className="group flex flex-col w-[130px] sm:w-[140px] flex-shrink-0 rounded-2xl overflow-hidden bg-white/[0.04] border border-white/8 hover:border-amber-400/30 hover:bg-white/[0.07] transition-all"
+                                    className="group flex flex-col w-[90px] sm:w-[140px] flex-shrink-0 rounded-xl sm:rounded-2xl overflow-hidden bg-white/[0.04] border border-white/8 hover:border-amber-400/30 hover:bg-white/[0.07] transition-all"
                                 >
                                     {/* Full photo */}
                                     <div className="relative w-full overflow-hidden" style={{ aspectRatio: "2/3" }}>
@@ -100,7 +100,7 @@ export function DetailTabs({
                                             />
                                         ) : (
                                             <div className="w-full h-full bg-neutral-800/80 flex flex-col items-center justify-center gap-2">
-                                                <div className="w-14 h-14 rounded-full bg-white/5 flex items-center justify-center text-2xl font-black text-white/25">
+                                                <div className="w-8 h-8 sm:w-14 sm:h-14 rounded-full bg-white/5 flex items-center justify-center text-lg sm:text-2xl font-black text-white/25">
                                                     {person.name?.[0]}
                                                 </div>
                                             </div>
@@ -109,9 +109,9 @@ export function DetailTabs({
                                         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
                                     </div>
                                     {/* Info */}
-                                    <div className="px-3 py-2.5">
-                                        <p className="text-xs font-black text-white/90 leading-tight mb-0.5 line-clamp-1 group-hover:text-amber-400 transition-colors">{person.name}</p>
-                                        <p className="text-[11px] text-white/35 font-medium leading-tight line-clamp-1">{person.character}</p>
+                                    <div className="px-2 sm:px-3 py-1.5 sm:py-2.5">
+                                        <p className="text-[10px] sm:text-xs font-black text-white/90 leading-tight mb-0.5 line-clamp-1 group-hover:text-amber-400 transition-colors">{person.name}</p>
+                                        <p className="text-[9px] sm:text-[11px] text-white/35 font-medium leading-tight line-clamp-1">{person.character}</p>
                                     </div>
                                 </Link>
                             ))}
@@ -120,17 +120,17 @@ export function DetailTabs({
                             {(cast || []).length > 5 && (
                                 <button
                                     onClick={() => setShowAllCast(p => !p)}
-                                    className="flex-shrink-0 w-[130px] sm:w-[140px] flex flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-white/12 text-white/30 hover:text-white/60 hover:border-white/25 transition-all self-stretch min-h-[80px]"
+                                    className="flex-shrink-0 w-[90px] sm:w-[140px] flex flex-col items-center justify-center gap-1 sm:gap-2 rounded-xl sm:rounded-2xl border border-dashed border-white/12 text-white/30 hover:text-white/60 hover:border-white/25 transition-all self-stretch min-h-[60px] sm:min-h-[80px]"
                                 >
                                     {showAllCast ? (
                                         <>
-                                            <span className="text-lg">↑</span>
-                                            <span className="text-xs font-black">Daha az</span>
+                                            <span className="text-sm sm:text-lg">↑</span>
+                                            <span className="text-[10px] sm:text-xs font-black">Daha az</span>
                                         </>
                                     ) : (
                                         <>
-                                            <span className="text-2xl font-black">+{(cast || []).length - 5}</span>
-                                            <span className="text-xs font-black">oyuncu</span>
+                                            <span className="text-xl sm:text-2xl font-black">+{(cast || []).length - 5}</span>
+                                            <span className="text-[10px] sm:text-xs font-black">oyuncu</span>
                                         </>
                                     )}
                                 </button>

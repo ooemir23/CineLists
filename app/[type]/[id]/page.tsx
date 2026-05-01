@@ -176,10 +176,27 @@ export default async function DetailsPage(props: Props) {
                             {data.overview && (
                                 <p className="text-sm text-white/65 leading-relaxed line-clamp-3 border-l-2 border-amber-400/35 pl-3">{data.overview}</p>
                             )}
-                            <div className="flex flex-wrap gap-2 items-center">
-                                <TrailerButton videos={data.videos?.results || []} title={title} />
+                            <div className="grid grid-cols-2 gap-2">
+                                <TrailerButton videos={data.videos?.results || []} title={title} className="w-full" />
                                 <WatchProviders providers={trProviders} isGlobal={isGlobal} isGuest={isGuest} />
-                                <MediaActions tmdbId={data.id} type={type as "movie" | "tv"} title={title} posterPath={data.poster_path} initialInWatchlist={inWatchlist} initialStatus={watchStatus} initialRating={userRating} initialRecommendation={activeRecommendation?.sender ? { id: activeRecommendation.sender.id, name: activeRecommendation.sender.name || "Bilinmiyor" } : undefined} isAuthenticated={isAuthenticated} isGuest={isGuest} variant="minimal" />
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <MediaActions
+                                    tmdbId={data.id}
+                                    type={type as "movie" | "tv"}
+                                    title={title}
+                                    posterPath={data.poster_path}
+                                    initialInWatchlist={inWatchlist}
+                                    initialStatus={watchStatus}
+                                    initialRating={userRating}
+                                    initialRecommendation={activeRecommendation?.sender ? {
+                                        id: activeRecommendation.sender.id,
+                                        name: activeRecommendation.sender.name || "Bilinmiyor"
+                                    } : undefined}
+                                    isAuthenticated={isAuthenticated}
+                                    isGuest={isGuest}
+                                    variant="minimal"
+                                />
                             </div>
                         </div>
                     </div>
