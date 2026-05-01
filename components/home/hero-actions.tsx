@@ -38,23 +38,21 @@ export function HeroActions({ movieId, mediaType = "movie" }: HeroActionsProps) 
 
     return (
         <>
-            <div className="flex flex-wrap items-center gap-3 mt-2">
+            <div className="flex flex-wrap items-center gap-4 mt-2">
                 <Link
                     href={`/${mediaType}/${movieId}`}
-                    className="group flex items-center gap-2 bg-primary hover:bg-primary/90 text-white px-5 py-2.5 rounded-xl font-bold text-sm transition-all shadow-lg shadow-primary/20 hover:scale-105 active:scale-95"
+                    className="group relative flex items-center gap-3 bg-amber-400 hover:bg-amber-300 text-slate-950 px-8 py-4 rounded-2xl font-black text-xs uppercase tracking-widest transition-all shadow-[0_10px_20px_rgba(251,191,36,0.2)] hover:shadow-[0_15px_30px_rgba(251,191,36,0.3)] hover:-translate-y-1 active:scale-95"
                 >
-                    <div className="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center group-hover:bg-white text-white group-hover:text-primary transition-colors">
-                        <Play className="w-3 h-3 fill-current ml-0.5" />
-                    </div>
+                    <Play className="w-4 h-4 fill-current" />
                     Detayları İncele
                 </Link>
 
                 <button
                     onClick={openTrailer}
-                    className="group flex items-center gap-2 bg-white/10 hover:bg-white/20 text-white border border-white/10 px-5 py-2.5 rounded-xl font-bold text-sm backdrop-blur-md transition-all hover:scale-105 active:scale-95"
+                    className="group flex items-center gap-3 bg-white/5 hover:bg-white/10 text-white border border-white/10 px-8 py-4 rounded-2xl font-black text-xs uppercase tracking-widest backdrop-blur-xl transition-all hover:-translate-y-1 active:scale-95 shadow-2xl"
                 >
-                    <Info className="w-4 h-4" />
-                    Fragman
+                    <Info className="w-4 h-4 text-amber-400" />
+                    Fragman İzle
                 </button>
             </div>
 

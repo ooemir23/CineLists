@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
+import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
-import { Star, Calendar, TrendingUp, Trophy, ChevronLeft, ChevronRight } from "lucide-react";
+import { Star, Calendar, TrendingUp, Trophy, ChevronLeft, ChevronRight, Play, Info } from "lucide-react";
 import { HeroActions } from "./hero-actions";
 import { cn } from "@/lib/utils";
 
@@ -13,7 +14,7 @@ interface HeroItem {
     title: string;
     overview: string;
     backdrop_path: string | null;
-    poster_path: string | null;
+    poster_path?: string | null;
     vote_average: number;
     media_type: "movie" | "tv";
     category: CategoryType;
@@ -35,85 +36,65 @@ const CATEGORY_CONFIG = {
     followed: { label: "Takip Ettiklerin", icon: Star, color: "text-cyan-300", bgColor: "bg-cyan-400" },
 };
 
-const EVENT_LABELS: Record<string, { label: string; icon: typeof TrendingUp; color: string }> = {
-    "Yeni Bolum": { label: "Yeni Bolum", icon: TrendingUp, color: "text-emerald-400" },
-    "Yeni Bolum Yakinda": { label: "Bolum Yakinda", icon: Calendar, color: "text-blue-400" },
-    "Vizyona Girdi": { label: "Vizyona Girdi", icon: Star, color: "text-amber-400" },
-    "Platformda Yayinda": { label: "Platformda Yayinda", icon: TrendingUp, color: "text-cyan-400" },
-    "Platformunda Yeni": { label: "Platformunda Yeni", icon: TrendingUp, color: "text-cyan-400" },
-    "Bugun Yayinda": { label: "Bugun Yayinda", icon: Star, color: "text-amber-300" },
-    "Devam Et": { label: "Devam Et", icon: TrendingUp, color: "text-emerald-300" },
-    "Arkadaslarinda Yukseldi": { label: "Arkadaslarinda Yukseldi", icon: TrendingUp, color: "text-rose-300" },
+const EVENT_LABELS: Record<string, { label: string; icon: any; color: string; bgColor: string }> = {
+    "Yeni Bolum": { label: "Yeni Bölüm", icon: TrendingUp, color: "text-emerald-400", bgColor: "bg-emerald-500/10" },
+    "Bolum Yakinda": { label: "Bölüm Yakında", icon: Calendar, color: "text-blue-400", bgColor: "bg-blue-500/10" },
+    "Vizyona Girdi": { label: "Vizyona Girdi", icon: Star, color: "text-amber-400", bgColor: "bg-amber-500/10" },
+    "Platformda Yayinda": { label: "Platformda Yayında", icon: TrendingUp, color: "text-cyan-400", bgColor: "bg-cyan-500/10" },
+    "Platformunda Yeni": { label: "Platformunda Yeni", icon: TrendingUp, color: "text-cyan-400", bgColor: "bg-cyan-500/10" },
+    "Bugun Yayinda": { label: "Bugün Yayında", icon: Star, color: "text-amber-300", bgColor: "bg-amber-500/10" },
+    "Devam Et": { label: "Devam Et", icon: Play, color: "text-emerald-300", bgColor: "bg-emerald-500/10" },
+    "Arkadaslarinda Yukseldi": { label: "Popüler", icon: TrendingUp, color: "text-rose-300", bgColor: "bg-rose-500/10" },
 };
 
 export function HeroSlider({ items, friendPopularIds = [] }: HeroSliderProps) {
     const [currentIndex, setCurrentIndex] = useState(0);
     const [isManual, setIsManual] = useState(false);
+    const [direction, setDirection] = useState(0); // 1 for next, -1 for prev
     const hasItems = items.length > 0;
 
-    // Auto-advance slide
-    useEffect(() => {
+    const goNext = useCallback(() => {
         if (!hasItems) return;
-
-        const timer = setInterval(() => {
-            setCurrentIndex((prev) => (prev + 1) % items.length);
-        }, 10000); // 10 seconds per slide
-
-        return () => clearInterval(timer);
+        setDirection(1);
+        setCurrentIndex((prev) => (prev + 1) % items.length);
     }, [hasItems, items.length]);
 
-    // Reset timer on interaction
+    const goPrev = useCallback(() => {
+        if (!hasItems) return;
+        setDirection(-1);
+        setCurrentIndex((prev) => (prev === 0 ? items.length - 1 : prev - 1));
+    }, [hasItems, items.length]);
+
+    useEffect(() => {
+        if (!hasItems || isManual) return;
+        const timer = setInterval(goNext, 12000);
+        return () => clearInterval(timer);
+    }, [hasItems, isManual, goNext]);
+
     const handleManualChange = (index: number) => {
+        setDirection(index > currentIndex ? 1 : -1);
         setIsManual(true);
         setCurrentIndex(index);
     };
 
-    const goPrev = () => {
-        if (!hasItems) return;
-        setIsManual(true);
-        setCurrentIndex((prev) => (prev === 0 ? items.length - 1 : prev - 1));
-    };
-
-    const goNext = () => {
-        if (!hasItems) return;
-        setIsManual(true);
-        setCurrentIndex((prev) => (prev + 1) % items.length);
-    };
-
-    const handleDragEnd = (event: any, info: any) => {
-        if (!hasItems) return;
-
-        if (info.offset.x > 50) {
-            // Swipe Right (Previous)
-            goPrev();
-        } else if (info.offset.x < -50) {
-            // Swipe Left (Next)
-            goNext();
-        }
-    };
-
     if (!hasItems) {
         return (
-            <div className="w-full h-[65svh] md:h-full rounded-[32px] md:rounded-[40px] overflow-hidden shadow-2xl border border-white/10 relative bg-gradient-to-br from-[#111827] to-[#0b1220] flex items-center justify-center p-8 text-center">
-                <div className="max-w-md space-y-3">
-                    <h3 className="text-xl md:text-2xl font-black text-white tracking-tight">İçerikler Yüklenemedi</h3>
-                    <p className="text-sm text-neutral-300 font-medium">
-                        TMDB bağlantısı kurulamadı. Geçerli API anahtarı ekledikten sonra içerikler burada görünecek.
-                    </p>
+            <div className="w-full h-full rounded-[3rem] overflow-hidden border border-white/5 bg-slate-950 flex items-center justify-center p-8 text-center">
+                <div className="space-y-4">
+                    <div className="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center mx-auto">
+                        <Info className="w-8 h-8 text-neutral-600" />
+                    </div>
+                    <h3 className="text-xl font-bold text-white uppercase tracking-widest">Yükleniyor...</h3>
                 </div>
             </div>
         );
     }
 
     const currentItem = items[currentIndex];
-    const config = CATEGORY_CONFIG[currentItem.category];
-    const Icon = config.icon;
-    const isFriendsPopular = friendPopularIds.includes(currentItem.id);
+    const categoryConfig = CATEGORY_CONFIG[currentItem.category];
     const eventMeta = currentItem.eventLabel ? EVENT_LABELS[currentItem.eventLabel] : null;
-    const EventIcon = eventMeta?.icon;
-    const metaLabel = currentItem.metaLabel;
+    const isFriendsPopular = friendPopularIds.includes(currentItem.id);
 
-    // Fallback images
     const backdropUrl = currentItem.backdrop_path
         ? `https://image.tmdb.org/t/p/original${currentItem.backdrop_path}`
         : "/placeholder-hero.jpg";
@@ -123,156 +104,166 @@ export function HeroSlider({ items, friendPopularIds = [] }: HeroSliderProps) {
         : null;
 
     return (
-        <div className="w-full h-[65svh] md:h-full rounded-[32px] md:rounded-[40px] overflow-hidden shadow-2xl border border-white/10 relative group">
-            <AnimatePresence mode="wait">
+        <div className="relative w-full h-full group overflow-hidden rounded-[2.5rem] border border-white/5 bg-slate-950 shadow-2xl">
+            <AnimatePresence initial={false} custom={direction} mode="popLayout">
                 <motion.div
-                    key={`${currentItem.id}-${currentItem.category}-${isManual ? "manual" : "auto"}`}
-                    onAnimationComplete={() => setIsManual(false)}
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    transition={{ duration: isManual ? 0 : 1.5, ease: "easeInOut" }}
-                    className="absolute inset-0 touch-pan-y"
-                    drag="x"
-                    dragConstraints={{ left: 0, right: 0 }}
-                    dragElastic={0.2}
-                    onDragEnd={handleDragEnd}
+                    key={currentItem.id}
+                    initial={{ opacity: 0, scale: 1.1 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.95 }}
+                    transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+                    className="absolute inset-0"
                 >
-                    {/* Background Backdrop */}
-                    <div
-                        className="absolute inset-0 bg-cover bg-center bg-no-repeat transition-transform duration-[10s] ease-out"
+                    {/* Immersive Backdrop with Ken Burns Effect */}
+                    <motion.div
+                        initial={{ scale: 1 }}
+                        animate={{ scale: 1.15 }}
+                        transition={{ duration: 15, repeat: Infinity, repeatType: "reverse", ease: "linear" }}
+                        className="absolute inset-0 bg-cover bg-center bg-no-repeat"
                         style={{ backgroundImage: `url(${backdropUrl})` }}
                     />
 
-                    {/* Multi-layered Gradient for better text readability */}
-                    <div className="absolute inset-0 bg-gradient-to-t from-[#020617] via-[#020617]/40 to-transparent" />
-                    <div className="absolute inset-0 bg-gradient-to-r from-[#020617]/60 via-transparent to-transparent" />
+                    {/* Gradient Overlays for Depth */}
+                    <div className="absolute inset-0 bg-gradient-to-t from-[#020617] via-[#020617]/40 to-transparent z-10" />
+                    <div className="absolute inset-0 bg-gradient-to-r from-[#020617]/80 via-[#020617]/20 to-transparent z-10" />
+                    <div className="absolute inset-0 bg-black/20 z-10" />
 
-                    {/* Content Over the Backdrop */}
-                    <div className="absolute inset-0 flex flex-col justify-end p-6 md:p-10 gap-3 md:gap-4 pb-16 md:pb-10">
-                        <div className="flex flex-col md:flex-row items-end gap-6 pt-10">
-                            {/* Portrait Poster - Added to show the "afiş" fully */}
-                            {posterUrl && (
+                    {/* Content Layer */}
+                    <div className="absolute inset-0 z-20 flex flex-col justify-end p-8 md:p-12 lg:p-16">
+                        <div className="flex flex-col lg:flex-row items-end gap-10">
+                            
+                            {/* Text Content */}
+                            <div className="flex-1 max-w-3xl space-y-6">
                                 <motion.div
-                                    initial={{ x: -20, opacity: 0 }}
-                                    animate={{ x: 0, opacity: 1 }}
-                                    transition={{ delay: isManual ? 0 : 0.4, duration: 0.5 }}
-                                    className="hidden md:block w-32 lg:w-40 xl:w-48 aspect-[2/3] rounded-2xl overflow-hidden shadow-2xl border border-white/10 shrink-0 mb-2"
+                                    initial={{ y: 30, opacity: 0 }}
+                                    animate={{ y: 0, opacity: 1 }}
+                                    transition={{ delay: 0.2, duration: 0.6 }}
+                                    className="flex flex-wrap gap-2 items-center"
                                 >
-                                    <img
+                                    {eventMeta && (
+                                        <span className={cn(
+                                            "px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border border-white/10 backdrop-blur-md",
+                                            eventMeta.bgColor, eventMeta.color
+                                        )}>
+                                            {eventMeta.label}
+                                        </span>
+                                    )}
+                                    <span className="px-4 py-1.5 rounded-full bg-white/10 text-white/90 text-[10px] font-black uppercase tracking-widest border border-white/10 backdrop-blur-md flex items-center gap-2">
+                                        <categoryConfig.icon className={cn("w-3 h-3", categoryConfig.color)} />
+                                        {categoryConfig.label}
+                                    </span>
+                                    {isFriendsPopular && (
+                                        <span className="px-4 py-1.5 rounded-full bg-emerald-500/20 text-emerald-400 text-[10px] font-black uppercase tracking-widest border border-emerald-500/20 backdrop-blur-md">
+                                            Arkadaşlarında Popüler
+                                        </span>
+                                    )}
+                                    <span className="px-4 py-1.5 rounded-full bg-amber-400/20 text-amber-400 text-[10px] font-black uppercase tracking-widest border border-amber-400/20 backdrop-blur-md flex items-center gap-1.5">
+                                        <Star className="w-3 h-3 fill-current" />
+                                        {currentItem.vote_average.toFixed(1)}
+                                    </span>
+                                </motion.div>
+
+                                <div className="space-y-4">
+                                    <motion.h2
+                                        initial={{ y: 30, opacity: 0 }}
+                                        animate={{ y: 0, opacity: 1 }}
+                                        transition={{ delay: 0.3, duration: 0.6 }}
+                                        className="text-4xl md:text-6xl lg:text-7xl font-black text-white leading-tight tracking-tighter drop-shadow-2xl italic uppercase"
+                                    >
+                                        {currentItem.title}
+                                    </motion.h2>
+                                    <motion.p
+                                        initial={{ y: 30, opacity: 0 }}
+                                        animate={{ y: 0, opacity: 1 }}
+                                        transition={{ delay: 0.4, duration: 0.6 }}
+                                        className="text-lg text-neutral-300 font-bold max-w-xl line-clamp-3 leading-relaxed drop-shadow-md border-l-4 border-amber-400 pl-6"
+                                    >
+                                        {currentItem.overview}
+                                    </motion.p>
+                                </div>
+
+                                <motion.div
+                                    initial={{ y: 30, opacity: 0 }}
+                                    animate={{ y: 0, opacity: 1 }}
+                                    transition={{ delay: 0.5, duration: 0.6 }}
+                                    className="pt-4"
+                                >
+                                    <HeroActions movieId={currentItem.id} mediaType={currentItem.media_type} />
+                                </motion.div>
+                            </div>
+
+                            {/* Floating Poster (Hidden on Mobile) */}
+                            <motion.div
+                                initial={{ x: 50, opacity: 0, rotate: 5 }}
+                                animate={{ x: 0, opacity: 1, rotate: 0 }}
+                                transition={{ delay: 0.4, duration: 0.8, type: "spring" }}
+                                className="hidden xl:block relative w-56 h-80 rounded-[2rem] overflow-hidden shadow-2xl border border-white/10 rotate-2 hover:rotate-0 transition-transform duration-500 group/poster"
+                            >
+                                {posterUrl ? (
+                                    <Image
                                         src={posterUrl}
                                         alt={currentItem.title}
-                                        className="w-full h-full object-cover"
+                                        fill
+                                        className="object-cover"
                                     />
-                                </motion.div>
-                            )}
-
-                            <div className="space-y-2 flex-1 min-w-0">
-                                <motion.h2
-                                    initial={{ y: 20, opacity: 0 }}
-                                    animate={{ y: 0, opacity: 1 }}
-                                    transition={{ delay: isManual ? 0 : 0.3, duration: isManual ? 0 : 0.5 }}
-                                    className="text-3xl md:text-5xl lg:text-6xl font-black text-white leading-[1.1] tracking-tighter drop-shadow-2xl line-clamp-2 md:line-clamp-2"
-                                >
-                                    {currentItem.title}
-                                </motion.h2>
-                                <motion.p
-                                    initial={{ y: 20, opacity: 0 }}
-                                    animate={{ y: 0, opacity: 1 }}
-                                    transition={{ delay: isManual ? 0 : 0.4, duration: isManual ? 0 : 0.5 }}
-                                    className="text-neutral-300 text-xs md:text-sm line-clamp-3 md:line-clamp-2 font-medium leading-relaxed drop-shadow-md max-w-lg"
-                                >
-                                    {currentItem.overview}
-                                </motion.p>
-                            </div>
+                                ) : (
+                                    <div className="w-full h-full bg-slate-900 flex items-center justify-center text-4xl">🎬</div>
+                                )}
+                                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover/poster:opacity-100 transition-opacity" />
+                            </motion.div>
                         </div>
-
-                        <motion.div
-                            initial={{ y: 20, opacity: 0 }}
-                            animate={{ y: 0, opacity: 1 }}
-                            transition={{ delay: isManual ? 0 : 0.5, duration: isManual ? 0 : 0.5 }}
-                            className="flex flex-wrap items-center gap-3 mt-1"
-                        >
-                            <HeroActions movieId={currentItem.id} mediaType={currentItem.media_type} />
-
-                            <div className="flex items-center gap-2">
-                                {isFriendsPopular && (
-                                    <div className="flex items-center gap-1.5 text-white/90 bg-emerald-500/20 backdrop-blur-xl px-3 py-2 rounded-xl border border-emerald-400/30 shadow-lg mt-2">
-                                        <TrendingUp size={14} className="text-emerald-400" />
-                                        <span className="font-bold text-[10px] uppercase tracking-wider">Arkadaşlarında Popüler</span>
-                                    </div>
-                                )}
-                                {eventMeta && EventIcon && (
-                                    <div className="flex items-center gap-1.5 text-white/90 bg-white/10 backdrop-blur-xl px-3 py-2 rounded-xl border border-white/10 shadow-lg mt-2">
-                                        <EventIcon size={14} className={eventMeta.color} />
-                                        <span className="font-bold text-[10px] uppercase tracking-wider">{eventMeta.label}</span>
-                                    </div>
-                                )}
-                                {metaLabel && (
-                                    <div className="flex items-center gap-1.5 text-white/90 bg-white/10 backdrop-blur-xl px-3 py-2 rounded-xl border border-white/10 shadow-lg mt-2">
-                                        <span className="font-bold text-[10px] uppercase tracking-wider">{metaLabel}</span>
-                                    </div>
-                                )}
-                                <div className="flex items-center gap-1.5 text-white/90 bg-white/10 backdrop-blur-xl px-3 py-2 rounded-xl border border-white/10 shadow-lg mt-2">
-                                    <Icon size={14} className={cn("fill-current", config.color)} />
-                                    <span className="font-bold text-[10px] uppercase tracking-wider">{config.label}</span>
-                                </div>
-
-                                <div className="flex items-center gap-1.5 text-white/90 bg-white/10 backdrop-blur-xl px-3 py-2 rounded-xl border border-white/10 shadow-lg mt-2">
-                                    <Star size={14} className="fill-current text-amber-400" />
-                                    <span className="font-bold text-sm tabular-nums">{currentItem.vote_average.toFixed(1)}</span>
-                                </div>
-                            </div>
-                        </motion.div>
                     </div>
                 </motion.div>
             </AnimatePresence>
 
-            {/* Slider Navigation Arrows */}
-            <div className="absolute inset-y-0 left-4 hidden md:flex items-center z-20">
+            {/* Premium Controls */}
+            <div className="absolute inset-y-0 left-0 right-0 z-30 pointer-events-none flex items-center justify-between px-6">
                 <button
-                    onClick={goPrev}
-                    className="w-10 h-10 rounded-full bg-black/40 hover:bg-black/60 border border-white/10 backdrop-blur-md flex items-center justify-center text-white/80 hover:text-white transition-all"
-                    aria-label="Onceki"
+                    onClick={(e) => { e.stopPropagation(); goPrev(); setIsManual(true); }}
+                    className="w-14 h-14 rounded-full bg-black/20 hover:bg-amber-400 border border-white/10 hover:border-amber-400 backdrop-blur-xl flex items-center justify-center text-white hover:text-slate-950 transition-all pointer-events-auto hover:scale-110 active:scale-95 group/btn"
+                    aria-label="Önceki"
                 >
-                    <ChevronLeft className="w-5 h-5" />
+                    <ChevronLeft className="w-6 h-6 group-hover/btn:-translate-x-1 transition-transform" />
                 </button>
-            </div>
-            <div className="absolute inset-y-0 right-4 hidden md:flex items-center z-20">
                 <button
-                    onClick={goNext}
-                    className="w-10 h-10 rounded-full bg-black/40 hover:bg-black/60 border border-white/10 backdrop-blur-md flex items-center justify-center text-white/80 hover:text-white transition-all"
+                    onClick={(e) => { e.stopPropagation(); goNext(); setIsManual(true); }}
+                    className="w-14 h-14 rounded-full bg-black/20 hover:bg-amber-400 border border-white/10 hover:border-amber-400 backdrop-blur-xl flex items-center justify-center text-white hover:text-slate-950 transition-all pointer-events-auto hover:scale-110 active:scale-95 group/btn"
                     aria-label="Sonraki"
                 >
-                    <ChevronRight className="w-5 h-5" />
+                    <ChevronRight className="w-6 h-6 group-hover/btn:translate-x-1 transition-transform" />
                 </button>
             </div>
 
-            {/* Slider Navigation Dots - Mobile Optimized */}
-            <div className="absolute top-4 right-4 md:bottom-6 md:right-8 md:top-auto flex items-center gap-2 z-20">
-                {items.map((_, index) => (
-                    <button
-                        key={index}
-                        onClick={() => setCurrentIndex(index)}
-                        className={cn(
-                            "transition-all duration-300 shadow-lg border border-white/10 backdrop-blur-sm",
-                            index === currentIndex
-                                ? "bg-white w-6 h-1.5 rounded-full"
-                                : "bg-white/20 w-1.5 h-1.5 rounded-full hover:bg-white/40"
-                        )}
-                        aria-label={`Go to slide ${index + 1}`}
-                    />
-                ))}
+            {/* Slider Dots & Progress */}
+            <div className="absolute bottom-8 right-12 z-30 flex items-center gap-4">
+                <div className="flex items-center gap-2 px-4 py-2 bg-black/40 backdrop-blur-2xl rounded-full border border-white/10 shadow-2xl">
+                    {items.map((_, index) => (
+                        <button
+                            key={index}
+                            onClick={() => handleManualChange(index)}
+                            className={cn(
+                                "transition-all duration-500",
+                                index === currentIndex
+                                    ? "bg-amber-400 w-8 h-2 rounded-full"
+                                    : "bg-white/20 w-2 h-2 rounded-full hover:bg-white/40"
+                            )}
+                            aria-label={`Slide ${index + 1}`}
+                        />
+                    ))}
+                </div>
+                <div className="text-[10px] font-black text-white/50 uppercase tracking-widest tabular-nums bg-black/40 px-4 py-2 rounded-full border border-white/10 backdrop-blur-md">
+                    <span className="text-amber-400">{String(currentIndex + 1).padStart(2, '0')}</span> / {String(items.length).padStart(2, '0')}
+                </div>
             </div>
 
-            {/* Progress Bar */}
-            <div className="absolute bottom-0 left-0 h-1 bg-white/10 w-full z-20">
+            {/* Visual Progress Bar (Bottom Edge) */}
+            <div className="absolute bottom-0 left-0 w-full h-1.5 bg-white/5 z-40 overflow-hidden">
                 <motion.div
                     key={currentIndex}
                     initial={{ width: "0%" }}
                     animate={{ width: "100%" }}
-                    transition={{ duration: 10, ease: "linear" }}
-                    className={cn("h-full", config.bgColor)}
+                    transition={{ duration: 12, ease: "linear" }}
+                    className="h-full bg-gradient-to-r from-amber-400 via-amber-300 to-amber-500 shadow-[0_0_15px_rgba(251,191,36,0.5)]"
                 />
             </div>
         </div>
