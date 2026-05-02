@@ -72,9 +72,9 @@ export function TvHeatmap({ tmdbId, seasons }: TvHeatmapProps) {
                             };
                         });
 
-                        const communityRated = seasonEpisodes.filter(e => e.communityCount && e.communityCount > 0);
+                        const communityRated = seasonEpisodes.filter((e: EpisodeData) => !!(e.communityCount && e.communityCount > 0));
                         const communityAverage = communityRated.length > 0
-                            ? communityRated.reduce((acc, ep) => acc + (ep.communityRating || 0), 0) / communityRated.length
+                            ? communityRated.reduce((acc: number, ep: EpisodeData) => acc + (ep.communityRating || 0), 0) / communityRated.length
                             : 0;
 
                         return {
