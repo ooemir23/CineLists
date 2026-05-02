@@ -183,7 +183,7 @@ export async function getWatchStatus(mediaId: number) {
 }
 
 
-export async function addComment(mediaId: number, type: "movie" | "tv", content: string, title: string, posterPath: string | null) {
+export async function addComment(mediaId: number, type: "movie" | "tv", content: string, title: string, posterPath: string | null, isSpoiler: boolean = false, parentId?: string) {
     const session = await auth();
     if (!session?.user?.id) {
         return { error: "Giriş yapmalısınız" };
@@ -217,17 +217,57 @@ export async function addComment(mediaId: number, type: "movie" | "tv", content:
         });
     }
 
-    const activity = await prisma.activity.create({
-        data: {
-            userId: session.user.id,
-            mediaId: media.id,
-            type: "REVIEWED",
-            review: content,
-        },
-    });
+    if (parentId) {
+        // This is a reply to an existing activity (review)
+        await prisma.comment.create({
+            data: {
+                userId: session.user.id,
+                activityId: parentId,
+                content: content,
+                isSpoiler: isSpoiler,
+            },
+        });
+    } else {
+        // This is a new top-level review
+        await prisma.activity.create({
+            data: {
+                userId: session.user.id,
+                mediaId: media.id,
+                type: "REVIEWED",
+                review: content,
+                isSpoiler: isSpoiler,
+            },
+        });
+    }
 
     revalidatePath(`/${type}/${mediaId}`);
-    return { success: true, activity };
+    revalidatePath("/feed");
+    revalidatePath("/profile");
+    return { success: true };
+}
+
+export async function voteActivity(activityId: string, increment: number) {
+    const session = await auth();
+    if (!session?.user?.id) return { error: "Giriş yapmalısınız" };
+
+    await prisma.activity.update({
+        where: { id: activityId },
+        data: { votes: { increment } }
+    });
+
+    return { success: true };
+}
+
+export async function voteComment(commentId: string, increment: number) {
+    const session = await auth();
+    if (!session?.user?.id) return { error: "Giriş yapmalısınız" };
+
+    await prisma.comment.update({
+        where: { id: commentId },
+        data: { votes: { increment } }
+    });
+
+    return { success: true };
 }
 
 export async function saveWatchDetails(params: {
@@ -464,4 +504,55 @@ export async function getMediaMetadataBulk(items: { id: number; type: "movie" | 
         console.error("Get bulk media metadata error:", error);
         return {};
     }
+}
+
+export async function updateComment(activityId: string, content: string, isSpoiler: boolean) {
+    const session = await auth();
+    if (!session?.user?.id) return { error: "Giriş yapmalısınız" };
+
+    const activity = await prisma.activity.findUnique({
+        where: { id: activityId },
+        select: { userId: true, mediaId: true, media: { select: { tmdbId: true, type: true } } }
+    });
+
+    if (!activity || activity.userId !== session.user.id) {
+        return { error: "Bu yorumu düzenleme yetkiniz yok" };
+    }
+
+    await prisma.activity.update({
+        where: { id: activityId },
+        data: { 
+            review: content,
+            isSpoiler: isSpoiler,
+            createdAt: new Date()
+        }
+    });
+
+    const type = activity.media.type.toLowerCase();
+    revalidatePath(`/${type}/${activity.media.tmdbId}`);
+    revalidatePath("/feed");
+    return { success: true };
+}
+
+export async function deleteComment(activityId: string) {
+    const session = await auth();
+    if (!session?.user?.id) return { error: "Giriş yapmalısınız" };
+
+    const activity = await prisma.activity.findUnique({
+        where: { id: activityId },
+        select: { userId: true, mediaId: true, media: { select: { tmdbId: true, type: true } } }
+    });
+
+    if (!activity || activity.userId !== session.user.id) {
+        return { error: "Bu yorumu silme yetkiniz yok" };
+    }
+
+    await prisma.activity.delete({
+        where: { id: activityId }
+    });
+
+    const type = activity.media.type.toLowerCase();
+    revalidatePath(`/${type}/${activity.media.tmdbId}`);
+    revalidatePath("/feed");
+    return { success: true };
 }

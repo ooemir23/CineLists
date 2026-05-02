@@ -2,7 +2,9 @@
 
 import { useEffect, useState, useRef } from "react";
 import Link from "next/link";
-import { Film, Tv, TrendingUp, Star, Check, Calendar, Filter, PlayCircle, Shuffle, LayoutGrid, List as ListIcon, Clock, Frown, RefreshCcw, Users, Grid3X3, ArrowRight, ChevronRight, ChevronLeft, Sparkles, Search, X } from "lucide-react";
+import { usePathname } from "next/navigation"; // Essential for navigation tracking
+import { motion, AnimatePresence } from "framer-motion";
+import { Film, Tv, TrendingUp, Star, Check, Calendar, Filter, PlayCircle, Shuffle, LayoutGrid, List as ListIcon, Clock, Frown, RefreshCcw, Users, Grid3X3, ArrowRight, ChevronRight, ChevronLeft, Sparkles, Search, X, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { MediaCard } from "@/components/media/media-card";
 
@@ -130,6 +132,16 @@ export function HomeDiscoverySection() {
     const [page, setPage] = useState(1);
     const [isLoading, setIsLoading] = useState(false);
     const [isMoreLoading, setIsMoreLoading] = useState(false);
+    const [activeFilterCategory, setActiveFilterCategory] = useState(0);
+    const [userPreferences, setUserPreferences] = useState<{ genres: string[], platforms: string[] } | null>(null);
+
+    // Staging states for filters (only applied when 'Uygula' is clicked)
+    const [stagedGenres, setStagedGenres] = useState<string[]>([]);
+    const [stagedYears, setStagedYears] = useState<string[]>([]);
+    const [stagedRatings, setStagedRatings] = useState<string[]>([]);
+    const [stagedProviders, setStagedProviders] = useState<string[]>([]);
+    const [stagedLanguages, setStagedLanguages] = useState<string[]>([]);
+    const [stagedCountries, setStagedCountries] = useState<string[]>([]);
 
     // Fetch dynamic filters from TMDB
     useEffect(() => {
@@ -146,6 +158,20 @@ export function HomeDiscoverySection() {
             }
         };
         fetchFilters();
+        
+        const fetchPreferences = async () => {
+            try {
+                const res = await fetch("/api/user/preferences");
+                const data = await res.json();
+                setUserPreferences({
+                    genres: data.favoriteGenres || [],
+                    platforms: data.platforms || []
+                });
+            } catch (err) {
+                console.error("Error fetching preferences:", err);
+            }
+        };
+        fetchPreferences();
     }, []);
 
     const toggleFilter = (current: string[], setter: (val: string[]) => void, value: string) => {
@@ -163,26 +189,52 @@ export function HomeDiscoverySection() {
 
     const applyPersonalizedFilters = async () => {
         markUserTriggered();
-        try {
-            const res = await fetch("/api/user/preferences");
-            const data = await res.json();
-            if (data.favoriteGenres) {
-                const genreIds = data.favoriteGenres.map((gName: string) => {
-                    const opt = genreOptions.find(o => o.label.toLowerCase() === gName.toLowerCase());
-                    return opt?.id;
-                }).filter(Boolean) as string[];
-                setGenres(genreIds);
-            }
-            if (data.platforms) {
-                const providerIds = data.platforms.map((pName: string) => {
-                    const opt = providerOptions.find(o => o.label.toLowerCase() === pName.toLowerCase());
-                    return opt?.id;
-                }).filter(Boolean) as string[];
-                setProviders(providerIds);
-            }
-        } catch (err) {
-            console.error("Personalized filters error:", err);
+        
+        const prefs = userPreferences;
+        if (!prefs) return;
+
+        if (prefs.genres) {
+            const genreIds = prefs.genres.map((gName: string) => {
+                const opt = genreOptions.find(o => o.label.toLowerCase() === gName.toLowerCase());
+                return opt?.id;
+            }).filter(Boolean) as string[];
+            setStagedGenres(genreIds);
         }
+        if (prefs.platforms) {
+            const providerIds = prefs.platforms.map((pName: string) => {
+                const opt = providerOptions.find(o => o.label.toLowerCase() === pName.toLowerCase());
+                return opt?.id;
+            }).filter(Boolean) as string[];
+            setStagedProviders(providerIds);
+        }
+    };
+
+    const commitFilters = () => {
+        setGenres(stagedGenres);
+        setYears(stagedYears);
+        setRatings(stagedRatings);
+        setProviders(stagedProviders);
+        setLanguages(stagedLanguages);
+        setCountries(stagedCountries);
+        setIsFilterSheetOpen(false);
+    };
+
+    const resetStaging = () => {
+        setStagedGenres(genres);
+        setStagedYears(years);
+        setStagedRatings(ratings);
+        setStagedProviders(providers);
+        setStagedLanguages(languages);
+        setStagedCountries(countries);
+    };
+
+    const clearAllStaged = () => {
+        setStagedGenres([]);
+        setStagedYears([]);
+        setStagedRatings([]);
+        setStagedProviders([]);
+        setStagedLanguages([]);
+        setStagedCountries([]);
     };
 
     const markUserTriggered = () => {
@@ -248,6 +300,24 @@ export function HomeDiscoverySection() {
 
     const [isFilterSheetOpen, setIsFilterSheetOpen] = useState(false);
 
+    useEffect(() => {
+        if (isFilterSheetOpen) {
+            resetStaging();
+        }
+    }, [isFilterSheetOpen]);
+
+    // Close overlays on navigation or global close event
+    useEffect(() => {
+        const handleClose = () => setIsFilterSheetOpen(false);
+        window.addEventListener("close-all-overlays", handleClose);
+        return () => window.removeEventListener("close-all-overlays", handleClose);
+    }, []);
+
+    const pathname = usePathname();
+    useEffect(() => {
+        setIsFilterSheetOpen(false);
+    }, [pathname]);
+
     const hasFilters = genres.length > 0 || years.length > 0 || ratings.length > 0 || providers.length > 0 || languages.length > 0 || countries.length > 0;
 
     // Helper to get labels for selected IDs
@@ -283,84 +353,184 @@ export function HomeDiscoverySection() {
 
     return (
         <section id="home-discover" ref={headerRef} className="max-w-[1600px] mx-auto px-3 sm:px-6 md:px-8 lg:px-12 mt-4 md:mt-5">
-            {/* Filter Bottom Sheet for Mobile */}
-            {isFilterSheetOpen && (
-                <div 
-                    className="fixed inset-0 z-[1000] lg:hidden bg-black/60 backdrop-blur-sm animate-in fade-in duration-300"
-                    onClick={() => setIsFilterSheetOpen(false)}
-                />
-            )}
-            <div className={cn(
-                "fixed bottom-0 left-0 right-0 z-[1001] lg:hidden bg-[#0f172a] border-t border-white/10 rounded-t-[2.5rem] p-6 pb-12 transition-transform duration-300 ease-out",
-                isFilterSheetOpen ? "translate-y-0" : "translate-y-full"
-            )}>
-                <div className="w-12 h-1.5 bg-white/20 rounded-full mx-auto mb-8" />
-                
-                <div className="flex items-center justify-between mb-6">
-                    <h3 className="text-xl font-black text-white uppercase tracking-tighter">İçerikleri Filtrele</h3>
-                    <button 
-                        onClick={applyPersonalizedFilters}
-                        className="flex items-center gap-2 px-4 py-2 rounded-xl bg-amber-400/20 text-amber-400 border border-amber-400/30 text-[10px] font-black uppercase tracking-widest"
+            {/* Refined Pro Mobile Filter Overlay */}
+            <AnimatePresence>
+                {isFilterSheetOpen && (
+                    <motion.div 
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 z-[2000] lg:hidden bg-slate-950/98 backdrop-blur-3xl flex flex-col"
                     >
-                        <Sparkles size={14} />
-                        Sana Özel
-                    </button>
-                </div>
-                
-                <div className="flex flex-col gap-6 max-h-[60vh] overflow-y-auto pr-2 no-scrollbar">
-                    {/* Detailed Filters in Sheet */}
-                    <div className="grid grid-cols-2 gap-4">
-                        {[
-                            { label: "Tür", value: genres, setter: setGenres, options: genreOptions },
-                            { label: "Yıl", value: years, setter: setYears, options: YEAR_OPTIONS.map(y => ({ id: y, label: y || "Hepsi" })) },
-                            { label: "Puan", value: ratings, setter: setRatings, options: RATING_OPTIONS },
-                            { label: "Platform", value: providers, setter: setProviders, options: providerOptions },
-                            { label: "Dil", value: languages, setter: setLanguages, options: languageOptions },
-                            { label: "Ülke", value: countries, setter: setCountries, options: countryOptions },
-                        ].map((filter, idx) => (
-                            <div key={idx} className="space-y-2">
-                                <span className="text-[10px] font-black text-neutral-500 uppercase tracking-widest px-2">{filter.label} {filter.value.length > 0 && `(${filter.value.length})`}</span>
-                                <div className="relative">
-                                    <select 
-                                        value={filter.value[0] || ""} 
-                                        onChange={(e) => {
-                                            toggleFilter(filter.value, filter.setter, e.target.value);
-                                        }}
-                                        className={cn(
-                                            "w-full bg-white/5 border border-white/10 rounded-2xl px-4 py-3.5 text-sm font-bold appearance-none outline-none focus:border-amber-400/50 transition-colors",
-                                            filter.value.length > 0 ? "text-amber-400 border-amber-400/20" : "text-neutral-300"
-                                        )}
-                                    >
-                                        {filter.options.map(opt => (
-                                            <option key={opt.id} value={opt.id} className="bg-[#0f172a] text-white">
-                                                {filter.value.includes(opt.id) ? `✓ ${opt.label}` : opt.label}
-                                            </option>
-                                        ))}
-                                    </select>
-                                    <Filter className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-500 pointer-events-none" />
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                </div>
+                        {/* Compact Header */}
+                        <div className="flex items-center justify-between px-6 py-4 border-b border-white/10">
+                            <h3 className="text-sm font-black text-white uppercase tracking-widest flex items-center gap-2">
+                                <div className="w-1.5 h-4 bg-amber-400 rounded-full" />
+                                Filtrele
+                            </h3>
+                            <button 
+                                onClick={() => setIsFilterSheetOpen(false)}
+                                className="p-2 -mr-2 text-neutral-500 hover:text-white transition-colors"
+                            >
+                                <X size={20} />
+                            </button>
+                        </div>
 
-                <div className="mt-8 flex gap-3">
-                    <button 
-                        onClick={() => {
-                            setGenres([]); setYears([]); setRatings([]); setProviders([]); setLanguages([]); setCountries([]);
-                        }}
-                        className="flex-1 py-4 rounded-2xl bg-white/5 border border-white/10 text-white font-black text-xs uppercase tracking-widest active:scale-95 transition-all"
-                    >
-                        Sıfırla
-                    </button>
-                    <button 
-                        onClick={() => setIsFilterSheetOpen(false)}
-                        className="flex-[2] py-4 rounded-2xl bg-amber-400 text-black font-black text-xs uppercase tracking-widest shadow-xl shadow-amber-400/20 active:scale-95 transition-all"
-                    >
-                        Uygula
-                    </button>
-                </div>
-            </div>
+                        {/* Category Navigation - Horizontal Scroll */}
+                        <div className="flex bg-slate-900/30 border-b border-white/5 overflow-x-auto no-scrollbar py-3 px-4 gap-2">
+                            {[
+                                { label: "Tür", value: stagedGenres },
+                                { label: "Platform", value: stagedProviders },
+                                { label: "Yıl", value: stagedYears },
+                                { label: "Puan", value: stagedRatings },
+                                { label: "Dil", value: stagedLanguages },
+                                { label: "Ülke", value: stagedCountries },
+                            ].map((cat, idx) => (
+                                <button
+                                    key={idx}
+                                    onClick={() => setActiveFilterCategory(idx)}
+                                    className={cn(
+                                        "flex-none px-5 py-2.5 rounded-full text-[10px] font-black uppercase tracking-widest transition-all border",
+                                        activeFilterCategory === idx
+                                            ? "bg-amber-400 text-slate-950 border-amber-400 shadow-lg shadow-amber-400/20"
+                                            : cat.value.length > 0 
+                                                ? "bg-amber-400/10 border-amber-400/30 text-amber-400"
+                                                : "bg-white/5 border-white/5 text-neutral-500 hover:text-white"
+                                    )}
+                                >
+                                    {cat.label} {cat.value.length > 0 && `(${cat.value.length})`}
+                                </button>
+                            ))}
+                        </div>
+
+                        {/* Options Content Area */}
+                        <div className="flex-1 overflow-y-auto p-6 no-scrollbar">
+                            <AnimatePresence mode="wait">
+                                <motion.div
+                                    key={activeFilterCategory}
+                                    initial={{ opacity: 0, x: 10 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    exit={{ opacity: 0, x: -10 }}
+                                    transition={{ duration: 0.2 }}
+                                    className="flex flex-wrap gap-2 justify-center"
+                                >
+                                    {([
+                                        { value: stagedGenres, setter: setStagedGenres, options: genreOptions },
+                                        { value: stagedProviders, setter: setStagedProviders, options: providerOptions },
+                                        { value: stagedYears, setter: setStagedYears, options: YEAR_OPTIONS.map(y => ({ id: y, label: y || "Tümü" })) },
+                                        { value: stagedRatings, setter: setStagedRatings, options: RATING_OPTIONS },
+                                        { value: stagedLanguages, setter: setStagedLanguages, options: languageOptions },
+                                        { value: stagedCountries, setter: setStagedCountries, options: countryOptions },
+                                    ][activeFilterCategory]).options.map((opt: any) => {
+                                        const cat = [
+                                            { value: stagedGenres, setter: setStagedGenres },
+                                            { value: stagedProviders, setter: setStagedProviders },
+                                            { value: stagedYears, setter: setStagedYears },
+                                            { value: stagedRatings, setter: setStagedRatings },
+                                            { value: stagedLanguages, setter: setStagedLanguages },
+                                            { value: stagedCountries, setter: setStagedCountries },
+                                        ][activeFilterCategory];
+                                        
+                                        const isSelected = cat.value.includes(opt.id);
+                                        
+                                        return (
+                                            <button
+                                                key={opt.id}
+                                                onClick={() => toggleFilter(cat.value, cat.setter, opt.id)}
+                                                className={cn(
+                                                    "px-5 py-3 rounded-2xl text-[11px] font-bold transition-all border",
+                                                    isSelected
+                                                        ? "bg-amber-400 text-slate-950 border-amber-400 shadow-xl shadow-amber-400/20"
+                                                        : "bg-white/5 border-white/10 text-neutral-400 hover:text-white"
+                                                )}
+                                            >
+                                                {opt.label}
+                                            </button>
+                                        );
+                                    })}
+                                </motion.div>
+                            </AnimatePresence>
+                        </div>
+
+                        {/* Selection Summary / Sana Özel Strip */}
+                        <div className="px-6 py-5 bg-amber-400/5 border-t border-white/10 flex items-center justify-between backdrop-blur-xl">
+                             <div className="flex flex-col flex-1 min-w-0 pr-4">
+                                {stagedGenres.length + stagedProviders.length + stagedYears.length + stagedRatings.length + stagedLanguages.length + stagedCountries.length > 0 ? (
+                                    <>
+                                        <div className="flex items-center gap-2 mb-1">
+                                            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-amber-400">Seçili Filtreler</span>
+                                            <button 
+                                                onClick={clearAllStaged}
+                                                className="p-1 text-rose-500 active:scale-90 transition-transform"
+                                            >
+                                                <X size={14} />
+                                            </button>
+                                        </div>
+                                        <div className="flex flex-wrap gap-x-2 gap-y-0.5 mt-0.5 max-h-12 overflow-y-auto no-scrollbar">
+                                            {[
+                                                ...stagedGenres.map(id => ({ id, label: genreOptions.find(o => o.id === id)?.label, setter: setStagedGenres, current: stagedGenres })),
+                                                ...stagedProviders.map(id => ({ id, label: providerOptions.find(o => o.id === id)?.label, setter: setStagedProviders, current: stagedProviders })),
+                                                ...stagedYears.map(y => ({ id: y, label: y, setter: setStagedYears, current: stagedYears })),
+                                                ...stagedRatings.map(r => ({ id: r, label: `${r}+ Puan`, setter: setStagedRatings, current: stagedRatings })),
+                                                ...stagedLanguages.map(id => ({ id, label: languageOptions.find(o => o.id === id)?.label, setter: setStagedLanguages, current: stagedLanguages })),
+                                                ...stagedCountries.map(id => ({ id, label: countryOptions.find(o => o.id === id)?.label, setter: setStagedCountries, current: stagedCountries })),
+                                            ].filter(o => o.label).map((opt, i, arr) => (
+                                                <button 
+                                                    key={i}
+                                                    onClick={() => opt.setter(opt.current.filter(v => v !== opt.id))}
+                                                    className="flex items-center gap-1.5 text-[9px] font-black text-neutral-400 hover:text-white active:text-rose-500 transition-colors uppercase tracking-wider"
+                                                >
+                                                    {opt.label}
+                                                    {i < arr.length - 1 && <span className="text-neutral-700/50">•</span>}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </>
+                                ) : (
+                                    <>
+                                        <div className="flex items-center gap-3 mb-1">
+                                            <div className="w-8 h-8 rounded-lg bg-amber-400/20 flex items-center justify-center text-amber-400">
+                                                <Sparkles size={16} />
+                                            </div>
+                                            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-amber-400">Özel Öneriler</span>
+                                        </div>
+                                        <span className="text-[9px] font-bold text-neutral-500 uppercase tracking-wider truncate">
+                                            {userPreferences ? (
+                                                [
+                                                    ...userPreferences.genres.map(id => genreOptions.find(o => o.id === id || o.label.toLowerCase() === id.toLowerCase())?.label || id),
+                                                    ...userPreferences.platforms.map(id => providerOptions.find(o => o.id === id || o.label.toLowerCase() === id.toLowerCase())?.label || id)
+                                                ].filter(val => val && !/^\d+$/.test(val)).join(" • ") || "Zevkine uygun içerikler"
+                                            ) : "Zevkine uygun içerikler"}
+                                        </span>
+                                    </>
+                                )}
+                             </div>
+                             <button 
+                                onClick={commitFilters}
+                                className="flex-none px-6 py-2.5 rounded-xl bg-amber-400 text-slate-950 text-[10px] font-black uppercase tracking-widest active:scale-95 transition-all shadow-lg shadow-amber-400/10"
+                             >
+                                Uygula
+                             </button>
+                        </div>
+
+                        {/* Sticky Footer */}
+                        <div className="p-6 pt-4 border-t border-white/10 grid grid-cols-2 gap-4 bg-slate-950">
+                            <button 
+                                onClick={clearAllStaged}
+                                className="py-4.5 rounded-2xl bg-white/5 border border-white/5 text-neutral-400 font-black text-[10px] uppercase tracking-[0.2em] active:scale-95 transition-all"
+                            >
+                                Sıfırla
+                            </button>
+                            <button 
+                                onClick={commitFilters}
+                                className="py-4.5 rounded-2xl bg-gradient-to-r from-amber-400 to-orange-500 text-slate-950 font-black text-[10px] uppercase tracking-[0.2em] active:scale-95 transition-all shadow-xl shadow-amber-500/20"
+                            >
+                                Uygula
+                            </button>
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
 
             {/* Sticky Header Container */}
             <div className="sticky top-[72px] z-40 pb-2 md:pb-4 -mx-3 px-3 sm:-mx-6 sm:px-6 md:-mx-8 md:px-8 lg:-mx-12 lg:px-12">
@@ -415,9 +585,14 @@ export function HomeDiscoverySection() {
                         {/* Mobile Filter Trigger */}
                         <button
                             onClick={() => setIsFilterSheetOpen(true)}
-                            className="lg:hidden flex items-center justify-center w-10 h-10 rounded-full bg-amber-400 text-black shadow-lg shadow-amber-400/20 active:scale-90 transition-all shrink-0"
+                            className="lg:hidden relative flex items-center justify-center w-12 h-12 rounded-2xl bg-amber-400 text-black shadow-lg shadow-amber-400/20 active:scale-90 transition-all shrink-0"
                         >
-                            <Filter size={18} strokeWidth={2.5} />
+                            <Filter size={20} strokeWidth={2.5} />
+                            {hasFilters && (
+                                <span className="absolute -top-1 -right-1 w-5 h-5 bg-rose-500 text-white text-[10px] font-black rounded-full flex items-center justify-center border-2 border-[#0f172a] animate-in zoom-in duration-300">
+                                    {genres.length + years.length + ratings.length + providers.length + languages.length + countries.length}
+                                </span>
+                            )}
                         </button>
                     </div>
 

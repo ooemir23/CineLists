@@ -4,6 +4,7 @@ import { auth } from "@/auth";
 import "./globals.css";
 // import { Sidebar } from "@/components/layout/sidebar";
 import { TopNav } from "@/components/layout/top-nav";
+import { MobileHeader } from "@/components/layout/mobile-header";
 import { MobileDock } from "@/components/layout/mobile-dock";
 import { cn } from "@/lib/utils";
 import { ErrorBoundary } from "@/components/ui/error-boundary";
@@ -69,7 +70,8 @@ export default async function RootLayout({
       <body className={cn(inter.className, "bg-background text-foreground overflow-x-hidden")} suppressHydrationWarning>
         <div className="flex flex-col min-h-screen max-w-[1920px] mx-auto shadow-2xl shadow-black/50">
           <TopNav user={session?.user} />
-          <main className="flex-1 pb-20 md:pb-0 relative z-0">
+          <MobileHeader />
+          <main className="flex-1 pt-16 sm:pt-0 pb-20 md:pb-0 relative z-0">
             <ErrorBoundary>
               {children}
             </ErrorBoundary>

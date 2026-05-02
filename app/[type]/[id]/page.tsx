@@ -64,15 +64,41 @@ export default async function DetailsPage(props: Props) {
         safe(getReceivedRecommendation(mediaId), null),
         safe(prisma.mediaItem.findUnique({
             where: { tmdbId: mediaId },
-            include: { activities: { where: { type: "REVIEWED" }, include: { user: true }, orderBy: { createdAt: "desc" } } }
+            include: { 
+                activities: { 
+                    where: { type: "REVIEWED" }, 
+                    include: { 
+                        user: true,
+                        comments: {
+                            include: { user: true },
+                            orderBy: { createdAt: "asc" }
+                        }
+                    }, 
+                    orderBy: { createdAt: "desc" } 
+                } 
+            }
         }), null)
     ]) as [any, boolean, any, any, any, number | null, any[], any, any];
 
     if (!data) notFound();
 
     const comments = dbMedia?.activities.map((a: any) => ({
-        id: a.id, content: a.review || "", createdAt: a.createdAt,
-        user: { name: a.user.name, image: a.user.image }
+        id: a.id, 
+        content: a.review || "", 
+        createdAt: a.createdAt,
+        isSpoiler: a.isSpoiler,
+        votes: a.votes || 0,
+        userId: a.userId,
+        user: { name: a.user.name, image: a.user.image },
+        replies: a.comments?.map((c: any) => ({
+            id: c.id,
+            content: c.content,
+            createdAt: c.createdAt,
+            isSpoiler: c.isSpoiler,
+            votes: c.votes || 0,
+            userId: c.userId,
+            user: { name: c.user.name, image: c.user.image }
+        })) || []
     })) || [];
 
     let trProviders = providersData?.results?.TR || null;
@@ -345,6 +371,9 @@ export default async function DetailsPage(props: Props) {
                         initialComments={comments}
                         recommendations={data.recommendations?.results || []}
                         watchedEpisodes={watchedEpisodes}
+                        currentUserId={session?.user?.id}
+                        director={directors?.[0]?.name || creators?.[0]?.name}
+                        producer={directors?.[1]?.name || creators?.[1]?.name || data.production_companies?.[0]?.name}
                     />
                 </div>
             </div>

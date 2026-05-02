@@ -1,13 +1,13 @@
 "use client";
 
-import { useState, useTransition, useEffect } from "react";
-import { ChevronDown, Loader2, Layers, CheckCircle2 } from "lucide-react";
+import { useState, useTransition, useEffect, useRef } from "react";
+import { ChevronDown, Loader2, Layers, CheckCircle2, ChevronRight, ChevronLeft } from "lucide-react";
 import EpisodeItem from "./episode-item";
 import { cn } from "@/lib/utils";
 import { fetchSeasonEpisodes } from "@/lib/client-actions";
 import { markSeasonAsWatched } from "@/lib/tv-actions";
 import { useRouter } from "next/navigation";
-import { TvHeatmap } from "./tv-heatmap";
+import Image from "next/image";
 
 type Season = {
     air_date: string;
@@ -26,171 +26,187 @@ type SeasonListProps = {
 };
 
 export default function SeasonList({ tmdbId, seasons, watchedEpisodes: initialWatchedEpisodes }: SeasonListProps) {
-    // All hooks must be called unconditionally at the top level
-    const [isAllVisible, setIsAllVisible] = useState(false);
-    const [showMoreSeasons, setShowMoreSeasons] = useState(false);
+    const [isAllVisible, setIsAllVisible] = useState(true);
     const validSeasons = seasons?.filter(s => s.episode_count > 0 && s.season_number > 0) || [];
     const [expandedSeason, setExpandedSeason] = useState<number | null>(validSeasons[0]?.season_number || null);
     const [isPending, startTransition] = useTransition();
     const [watchedEpisodes, setWatchedEpisodes] = useState(initialWatchedEpisodes);
     const router = useRouter();
+    const scrollRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         setWatchedEpisodes(initialWatchedEpisodes);
     }, [initialWatchedEpisodes]);
 
-    // Early return after all hooks are called
     if (!seasons || seasons.length === 0) return null;
 
     const handleMarkSeasonWatched = async (seasonNumber: number) => {
-        // Get the season to find episode count
         const season = validSeasons.find(s => s.season_number === seasonNumber);
         if (!season) return;
 
-        // Check if all episodes are already watched
         const seasonWatchedEpisodes = watchedEpisodes.filter(w => w.s === seasonNumber);
         const allWatched = seasonWatchedEpisodes.length === season.episode_count;
 
-        // Optimistic update
         if (allWatched) {
-            // Remove all watched episodes for this season
             setWatchedEpisodes(prev => prev.filter(w => w.s !== seasonNumber));
         } else {
-            // Mark all episodes as watched
             const newWatchedEpisodes = Array.from({ length: season.episode_count }, (_, i) => ({
                 s: seasonNumber,
                 e: i + 1
             }));
             setWatchedEpisodes(prev => {
-                // Remove existing watched episodes for this season
                 const filtered = prev.filter(w => w.s !== seasonNumber);
-                // Add all episodes
                 return [...filtered, ...newWatchedEpisodes];
             });
         }
 
-        // Call server action in background
         startTransition(async () => {
             try {
                 const result = await markSeasonAsWatched(tmdbId, seasonNumber);
                 if (result && 'error' in result) {
                     alert(result.error);
-                    // Revert optimistic update on error
                     setWatchedEpisodes(initialWatchedEpisodes);
                 } else {
-                    // Refresh the page data without full reload
                     router.refresh();
                 }
             } catch (err) {
                 console.error("Client Error:", err);
-                alert("Bir hata oluştu. Lütfen tekrar deneyin.");
-                // Revert optimistic update on error
                 setWatchedEpisodes(initialWatchedEpisodes);
             }
         });
     };
 
+    const scroll = (direction: 'left' | 'right') => {
+        if (scrollRef.current) {
+            const { scrollLeft, clientWidth } = scrollRef.current;
+            const scrollTo = direction === 'left' ? scrollLeft - clientWidth / 2 : scrollLeft + clientWidth / 2;
+            scrollRef.current.scrollTo({ left: scrollTo, behavior: 'smooth' });
+        }
+    };
+
     return (
-        <div className="space-y-6">
-            {/* Main Toggle Header */}
-            <button
-                onClick={() => setIsAllVisible(!isAllVisible)}
-                className="w-full flex items-center justify-between group py-4 border-b border-white/5 hover:border-primary/30 transition-all font-sans"
-            >
-                <div className="flex items-center gap-4">
-                    <div className={cn(
-                        "p-2 rounded-xl transition-all",
-                        isAllVisible ? "bg-primary text-background" : "bg-white/5 text-neutral-400 group-hover:text-white"
-                    )}>
-                        <Layers className="w-5 h-5" />
-                    </div>
-                    <div className="text-left">
-                        <h3 className="text-2xl font-black text-white tracking-tight uppercase italic">Sezonlar</h3>
-                        <p className="text-sm font-bold text-neutral-500 mt-0.5">
-                            Toplam {validSeasons.length} Sezon
-                        </p>
-                    </div>
-                </div>
-                <div className={cn(
-                    "p-2 rounded-full border border-white/5 transition-all",
-                    isAllVisible ? "bg-white/10 text-white rotate-180" : "bg-transparent text-neutral-500 group-hover:text-white"
-                )}>
-                    <ChevronDown className="w-6 h-6" />
-                </div>
-            </button>
+        <div className="space-y-4">
+            {/* Main Header - Compact */}
 
-            {/* Expandable Content Area */}
-            {isAllVisible && (
-                <div className="space-y-8 mt-6 animate-in fade-in slide-in-from-top-2 duration-300">
-                    {/* Season Tabs Row */}
-                    <div className="space-y-4">
-                        <div className="grid grid-cols-2 md:flex md:flex-wrap gap-2 md:gap-3">
-                            {(showMoreSeasons ? validSeasons : validSeasons.slice(0, 4)).map((season) => (
-                                <button
-                                    key={season.id}
-                                    onClick={() => setExpandedSeason(season.season_number)}
-                                    className={cn(
-                                        "px-2 md:px-5 py-2.5 rounded-xl font-black text-[10px] md:text-[11px] transition-all border active:scale-95 uppercase tracking-widest truncate",
-                                        expandedSeason === season.season_number
-                                            ? "bg-primary text-background border-primary shadow-lg shadow-primary/20"
-                                            : "bg-white/5 text-neutral-400 border-white/5 hover:bg-white/10 hover:text-white"
-                                    )}
-                                >
-                                    {season.name}
-                                </button>
-                            ))}
-                        </div>
 
-                        {validSeasons.length > 4 && !showMoreSeasons && (
+            {/* Season Selector - Compact Posters */}
+            <div className="relative group/nav">
+                <div 
+                    ref={scrollRef}
+                    className="flex gap-3 overflow-x-auto no-scrollbar pt-2 pb-3 -mx-1 px-1 snap-x"
+                >
+                    {validSeasons.map((season) => {
+                        const isActive = expandedSeason === season.season_number;
+                        const seasonWatchedCount = watchedEpisodes.filter(w => w.s === season.season_number).length;
+                        const progress = (seasonWatchedCount / season.episode_count) * 100;
+                        const isSeasonWatched = seasonWatchedCount === season.episode_count;
+
+                        return (
                             <button
-                                onClick={() => setShowMoreSeasons(true)}
-                                className="w-full md:w-auto px-6 py-2 bg-white/5 hover:bg-white/10 text-neutral-500 hover:text-white rounded-lg text-[9px] font-black uppercase tracking-[0.2em] transition-all border border-white/5"
+                                key={season.id}
+                                onClick={() => setExpandedSeason(season.season_number)}
+                                className={cn(
+                                    "relative flex-shrink-0 w-[85px] sm:w-[110px] group transition-all snap-start",
+                                    isActive ? "scale-105" : "opacity-60 hover:opacity-100"
+                                )}
                             >
-                                + {validSeasons.length - 4} SEZON DAHA
-                            </button>
-                        )}
-                    </div>
-
-                    {/* Expanded Content View */}
-                    {expandedSeason !== null && (
-                        <div className="bg-neutral-900/40 backdrop-blur-md border border-white/5 rounded-[2rem] overflow-hidden shadow-2xl">
-                            <div className="p-6 md:p-8 bg-white/[0.02] border-b border-white/5 flex flex-col sm:flex-row items-center justify-between gap-6">
-                                <div>
-                                    <h3 className="text-xl font-black text-white tracking-tight uppercase italic">
-                                        {validSeasons.find(s => s.season_number === expandedSeason)?.name}
-                                    </h3>
-                                    <p className="text-sm font-bold text-neutral-500 mt-0.5">
-                                        {validSeasons.find(s => s.season_number === expandedSeason)?.episode_count} Bölüm Bulunuyor
+                                {/* Season Poster */}
+                                <div className={cn(
+                                    "relative aspect-[2/3] rounded-xl overflow-hidden shadow-lg transition-all border-2",
+                                    isActive ? "border-amber-400" : "border-white/5"
+                                )}>
+                                    {season.poster_path ? (
+                                        <Image
+                                            src={`https://image.tmdb.org/t/p/w185${season.poster_path}`}
+                                            alt={season.name}
+                                            fill
+                                            sizes="(max-width: 640px) 85px, 110px"
+                                            className="object-cover"
+                                        />
+                                    ) : (
+                                        <div className="w-full h-full bg-neutral-800 flex items-center justify-center">
+                                            <span className="text-xl font-black text-white/10">{season.season_number}</span>
+                                        </div>
+                                    )}
+                                    
+                                    {/* Watch Progress Overlay - Minimal */}
+                                    <div className="absolute inset-x-0 bottom-0 h-0.5 bg-black/40">
+                                        <div 
+                                            className="h-full bg-amber-400 transition-all duration-500" 
+                                            style={{ width: `${progress}%` }}
+                                        />
+                                    </div>
+                                    
+                                    {isSeasonWatched && (
+                                        <div className="absolute top-1 right-1 bg-emerald-500 text-white p-0.5 rounded-full shadow-lg">
+                                            <CheckCircle2 size={10} strokeWidth={3} />
+                                        </div>
+                                    )}
+                                </div>
+                                
+                                {/* Season Label - Compact */}
+                                <div className="mt-2 text-center">
+                                    <p className={cn(
+                                        "text-[9px] sm:text-[10px] font-black uppercase tracking-widest truncate",
+                                        isActive ? "text-amber-400" : "text-white/50"
+                                    )}>
+                                        {season.name}
+                                    </p>
+                                    <p className="text-[8px] font-bold text-neutral-600 mt-0.5">
+                                        {season.episode_count} Bölüm
                                     </p>
                                 </div>
+                            </button>
+                        );
+                    })}
+                </div>
+            </div>
 
-                                <button
-                                    onClick={(e) => {
-                                        e.preventDefault();
-                                        handleMarkSeasonWatched(expandedSeason);
-                                    }}
-                                    disabled={false}
-                                    className="w-full sm:w-auto flex items-center justify-center gap-3 px-6 py-3 bg-white/5 hover:bg-green-500 hover:text-white border border-white/10 hover:border-green-400 rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all group/btn active:scale-95"
-                                >
-                                    <CheckCircle2 className="w-4 h-4 group-hover/btn:scale-110 transition-transform" />
-                                    Sezonu Bitir (Tümünü İzle)
-                                </button>
-                            </div>
-
-                            <div className="max-h-[600px] overflow-y-auto custom-scrollbar">
-                                <SeasonEpisodes
-                                    tmdbId={tmdbId}
-                                    seasonNumber={expandedSeason}
-                                    watchedEpisodes={watchedEpisodes.filter(w => w.s === expandedSeason).map(w => w.e)}
-                                />
+            {/* Expanded Content View - More Compact */}
+            {expandedSeason !== null && (
+                <div className="bg-white/[0.01] border border-white/5 rounded-[1.5rem] overflow-hidden shadow-xl animate-in fade-in zoom-in-95 duration-200">
+                    <div className="p-4 md:p-5 border-b border-white/5 flex flex-col sm:flex-row items-center justify-between gap-4 bg-gradient-to-br from-white/[0.02] to-transparent">
+                        <div className="text-center sm:text-left">
+                            <h3 className="text-lg font-black text-white tracking-tighter uppercase italic">
+                                {validSeasons.find(s => s.season_number === expandedSeason)?.name}
+                            </h3>
+                            <div className="flex items-center justify-center sm:justify-start gap-2 mt-0.5">
+                                <p className="text-[10px] font-bold text-neutral-500">
+                                    {validSeasons.find(s => s.season_number === expandedSeason)?.episode_count} Bölüm
+                                </p>
+                                <div className="w-1 h-1 rounded-full bg-white/5" />
+                                <p className="text-[9px] font-black text-amber-400 uppercase tracking-widest">
+                                    {watchedEpisodes.filter(w => w.s === expandedSeason).length} / {validSeasons.find(s => s.season_number === expandedSeason)?.episode_count} İzlendi
+                                </p>
                             </div>
                         </div>
-                    )}
+
+                        <button
+                            onClick={(e) => {
+                                e.preventDefault();
+                                handleMarkSeasonWatched(expandedSeason);
+                            }}
+                            className={cn(
+                                "w-full sm:w-auto flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all active:scale-95 shadow-lg",
+                                watchedEpisodes.filter(w => w.s === expandedSeason).length === validSeasons.find(s => s.season_number === expandedSeason)?.episode_count
+                                    ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500 hover:text-white"
+                                    : "bg-white/5 text-white border border-white/10 hover:bg-emerald-500 hover:border-emerald-400"
+                            )}
+                        >
+                            <CheckCircle2 className="w-3.5 h-3.5" />
+                            Sezonu Tamamla
+                        </button>
+                    </div>
+
+                    <div className="max-h-[500px] overflow-y-auto custom-scrollbar">
+                        <SeasonEpisodes
+                            tmdbId={tmdbId}
+                            seasonNumber={expandedSeason}
+                            watchedEpisodes={watchedEpisodes.filter(w => w.s === expandedSeason).map(w => w.e)}
+                        />
+                    </div>
                 </div>
             )}
-
-            {/* Bölüm Isı Haritası */}
-            <TvHeatmap tmdbId={tmdbId} seasons={validSeasons} />
         </div>
     );
 }
@@ -212,17 +228,17 @@ function SeasonEpisodes({ tmdbId, seasonNumber, watchedEpisodes }: { tmdbId: num
     }, [tmdbId, seasonNumber, refreshKey]);
 
     if (loading && episodes.length === 0) return (
-        <div className="py-10 md:py-20 flex flex-col items-center justify-center gap-4">
-            <Loader2 className="w-8 h-8 animate-spin text-primary opacity-50" />
-            <p className="text-[10px] font-black text-neutral-600 uppercase tracking-[0.2em] italic">Bölümler Hazırlanıyor...</p>
+        <div className="py-12 flex flex-col items-center justify-center gap-3">
+            <Loader2 className="w-6 h-6 animate-spin text-amber-400 opacity-50" />
+            <p className="text-[8px] font-black text-neutral-600 uppercase tracking-[0.2em] italic">Yükleniyor...</p>
         </div>
     );
 
-    const displayedEpisodes = showAll ? episodes : episodes.slice(0, 4);
+    const displayedEpisodes = showAll ? episodes : episodes.slice(0, 5);
 
     return (
         <div className="flex flex-col">
-            <div className="grid grid-cols-2 md:grid-cols-1 gap-1 md:gap-0">
+            <div className="grid grid-cols-1 gap-1">
                 {displayedEpisodes.map((episode: any) => (
                     <EpisodeItem
                         key={episode.id}
@@ -235,13 +251,13 @@ function SeasonEpisodes({ tmdbId, seasonNumber, watchedEpisodes }: { tmdbId: num
                 ))}
             </div>
 
-            {episodes.length > 4 && !showAll && (
+            {episodes.length > 5 && !showAll && (
                 <div className="p-4 flex justify-center border-t border-white/5 bg-white/[0.01]">
                     <button
                         onClick={() => setShowAll(true)}
-                        className="flex items-center gap-2 px-6 py-2.5 bg-white/5 hover:bg-white/10 text-neutral-400 hover:text-white rounded-xl text-[10px] font-black uppercase tracking-widest transition-all active:scale-95"
+                        className="flex items-center gap-2 px-6 py-2 bg-white/5 hover:bg-white/10 text-neutral-500 hover:text-white rounded-lg text-[9px] font-black uppercase tracking-widest transition-all active:scale-95 border border-white/5"
                     >
-                        Devamını Göster ({episodes.length - 4} Bölüm Daha)
+                        Tüm Bölümler ({episodes.length})
                         <ChevronDown className="w-3 h-3" />
                     </button>
                 </div>

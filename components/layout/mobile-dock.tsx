@@ -18,10 +18,6 @@ import {
   guestNavItems,
 } from "@/components/layout/nav-items";
 
-const dockBg = 'bg-slate-900/90 backdrop-blur-xl border-t border-white/10';
-const activeColor = 'text-amber-400';
-const inactiveColor = 'text-slate-400 hover:text-white';
-
 interface MobileDockProps {
   user?: {
     name?: string | null;
@@ -55,7 +51,7 @@ export function MobileDock({ user }: MobileDockProps) {
         />
       )}
       <nav
-        className={`fixed bottom-4 left-4 right-4 z-[200] bg-slate-900/80 backdrop-blur-2xl border border-white/10 flex items-center justify-center px-4 py-2 sm:hidden rounded-[2rem] shadow-[0_8px_32px_rgba(0,0,0,0.5)] safe-area-bottom`}
+        className={`fixed bottom-0 left-0 right-0 z-[200] bg-slate-900/95 backdrop-blur-2xl border-t border-white/10 flex items-center justify-center px-6 py-3 sm:hidden rounded-t-[2.5rem] shadow-[0_-8px_32px_rgba(0,0,0,0.5)] pb-[calc(0.5rem+env(safe-area-inset-bottom))]`}
       >
         <div className="w-full max-w-md flex items-center justify-between mx-auto relative">
           {/* Ekranım menü tuşu */}
@@ -104,7 +100,7 @@ export function MobileDock({ user }: MobileDockProps) {
           <div className="relative flex items-center justify-center h-12 w-12">
             <Link
               href="/search"
-              className="absolute -top-10 flex items-center justify-center h-16 w-16 rounded-full bg-amber-400 text-slate-950 shadow-[0_8px_24px_rgba(251,191,36,0.4)] border-[6px] border-[#101624] transition-all hover:scale-110 active:scale-90 z-[210]"
+              className="absolute -top-6 flex items-center justify-center h-16 w-16 rounded-full bg-amber-400 text-slate-950 shadow-[0_8px_24px_rgba(251,191,36,0.4)] border-[6px] border-[#101624] transition-all hover:scale-110 active:scale-90 z-[210]"
               onClick={() => { setMenuOpen(false); setProfileMenuOpen(false); }}
             >
               <Search size={28} strokeWidth={3} />

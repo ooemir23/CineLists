@@ -122,6 +122,12 @@ export const tmdb = {
         return this.fetch(`/tv/${tvId}/season/${seasonNumber}`);
     },
 
+    async getEpisodeDetails(tvId: string, seasonNumber: number, episodeNumber: number) {
+        return this.fetch(`/tv/${tvId}/season/${seasonNumber}/episode/${episodeNumber}`, {
+            params: { append_to_response: "credits,images,videos" }
+        });
+    },
+
     async getWatchProviders(type: "movie" | "tv", id: string) {
         return this.fetch(`/${type}/${id}/watch/providers`);
     },

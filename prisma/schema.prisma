@@ -163,6 +163,8 @@ model Activity {
   platform          String?
   createdAt         DateTime     @default(now())
   episodeId         String?
+  isSpoiler         Boolean      @default(false)
+  votes             Int          @default(0)
   recommendedById   String?
   recommendedByText String?
   episode           Episode?     @relation(fields: [episodeId], references: [id])
@@ -179,13 +181,17 @@ model Comment {
   userId     String
   activityId String?
   episodeId  String?
+  parentId   String?
   content    String
   createdAt  DateTime  @default(now())
   personId   Int?
   isSpoiler  Boolean   @default(false)
+  votes      Int       @default(0)
   activity   Activity? @relation(fields: [activityId], references: [id], onDelete: Cascade)
   episode    Episode?  @relation(fields: [episodeId], references: [id], onDelete: Cascade)
   user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  parent     Comment?  @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies    Comment[] @relation("CommentReplies")
 }
 
 model Recommendation {

@@ -329,3 +329,33 @@ export async function getAllMediaRatings(tmdbId: number) {
         return [];
     }
 }
+
+export async function getEpisodeStatsBulk(tmdbId: number) {
+    try {
+        const episodes = await prisma.episode.findMany({
+            where: { media: { tmdbId } },
+            include: {
+                activities: { where: { type: "RATED" }, select: { rating: true } },
+                _count: {
+                    select: { comments: true }
+                }
+            }
+        });
+
+        const statsMap: Record<string, { rating: number; count: number; comments: number }> = {};
+        episodes.forEach(ep => {
+            const key = `${ep.seasonNumber}-${ep.episodeNumber}`;
+            const ratings = ep.activities.map(a => a.rating).filter((r): r is number => r !== null);
+            const average = ratings.length > 0 ? ratings.reduce((a, b) => a + b, 0) / ratings.length : 0;
+            statsMap[key] = {
+                rating: Number(average.toFixed(1)),
+                count: ratings.length,
+                comments: ep._count.comments
+            };
+        });
+        return statsMap;
+    } catch (error) {
+        console.error("Get episode stats bulk error:", error);
+        return {};
+    }
+}
