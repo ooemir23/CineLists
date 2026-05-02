@@ -88,6 +88,7 @@ export function ActivityPost({ activity }: ActivityPostProps) {
     const [submitting, setSubmitting] = useState(false);
     const [copied, setCopied] = useState(false);
     const [timeLabel, setTimeLabel] = useState("");
+    const [isExpanded, setIsExpanded] = useState(false);
 
     // Set random likes count on client side only to avoid hydration mismatch
     useEffect(() => {
@@ -162,7 +163,7 @@ export function ActivityPost({ activity }: ActivityPostProps) {
             <div className="flex flex-row min-h-[120px]">
 
                 {/* Left Side: Media Image (Poster) */}
-                <div className="relative w-[88px] sm:w-[110px] shrink-0 bg-neutral-900 group/poster overflow-hidden">
+                <div className="relative w-[120px] sm:w-[170px] aspect-[2/3] shrink-0 bg-neutral-900 group/poster overflow-hidden border-r border-white/5">
                     {activity.media.posterPath ? (
                         <Image
                             src={`https://image.tmdb.org/t/p/w500${activity.media.posterPath}`}
@@ -269,10 +270,22 @@ export function ActivityPost({ activity }: ActivityPostProps) {
                     {/* Review content with better styling */}
                     <div className="flex-1 mb-2">
                         {activity.review ? (
-                            <div className="relative p-3 bg-white/[0.03] border-l-2 border-primary rounded-r-xl shadow-inner group/review overflow-hidden">
-                                <p className="relative z-10 text-xs text-neutral-300 leading-relaxed font-medium line-clamp-2">
+                            <div 
+                                onClick={() => setIsExpanded(!isExpanded)}
+                                className={cn(
+                                    "relative p-3 bg-white/[0.03] border-l-2 border-primary rounded-r-xl shadow-inner group/review overflow-hidden cursor-pointer transition-all duration-300",
+                                    isExpanded ? "bg-white/[0.06]" : "hover:bg-white/[0.05]"
+                                )}
+                            >
+                                <p className={cn(
+                                    "relative z-10 text-xs text-neutral-300 leading-relaxed font-medium transition-all duration-300",
+                                    !isExpanded && "line-clamp-2"
+                                )}>
                                     {activity.review}
                                 </p>
+                                {!isExpanded && activity.review.length > 100 && (
+                                    <div className="absolute bottom-1 right-2 text-[8px] font-black text-primary/50 uppercase tracking-widest animate-pulse">Devamını Gör</div>
+                                )}
                             </div>
                         ) : (
                             <div className="h-px w-full bg-gradient-to-r from-white/5 to-transparent my-2" />

@@ -82,7 +82,7 @@ export function CompactActivityCard({ activity }: CompactActivityCardProps) {
 
     return (
         <Link href={`/profile/${activity.user.id}`}>
-            <div className="bg-gradient-to-br from-white/8 to-white/3 hover:from-white/12 hover:to-white/5 border border-white/8 hover:border-white/15 rounded-xl p-3.5 transition-all duration-300 group cursor-pointer backdrop-blur-sm">
+            <div className="bg-gradient-to-br from-white/8 to-white/3 hover:from-white/12 hover:to-white/5 border border-white/8 hover:border-white/15 rounded-xl p-2.5 transition-all duration-300 group cursor-pointer backdrop-blur-sm">
                 <div className="flex gap-3">
                     {/* Poster Image - Larger */}
                     <div className="relative w-20 h-28 shrink-0 rounded-lg overflow-hidden bg-neutral-900/50 shadow-lg ring-1 ring-white/10 group-hover:ring-primary/30 transition-all">
@@ -106,7 +106,7 @@ export function CompactActivityCard({ activity }: CompactActivityCardProps) {
                     </div>
 
                     {/* Content - Improved Layout */}
-                    <div className="flex-1 min-w-0 flex flex-col justify-between py-1">
+                    <div className="flex-1 min-w-0 flex flex-col justify-between">
                         {/* User Info - More Prominent */}
                         <div className="flex items-center gap-2.5 mb-2">
                             <div className="relative w-7 h-7 rounded-full overflow-hidden ring-2 ring-white/20 group-hover:ring-primary/50 transition-all flex-shrink-0">
