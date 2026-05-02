@@ -25,6 +25,7 @@ interface DetailTabsProps {
     currentUserId?: string;
     director?: string;
     producer?: string;
+    images?: any[];
 }
 
 const TABS: { id: Tab; label: string; icon: any; condition?: boolean }[] = [
@@ -48,6 +49,7 @@ export function DetailTabs({
     currentUserId,
     director,
     producer,
+    images,
 }: DetailTabsProps) {
     const searchParams = useSearchParams();
     const router = useRouter();
