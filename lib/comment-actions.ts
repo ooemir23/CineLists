@@ -97,7 +97,7 @@ export async function addActivityComment(activityId: string, content: string) {
                     userId: comment.activity.userId,
                     type: "NEW_COMMENT",
                     message: `${session.user.name || "Birisi"} paylaşımına yorum yaptı: "${content.substring(0, 30)}${content.length > 30 ? "..." : ""}"`,
-                    link: "/feed", // Or a link to specific activity if we have one
+                    link: `/feed#activity-${activityId}`,
                 }
             });
         }

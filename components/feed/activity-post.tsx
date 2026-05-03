@@ -159,7 +159,7 @@ export function ActivityPost({ activity }: ActivityPostProps) {
     };
 
     return (
-        <div className="bg-[#131b2c]/70 backdrop-blur-xl border border-white/5 rounded-2xl overflow-hidden shadow-xl transition-all hover:border-primary/20 group animate-fade-in">
+        <div id={`activity-${activity.id}`} className="bg-[#131b2c]/70 backdrop-blur-xl border border-white/5 rounded-2xl overflow-hidden shadow-xl transition-all hover:border-primary/20 group animate-fade-in">
             <div className="flex flex-row min-h-[120px]">
 
                 {/* Left Side: Media Image (Poster) */}
