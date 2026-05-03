@@ -230,6 +230,11 @@ export async function addComment(mediaId: number, type: "movie" | "tv", content:
                 activity: {
                     select: {
                         userId: true,
+                        media: {
+                            select: {
+                                title: true
+                            }
+                        }
                     }
                 }
             }
@@ -241,7 +246,7 @@ export async function addComment(mediaId: number, type: "movie" | "tv", content:
                 data: {
                     userId: comment.activity.userId,
                     type: "NEW_COMMENT",
-                    message: `${session.user.name || "Birisi"} incelemene yorum yaptı: "${content.substring(0, 30)}${content.length > 30 ? "..." : ""}"`,
+                    message: `${session.user.name || "Birisi"}, ${comment.activity.media.title} paylaşımına yorum yaptı: "${content.substring(0, 30)}${content.length > 30 ? "..." : ""}"`,
                     link: `/feed#activity-${parentId}`,
                 }
             });

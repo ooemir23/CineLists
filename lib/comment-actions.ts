@@ -85,6 +85,11 @@ export async function addActivityComment(activityId: string, content: string) {
                 activity: {
                     select: {
                         userId: true,
+                        media: {
+                            select: {
+                                title: true
+                            }
+                        }
                     }
                 }
             }
@@ -96,7 +101,7 @@ export async function addActivityComment(activityId: string, content: string) {
                 data: {
                     userId: comment.activity.userId,
                     type: "NEW_COMMENT",
-                    message: `${session.user.name || "Birisi"} paylaşımına yorum yaptı: "${content.substring(0, 30)}${content.length > 30 ? "..." : ""}"`,
+                    message: `${session.user.name || "Birisi"}, ${comment.activity.media.title} paylaşımına yorum yaptı: "${content.substring(0, 30)}${content.length > 30 ? "..." : ""}"`,
                     link: `/feed#activity-${activityId}`,
                 }
             });
