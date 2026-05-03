@@ -99,6 +99,13 @@ export function ActivityPost({ activity }: ActivityPostProps) {
         setTimeLabel(formatDistanceToNow(new Date(activity.createdAt), { addSuffix: true, locale: tr }));
     }, [activity.createdAt]);
 
+    // Handle deep linking from notifications
+    useEffect(() => {
+        if (typeof window !== "undefined" && window.location.hash === `#activity-${activity.id}`) {
+            setShowComments(true);
+        }
+    }, [activity.id]);
+
     useEffect(() => {
         if (showComments) {
             fetchComments();
@@ -398,7 +405,7 @@ export function ActivityPost({ activity }: ActivityPostProps) {
                         ) : comments.length === 0 ? null : (
                             <div className="space-y-3">
                                 {comments.map((c) => (
-                                    <div key={c.id} className="flex gap-2 animate-in fade-in slide-in-from-left-2 duration-300">
+                                    <div id={`comment-${c.id}`} key={c.id} className="flex gap-2 animate-in fade-in slide-in-from-left-2 duration-300">
                                         <Link href={`/profile/${c.user.id}`} className="relative w-7 h-7 rounded-lg overflow-hidden shrink-0 ring-1 ring-white/10 shadow-lg">
                                             {c.user.image ? (
                                                 <Image src={c.user.image} alt={c.user.name} fill className="object-cover" />
