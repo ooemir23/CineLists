@@ -165,7 +165,7 @@ export function CommentsSection({
         const isEditing = editingComment?.id === item.id;
 
         return (
-            <div id={`comment-${item.id}`} className={cn(
+            <div className={cn(
                 "group/item transition-all p-5 rounded-3xl border border-white/5 hover:border-white/10 shadow-sm",
                 isReply ? "bg-white/[0.01] ml-8 md:ml-12 border-l-2 border-l-amber-400/20" : "bg-white/[0.03]"
             )}>

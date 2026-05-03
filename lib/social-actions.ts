@@ -58,7 +58,8 @@ export async function toggleFollow(targetUserId: string) {
                 userId: targetUserId,
                 type: "NEW_FOLLOWER",
                 message: `${session.user.name || "Birisi"} seni takip etmeye başladı.`,
-                link: `/profile/${currentUserId}`, // Assuming we have public profiles
+                link: `/profile/${currentUserId}`, 
+                image: session.user.image,
             }
         });
 

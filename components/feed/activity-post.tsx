@@ -31,6 +31,7 @@ import { formatDistanceToNow } from "date-fns";
 import { tr } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import { addActivityComment, getActivityComments } from "@/lib/comment-actions";
+import { voteActivity } from "@/lib/activity-actions";
 
 type ActivityPostProps = {
     activity: {
@@ -41,6 +42,7 @@ type ActivityPostProps = {
         review: string | null;
         watchedWith: string | null;
         recommendedByText: string | null;
+        votes: number;
         recommendedBy?: {
             id: string;
             name: string | null;
@@ -90,21 +92,14 @@ export function ActivityPost({ activity }: ActivityPostProps) {
     const [timeLabel, setTimeLabel] = useState("");
     const [isExpanded, setIsExpanded] = useState(false);
 
-    // Set random likes count on client side only to avoid hydration mismatch
+    // Set likes count from activity
     useEffect(() => {
-        setLikesCount(Math.floor(Math.random() * 50));
-    }, []);
+        setLikesCount(activity.votes || 0);
+    }, [activity.votes]);
 
     useEffect(() => {
         setTimeLabel(formatDistanceToNow(new Date(activity.createdAt), { addSuffix: true, locale: tr }));
     }, [activity.createdAt]);
-
-    // Handle deep linking from notifications
-    useEffect(() => {
-        if (typeof window !== "undefined" && window.location.hash === `#activity-${activity.id}`) {
-            setShowComments(true);
-        }
-    }, [activity.id]);
 
     useEffect(() => {
         if (showComments) {
@@ -119,9 +114,15 @@ export function ActivityPost({ activity }: ActivityPostProps) {
         setLoadingComments(false);
     };
 
-    const handleLike = () => {
-        setIsLiked(!isLiked);
-        setLikesCount(prev => isLiked ? prev - 1 : prev + 1);
+    const handleLike = async (e: React.MouseEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        const newIsLiked = !isLiked;
+        setIsLiked(newIsLiked);
+        setLikesCount(prev => newIsLiked ? prev + 1 : prev - 1);
+        
+        await voteActivity(activity.id, newIsLiked ? 1 : -1);
     };
 
     const handleCommentSubmit = async (e: React.FormEvent) => {
@@ -155,7 +156,6 @@ export function ActivityPost({ activity }: ActivityPostProps) {
         WATCHED: "izledi",
         RATED: "puan verdi",
         REVIEWED: "inceledi",
-
     }[activity.type];
 
     const formatRuntime = (minutes: number) => {
@@ -166,11 +166,11 @@ export function ActivityPost({ activity }: ActivityPostProps) {
     };
 
     return (
-        <div id={`activity-${activity.id}`} className="bg-[#131b2c]/70 backdrop-blur-xl border border-white/5 rounded-2xl overflow-hidden shadow-xl transition-all hover:border-primary/20 group animate-fade-in">
+        <div className="bg-[#131b2c]/70 backdrop-blur-xl border border-white/5 rounded-2xl overflow-hidden shadow-xl transition-all hover:border-primary/20 group animate-fade-in">
             <div className="flex flex-row min-h-[120px]">
 
                 {/* Left Side: Media Image (Poster) */}
-                <div className="relative w-[120px] sm:w-[170px] aspect-[2/3] shrink-0 bg-neutral-900 group/poster overflow-hidden border-r border-white/5">
+                <div className="relative w-[90px] sm:w-[120px] aspect-[2/3] shrink-0 bg-neutral-900 group/poster overflow-hidden border-r border-white/5">
                     {activity.media.posterPath ? (
                         <Image
                             src={`https://image.tmdb.org/t/p/w500${activity.media.posterPath}`}
@@ -299,47 +299,6 @@ export function ActivityPost({ activity }: ActivityPostProps) {
                         )}
                     </div>
 
-                    {/* Meta/Tags (Hidden on extremely small screens if review is long, or just smaller) */}
-                    {(activity.watchedWith || activity.recommendedBy || activity.recommendedByText) && (
-                        <div className="hidden sm:flex flex-wrap gap-3 mb-3">
-                            {activity.watchedWith && (
-                                <div className="flex items-center gap-2 px-3 py-2 bg-blue-500/5 rounded-2xl border border-blue-500/10 group/meta transition-all hover:bg-blue-500/10">
-                                    <div className="w-7 h-7 bg-blue-500/20 rounded-xl flex items-center justify-center">
-                                        <Users className="w-3.5 h-3.5 text-blue-400" />
-                                    </div>
-                                    <div className="flex flex-col">
-                                        <span className="text-[9px] uppercase font-black text-blue-500/60 tracking-[0.1em]">Birlikte İzledi</span>
-                                        <span className="text-[11px] font-bold text-blue-300">
-                                            {(() => {
-                                                try {
-                                                    const parsed = JSON.parse(activity.watchedWith);
-                                                    return Array.isArray(parsed) ? parsed.join(", ") : parsed;
-                                                } catch (e) {
-                                                    return activity.watchedWith;
-                                                }
-                                            })()}
-                                        </span>
-                                    </div>
-                                </div>
-                            )}
-
-                            {(activity.recommendedBy || activity.recommendedByText) && (
-                                <div className="flex items-center gap-2 px-3 py-2 bg-purple-500/5 rounded-2xl border border-purple-500/10 group/meta transition-all hover:bg-purple-500/10">
-                                    <div className="w-7 h-7 bg-purple-500/20 rounded-xl flex items-center justify-center">
-                                        <Sparkles className="w-3.5 h-3.5 text-purple-400" />
-                                    </div>
-                                    <div className="flex flex-col">
-                                        <span className="text-[9px] uppercase font-black text-purple-500/60 tracking-[0.1em]">Tavsiye Eden</span>
-                                        <span className="text-[11px] font-bold text-purple-300">
-                                            {activity.recommendedBy?.name || activity.recommendedByText}
-                                        </span>
-                                    </div>
-                                </div>
-                            )}
-                        </div>
-                    )}
-
-
                     {/* Bottom: Interactions */}
                     <div className="mt-auto px-0 pt-2 border-t border-white/5 flex items-center justify-between">
                         <div className="flex items-center gap-4">
@@ -354,19 +313,27 @@ export function ActivityPost({ activity }: ActivityPostProps) {
                                 <span className="text-xs font-black">{likesCount}</span>
                             </button>
                             <button
-                                onClick={() => setShowComments(!showComments)}
+                                onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    setShowComments(!showComments);
+                                }}
                                 className={cn(
                                     "flex items-center gap-1.5 transition-all hover:scale-105",
                                     showComments ? "text-primary" : "text-neutral-400 hover:text-primary"
                                 )}
                             >
                                 <MessageSquare className="w-4 h-4" />
-                                <span className="text-xs font-black">{activity._count?.comments || 0}</span>
+                                <span className="text-xs font-black">{activity._count?.comments || comments.length || 0}</span>
                             </button>
                         </div>
 
                         <button
-                            onClick={() => setShowShare(!showShare)}
+                            onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                setShowShare(!showShare);
+                            }}
                             className="p-1.5 text-neutral-400 hover:text-white bg-white/5 hover:bg-white/10 rounded-lg transition-all border border-transparent hover:border-white/10"
                         >
                             <Share2 className="w-4 h-4" />
@@ -378,7 +345,7 @@ export function ActivityPost({ activity }: ActivityPostProps) {
             {/* Comments Section */}
             {showComments && (
                 <div className="border-t border-white/5 bg-white/[0.02] p-3 space-y-4 animate-in slide-in-from-top-4 duration-300">
-                    <form onSubmit={handleCommentSubmit} className="flex gap-2">
+                    <form onSubmit={handleCommentSubmit} className="flex gap-2" onClick={e => e.stopPropagation()}>
                         <div className="flex-1 flex gap-2">
                             <input
                                 type="text"
@@ -405,7 +372,7 @@ export function ActivityPost({ activity }: ActivityPostProps) {
                         ) : comments.length === 0 ? null : (
                             <div className="space-y-3">
                                 {comments.map((c) => (
-                                    <div id={`comment-${c.id}`} key={c.id} className="flex gap-2 animate-in fade-in slide-in-from-left-2 duration-300">
+                                    <div key={c.id} className="flex gap-2 animate-in fade-in slide-in-from-left-2 duration-300">
                                         <Link href={`/profile/${c.user.id}`} className="relative w-7 h-7 rounded-lg overflow-hidden shrink-0 ring-1 ring-white/10 shadow-lg">
                                             {c.user.image ? (
                                                 <Image src={c.user.image} alt={c.user.name} fill className="object-cover" />
@@ -436,7 +403,7 @@ export function ActivityPost({ activity }: ActivityPostProps) {
 
             {/* Share View Overlay */}
             {showShare && (
-                <div className="absolute inset-0 z-50 flex items-center justify-center p-6 bg-black/60 backdrop-blur-md animate-in fade-in duration-300">
+                <div className="absolute inset-0 z-50 flex items-center justify-center p-6 bg-black/60 backdrop-blur-md animate-in fade-in duration-300" onClick={e => { e.preventDefault(); e.stopPropagation(); setShowShare(false); }}>
                     <div className="relative w-full max-w-sm bg-[#1A202C] border border-white/10 rounded-[2.5rem] p-10 shadow-3xl animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
                         <button onClick={() => setShowShare(false)} className="absolute top-6 right-6 p-2 text-neutral-500 hover:text-white hover:bg-white/5 rounded-xl transition-all">
                             <X className="w-6 h-6" />

@@ -87,7 +87,9 @@ export async function addActivityComment(activityId: string, content: string) {
                         userId: true,
                         media: {
                             select: {
-                                title: true
+                                tmdbId: true,
+                                title: true,
+                                type: true,
                             }
                         }
                     }
@@ -97,12 +99,19 @@ export async function addActivityComment(activityId: string, content: string) {
 
         // Create notification for activity owner if it's not the same user
         if (comment.activity && comment.activity.userId !== session.user.id) {
+            const mediaTitle = comment.activity.media?.title || "bir içerik";
+            const mediaType = comment.activity.media?.type === "TV" ? "tv" : "movie";
+            const mediaLink = comment.activity.media?.tmdbId
+                ? `/${mediaType}/${comment.activity.media.tmdbId}?tab=comments`
+                : "/feed";
+
             await prisma.indicates.create({
                 data: {
                     userId: comment.activity.userId,
                     type: "NEW_COMMENT",
-                    message: `${session.user.name || "Birisi"}, ${comment.activity.media.title} paylaşımına yorum yaptı: "${content.substring(0, 30)}${content.length > 30 ? "..." : ""}"`,
-                    link: `/feed#activity-${activityId}`,
+                    message: `${session.user.name || "Birisi"} ${mediaTitle} hakkındaki paylaşımına yorum yaptı: "${content.substring(0, 30)}${content.length > 30 ? "..." : ""}"`,
+                    link: mediaLink,
+                    image: comment.activity.media?.posterPath,
                 }
             });
         }

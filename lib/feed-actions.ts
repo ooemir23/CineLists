@@ -9,6 +9,7 @@ export type FeedActivity = {
     createdAt: Date;
     rating: number | null;
     review: string | null;
+    votes: number;
     content?: string | null; // For comments
     user: {
         id: string;
@@ -117,6 +118,7 @@ export async function getFriendsActivity(): Promise<FeedActivity[]> {
             createdAt: c.createdAt,
             content: c.content,
             user: c.user,
+            votes: 0,
             media: media as any,
             episode: episode as any,
             _count: { comments: 0 }
@@ -128,6 +130,7 @@ export async function getFriendsActivity(): Promise<FeedActivity[]> {
         type: "LISTED",
         createdAt: w.addedAt,
         user: w.user,
+        votes: 0,
         media: w.media as any,
         _count: { comments: 0 }
     } as FeedActivity));

@@ -66,7 +66,13 @@ export default async function DetailsPage(props: Props) {
             where: { tmdbId: mediaId },
             include: { 
                 activities: { 
-                    where: { type: "REVIEWED" }, 
+                    where: {
+                        OR: [
+                            { type: "REVIEWED" },
+                            { review: { not: null } },
+                            { comments: { some: {} } }
+                        ]
+                    }, 
                     include: { 
                         user: true,
                         comments: {

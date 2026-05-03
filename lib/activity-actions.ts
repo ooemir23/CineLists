@@ -219,38 +219,14 @@ export async function addComment(mediaId: number, type: "movie" | "tv", content:
 
     if (parentId) {
         // This is a reply to an existing activity (review)
-        const comment = await prisma.comment.create({
+        await prisma.comment.create({
             data: {
                 userId: session.user.id,
                 activityId: parentId,
                 content: content,
                 isSpoiler: isSpoiler,
             },
-            include: {
-                activity: {
-                    select: {
-                        userId: true,
-                        media: {
-                            select: {
-                                title: true
-                            }
-                        }
-                    }
-                }
-            }
         });
-
-        // Create notification for activity owner if it's not the same user
-        if (comment.activity && comment.activity.userId !== session.user.id) {
-            await prisma.indicates.create({
-                data: {
-                    userId: comment.activity.userId,
-                    type: "NEW_COMMENT",
-                    message: `${session.user.name || "Birisi"}, ${comment.activity.media.title} paylaşımına yorum yaptı: "${content.substring(0, 30)}${content.length > 30 ? "..." : ""}"`,
-                    link: `/feed#activity-${parentId}`,
-                }
-            });
-        }
     } else {
         // This is a new top-level review
         await prisma.activity.create({
@@ -412,6 +388,7 @@ export async function saveWatchDetails(params: {
                 type: "NEW_RECOMMENDATION",
                 message: `${session.user.name || "Birisi"} tavsiye ettiğin ${title} içeriğini izledi!`,
                 link: `/profile/${session.user.id}`,
+                image: posterPath,
             }
         });
     }

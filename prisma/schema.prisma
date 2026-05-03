@@ -223,6 +223,7 @@ model Indicates {
   userId    String
   type      NotificationType
   message   String
+  image     String?
   link      String?
   isRead    Boolean          @default(false)
   createdAt DateTime         @default(now())

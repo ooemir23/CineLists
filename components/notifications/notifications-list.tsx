@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import {
     Bell,
     UserPlus,
@@ -27,6 +28,7 @@ type Notification = {
     message: string;
     link: string | null;
     isRead: boolean;
+    image?: string | null;
     createdAt: Date;
 };
 
@@ -154,7 +156,18 @@ export function NotificationsList({ initialNotifications }: NotificationsListPro
                                         "p-3 rounded-2xl shrink-0 transition-transform group-hover:scale-110 duration-500",
                                         notification.isRead ? "bg-neutral-800" : "bg-white/5"
                                     )}>
-                                        {getIcon(notification.type)}
+                                        {notification.image ? (
+                                            <div className="relative w-12 h-16 rounded-lg overflow-hidden ring-1 ring-white/10 group-hover:ring-primary/40 transition-all shadow-2xl">
+                                                <Image 
+                                                    src={`https://image.tmdb.org/t/p/w200${notification.image}`}
+                                                    alt="content"
+                                                    fill
+                                                    className="object-cover"
+                                                />
+                                            </div>
+                                        ) : (
+                                            getIcon(notification.type)
+                                        )}
                                     </div>
 
                                     <div className="flex-1 min-w-0">

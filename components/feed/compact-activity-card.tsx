@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import {
@@ -11,12 +11,14 @@ import {
     Tv,
     Clock,
     User,
-    Sparkles,
-    Users
+    Send,
+    Loader2
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { tr } from "date-fns/locale";
 import { cn } from "@/lib/utils";
+import { addActivityComment, getActivityComments } from "@/lib/comment-actions";
+import { voteActivity } from "@/lib/activity-actions";
 
 type CompactActivityCardProps = {
     activity: {
@@ -25,6 +27,7 @@ type CompactActivityCardProps = {
         createdAt: Date;
         rating: number | null;
         review: string | null;
+        votes: number;
         content?: string | null;
         watchedWith: string | null;
         recommendedByText: string | null;
@@ -66,10 +69,76 @@ type CompactActivityCardProps = {
 
 export function CompactActivityCard({ activity }: CompactActivityCardProps) {
     const [timeLabel, setTimeLabel] = useState("");
+    const [isLiked, setIsLiked] = useState(false);
+    const [likesCount, setLikesCount] = useState(0);
+    const [showComments, setShowComments] = useState(false);
+    const [comments, setComments] = useState<any[]>([]);
+    const [loadingComments, setLoadingComments] = useState(false);
+    const [commentInput, setCommentInput] = useState("");
+    const [submitting, setSubmitting] = useState(false);
+    const [showHeartAnim, setShowHeartAnim] = useState(false);
+    const lastTap = useRef<number>(0);
 
     useEffect(() => {
         setTimeLabel(formatDistanceToNow(new Date(activity.createdAt), { addSuffix: true, locale: tr }));
-    }, [activity.createdAt]);
+        setLikesCount(activity.votes || 0);
+    }, [activity.createdAt, activity.votes]);
+
+    useEffect(() => {
+        if (showComments) {
+            fetchComments();
+        }
+    }, [showComments]);
+
+    const fetchComments = async () => {
+        setLoadingComments(true);
+        const data = await getActivityComments(activity.id);
+        setComments(data);
+        setLoadingComments(false);
+    };
+
+    const handleLike = async (e?: React.MouseEvent) => {
+        if (e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+        
+        const newIsLiked = !isLiked;
+        setIsLiked(newIsLiked);
+        setLikesCount(prev => newIsLiked ? prev + 1 : prev - 1);
+        
+        await voteActivity(activity.id, newIsLiked ? 1 : -1);
+    };
+
+    const handleDoubleTap = (e: React.MouseEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const now = Date.now();
+        if (now - lastTap.current < 300) {
+            if (!isLiked) {
+                handleLike();
+            }
+            setShowHeartAnim(true);
+            setTimeout(() => setShowHeartAnim(false), 800);
+        }
+        lastTap.current = now;
+    };
+
+    const handleCommentSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (!commentInput.trim() || submitting) return;
+
+        setSubmitting(true);
+        const res = await addActivityComment(activity.id, commentInput);
+        setSubmitting(false);
+
+        if (res.success) {
+            setCommentInput("");
+            if (!showComments) setShowComments(true);
+            fetchComments();
+        }
+    };
 
     const actionText = {
         WATCHED: "izledi",
@@ -77,101 +146,168 @@ export function CompactActivityCard({ activity }: CompactActivityCardProps) {
         REVIEWED: "inceledi",
         COMMENTED: "yorum yaptı",
         LISTED: "listesine ekledi"
-
     }[activity.type];
 
     return (
-        <Link href={`/profile/${activity.user.id}`}>
-            <div className="bg-gradient-to-br from-white/8 to-white/3 hover:from-white/12 hover:to-white/5 border border-white/8 hover:border-white/15 rounded-xl p-2.5 transition-all duration-300 group cursor-pointer backdrop-blur-sm">
-                <div className="flex gap-3">
-                    {/* Poster Image - Larger */}
-                    <div className="relative w-20 h-28 shrink-0 rounded-lg overflow-hidden bg-neutral-900/50 shadow-lg ring-1 ring-white/10 group-hover:ring-primary/30 transition-all">
+        <div className="bg-[#1A202C]/40 hover:bg-[#1A202C]/60 border border-white/5 hover:border-primary/20 rounded-2xl overflow-hidden transition-all duration-300 group shadow-xl backdrop-blur-md">
+            <div className="p-3">
+                {/* Header: User Info */}
+                <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-2">
+                        <Link 
+                            href={`/profile/${activity.user.id}`}
+                            className="relative w-6 h-6 rounded-full overflow-hidden ring-1 ring-white/10 hover:ring-primary/50 transition-all flex-shrink-0"
+                        >
+                            {activity.user.image ? (
+                                <Image src={activity.user.image} alt={activity.user.name || ""} fill className="object-cover" />
+                            ) : (
+                                <div className="w-full h-full bg-neutral-800 flex items-center justify-center">
+                                    <User className="w-3 h-3 text-neutral-500" />
+                                </div>
+                            )}
+                        </Link>
+                        <div className="min-w-0">
+                            <Link 
+                                href={`/profile/${activity.user.id}`}
+                                className="text-[12px] font-black text-white hover:text-primary transition-colors truncate block leading-none"
+                            >
+                                {activity.user.name}
+                            </Link>
+                        </div>
+                    </div>
+                    <span className="text-[8px] text-neutral-600 font-bold uppercase">{timeLabel}</span>
+                </div>
+
+                {/* Main Content Area: Side by Side */}
+                <div className="flex gap-3 mb-3">
+                    {/* Small Poster - Tam sığacak şekilde aspect-2/3 */}
+                    <div 
+                        className="relative w-[70px] aspect-[2/3] shrink-0 rounded-lg overflow-hidden bg-neutral-900 group/media cursor-pointer shadow-lg ring-1 ring-white/10"
+                        onClick={handleDoubleTap}
+                    >
                         {activity.media.posterPath ? (
                             <Image
                                 src={`https://image.tmdb.org/t/p/w200${activity.media.posterPath}`}
                                 alt={activity.media.title}
                                 fill
-                                className="object-cover group-hover:scale-105 transition-transform duration-500"
+                                className="object-cover transition-transform duration-700 group-hover/media:scale-110"
                             />
                         ) : (
-                            <div className="w-full h-full flex items-center justify-center text-2xl">🎬</div>
+                            <div className="w-full h-full flex items-center justify-center text-xl">🎬</div>
                         )}
+                        
+                        {/* Double Tap Heart Animation (Small) */}
+                        {showHeartAnim && (
+                            <div className="absolute inset-0 flex items-center justify-center z-20 pointer-events-none animate-heart-burst">
+                                <Heart className="w-10 h-10 text-white fill-white drop-shadow-2xl" />
+                            </div>
+                        )}
+
                         {/* Rating Badge */}
                         {activity.rating && (
-                            <div className="absolute bottom-1.5 right-1.5 bg-gradient-to-r from-yellow-500 to-yellow-600 text-black text-[10px] font-black px-2 py-1 rounded-md shadow-lg flex items-center gap-1">
-                                <Star className="w-3 h-3 fill-current" />
+                            <div className="absolute bottom-1 right-1 bg-primary text-background text-[8px] font-black px-1 py-0.5 rounded shadow-xl flex items-center gap-0.5">
+                                <Star className="w-2 h-2 fill-current" />
                                 {activity.rating}
                             </div>
                         )}
                     </div>
 
-                    {/* Content - Improved Layout */}
-                    <div className="flex-1 min-w-0 flex flex-col justify-between">
-                        {/* User Info - More Prominent */}
-                        <div className="flex items-center gap-2.5 mb-2">
-                            <div className="relative w-7 h-7 rounded-full overflow-hidden ring-2 ring-white/20 group-hover:ring-primary/50 transition-all flex-shrink-0">
-                                {activity.user.image ? (
-                                    <Image src={activity.user.image} alt={activity.user.name || ""} fill className="object-cover" />
-                                ) : (
-                                    <div className="w-full h-full bg-gradient-to-br from-primary/30 to-primary/10 flex items-center justify-center">
-                                        <User className="w-3.5 h-3.5 text-primary" />
-                                    </div>
-                                )}
-                            </div>
-                            <div className="min-w-0 flex-1">
-                                <p className="text-sm font-bold text-white group-hover:text-primary transition-colors truncate">
-                                    {activity.user.name || "Kullanıcı"}
-                                </p>
-                                <p className="text-xs text-neutral-400 truncate">{actionText}</p>
-                            </div>
-                        </div>
-
-                        {/* Media Title */}
-                        <div className="mb-2">
-                            <h4 className="text-sm font-bold text-white leading-tight line-clamp-2 group-hover:text-primary transition-colors mb-1">
+                    {/* Media Details & Action Info */}
+                    <div className="flex-1 min-w-0 flex flex-col justify-between py-0.5">
+                        <div className="space-y-1">
+                            <p className="text-[10px] text-neutral-500 font-bold uppercase tracking-tight leading-none">{actionText}</p>
+                            <Link 
+                                href={`/${activity.media.type === "MOVIE" ? "movie" : "tv"}/${activity.media.tmdbId}`}
+                                className="text-[13px] font-black text-white hover:text-primary transition-colors line-clamp-2 leading-tight"
+                            >
                                 {activity.media.title}
-                            </h4>
-                            <div className="flex items-center gap-2 flex-wrap">
-                                <span className="text-[11px] text-neutral-400 font-medium inline-flex items-center gap-1 bg-white/5 px-2 py-0.5 rounded-md">
-                                    {activity.media.type === "MOVIE" ? (
-                                        <>
-                                            <Film className="w-3 h-3" /> Film
-                                        </>
-                                    ) : (
-                                        <>
-                                            <Tv className="w-3 h-3" /> Dizi
-                                        </>
-                                    )}
-                                </span>
-                                {(activity.episode || activity.episodeRange) && (
-                                    <span className="text-[11px] text-blue-400/90 font-medium bg-blue-500/15 px-2 py-0.5 rounded-md">
-                                        {activity.episodeRange
-                                            ? `${activity.episodeRange.count} Bölüm`
-                                            : `S${activity.episode?.seasonNumber} B${activity.episode?.episodeNumber}`
-                                        }
-                                    </span>
-                                )}
-                            </div>
+                            </Link>
+                            {activity.episode && (
+                                <span className="text-[9px] text-blue-400 font-bold uppercase">S{activity.episode.seasonNumber} E{activity.episode.episodeNumber}</span>
+                            )}
+                            {activity.episodeRange && (
+                                <span className="text-[9px] text-blue-400 font-bold uppercase">S{activity.episodeRange.seasonNumber} E{activity.episodeRange.fromEpisode}-{activity.episodeRange.toEpisode}</span>
+                            )}
                         </div>
 
-                        {/* Time & Stats */}
-                        <div className="flex items-center justify-between text-xs">
-                            <span className="text-neutral-500">
-                                {timeLabel}
-                            </span>
-                            <div className="flex items-center gap-3 text-neutral-400">
-                                {activity.review && (
-                                    <div className="flex items-center gap-1 hover:text-white transition-colors">
-                                        <MessageSquare className="w-3.5 h-3.5" />
-                                        <span className="text-[10px]">{activity._count.comments}</span>
-                                    </div>
+                        {/* Social Buttons */}
+                        <div className="flex items-center gap-4 mt-2">
+                            <button 
+                                onClick={handleLike}
+                                className={cn(
+                                    "transition-all hover:scale-125 active:scale-90 flex items-center gap-1.5",
+                                    isLiked ? "text-red-500" : "text-neutral-400 hover:text-red-500"
                                 )}
-                                <Heart className="w-3.5 h-3.5 hover:text-red-400 transition-colors" />
-                            </div>
+                            >
+                                <Heart className={cn("w-4 h-4", isLiked && "fill-current")} />
+                                <span className="text-[10px] font-black">{likesCount}</span>
+                            </button>
+                            <button 
+                                onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    setShowComments(!showComments);
+                                }}
+                                className={cn(
+                                    "transition-all hover:scale-125 active:scale-90 flex items-center gap-1.5",
+                                    showComments ? "text-primary" : "text-neutral-400 hover:text-primary"
+                                )}
+                            >
+                                <MessageSquare className="w-4 h-4" />
+                                <span className="text-[10px] font-black">{activity._count.comments || comments.length}</span>
+                            </button>
                         </div>
                     </div>
                 </div>
+
+                {/* Review/Content if exists */}
+                {activity.review && (
+                    <div className="px-1 mb-2 bg-white/5 p-2 rounded-xl border border-white/5">
+                        <p className="text-[10px] text-neutral-300 leading-relaxed line-clamp-2 italic">
+                            "{activity.review}"
+                        </p>
+                    </div>
+                )}
+
+                {/* Quick Comment Input */}
+                <form onSubmit={handleCommentSubmit} className="relative mt-2 border-t border-white/5 pt-2">
+                    <input
+                        type="text"
+                        value={commentInput}
+                        onChange={(e) => setCommentInput(e.target.value)}
+                        placeholder="Yorum ekle..."
+                        className="w-full bg-transparent text-[10px] text-white py-1 pr-8 outline-none placeholder:text-neutral-600 font-medium"
+                    />
+                    {commentInput.trim() && (
+                        <button
+                            disabled={submitting}
+                            className="absolute right-0 top-1/2 -translate-y-1/2 text-[9px] font-black text-primary hover:text-primary/80 transition-colors uppercase tracking-widest disabled:opacity-50"
+                        >
+                            {submitting ? <Loader2 className="w-3 h-3 animate-spin" /> : "Paylaş"}
+                        </button>
+                    )}
+                </form>
+
+                {/* Comments List (Conditional) */}
+                {showComments && (
+                    <div className="mt-2 space-y-1.5 max-h-[120px] overflow-y-auto pr-1 custom-scrollbar animate-in slide-in-from-top-1 duration-200">
+                        {loadingComments ? (
+                            <div className="flex justify-center py-2">
+                                <Loader2 className="w-3 h-3 text-primary/50 animate-spin" />
+                            </div>
+                        ) : comments.length === 0 ? null : (
+                            <div className="space-y-1.5">
+                                {comments.map((c) => (
+                                    <div key={c.id} className="flex gap-1.5">
+                                        <span className="text-[9px] font-black text-white shrink-0">{c.user.name}</span>
+                                        <p className="text-[9px] text-neutral-400 leading-tight flex-1">{c.content}</p>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                )}
             </div>
-        </Link>
+        </div>
     );
 }
