@@ -90,6 +90,7 @@ export async function addActivityComment(activityId: string, content: string) {
                                 tmdbId: true,
                                 title: true,
                                 type: true,
+                                posterPath: true,
                             }
                         }
                     }
