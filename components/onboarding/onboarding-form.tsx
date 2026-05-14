@@ -11,7 +11,8 @@ import {
     Tv, 
     Search,
     Sparkles,
-    CheckCircle2
+    CheckCircle2,
+    Loader2
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { completeOnboarding } from "@/lib/onboarding-actions";
@@ -30,18 +31,21 @@ interface Platform {
 interface OnboardingFormProps {
     genres: Genre[];
     platforms: Platform[];
+    defaultUsername?: string;
 }
 
-export function OnboardingForm({ genres, platforms }: OnboardingFormProps) {
+export function OnboardingForm({ genres, platforms, defaultUsername = "" }: OnboardingFormProps) {
     const [step, setStep] = useState(1);
-    const [username, setUsername] = useState("");
+    const [username, setUsername] = useState(defaultUsername);
     const [selectedGenres, setSelectedGenres] = useState<number[]>([]);
     const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>([]);
     const [searchQuery, setSearchQuery] = useState("");
     const [searchResults, setSearchResults] = useState<any[]>([]);
     const [selectedFavorites, setSelectedFavorites] = useState<any[]>([]);
     const [isSearching, setIsSearching] = useState(false);
-    const [showAllGenres, setShowAllGenres] = useState(false);
+    const [genreSearch, setGenreSearch] = useState("");
+    const [platformSearch, setPlatformSearch] = useState("");
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     const totalSteps = 4;
 
@@ -129,7 +133,7 @@ export function OnboardingForm({ genres, platforms }: OnboardingFormProps) {
                         <div className="space-y-6">
                             <div className="text-center md:text-left">
                                 <h2 className="text-2xl md:text-3xl font-black text-white tracking-tight uppercase mb-1">
-                                    Profilini Özelleştir
+                                    Kullanıcı Adı
                                 </h2>
                                 <p className="text-xs text-neutral-400 font-medium">
                                     Seni nasıl çağırmamızı istersin? (İsteğe bağlı)
@@ -141,10 +145,10 @@ export function OnboardingForm({ genres, platforms }: OnboardingFormProps) {
                                     <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-neutral-500 group-focus-within:text-amber-400 transition-colors" />
                                     <input 
                                         type="text"
-                                        placeholder="Kullanıcı Adı"
+                                        placeholder={defaultUsername || "Kullanıcı Adı"}
                                         value={username}
                                         onChange={(e) => setUsername(e.target.value)}
-                                        className="w-full pl-12 pr-4 py-3.5 bg-white/5 border border-white/10 rounded-2xl text-lg font-bold text-white focus:outline-none focus:border-amber-400/50 focus:ring-4 focus:ring-amber-400/10 transition-all placeholder:text-neutral-700"
+                                        className="w-full pl-12 pr-4 py-3.5 bg-white/5 border border-white/10 rounded-2xl text-lg font-bold text-white focus:outline-none focus:border-amber-400/50 focus:ring-4 focus:ring-amber-400/10 transition-all placeholder:text-neutral-500/50"
                                     />
                                 </div>
                                 <p className="text-[9px] text-neutral-500 font-black uppercase tracking-widest px-4">
@@ -157,24 +161,38 @@ export function OnboardingForm({ genres, platforms }: OnboardingFormProps) {
                     {/* STEP 2: GENRES */}
                     {step === 2 && (
                         <div className="space-y-6">
-                            <div className="text-center md:text-left">
-                                <h2 className="text-2xl md:text-3xl font-black text-white tracking-tight uppercase mb-1">
-                                    Neler İzlemeyi Seversin?
-                                </h2>
-                                <p className="text-xs text-neutral-400 font-medium">
-                                    Sana özel öneriler için en az 3 tür seçmeni öneririz.
-                                </p>
+                            <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+                                <div className="text-center md:text-left">
+                                    <h2 className="text-2xl md:text-3xl font-black text-white tracking-tight uppercase mb-1">
+                                        Neler İzlemeyi Seversin?
+                                    </h2>
+                                    <p className="text-xs text-neutral-400 font-medium">
+                                        Sana özel öneriler için en az 3 tür seçmeni öneririz.
+                                    </p>
+                                </div>
+                                <div className="relative">
+                                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-500" />
+                                    <input
+                                        type="text"
+                                        placeholder="Tür ara..."
+                                        value={genreSearch}
+                                        onChange={(e) => setGenreSearch(e.target.value)}
+                                        className="w-full md:w-48 pl-9 pr-4 py-2 bg-white/5 border border-white/10 rounded-xl text-xs font-medium text-white focus:outline-none focus:border-amber-400/50 transition-colors"
+                                    />
+                                </div>
                             </div>
 
-                            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
-                                {(showAllGenres ? genres : genres.slice(0, 8)).map((genre) => {
+                            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-1.5 md:gap-2">
+                                {genres
+                                    .filter(g => g.name.toLowerCase().includes(genreSearch.toLowerCase()))
+                                    .map((genre) => {
                                     const isActive = selectedGenres.includes(genre.id);
                                     return (
                                         <button
                                             key={genre.id}
                                             onClick={() => toggleGenre(genre.id)}
                                             className={cn(
-                                                "relative px-4 py-2.5 rounded-xl border text-[11px] font-black uppercase tracking-widest transition-all duration-300",
+                                                "relative px-3 py-2 rounded-xl border text-[10px] font-black uppercase tracking-widest transition-all duration-300",
                                                 isActive 
                                                     ? "bg-amber-400 border-amber-400 text-slate-950 shadow-lg shadow-amber-400/10 scale-105" 
                                                     : "bg-white/5 border-white/5 text-neutral-500 hover:bg-white/10 hover:border-white/10"
@@ -190,58 +208,58 @@ export function OnboardingForm({ genres, platforms }: OnboardingFormProps) {
                                     );
                                 })}
                             </div>
-
-                            {genres.length > 8 && (
-                                <div className="flex justify-center mt-4">
-                                    <button 
-                                        onClick={() => setShowAllGenres(!showAllGenres)}
-                                        className="text-[10px] font-black uppercase tracking-[0.2em] text-neutral-600 hover:text-amber-400 transition-colors py-2 px-4"
-                                    >
-                                        {showAllGenres ? "Daha Az Göster" : "Daha Fazla Tür Göster"}
-                                    </button>
-                                </div>
-                            )}
                         </div>
                     )}
 
                     {/* STEP 3: PLATFORMS */}
                     {step === 3 && (
                         <div className="space-y-6">
-                            <div className="text-center md:text-left">
-                                <h2 className="text-2xl md:text-3xl font-black text-white tracking-tight uppercase mb-1">
-                                    Hangi Platformları Kullanıyorsun?
-                                </h2>
-                                <p className="text-xs text-neutral-400 font-medium">
-                                    Sadece izleyebileceğin platformları öne çıkaralım.
-                                </p>
+                            <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+                                <div className="text-center md:text-left">
+                                    <h2 className="text-2xl md:text-3xl font-black text-white tracking-tight uppercase mb-1">
+                                        Hangi Platformları Kullanıyorsun?
+                                    </h2>
+                                    <p className="text-xs text-neutral-400 font-medium">
+                                        Sadece izleyebileceğin platformları öne çıkaralım.
+                                    </p>
+                                </div>
+                                <div className="relative">
+                                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-500" />
+                                    <input
+                                        type="text"
+                                        placeholder="Platform ara..."
+                                        value={platformSearch}
+                                        onChange={(e) => setPlatformSearch(e.target.value)}
+                                        className="w-full md:w-48 pl-9 pr-4 py-2 bg-white/5 border border-white/10 rounded-xl text-xs font-medium text-white focus:outline-none focus:border-amber-400/50 transition-colors"
+                                    />
+                                </div>
                             </div>
 
-                            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3">
-                                {platforms.map((platform) => {
+                            <div className="flex flex-wrap gap-4 justify-center md:justify-start">
+                                {platforms
+                                    .filter(p => p.name.toLowerCase().includes(platformSearch.toLowerCase()))
+                                    .map((platform) => {
                                     const isActive = selectedPlatforms.includes(platform.id);
                                     return (
                                         <button
                                             key={platform.id}
                                             onClick={() => togglePlatform(platform.id)}
-                                            className={cn(
-                                                "aspect-[4/3] flex flex-col items-center justify-center gap-2 rounded-2xl border transition-all duration-300 group",
-                                                isActive
-                                                    ? "bg-amber-400 border-amber-400 shadow-xl shadow-amber-400/10"
-                                                    : "bg-white/5 border-white/5 grayscale hover:grayscale-0 hover:bg-white/10 hover:border-white/10"
-                                            )}
+                                            title={platform.name}
+                                            className="relative group transition-transform duration-300 hover:scale-110 active:scale-95"
                                         >
                                             <div className={cn(
-                                                "w-10 h-10 rounded-xl overflow-hidden transition-transform duration-500",
-                                                isActive ? "scale-110 shadow-lg" : "group-hover:scale-110"
+                                                "w-14 h-14 md:w-16 md:h-16 rounded-xl overflow-hidden shadow-xl transition-all duration-300 border-2",
+                                                isActive
+                                                    ? "border-amber-400 opacity-100 ring-4 ring-amber-400/20 scale-105"
+                                                    : "border-transparent opacity-50 grayscale hover:grayscale-0 hover:opacity-100"
                                             )}>
                                                 <img src={platform.icon} alt={platform.name} className="w-full h-full object-cover" />
                                             </div>
-                                            <span className={cn(
-                                                "text-[9px] font-black uppercase tracking-widest",
-                                                isActive ? "text-slate-950" : "text-neutral-500"
-                                            )}>
-                                                {platform.name}
-                                            </span>
+                                            {isActive && (
+                                                <div className="absolute -top-2 -right-2 bg-amber-400 rounded-full p-1 border-2 border-[#020617] shadow-lg">
+                                                    <Check className="w-3 h-3 text-slate-950 font-black" />
+                                                </div>
+                                            )}
                                         </button>
                                     );
                                 })}
@@ -363,7 +381,6 @@ export function OnboardingForm({ genres, platforms }: OnboardingFormProps) {
                 {step < totalSteps ? (
                     <button
                         onClick={handleNext}
-                        disabled={step === 2 && selectedGenres.length < 1}
                         className={cn(
                             "flex items-center gap-2 px-6 py-3 bg-amber-400 text-slate-950 rounded-xl font-black text-[10px] uppercase tracking-widest shadow-lg shadow-amber-400/10 hover:bg-amber-300 transition-all active:scale-95 disabled:opacity-50 disabled:grayscale"
                         )}

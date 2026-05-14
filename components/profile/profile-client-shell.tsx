@@ -9,12 +9,12 @@ import { GenreTags } from "./genre-tags";
 import { RecentMedia } from "./recent-media";
 import { ProfileCompletion } from "./profile-completion";
 import { InsightsCard } from "./insights-card";
-import { SettingsModal } from "./settings-modal";
 import { AchievementsBadges } from "./achievements-badges";
 import { ActivityHeatmap } from "./activity-heatmap";
 import { WatchCountries } from "./watch-countries";
 import { PeriodStats } from "./period-stats";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 
 type UserData = {
@@ -63,7 +63,7 @@ export function ProfileClientShell({
     watchlistItems = [],
 
 }: ProfileClientShellProps) {
-    const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+    const router = useRouter();
 
     const totalHours = Math.round((stats.movieCount * 1.5) + (stats.episodeCount * 0.75));
 
@@ -80,7 +80,7 @@ export function ProfileClientShell({
                 watchedCount={user._count.watched}
                 isPrivate={user.isPrivate}
                 isOwnProfile={true}
-                onSettingsClick={() => setIsSettingsOpen(true)}
+                onSettingsClick={() => router.push("/settings/general")}
             />
 
             {/* Main Content */}
@@ -101,7 +101,7 @@ export function ProfileClientShell({
                     hasFavoriteGenres={user.favoriteGenres.length > 0}
                     hasFavoritePersons={user.favoritePersons.length > 0}
                     hasWatchedItems={user._count.watched > 0}
-                    onEditProfile={() => setIsSettingsOpen(true)}
+                    onEditProfile={() => router.push("/settings/general")}
                 />
 
                 {/* Insights */}
@@ -186,11 +186,6 @@ export function ProfileClientShell({
                     />
                 </section>
             </div>
-
-            {/* Settings Modal */}
-            {isSettingsOpen && (
-                <SettingsModal user={user as any} onClose={() => setIsSettingsOpen(false)} />
-            )}
         </div>
     );
 }

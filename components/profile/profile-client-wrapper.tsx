@@ -1,10 +1,9 @@
 "use client";
 
-import { useState } from "react";
 import { Settings, LogOut, User as UserIcon } from "lucide-react";
 import { handleSignOut } from "@/lib/auth-actions";
-import { SettingsModal } from "./settings-modal";
 import Image from "next/image";
+import Link from "next/link";
 import { cn } from "@/lib/utils";
 
 type UserData = {
@@ -27,8 +26,6 @@ type UserData = {
 };
 
 export function ProfileClientWrapper({ user }: { user: UserData }) {
-    const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-
     return (
         <div className="w-full lg:w-80 shrink-0">
             <div className="bg-card border border-white/10 rounded-[2.5rem] p-8 shadow-2xl sticky top-24 overflow-hidden relative group">
@@ -63,13 +60,13 @@ export function ProfileClientWrapper({ user }: { user: UserData }) {
                     </div>
 
                     <div className="w-full space-y-3 mt-8">
-                        <button
-                            onClick={() => setIsSettingsOpen(true)}
+                        <Link
+                            href="/settings/general"
                             className="w-full flex items-center justify-center gap-2 py-4 bg-white text-black rounded-2xl hover:bg-neutral-200 transition-all font-black text-sm active:scale-95 shadow-xl shadow-white/5"
                         >
                             <Settings className="w-4 h-4" />
                             Profili Düzenle
-                        </button>
+                        </Link>
 
                         <form action={handleSignOut} className="w-full">
                             <button className="w-full flex items-center justify-center gap-2 py-4 bg-white/5 border border-white/5 rounded-2xl hover:bg-rose-500/10 hover:text-rose-400 hover:border-rose-500/20 transition-all text-neutral-400 font-bold text-sm active:scale-95 group">
@@ -80,10 +77,6 @@ export function ProfileClientWrapper({ user }: { user: UserData }) {
                     </div>
                 </div>
             </div>
-
-            {isSettingsOpen && (
-                <SettingsModal user={user} onClose={() => setIsSettingsOpen(false)} />
-            )}
         </div>
     );
 }

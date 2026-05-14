@@ -36,21 +36,18 @@ ENV NODE_ENV=production
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
 
+# Copy only necessary files from builder
 COPY --from=builder /app/public ./public
 COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./.next/static
 COPY --from=builder /app/prisma ./prisma
-COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
-COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
-COPY --from=builder /app/node_modules/prisma ./node_modules/prisma
+COPY --from=builder /app/start.sh ./
 
-# Copy startup script
-COPY start.sh ./
-RUN chmod +x ./start.sh
-
-# Create prisma directory with write permissions for nextjs user
-RUN mkdir -p /app/.prisma && chown -R nextjs:nodejs /app/.prisma && chown -R nextjs:nodejs /app
+# Create necessary directories with correct permissions
+# Note: /app/.next/cache should ideally be a Railway Volume
+RUN mkdir -p /app/.prisma /app/.next/cache && \
+    chown -R nextjs:nodejs /app && \
+    chmod +x /app/start.sh
 
 USER nextjs
 

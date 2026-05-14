@@ -1,0 +1,15 @@
+node_modules
+.next
+.git
+.env*
+*.log
+build_log*.txt
+lint_output.txt
+.vscode
+.idea
+.continue
+scratch
+dist
+build
+out
+.husky

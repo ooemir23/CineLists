@@ -1,7 +1,10 @@
 import { auth } from "@/auth";
+import { prisma } from "@/lib/prisma";
 import { tmdb } from "@/lib/tmdb";
+import { getAppPlatforms } from "@/lib/platforms";
 import { redirect } from "next/navigation";
 import { OnboardingForm } from "@/components/onboarding/onboarding-form";
+import { GENRE_MAP } from "@/lib/genres";
 
 export default async function OnboardingPage() {
     const session = await auth();
@@ -17,33 +20,28 @@ export default async function OnboardingPage() {
         redirect("/");
     }
 
-    const [movieGenres, tvGenres, movieProviders, tvProviders] = await Promise.all([
+    const [movieGenres, tvGenres, dbUser] = await Promise.all([
         tmdb.getGenres("movie"),
         tmdb.getGenres("tv"),
-        tmdb.fetch("/watch/providers/movie", { params: { watch_region: "TR" } }),
-        tmdb.fetch("/watch/providers/tv", { params: { watch_region: "TR" } }),
+        prisma.user.findUnique({ where: { id: session.user.id }, select: { username: true } })
     ]);
 
-    // Merge and unique genres
-    const allGenres = Array.from(
+    // Merge and unique genres from TMDB
+    const rawGenres = Array.from(
         new Map([...(movieGenres.genres || []), ...(tvGenres.genres || [])].map((g: any) => [g.id, g])).values()
-    ).sort((a: any, b: any) => a.name.localeCompare(b.name)) as { id: number; name: string }[];
+    );
 
-    // Format providers from TMDB
-    const providerMap = new Map();
-    [...(movieProviders.results || []), ...(tvProviders.results || [])].forEach((p: any) => {
-        providerMap.set(p.provider_id, {
-            id: p.provider_id.toString(),
-            name: p.provider_name,
-            icon: `https://image.tmdb.org/t/p/original${p.logo_path}`
-        });
-    });
+    // Filter and normalize
+    const allGenres = rawGenres.map((g: any) => ({
+        id: g.id,
+        name: GENRE_MAP[g.id] || g.name
+    })).sort((a, b) => a.name.localeCompare(b.name, "tr"));
 
-    // Most common providers in Turkey to keep the list clean
-    const commonProviderNames = ["Netflix", "Disney Plus", "Amazon Prime Video", "BluTV", "MUBI", "Apple TV Plus", "Gain", "Exxen", "TV+"];
-    const platforms = Array.from(providerMap.values())
-        .filter(p => commonProviderNames.some(cn => p.name.toLowerCase().replace(/[\s\+]/g, "").includes(cn.toLowerCase().replace(/[\s\+]/g, ""))))
-        .sort((a, b) => a.name.localeCompare(b.name));
+    // We can also prioritize certain genres to match "previous" experience if needed,
+    // but alphabetical is usually safest unless a specific order is requested.
+    // The current logic in onboarding-form.tsx shows first 8, then the rest on click.
+
+    const platforms = await getAppPlatforms();
 
     return (
         <div className=" bg-[#020617] py-12 md:py-20 px-4 md:px-6 relative overflow-hidden">
@@ -56,9 +54,11 @@ export default async function OnboardingPage() {
             <div className="max-w-4xl mx-auto relative z-10">
                 <OnboardingForm 
                     genres={allGenres} 
-                    platforms={platforms} 
+                    platforms={platforms}
+                    defaultUsername={dbUser?.username || ""}
                 />
             </div>
         </div>
     );
 }
+

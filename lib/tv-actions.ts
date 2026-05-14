@@ -4,6 +4,7 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { tmdb } from "./tmdb";
+import { GENRE_MAP } from "./genres";
 
 export async function markEpisodeAsWatched(
     tmdbId: number,
@@ -41,6 +42,7 @@ export async function markEpisodeAsWatched(
                         backdropPath: tvDetails?.backdrop_path,
                         overview: tvDetails?.overview,
                         voteAverage: tvDetails?.vote_average,
+                        genres: tvDetails?.genres?.map((g: any) => GENRE_MAP[g.id] || g.name) || [],
                     }
                 });
             } else if (media.title === "TV Show" && tvDetails) {
@@ -52,6 +54,7 @@ export async function markEpisodeAsWatched(
                         backdropPath: tvDetails.backdrop_path,
                         overview: tvDetails.overview,
                         voteAverage: tvDetails.vote_average,
+                        genres: tvDetails.genres?.map((g: any) => GENRE_MAP[g.id] || g.name) || [],
                     }
                 });
             }
@@ -188,6 +191,7 @@ export async function markSeasonAsWatched(tmdbId: number, seasonNumber: number) 
                         backdropPath: tvDetails?.backdrop_path,
                         overview: tvDetails?.overview,
                         voteAverage: tvDetails?.vote_average,
+                        genres: tvDetails?.genres?.map((g: any) => GENRE_MAP[g.id] || g.name) || [],
                     }
                 });
             } else if (tvDetails) {
@@ -199,6 +203,7 @@ export async function markSeasonAsWatched(tmdbId: number, seasonNumber: number) 
                         backdropPath: tvDetails.backdrop_path,
                         overview: tvDetails.overview,
                         voteAverage: tvDetails.vote_average,
+                        genres: tvDetails.genres?.map((g: any) => GENRE_MAP[g.id] || g.name) || [],
                     }
                 });
             }
@@ -450,6 +455,7 @@ export async function ensureEpisodeExists(params: {
                     backdropPath: tvDetails?.backdrop_path,
                     overview: tvDetails?.overview,
                     voteAverage: tvDetails?.vote_average,
+                    genres: tvDetails?.genres?.map((g: any) => GENRE_MAP[g.id] || g.name) || [],
                 }
             });
         } else if (tvDetails) {
@@ -461,6 +467,7 @@ export async function ensureEpisodeExists(params: {
                     backdropPath: tvDetails.backdrop_path,
                     overview: tvDetails.overview,
                     voteAverage: tvDetails.vote_average,
+                    genres: tvDetails.genres?.map((g: any) => GENRE_MAP[g.id] || g.name) || [],
                 }
             });
         }

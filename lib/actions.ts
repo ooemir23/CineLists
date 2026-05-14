@@ -4,6 +4,7 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { tmdb } from "@/lib/tmdb";
 import { revalidatePath } from "next/cache";
+import { GENRE_MAP } from "./genres";
 
 export async function toggleToWatch(mediaId: number, type: "movie" | "tv" | "person", title: string, posterPath: string | null) {
     const session = await auth();
@@ -35,7 +36,7 @@ export async function toggleToWatch(mediaId: number, type: "movie" | "tv" | "per
         if (type !== "person") {
             // Fetch genres from TMDB
             details = await tmdb.getDetails(type, mediaId.toString());
-            genres = details.genres?.map((g: any) => g.name) || [];
+            genres = details.genres?.map((g: any) => GENRE_MAP[g.id] || g.name) || [];
         }
 
         media = await prisma.mediaItem.create({

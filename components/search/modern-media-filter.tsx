@@ -19,46 +19,13 @@ const COUNTRIES = [
 
 const YEARS = Array.from({ length: 30 }, (_, i) => (new Date().getFullYear() - i).toString());
 
-const MOVIE_GENRES = [
-    { id: 28, name: "Aksiyon" },
-    { id: 12, name: "Macera" },
-    { id: 16, name: "Animasyon" },
-    { id: 35, name: "Komedi" },
-    { id: 80, name: "Suç" },
-    { id: 99, name: "Belgesel" },
-    { id: 18, name: "Dram" },
-    { id: 10751, name: "Aile" },
-    { id: 14, name: "Fantastik" },
-    { id: 36, name: "Tarih" },
-    { id: 27, name: "Korku" },
-    { id: 10402, name: "Müzik" },
-    { id: 9648, name: "Gizem" },
-    { id: 10749, name: "Romantik" },
-    { id: 878, name: "Bilim Kurgu" },
-    { id: 10770, name: "TV Film" },
-    { id: 53, name: "Gerilim" },
-    { id: 10752, name: "Savaş" },
-    { id: 37, name: "Vahşi Batı" },
-];
+import { GENRE_MAP } from "@/lib/genres";
 
-const TV_GENRES = [
-    { id: 10759, name: "Aksiyon & Macera" },
-    { id: 16, name: "Animasyon" },
-    { id: 35, name: "Komedi" },
-    { id: 80, name: "Suç" },
-    { id: 99, name: "Belgesel" },
-    { id: 18, name: "Dram" },
-    { id: 10751, name: "Aile" },
-    { id: 10762, name: "Çocuk" },
-    { id: 9648, name: "Gizem" },
-    { id: 10763, name: "Haber" },
-    { id: 10764, name: "Reality" },
-    { id: 10765, name: "Bilim Kurgu & Fantastik" },
-    { id: 10766, name: "Pembe Dizi" },
-    { id: 10767, name: "Talk Show" },
-    { id: 10768, name: "Savaş & Politika" },
-    { id: 37, name: "Vahşi Batı" },
-];
+const MOVIE_GENRE_IDS = [28, 12, 16, 35, 80, 99, 18, 10751, 14, 36, 27, 10402, 9648, 10749, 878, 10770, 53, 10752, 37];
+const TV_GENRE_IDS = [10759, 16, 35, 80, 99, 18, 10751, 10762, 9648, 10763, 10764, 10765, 10766, 10767, 10768, 37];
+
+const MOVIE_GENRES = MOVIE_GENRE_IDS.map(id => ({ id, name: GENRE_MAP[id] }));
+const TV_GENRES = TV_GENRE_IDS.map(id => ({ id, name: GENRE_MAP[id] }));
 
 export function ModernMediaFilter({
   type,

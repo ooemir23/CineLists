@@ -6,13 +6,14 @@ import WatchedSearchBar from "@/components/watched/watched-search-bar";
 import { MediaCard } from "@/components/media/media-card";
 import { Calendar, Star, User, Users, Film, Tv, Filter, RefreshCcw } from "lucide-react";
 
-// Genre listeleri (sabit)
-const MOVIE_GENRES = [
-    "Aksiyon", "Macera", "Animasyon", "Komedi", "Suç", "Belgesel", "Dram", "Aile", "Fantastik", "Tarih", "Korku", "Müzik", "Gizem", "Romantik", "Bilim Kurgu", "TV Film", "Gerilim", "Savaş", "Vahşi Batı"
-];
-const TV_GENRES = [
-    "Aksiyon & Macera", "Animasyon", "Komedi", "Suç", "Belgesel", "Dram", "Aile", "Çocuk", "Gizem", "Haber", "Reality", "Bilim Kurgu & Fantastik", "Pembe Dizi", "Talk Show", "Savaş & Politika", "Vahşi Batı"
-];
+import { GENRE_MAP } from "@/lib/genres";
+
+// Genre listeleri (sabit ID'ler üzerinden)
+const MOVIE_GENRE_IDS = [28, 12, 16, 35, 80, 99, 18, 10751, 14, 36, 27, 10402, 9648, 10749, 878, 10770, 53, 10752, 37];
+const TV_GENRE_IDS = [10759, 16, 35, 80, 99, 18, 10751, 10762, 9648, 10763, 10764, 10765, 10766, 10767, 10768, 37];
+
+const MOVIE_GENRES = MOVIE_GENRE_IDS.map(id => GENRE_MAP[id]).sort();
+const TV_GENRES = TV_GENRE_IDS.map(id => GENRE_MAP[id]).sort();
 const ALL_GENRES = [...new Set([...MOVIE_GENRES, ...TV_GENRES])].sort();
 
 export default function WatchedSearchBarWrapper({ watched }: { watched: any[] }) {
