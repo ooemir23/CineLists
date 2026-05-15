@@ -102,21 +102,21 @@ export const sendRecommendationEmail = async (params: {
             to: email,
             subject: `${senderName} sana bir ${mediaLabel.toLowerCase()} tavsiye etti!`,
             html: `
-                <div style="background-color: #020617; padding: 50px 0; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #f8fafc; text-align: center;">
-                    <div style="max-width: 680px; margin: 0 auto; background-color: #0f172a; border: 1px solid #1e293b; border-radius: 40px; overflow: hidden; box-shadow: 0 50px 100px -20px rgba(0, 0, 0, 0.7); text-align: left; position: relative;">
+                <div style="background-color: #020617; ${backdropUrl ? `background-image: linear-gradient(rgba(2, 6, 23, 0.85), rgba(2, 6, 23, 0.85)), url('${backdropUrl}'); background-size: cover; background-position: center;` : ''} padding: 60px 0; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #f8fafc; text-align: center; min-height: 100%;">
+                    <div style="max-width: 680px; margin: 0 auto; background-color: #0f172a; border: 1px solid #1e293b; border-radius: 40px; overflow: hidden; box-shadow: 0 60px 120px -20px rgba(0, 0, 0, 0.8); text-align: left; position: relative;">
                         
-                        <!-- Background Backdrop (Integrated) -->
+                        <!-- Header Backdrop (Top Section) -->
                         ${backdropUrl ? `
-                        <div style="position: absolute; top: 0; left: 0; right: 0; height: 320px; z-index: 0; overflow: hidden; opacity: 0.3;">
-                            <img src="${backdropUrl}" style="width: 100%; height: 100%; object-fit: cover; filter: blur(25px);" />
+                        <div style="position: absolute; top: 0; left: 0; right: 0; height: 350px; z-index: 0; overflow: hidden;">
+                            <img src="${backdropUrl}" style="width: 100%; height: 100%; object-fit: cover; filter: blur(30px); opacity: 0.4;" />
                             <div style="position: absolute; inset: 0; background: linear-gradient(to bottom, transparent, #0f172a);"></div>
                         </div>
                         ` : ''}
 
                         <div style="position: relative; z-index: 1;">
                             <!-- Header -->
-                            <div style="padding: 45px 30px 30px 30px; text-align: center;">
-                                <div style="display: inline-flex; align-items: center; justify-content: center; gap: 15px; margin-bottom: 25px; background: rgba(255, 255, 255, 0.05); padding: 12px 24px; border-radius: 100px; border: 1px solid rgba(255,255,255,0.1); backdrop-filter: blur(10px);">
+                            <div style="padding: 50px 30px 30px 30px; text-align: center;">
+                                <div style="display: inline-flex; align-items: center; justify-content: center; gap: 15px; margin-bottom: 25px; background: rgba(255, 255, 255, 0.07); padding: 12px 24px; border-radius: 100px; border: 1px solid rgba(255,255,255,0.1); backdrop-filter: blur(10px);">
                                     ${senderImage ? 
                                         `<img src="${senderImage}" style="width: 40px; height: 40px; border-radius: 50%; border: 2px solid #fbbf24; object-fit: cover;" />` :
                                         `<div style="width: 40px; height: 40px; border-radius: 50%; background-color: #fbbf24; color: #020617; line-height: 40px; font-size: 18px; font-weight: 900; text-align: center;">${senderName[0].toUpperCase()}</div>`
@@ -127,21 +127,21 @@ export const sendRecommendationEmail = async (params: {
                             </div>
 
                             <!-- Content -->
-                            <div style="padding: 0 40px 45px 40px;">
+                            <div style="padding: 0 45px 50px 45px;">
                                 <div style="display: table; width: 100%; border-collapse: separate; border-spacing: 0;">
                                     <div style="display: table-row;">
                                         <!-- Poster Column -->
-                                        <div style="display: table-cell; width: 220px; vertical-align: top; padding-right: 40px;">
+                                        <div style="display: table-cell; width: 230px; vertical-align: top; padding-right: 45px;">
                                             ${posterUrl ? 
-                                                `<img src="${posterUrl}" style="width: 220px; border-radius: 32px; border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 40px 80px -15px rgba(0,0,0,0.6);" />` :
-                                                `<div style="width: 220px; height: 330px; background-color: #1e293b; border-radius: 32px;"></div>`
+                                                `<img src="${posterUrl}" style="width: 230px; border-radius: 32px; border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 40px 80px -15px rgba(0,0,0,0.6);" />` :
+                                                `<div style="width: 230px; height: 345px; background-color: #1e293b; border-radius: 32px;"></div>`
                                             }
                                         </div>
                                         
                                         <!-- Details Column -->
                                         <div style="display: table-cell; vertical-align: top; text-align: left;">
                                             <div style="background: #fbbf24; color: #020617; padding: 5px 14px; border-radius: 8px; font-size: 10px; font-weight: 900; display: inline-block; margin-bottom: 15px; letter-spacing: 0.5px; text-transform: uppercase;">${mediaLabel}</div>
-                                            <h3 style="color: #ffffff; font-size: 32px; font-weight: 900; margin: 0 0 15px 0; line-height: 1.1; letter-spacing: -1px;">${mediaTitle}</h3>
+                                            <h3 style="color: #ffffff; font-size: 34px; font-weight: 900; margin: 0 0 15px 0; line-height: 1.1; letter-spacing: -1px;">${mediaTitle}</h3>
                                             
                                             <div style="margin-bottom: 20px; display: flex; align-items: center; gap: 20px;">
                                                 <span style="color: #94a3b8; font-size: 14px; font-weight: 800;">⭐ TMDB: ${globalRating?.toFixed(1) || '0.0'}</span>
@@ -187,7 +187,7 @@ export const sendRecommendationEmail = async (params: {
                             </div>
 
                             <!-- Footer -->
-                            <div style="padding: 40px; text-align: center; border-top: 1px solid #1e293b; background-color: #0b1222;">
+                            <div style="padding: 50px 40px; text-align: center; border-top: 1px solid #1e293b; background-color: #0b1222;">
                                 <span style="color: #ffffff; font-size: 22px; font-weight: 900; font-style: italic; opacity: 0.8; letter-spacing: -0.5px;">CineLists</span>
                                 <p style="color: #475569; font-size: 11px; margin-top: 10px; font-weight: 600;">Bu e-posta CineLists üzerinden gönderilmiştir.</p>
                             </div>
