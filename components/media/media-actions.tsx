@@ -82,16 +82,16 @@ export function MediaActions({
         }
 
         const oldStatus = status;
-        const newStatus = status === "WATCHING" ? "PLAN_TO_WATCH" : "WATCHING";
+        const newStatus = status === "WATCHING" ? null : "WATCHING";
         setStatus(newStatus);
 
         startTransition(async () => {
-            const result = await setWatchStatus(tmdbId, type, title, posterPath, newStatus === "WATCHING" ? "WATCHING" : "PLAN_TO_WATCH");
+            const result = await setWatchStatus(tmdbId, type, title, posterPath, newStatus);
             if (result.error) {
                 setStatus(oldStatus);
                 toast.error(result.error);
             } else {
-                toast.success(newStatus === "WATCHING" ? "İzleniyor olarak işaretlendi" : "İzleme listesine geri alındı");
+                toast.success(newStatus === "WATCHING" ? "İzleniyor olarak işaretlendi" : "İzleme listesinden çıkarıldı");
             }
         });
     };

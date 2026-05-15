@@ -147,7 +147,7 @@ export async function toggleWatchedStatus(mediaId: number, type: "movie" | "tv",
     }
 }
 
-export async function setWatchStatus(mediaId: number, type: "movie" | "tv", title: string, posterPath: string | null, status: "PLAN_TO_WATCH" | "WATCHING") {
+export async function setWatchStatus(mediaId: number, type: "movie" | "tv", title: string, posterPath: string | null, status: "PLAN_TO_WATCH" | "WATCHING" | null) {
     const session = await auth();
     if (!session?.user?.id) return { error: "Giriş yapmalısınız" };
 
@@ -170,6 +170,21 @@ export async function setWatchStatus(mediaId: number, type: "movie" | "tv", titl
                 runtime: type === "movie" ? details.runtime : null,
             },
         });
+    }
+
+    if (status === null) {
+        await prisma.toWatch.deleteMany({
+            where: {
+                userId: session.user.id,
+                mediaId: media.id,
+            },
+        });
+
+        revalidatePath("/watchlist");
+        revalidatePath("/profile");
+        revalidatePath(`/${type}/${mediaId}`);
+
+        return { success: true };
     }
 
     // Remove from watched if moving to a to-watch state
