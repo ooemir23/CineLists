@@ -74,13 +74,13 @@ export function TopNav({ user }: TopNavProps) {
   return (
     <>
       <header
-        className={`sticky top-0 left-0 w-full z-[1000] ${navBg} hidden sm:flex items-center justify-center px-6 transition-all duration-300`}
+        className={`sticky top-0 left-0 w-full z-[1000] ${navBg} hidden sm:flex items-center justify-center px-4 transition-all duration-300`}
         style={{
           boxShadow: isScrolled ? '0 10px 30px -10px rgba(0,0,0,0.5)' : 'none',
           height: 72
         }}
       >
-        <div className="w-full max-w-7xl flex items-center justify-between relative h-full">
+        <div className="w-full max-w-[1440px] flex items-center justify-between relative h-full">
 
           {/* Logo Section */}
           <div className="flex-1 flex justify-start z-[1001]">
@@ -102,45 +102,45 @@ export function TopNav({ user }: TopNavProps) {
           </div>
 
           {/* Navigation Middle Group */}
-          <div className="flex items-center justify-center relative h-full flex-grow">
+          <div className="flex-grow flex items-center justify-between h-full px-4">
             {/* Left Items Wrapper */}
-            <div className="flex-1 flex justify-end gap-1 md:gap-2 lg:gap-4">
+            <div className="flex-1 flex justify-end gap-1 md:gap-2 lg:gap-4 pr-16 md:pr-20 lg:pr-24">
               {/* İzlenenler */}
               <Link
                 href="/watched"
-                className={`flex flex-col items-center justify-center h-full transition-all duration-200 px-3 group ${activeView === 'watched' ? activeColor : inactiveColor}`}
+                className={`flex flex-col items-center justify-center h-full transition-all duration-200 px-2 group ${activeView === 'watched' ? activeColor : inactiveColor}`}
               >
                 <div className={`p-1.5 rounded-xl transition-colors ${activeView === 'watched' ? 'bg-amber-400/10' : 'group-hover:bg-white/5'}`}>
-                  <Check size={22} />
+                  <Check size={20} />
                 </div>
-                <span className="text-[10px] mt-0.5 font-bold uppercase tracking-wider">İzlenenler</span>
+                <span className="text-[9px] mt-0.5 font-bold uppercase tracking-tight whitespace-nowrap">İzlenenler</span>
               </Link>
 
               {/* İzliyorum */}
               <Link
                 href="/watching"
-                className={`flex flex-col items-center justify-center h-full transition-all duration-200 px-3 group ${activeView === 'watching' ? 'text-sky-400' : inactiveColor}`}
+                className={`flex flex-col items-center justify-center h-full transition-all duration-200 px-2 group ${activeView === 'watching' ? 'text-sky-400' : inactiveColor}`}
               >
                 <div className={`p-1.5 rounded-xl transition-colors ${activeView === 'watching' ? 'bg-sky-400/10' : 'group-hover:bg-white/5'}`}>
-                  <Eye size={22} />
+                  <Eye size={20} />
                 </div>
-                <span className="text-[10px] mt-0.5 font-bold uppercase tracking-wider">İzliyorum</span>
+                <span className="text-[9px] mt-0.5 font-bold uppercase tracking-tight whitespace-nowrap">İzliyorum</span>
               </Link>
 
               {/* Takip Ettiklerim */}
               <Link
                 href="/watchlist"
-                className={`flex flex-col items-center justify-center h-full transition-all duration-200 px-3 group ${activeView === 'watchlist' ? activeColor : inactiveColor}`}
+                className={`flex flex-col items-center justify-center h-full transition-all duration-200 px-2 group ${activeView === 'watchlist' ? activeColor : inactiveColor}`}
               >
                 <div className={`p-1.5 rounded-xl transition-colors ${activeView === 'watchlist' ? 'bg-amber-400/10' : 'group-hover:bg-white/5'}`}>
-                  <Bookmark size={22} />
+                  <Bookmark size={20} />
                 </div>
-                <span className="text-[10px] mt-0.5 font-bold uppercase tracking-wider whitespace-nowrap">Takip Ettiklerim</span>
+                <span className="text-[9px] mt-0.5 font-bold uppercase tracking-tight whitespace-nowrap">Takip Ettiklerim</span>
               </Link>
             </div>
 
-            {/* Search/Explore Button (Center) */}
-            <div className="flex flex-col items-center justify-center h-full relative px-4 mx-2 flex-shrink-0">
+            {/* Search/Explore Button (Absolutely Centered) */}
+            <div className="absolute left-1/2 -translate-x-1/2 flex flex-col items-center justify-center h-full z-50">
               <Link
                 href="/search"
                 className="group relative flex items-center justify-center"
@@ -155,7 +155,7 @@ export function TopNav({ user }: TopNavProps) {
                   <Search size={32} strokeWidth={3} />
                 </div>
 
-                {/* CURVED TEXT - FIXED TRUNCATION */}
+                {/* CURVED TEXT */}
                 <motion.div
                   className="absolute -bottom-10 w-40 h-16 pointer-events-none z-30 flex items-center justify-center"
                   initial={{ opacity: 0.8 }}
@@ -170,7 +170,6 @@ export function TopNav({ user }: TopNavProps) {
                   }}
                 >
                   <svg viewBox="0 0 160 60" className="w-full h-full overflow-visible">
-                    {/* Wider path to accommodate all letters and ensure perfect centering */}
                     <path id="curve-path" d="M 20,15 Q 80,55 140,15" fill="transparent" />
                     <text className="text-[9px] font-black fill-amber-400 tracking-[0.1em] uppercase drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]">
                       <textPath href="#curve-path" startOffset="50%" textAnchor="middle">
@@ -183,50 +182,50 @@ export function TopNav({ user }: TopNavProps) {
             </div>
 
             {/* Right Items Wrapper */}
-            <div className="flex-1 flex justify-start gap-1 md:gap-2 lg:gap-4">
+            <div className="flex-1 flex justify-start gap-1 md:gap-2 lg:gap-4 pl-16 md:pl-20 lg:pl-24">
               {/* Akış */}
               <Link
                 href="/feed"
-                className={`flex flex-col items-center justify-center h-full transition-all duration-200 px-3 group ${activeView === 'feed' ? activeColor : inactiveColor}`}
+                className={`flex flex-col items-center justify-center h-full transition-all duration-200 px-2 group ${activeView === 'feed' ? activeColor : inactiveColor}`}
               >
                 <div className={`p-1.5 rounded-xl transition-colors ${activeView === 'feed' ? 'bg-amber-400/10' : 'group-hover:bg-white/5'}`}>
-                  <Compass size={22} />
+                  <Compass size={20} />
                 </div>
-                <span className="text-[10px] mt-0.5 font-bold uppercase tracking-wider">Sosyal Akış</span>
+                <span className="text-[9px] mt-0.5 font-bold uppercase tracking-tight whitespace-nowrap">Sosyal Akış</span>
               </Link>
 
               {/* İstatistikler */}
               <Link
                 href="/stats"
-                className={`flex flex-col items-center justify-center h-full transition-all duration-200 px-3 group ${activeView === 'stats' ? activeColor : inactiveColor}`}
+                className={`flex flex-col items-center justify-center h-full transition-all duration-200 px-2 group ${activeView === 'stats' ? activeColor : inactiveColor}`}
               >
                 <div className={`p-1.5 rounded-xl transition-colors ${activeView === 'stats' ? 'bg-amber-400/10' : 'group-hover:bg-white/5'}`}>
-                  <BarChart3 size={22} />
+                  <BarChart3 size={20} />
                 </div>
-                <span className="text-[10px] mt-0.5 font-bold uppercase tracking-wider">İstatistik</span>
+                <span className="text-[9px] mt-0.5 font-bold uppercase tracking-tight whitespace-nowrap">İstatistik</span>
               </Link>
 
               {/* Topluluk */}
               <Link
                 href="/community"
-                className={`flex flex-col items-center justify-center h-full transition-all duration-200 px-3 group ${activeView === 'community' ? activeColor : inactiveColor}`}
+                className={`flex flex-col items-center justify-center h-full transition-all duration-200 px-2 group ${activeView === 'community' ? activeColor : inactiveColor}`}
               >
                 <div className={`p-1.5 rounded-xl transition-colors ${activeView === 'community' ? 'bg-amber-400/10' : 'group-hover:bg-white/5'}`}>
-                  <Users size={22} />
+                  <Users size={20} />
                 </div>
-                <span className="text-[10px] mt-0.5 font-bold uppercase tracking-wider">Topluluk</span>
+                <span className="text-[9px] mt-0.5 font-bold uppercase tracking-tight whitespace-nowrap">Topluluk</span>
               </Link>
 
               {desktopLibraryItems.map((item) => (
                 <Link
                   key={item.key}
                   href={item.href}
-                  className={`flex flex-col items-center justify-center h-full transition-all duration-200 px-3 group ${activeView === item.key ? activeColor : inactiveColor}`}
+                  className={`flex flex-col items-center justify-center h-full transition-all duration-200 px-2 group ${activeView === item.key ? activeColor : inactiveColor}`}
                 >
                   <div className={`p-1.5 rounded-xl transition-colors ${activeView === item.key ? 'bg-amber-400/10' : 'group-hover:bg-white/5'}`}>
-                    <item.icon size={22} />
+                    <item.icon size={20} />
                   </div>
-                  <span className="text-[10px] mt-0.5 font-bold uppercase tracking-wider">{item.label}</span>
+                  <span className="text-[9px] mt-0.5 font-bold uppercase tracking-tight whitespace-nowrap">{item.label}</span>
                 </Link>
               ))}
             </div>

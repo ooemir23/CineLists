@@ -235,7 +235,7 @@ export function UpcomingEpisodesCarousel({ episodes }: UpcomingEpisodesCarouselP
                                     <div className="flex-1 min-w-0 flex flex-col justify-between gap-2">
                                         <div className="min-w-0">
                                             <h4 className="text-sm font-black text-white line-clamp-1 group-hover:text-blue-400 transition-colors">
-                                                {episode.showTitle} (v2)
+                                                {episode.showTitle}
                                             </h4>
                                             <p className="text-xs text-blue-200/90 mt-0.5 line-clamp-1 font-bold">
                                                 {formatEpisodeInfo(episode)}
