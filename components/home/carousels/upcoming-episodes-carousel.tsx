@@ -32,6 +32,10 @@ export function UpcomingEpisodesCarousel({ episodes }: UpcomingEpisodesCarouselP
 
     const filteredEpisodes = episodes.filter(ep => {
         if (filter === "all") return true;
+        
+        // When filtered by today or week, only show "Watching" content as requested
+        if (ep.statusType !== "watching") return false;
+
         if (!ep.nextEpisodeDate) return false;
         const date = new Date(ep.nextEpisodeDate);
         const now = new Date();
@@ -45,6 +49,7 @@ export function UpcomingEpisodesCarousel({ episodes }: UpcomingEpisodesCarouselP
     });
 
     const todayCount = episodes.filter(ep => {
+        if (ep.statusType !== "watching") return false;
         if (!ep.nextEpisodeDate) return false;
         const date = new Date(ep.nextEpisodeDate);
         const now = new Date();
@@ -55,6 +60,7 @@ export function UpcomingEpisodesCarousel({ episodes }: UpcomingEpisodesCarouselP
     }).length;
 
     const weekCount = episodes.filter(ep => {
+        if (ep.statusType !== "watching") return false;
         if (!ep.nextEpisodeDate) return false;
         const date = new Date(ep.nextEpisodeDate);
         const now = new Date();
