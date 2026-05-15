@@ -86,7 +86,7 @@ export function TopNav({ user }: TopNavProps) {
           <div className="flex-1 flex justify-start z-[1001]">
             <Link
               href="/"
-              className="flex items-center gap-2 font-black text-2xl text-white group transition-transform hover:scale-105 cursor-pointer"
+              className="flex items-center group transition-transform hover:scale-105 cursor-pointer"
               onClick={(e) => {
                 if (pathname === "/") {
                   e.preventDefault();
@@ -94,10 +94,14 @@ export function TopNav({ user }: TopNavProps) {
                 }
               }}
             >
-              <div className="w-10 h-10 bg-amber-400 rounded-xl flex items-center justify-center rotate-3 group-hover:rotate-0 transition-transform">
-                <Film size={24} className="text-slate-950" />
-              </div>
-              <span className="tracking-tighter hidden md:block"><span className="text-amber-400">cine</span>lists</span>
+              <Image 
+                src="/logo.png" 
+                alt="CineLists" 
+                width={160} 
+                height={50} 
+                className="h-10 w-auto object-contain"
+                priority
+              />
             </Link>
           </div>
 

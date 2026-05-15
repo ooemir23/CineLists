@@ -3,6 +3,7 @@
 import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import Image from "next/image";
 import { Film, Bell } from "lucide-react";
 import { motion } from "framer-motion";
 import { NotificationBell } from "./notification-bell";
@@ -18,7 +19,7 @@ export function MobileHeader() {
       {/* Modern Logo Section */}
       <Link
         href="/"
-        className="flex items-center gap-2.5 group transition-all active:scale-95 cursor-pointer"
+        className="flex items-center group transition-all active:scale-95 cursor-pointer"
         onClick={(e) => {
           window.dispatchEvent(new CustomEvent("close-all-overlays"));
           if (pathname === "/") {
@@ -27,22 +28,14 @@ export function MobileHeader() {
           }
         }}
       >
-        <div className="relative">
-          {/* Outer Glow */}
-          <div className="absolute inset-0 bg-amber-400/20 blur-lg rounded-full" />
-          
-          <div className="relative w-9 h-9 bg-gradient-to-br from-amber-300 via-amber-400 to-orange-500 rounded-xl flex items-center justify-center shadow-lg shadow-amber-500/20 rotate-3 group-active:rotate-0 transition-transform">
-            <Film size={20} className="text-slate-950" strokeWidth={2.5} />
-          </div>
-        </div>
-        
-        <div className="flex flex-col leading-none">
-          <span className="text-xl font-black tracking-tighter text-white">
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-400 to-orange-400">cine</span>
-            lists
-          </span>
-          <div className="h-0.5 w-full bg-gradient-to-r from-amber-400/50 to-transparent rounded-full mt-0.5 opacity-50" />
-        </div>
+        <Image 
+          src="/logo.png" 
+          alt="CineLists" 
+          width={120} 
+          height={40} 
+          className="h-8 w-auto object-contain"
+          priority
+        />
       </Link>
 
       {/* Right Side Actions */}
