@@ -104,7 +104,7 @@ export function MediaActions({
 
         const oldStatus = status;
         const isWatched = status === "COMPLETED";
-        const newStatus = isWatched ? "PLAN_TO_WATCH" : "COMPLETED";
+        const newStatus = isWatched ? null : "COMPLETED";
         setStatus(newStatus);
 
         if (newStatus === "COMPLETED") {
