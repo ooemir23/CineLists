@@ -31,9 +31,9 @@ export function MobileHeader() {
         <Image 
           src="/logo.png" 
           alt="CineLists" 
-          width={120} 
-          height={40} 
-          className="h-8 w-auto object-contain"
+          width={140} 
+          height={48} 
+          className="h-10 w-auto object-contain"
           priority
         />
       </Link>
