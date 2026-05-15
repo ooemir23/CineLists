@@ -169,21 +169,21 @@ export const sendRecommendationEmail = async (params: {
                                                     `).join('')}
                                                 </div>
                                             ` : ''}
+
+                                            <!-- Moved Thoughts & Buttons here -->
+                                            ${message ? `
+                                                <div style="margin-top: 30px; padding: 20px; background: rgba(251, 191, 36, 0.05); border-left: 4px solid #fbbf24; border-radius: 16px;">
+                                                    <p style="margin: 0; color: #fbbf24; font-size: 10px; font-weight: 900; text-transform: uppercase; margin-bottom: 6px;">DÜŞÜNCELERİ</p>
+                                                    <p style="margin: 0; color: #f8fafc; font-size: 14px; font-weight: 500; font-style: italic; line-height: 1.4;">"${message}"</p>
+                                                </div>
+                                            ` : ''}
+
+                                            <div style="margin-top: 30px;">
+                                                <a href="${mediaLink}" style="display: block; background-color: #fbbf24; color: #020617; padding: 18px; border-radius: 16px; font-weight: 900; text-decoration: none; text-transform: uppercase; font-size: 13px; letter-spacing: 1px; margin-bottom: 12px; text-align: center;">Detayları İncele</a>
+                                                <a href="${addToWatchlistLink}" style="display: block; background-color: rgba(255,255,255,0.03); color: #ffffff; padding: 16px; border-radius: 16px; font-weight: 800; text-decoration: none; text-transform: uppercase; font-size: 12px; border: 1px solid #1e293b; text-align: center;">➕ İzleme Listeme Ekle</a>
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
-
-                                ${message ? `
-                                    <div style="margin-top: 40px; padding: 25px; background: rgba(251, 191, 36, 0.05); border-left: 4px solid #fbbf24; border-radius: 16px;">
-                                        <p style="margin: 0; color: #fbbf24; font-size: 11px; font-weight: 900; text-transform: uppercase; margin-bottom: 8px;">DÜŞÜNCELERİ</p>
-                                        <p style="margin: 0; color: #f8fafc; font-size: 15px; font-weight: 500; font-style: italic; line-height: 1.5;">"${message}"</p>
-                                    </div>
-                                ` : ''}
-
-                                <!-- Actions -->
-                                <div style="margin-top: 40px;">
-                                    <a href="${mediaLink}" style="display: block; background-color: #fbbf24; color: #020617; padding: 20px; border-radius: 20px; font-weight: 900; text-decoration: none; text-transform: uppercase; font-size: 14px; letter-spacing: 1px; margin-bottom: 15px; text-align: center;">Detayları İncele</a>
-                                    <a href="${addToWatchlistLink}" style="display: block; background-color: rgba(255,255,255,0.03); color: #ffffff; padding: 18px; border-radius: 20px; font-weight: 800; text-decoration: none; text-transform: uppercase; font-size: 13px; border: 1px solid #1e293b; text-align: center;">➕ İzleme Listeme Ekle</a>
                                 </div>
                             </div>
 
