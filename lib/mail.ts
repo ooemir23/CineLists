@@ -110,15 +110,19 @@ export const sendRecommendationEmail = async (params: {
                     <div style="max-width: 740px; margin: 0 auto; background-color: rgba(15, 23, 42, 0.85); border: 1px solid rgba(255,255,255,0.12); border-radius: 40px; overflow: hidden; box-shadow: 0 60px 120px -20px rgba(0, 0, 0, 0.8); text-align: left; backdrop-filter: blur(10px);">
                         
                         <!-- Header with Sender Info -->
-                        <div style="padding: 40px 40px 20px 40px; text-align: left; display: flex; align-items: center; justify-content: space-between;">
-                            <div style="display: flex; align-items: center; gap: 15px;">
-                                ${senderImage ? 
-                                    `<img src="${senderImage}" style="width: 40px; height: 40px; border-radius: 12px; border: 2px solid #fbbf24; object-fit: cover;" />` :
-                                    `<div style="width: 40px; height: 40px; border-radius: 12px; background-color: #fbbf24; color: #020617; line-height: 40px; font-size: 18px; font-weight: 900; text-align: center;">${senderName[0].toUpperCase()}</div>`
-                                }
-                                <div>
-                                    <h2 style="color: #ffffff; font-size: 16px; font-weight: 900; margin: 0; letter-spacing: -0.5px;">${senderName} <span style="color: #94a3b8; font-weight: 500; font-size: 14px; margin-left: 5px;">sana bir öneride bulundu</span></h2>
-                                    <p style="color: #fbbf24; font-size: 11px; font-weight: 800; margin-top: 2px; text-transform: uppercase; letter-spacing: 1px;">Sana harika bir tavsiyesi var!</p>
+                        <div style="padding: 40px 40px 20px 40px; text-align: left;">
+                            <div style="display: table; width: 100%;">
+                                <div style="display: table-row;">
+                                    <div style="display: table-cell; width: 48px; vertical-align: middle; padding-right: 20px;">
+                                        ${senderImage ? 
+                                            `<img src="${senderImage}" style="width: 48px; height: 48px; border-radius: 16px; border: 2.5px solid #fbbf24; object-fit: cover;" />` :
+                                            `<div style="width: 48px; height: 48px; border-radius: 16px; background-color: #fbbf24; color: #020617; line-height: 48px; font-size: 20px; font-weight: 900; text-align: center;">${senderName[0].toUpperCase()}</div>`
+                                        }
+                                    </div>
+                                    <div style="display: table-cell; vertical-align: middle;">
+                                        <h2 style="color: #ffffff; font-size: 16px; font-weight: 900; margin: 0; letter-spacing: -0.5px;">${senderName} <span style="color: #94a3b8; font-weight: 500; font-size: 14px; margin-left: 5px;">sana bir öneride bulundu</span></h2>
+                                        <p style="color: #fbbf24; font-size: 11px; font-weight: 800; margin-top: 2px; text-transform: uppercase; letter-spacing: 1px;">Sana harika bir tavsiyesi var!</p>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -128,42 +132,44 @@ export const sendRecommendationEmail = async (params: {
                             <div style="display: table; width: 100%; border-collapse: separate; border-spacing: 0;">
                                 <div style="display: table-row;">
                                     
-                                    <!-- Column 1: Poster -->
+                                    <!-- Column 1: Poster & Type & Platforms -->
                                     <div style="display: table-cell; width: 160px; vertical-align: top; padding-right: 30px;">
-                                        ${posterUrl ? 
-                                            `<img src="${posterUrl}" style="width: 160px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 20px 40px rgba(0,0,0,0.5);" />` :
-                                            `<div style="width: 160px; height: 240px; background-color: rgba(255,255,255,0.05); border-radius: 20px;"></div>`
-                                        }
+                                        <a href="${mediaLink}" style="text-decoration: none; border: none; outline: none;">
+                                            ${posterUrl ? 
+                                                `<img src="${posterUrl}" style="width: 160px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 20px 40px rgba(0,0,0,0.5);" />` :
+                                                `<div style="width: 160px; height: 240px; background-color: rgba(255,255,255,0.05); border-radius: 20px;"></div>`
+                                            }
+                                        </a>
                                         <div style="margin-top: 15px; text-align: center;">
-                                            <div style="background: #fbbf24; color: #020617; padding: 4px 10px; border-radius: 6px; font-size: 9px; font-weight: 900; display: inline-block; text-transform: uppercase;">${mediaLabel}</div>
+                                            <div style="background: #fbbf24; color: #020617; padding: 4px 10px; border-radius: 6px; font-size: 9px; font-weight: 900; display: inline-block; text-transform: uppercase; margin-bottom: 12px;">${mediaLabel}</div>
+                                            
+                                            ${platforms && platforms.length > 0 ? `
+                                                <div style="display: block; margin-top: 5px;">
+                                                    <div style="display: inline-flex; justify-content: center; flex-wrap: wrap; gap: 6px;">
+                                                        ${platforms.slice(0, 3).map(p => `
+                                                            <div style="background: rgba(255,255,255,0.05); padding: 5px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05);" title="${p.name}">
+                                                                ${p.logo ? `<img src="https://image.tmdb.org/t/p/w92${p.logo}" style="width: 18px; height: 18px; border-radius: 4px; display: block;" />` : ''}
+                                                            </div>
+                                                        `).join('')}
+                                                    </div>
+                                                </div>
+                                            ` : ''}
                                         </div>
                                     </div>
 
                                     <!-- Column 2: Summary -->
                                     <div style="display: table-cell; vertical-align: top; padding-right: 30px;">
-                                        <h3 style="color: #ffffff; font-size: 26px; font-weight: 900; margin: 0 0 10px 0; line-height: 1.1; letter-spacing: -0.8px;">${mediaTitle}</h3>
-                                        
-                                        <div style="margin-bottom: 15px; display: flex; align-items: center; gap: 12px;">
-                                            <span style="color: #94a3b8; font-size: 13px; font-weight: 800;">⭐ TMDB: ${globalRating?.toFixed(1) || '0.0'}</span>
-                                        </div>
-
-                                        <p style="color: #94a3b8; font-size: 13px; line-height: 1.6; margin: 0 0 20px 0; font-weight: 500;">
-                                            ${overview ? (overview.length > 250 ? overview.substring(0, 250) + '...' : overview) : 'Bu içerik hakkında özet bulunmuyor.'}
-                                        </p>
-
-                                        ${platforms && platforms.length > 0 ? `
-                                            <div style="margin-top: 10px;">
-                                                <p style="color: #64748b; font-size: 10px; font-weight: 800; text-transform: uppercase; margin-bottom: 8px; letter-spacing: 0.5px;">Şuradan İzle:</p>
-                                                <div style="display: flex; flex-wrap: wrap; gap: 8px;">
-                                                    ${platforms.slice(0, 3).map(p => `
-                                                        <div style="display: inline-flex; align-items: center; gap: 6px; background: rgba(255,255,255,0.05); padding: 6px 10px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.05);">
-                                                            ${p.logo ? `<img src="https://image.tmdb.org/t/p/w92${p.logo}" style="width: 14px; height: 14px; border-radius: 3px;" />` : ''}
-                                                            <span style="color: #ffffff; font-size: 11px; font-weight: 700;">${p.name}</span>
-                                                        </div>
-                                                    `).join('')}
-                                                </div>
+                                        <a href="${mediaLink}" style="text-decoration: none; color: inherit; display: block;">
+                                            <h3 style="color: #ffffff; font-size: 26px; font-weight: 900; margin: 0 0 10px 0; line-height: 1.1; letter-spacing: -0.8px;">${mediaTitle}</h3>
+                                            
+                                            <div style="margin-bottom: 15px; display: flex; align-items: center; gap: 12px;">
+                                                <span style="color: #94a3b8; font-size: 13px; font-weight: 800;">⭐ TMDB: ${globalRating?.toFixed(1) || '0.0'}</span>
                                             </div>
-                                        ` : ''}
+
+                                            <p style="color: #94a3b8; font-size: 13px; line-height: 1.6; margin: 0; font-weight: 500;">
+                                                ${overview ? (overview.length > 250 ? overview.substring(0, 250) + '...' : overview) : 'Bu içerik hakkında özet bulunmuyor.'}
+                                            </p>
+                                        </a>
                                     </div>
 
                                     <!-- Column 3: Thoughts & Buttons -->
@@ -176,8 +182,6 @@ export const sendRecommendationEmail = async (params: {
                                         ` : ''}
 
                                         <div style="margin-top: 10px;">
-                                            <a href="${mediaLink}" style="display: block; background-color: #fbbf24; color: #020617; padding: 14px; border-radius: 14px; font-weight: 900; text-decoration: none; text-transform: uppercase; font-size: 12px; letter-spacing: 0.5px; margin-bottom: 10px; text-align: center; box-shadow: 0 10px 20px rgba(251, 191, 36, 0.15);">Detayları İncele</a>
-                                            
                                             <div style="display: table; width: 100%; border-collapse: separate; border-spacing: 0;">
                                                 <div style="display: table-row;">
                                                     <div style="display: table-cell; width: 50%; padding-right: 5px;">
