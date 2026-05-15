@@ -102,95 +102,94 @@ export const sendRecommendationEmail = async (params: {
             to: email,
             subject: `${senderName} sana bir ${mediaLabel.toLowerCase()} tavsiye etti!`,
             html: `
-                <div style="background-color: #020617; ${backdropUrl ? `background-image: linear-gradient(rgba(2, 6, 23, 0.85), rgba(2, 6, 23, 0.85)), url('${backdropUrl}'); background-size: cover; background-position: center;` : ''} padding: 60px 0; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #f8fafc; text-align: center; min-height: 100%;">
-                    <div style="max-width: 680px; margin: 0 auto; background-color: #0f172a; border: 1px solid #1e293b; border-radius: 40px; overflow: hidden; box-shadow: 0 60px 120px -20px rgba(0, 0, 0, 0.8); text-align: left; position: relative;">
+                <div style="background-color: #020617; ${backdropUrl ? `background-image: linear-gradient(rgba(2, 6, 23, 0.92), rgba(2, 6, 23, 0.92)), url('${backdropUrl}'); background-size: cover; background-position: center;` : ''} padding: 60px 0; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #f8fafc; text-align: center; min-height: 100%;">
+                    <div style="max-width: 720px; margin: 0 auto; background-color: #0f172a; border: 1px solid #1e293b; border-radius: 40px; overflow: hidden; box-shadow: 0 60px 120px -20px rgba(0, 0, 0, 0.8); text-align: left;">
                         
-                        <!-- Header Backdrop (Top Section) -->
-                        ${backdropUrl ? `
-                        <div style="position: absolute; top: 0; left: 0; right: 0; height: 350px; z-index: 0; overflow: hidden;">
-                            <img src="${backdropUrl}" style="width: 100%; height: 100%; object-fit: cover; filter: blur(30px); opacity: 0.4;" />
-                            <div style="position: absolute; inset: 0; background: linear-gradient(to bottom, transparent, #0f172a);"></div>
-                        </div>
-                        ` : ''}
-
-                        <div style="position: relative; z-index: 1;">
-                            <!-- Header -->
-                            <div style="padding: 50px 30px 30px 30px; text-align: center;">
-                                <div style="display: inline-flex; align-items: center; justify-content: center; gap: 15px; margin-bottom: 25px; background: rgba(255, 255, 255, 0.07); padding: 12px 24px; border-radius: 100px; border: 1px solid rgba(255,255,255,0.1); backdrop-filter: blur(10px);">
-                                    ${senderImage ? 
-                                        `<img src="${senderImage}" style="width: 40px; height: 40px; border-radius: 50%; border: 2px solid #fbbf24; object-fit: cover;" />` :
-                                        `<div style="width: 40px; height: 40px; border-radius: 50%; background-color: #fbbf24; color: #020617; line-height: 40px; font-size: 18px; font-weight: 900; text-align: center;">${senderName[0].toUpperCase()}</div>`
-                                    }
-                                    <span style="color: #ffffff; font-size: 16px; font-weight: 900; letter-spacing: -0.5px;">${senderName}</span>
+                        <!-- Header with Sender Info (No Backdrop Inside Card) -->
+                        <div style="padding: 40px 40px 20px 40px; text-align: left; display: flex; align-items: center; justify-content: space-between;">
+                            <div style="display: flex; align-items: center; gap: 15px;">
+                                ${senderImage ? 
+                                    `<img src="${senderImage}" style="width: 40px; height: 40px; border-radius: 12px; border: 2px solid #fbbf24; object-fit: cover;" />` :
+                                    `<div style="width: 40px; height: 40px; border-radius: 12px; background-color: #fbbf24; color: #020617; line-height: 40px; font-size: 18px; font-weight: 900; text-align: center;">${senderName[0].toUpperCase()}</div>`
+                                }
+                                <div>
+                                    <h2 style="color: #ffffff; font-size: 16px; font-weight: 900; margin: 0; letter-spacing: -0.5px;">${senderName} <span style="color: #94a3b8; font-weight: 500; font-size: 14px; margin-left: 5px;">sana bir öneride bulundu</span></h2>
+                                    <p style="color: #fbbf24; font-size: 11px; font-weight: 800; margin-top: 2px; text-transform: uppercase; letter-spacing: 1px;">Sana harika bir tavsiyesi var!</p>
                                 </div>
-                                <h2 style="color: #ffffff; font-size: 28px; font-weight: 900; margin: 0; letter-spacing: -1.2px; line-height: 1.2;">Sana harika bir tavsiyesi var!</h2>
                             </div>
+                        </div>
 
-                            <!-- Content -->
-                            <div style="padding: 0 45px 50px 45px;">
-                                <div style="display: table; width: 100%; border-collapse: separate; border-spacing: 0;">
-                                    <div style="display: table-row;">
-                                        <!-- Poster Column -->
-                                        <div style="display: table-cell; width: 230px; vertical-align: top; padding-right: 45px;">
-                                            ${posterUrl ? 
-                                                `<img src="${posterUrl}" style="width: 230px; border-radius: 32px; border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 40px 80px -15px rgba(0,0,0,0.6);" />` :
-                                                `<div style="width: 230px; height: 345px; background-color: #1e293b; border-radius: 32px;"></div>`
-                                            }
-                                        </div>
-                                        
-                                        <!-- Details Column -->
-                                        <div style="display: table-cell; vertical-align: top; text-align: left;">
-                                            <div style="background: #fbbf24; color: #020617; padding: 5px 14px; border-radius: 8px; font-size: 10px; font-weight: 900; display: inline-block; margin-bottom: 15px; letter-spacing: 0.5px; text-transform: uppercase;">${mediaLabel}</div>
-                                            <h3 style="color: #ffffff; font-size: 34px; font-weight: 900; margin: 0 0 15px 0; line-height: 1.1; letter-spacing: -1px;">${mediaTitle}</h3>
-                                            
-                                            <div style="margin-bottom: 20px; display: flex; align-items: center; gap: 20px;">
-                                                <span style="color: #94a3b8; font-size: 14px; font-weight: 800;">⭐ TMDB: ${globalRating?.toFixed(1) || '0.0'}</span>
-                                                ${senderRating ? `
-                                                    <span style="color: #fbbf24; font-size: 14px; font-weight: 800;">👤 Senin Puanın: ${senderRating}</span>
-                                                ` : ''}
-                                            </div>
-
-                                            ${overview ? `
-                                                <p style="color: #94a3b8; font-size: 14px; line-height: 1.7; margin: 0 0 25px 0; font-weight: 500;">${overview}</p>
-                                            ` : ''}
-
-                                            <!-- Platforms -->
-                                            ${platforms && platforms.length > 0 ? `
-                                                <div style="margin-bottom: 30px;">
-                                                    <p style="color: #64748b; font-size: 11px; font-weight: 800; text-transform: uppercase; margin-bottom: 12px; letter-spacing: 0.5px;">Şuradan İzle:</p>
-                                                    <div style="display: flex; flex-wrap: wrap; gap: 10px;">
-                                                        ${platforms.slice(0, 4).map(p => `
-                                                            <div style="display: inline-flex; align-items: center; gap: 8px; background: rgba(255,255,255,0.03); padding: 8px 14px; border-radius: 14px; border: 1px solid rgba(255,255,255,0.06);">
-                                                                ${p.logo ? `<img src="https://image.tmdb.org/t/p/w92${p.logo}" style="width: 18px; height: 18px; border-radius: 4px;" />` : ''}
-                                                                <span style="color: #ffffff; font-size: 12px; font-weight: 800;">${p.name}</span>
-                                                            </div>
-                                                        `).join('')}
-                                                    </div>
-                                                </div>
-                                            ` : ''}
-
-                                            <!-- Thoughts Block -->
-                                            ${message ? `
-                                                <div style="margin-top: 35px; padding: 25px; background: rgba(251, 191, 36, 0.05); border-left: 5px solid #fbbf24; border-radius: 20px;">
-                                                    <p style="margin: 0; color: #fbbf24; font-size: 11px; font-weight: 900; text-transform: uppercase; margin-bottom: 8px; letter-spacing: 0.5px;">DÜŞÜNCELERİ</p>
-                                                    <p style="margin: 0; color: #f8fafc; font-size: 16px; font-weight: 500; font-style: italic; line-height: 1.5;">"${message}"</p>
-                                                </div>
-                                            ` : ''}
-
-                                            <div style="margin-top: 35px;">
-                                                <a href="${mediaLink}" style="display: block; background-color: #fbbf24; color: #020617; padding: 20px; border-radius: 20px; font-weight: 900; text-decoration: none; text-transform: uppercase; font-size: 15px; letter-spacing: 1px; margin-bottom: 15px; text-align: center; box-shadow: 0 15px 30px rgba(251, 191, 36, 0.2);">Detayları İncele</a>
-                                                <a href="${addToWatchlistLink}" style="display: block; background-color: rgba(255,255,255,0.03); color: #ffffff; padding: 18px; border-radius: 20px; font-weight: 800; text-decoration: none; text-transform: uppercase; font-size: 14px; border: 1px solid #1e293b; text-align: center;">➕ İzleme Listeme Ekle</a>
-                                            </div>
+                        <!-- Main Grid Layout -->
+                        <div style="padding: 20px 40px 40px 40px;">
+                            <div style="display: table; width: 100%; border-collapse: separate; border-spacing: 0;">
+                                <div style="display: table-row;">
+                                    
+                                    <!-- Column 1: Poster (Left) -->
+                                    <div style="display: table-cell; width: 160px; vertical-align: top; padding-right: 30px;">
+                                        ${posterUrl ? 
+                                            `<img src="${posterUrl}" style="width: 160px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 20px 40px rgba(0,0,0,0.5);" />` :
+                                            `<div style="width: 160px; height: 240px; background-color: #1e293b; border-radius: 20px;"></div>`
+                                        }
+                                        <div style="margin-top: 15px; text-align: center;">
+                                            <div style="background: #fbbf24; color: #020617; padding: 4px 10px; border-radius: 6px; font-size: 9px; font-weight: 900; display: inline-block; text-transform: uppercase;">${mediaLabel}</div>
                                         </div>
                                     </div>
+
+                                    <!-- Column 2: Summary & Info (Middle) -->
+                                    <div style="display: table-cell; vertical-align: top; padding-right: 30px;">
+                                        <h3 style="color: #ffffff; font-size: 26px; font-weight: 900; margin: 0 0 10px 0; line-height: 1.1; letter-spacing: -0.8px;">${mediaTitle}</h3>
+                                        
+                                        <div style="margin-bottom: 15px; display: flex; align-items: center; gap: 12px;">
+                                            <span style="color: #94a3b8; font-size: 13px; font-weight: 800;">⭐ TMDB: ${globalRating?.toFixed(1) || '0.0'}</span>
+                                        </div>
+
+                                        <p style="color: #94a3b8; font-size: 13px; line-height: 1.6; margin: 0 0 20px 0; font-weight: 500;">
+                                            ${overview ? (overview.length > 300 ? overview.substring(0, 300) + '...' : overview) : 'Bu içerik hakkında özet bulunmuyor.'}
+                                        </p>
+
+                                        ${platforms && platforms.length > 0 ? `
+                                            <div style="margin-top: 10px;">
+                                                <p style="color: #64748b; font-size: 10px; font-weight: 800; text-transform: uppercase; margin-bottom: 8px; letter-spacing: 0.5px;">Şuradan İzle:</p>
+                                                <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+                                                    ${platforms.slice(0, 3).map(p => `
+                                                        <div style="display: inline-flex; align-items: center; gap: 6px; background: rgba(255,255,255,0.03); padding: 6px 10px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.05);">
+                                                            ${p.logo ? `<img src="https://image.tmdb.org/t/p/w92${p.logo}" style="width: 14px; height: 14px; border-radius: 3px;" />` : ''}
+                                                            <span style="color: #ffffff; font-size: 11px; font-weight: 700;">${p.name}</span>
+                                                        </div>
+                                                    `).join('')}
+                                                </div>
+                                            </div>
+                                        ` : ''}
+                                    </div>
+
+                                    <!-- Column 3: Thoughts & Buttons (Right) -->
+                                    <div style="display: table-cell; width: 200px; vertical-align: top;">
+                                        ${message ? `
+                                            <div style="margin-bottom: 20px; padding: 18px; background: rgba(251, 191, 36, 0.05); border-left: 4px solid #fbbf24; border-radius: 16px;">
+                                                <p style="margin: 0; color: #fbbf24; font-size: 9px; font-weight: 900; text-transform: uppercase; margin-bottom: 6px; letter-spacing: 0.5px;">DÜŞÜNCELERİ</p>
+                                                <p style="margin: 0; color: #f8fafc; font-size: 13px; font-weight: 500; font-style: italic; line-height: 1.4;">"${message}"</p>
+                                            </div>
+                                        ` : ''}
+
+                                        ${senderRating ? `
+                                            <div style="margin-bottom: 15px; text-align: center; padding: 10px; background: rgba(255,255,255,0.03); border-radius: 12px; border: 1px solid rgba(255,255,255,0.05);">
+                                                <span style="color: #fbbf24; font-size: 12px; font-weight: 800;">👤 Puanı: ${senderRating}</span>
+                                            </div>
+                                        ` : ''}
+
+                                        <div style="margin-top: 10px;">
+                                            <a href="${mediaLink}" style="display: block; background-color: #fbbf24; color: #020617; padding: 14px; border-radius: 14px; font-weight: 900; text-decoration: none; text-transform: uppercase; font-size: 12px; letter-spacing: 0.5px; margin-bottom: 10px; text-align: center; box-shadow: 0 10px 20px rgba(251, 191, 36, 0.15);">Detayları İncele</a>
+                                            <a href="${addToWatchlistLink}" style="display: block; background-color: rgba(255,255,255,0.03); color: #ffffff; padding: 12px; border-radius: 14px; font-weight: 800; text-decoration: none; text-transform: uppercase; font-size: 11px; border: 1px solid #1e293b; text-align: center;">➕ Liste</a>
+                                        </div>
+                                    </div>
+
                                 </div>
                             </div>
+                        </div>
 
-                            <!-- Footer -->
-                            <div style="padding: 50px 40px; text-align: center; border-top: 1px solid #1e293b; background-color: #0b1222;">
-                                <span style="color: #ffffff; font-size: 22px; font-weight: 900; font-style: italic; opacity: 0.8; letter-spacing: -0.5px;">CineLists</span>
-                                <p style="color: #475569; font-size: 11px; margin-top: 10px; font-weight: 600;">Bu e-posta CineLists üzerinden gönderilmiştir.</p>
-                            </div>
+                        <!-- Footer -->
+                        <div style="padding: 30px 40px; text-align: center; border-top: 1px solid #1e293b; background-color: #0b1222;">
+                            <span style="color: #ffffff; font-size: 18px; font-weight: 900; font-style: italic; opacity: 0.8; letter-spacing: -0.5px;">CineLists</span>
                         </div>
                     </div>
                 </div>
