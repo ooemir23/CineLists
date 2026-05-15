@@ -40,7 +40,7 @@ export function MediaActions({
     isGuest,
     variant = "standard"
 }: MediaActionsProps) {
-    const [status, setStatus] = useState<string | null>(initialStatus);
+    const [status, setStatus] = useState<string | null>(initialStatus || null);
     const [showDetailsForm, setShowDetailsForm] = useState(false);
     const [isRecommendOpen, setIsRecommendOpen] = useState(false);
     const [userRating, setUserRating] = useState(initialRating || 0);
