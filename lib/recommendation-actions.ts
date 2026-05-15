@@ -62,6 +62,17 @@ export async function recommendMedia(params: {
         },
     });
 
+    // 2.1 Get sender's rating for this media (if any)
+    const senderWatched = await prisma.watched.findUnique({
+        where: {
+            userId_mediaId: {
+                userId: session.user.id,
+                mediaId: media.id
+            }
+        },
+        select: { rating: true }
+    });
+
     // 3. Create Notification
     await prisma.indicates.create({
         data: {
@@ -80,7 +91,10 @@ export async function recommendMedia(params: {
             tmdb.getWatchProviders(mediaType, mediaId.toString()).catch(() => null)
         ]);
 
-        const trProviders = providers?.results?.TR?.flatrate?.map((p: any) => p.provider_name) || [];
+        const trProviders = providers?.results?.TR?.flatrate?.map((p: any) => ({
+            name: p.provider_name,
+            logo: p.logo_path
+        })) || [];
 
         // Await email to ensure it's sent before the function finishes (important for serverless)
         try {
@@ -95,7 +109,10 @@ export async function recommendMedia(params: {
                 message,
                 overview: details?.overview,
                 runtime: mediaType === "movie" ? details?.runtime : (details?.episode_run_time?.[0] || null),
-                platforms: trProviders
+                platforms: trProviders,
+                senderRating: senderWatched?.rating,
+                globalRating: details?.vote_average,
+                backdropPath: details?.backdrop_path
             });
         } catch (error: any) {
             console.error("Recommendation email error details:", {
