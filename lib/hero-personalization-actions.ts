@@ -276,19 +276,29 @@ export async function getWatchedShowsNextEpisodes(): Promise<UpcomingEpisode[]> 
             }
         }
 
-        // Sort by date (past to future, with nulls at the end)
+        // Sort with priority: Watching > Plan to Watch > Others
+        // Within each category, sort by date
         const sorted = episodes.sort((a, b) => {
+            const getPriority = (ep: UpcomingEpisode) => {
+                if (ep.statusType === "watching") return 0;
+                if (ep.statusType === "plan_to_watch") return 1;
+                return 2;
+            };
+
+            const priorityA = getPriority(a);
+            const priorityB = getPriority(b);
+
+            if (priorityA !== priorityB) return priorityA - priorityB;
+
+            // Date sorting for same priority
             if (!a.nextEpisodeDate && !b.nextEpisodeDate) return 0;
             if (!a.nextEpisodeDate) return 1;
             if (!b.nextEpisodeDate) return -1;
             return new Date(a.nextEpisodeDate).getTime() - new Date(b.nextEpisodeDate).getTime();
         });
 
-        // Mix in some randomness but keep the top few somewhat stable
-        const prioritized = sorted.slice(0, 5);
-        const others = sorted.slice(5).sort(() => Math.random() - 0.5);
-
-        return [...prioritized, ...others].slice(0, 20);
+        // Take top 20 items with this priority
+        return sorted.slice(0, 20);
     } catch (error) {
         console.error("Error getting next episodes:", error);
         return [];

@@ -237,7 +237,7 @@ export async function GET(request: NextRequest) {
                         return (item as any).targetDate ? filterFn(new Date((item as any).targetDate)) : (upcomingFilter === "all");
                     });
 
-                    filteredTmdbResults = filteredTmdbResults.filter(item => {
+                    filteredTmdbResults = filteredTmdbResults.filter((item: any) => {
                         const date = item.release_date || item.first_air_date;
                         return date ? filterFn(new Date(date)) : false;
                     });

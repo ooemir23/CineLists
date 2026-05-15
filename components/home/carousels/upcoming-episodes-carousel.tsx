@@ -3,7 +3,7 @@
 import { Calendar, Clock3, ChevronLeft, ChevronRight } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import type { UpcomingEpisode } from "@/lib/hero-personalization-actions";
 
@@ -13,7 +13,12 @@ interface UpcomingEpisodesCarouselProps {
 
 export function UpcomingEpisodesCarousel({ episodes }: UpcomingEpisodesCarouselProps) {
     const [filter, setFilter] = useState<"all" | "today" | "week">("all");
+    const [isMounted, setIsMounted] = useState(false);
     const scrollContainerRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        setIsMounted(true);
+    }, []);
 
     const scroll = (direction: "left" | "right") => {
         if (scrollContainerRef.current) {
@@ -187,7 +192,7 @@ export function UpcomingEpisodesCarousel({ episodes }: UpcomingEpisodesCarouselP
                                     )}
                                 >
                                     {/* Status Badge */}
-                                    {(episode.statusType === "plan_to_watch" || episode.statusType === "watching") && (
+                                    {isMounted && (episode.statusType === "plan_to_watch" || episode.statusType === "watching") && (
                                         <div className={cn(
                                             "absolute top-0 right-0 px-2 py-0.5 rounded-bl-lg text-[7px] font-black uppercase tracking-widest z-20",
                                             episode.statusType === "plan_to_watch" ? "bg-rose-500 text-white" : "bg-sky-500 text-white"
@@ -235,10 +240,10 @@ export function UpcomingEpisodesCarousel({ episodes }: UpcomingEpisodesCarouselP
                                                 <div className="flex items-center gap-1 text-xs text-neutral-200">
                                                     <Clock3 className="w-3 h-3 text-blue-300" />
                                                     <span className="font-bold text-blue-200">
-                                                    {episode.statusType === "plan_to_watch" && episode.addedAt
-                                                        ? `${new Date(episode.addedAt).toLocaleDateString("tr-TR", { day: "numeric", month: "short" })} tarihinde eklendi`
-                                                        : (formatDaysLeft(episode.nextEpisodeDate) || "Tarih yok")}
-                                                </span>
+                                                        {isMounted && episode.statusType === "plan_to_watch" && episode.addedAt
+                                                            ? `${new Date(episode.addedAt).toLocaleDateString("tr-TR", { day: "numeric", month: "short" })} tarihinde eklendi`
+                                                            : (isMounted ? (formatDaysLeft(episode.nextEpisodeDate) || "Tarih yok") : "")}
+                                                    </span>
                                                 </div>
                                             </div>
                                         </div>

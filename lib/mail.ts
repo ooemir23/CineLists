@@ -8,7 +8,7 @@ export const sendPasswordResetEmail = async (email: string, token: string) => {
         console.error("RESEND_API_KEY eksik! Lütfen .env dosyanızı kontrol edin.");
         return;
     }
-    const domain = process.env.AUTH_URL || process.env.NEXTAUTH_URL || "http://localhost:3000";
+    const domain = process.env.NEXT_PUBLIC_APP_URL || process.env.AUTH_URL || process.env.NEXTAUTH_URL || "http://localhost:3000";
     const resetLink = `${domain}/reset-password?token=${token}`;
 
     try {
@@ -69,7 +69,7 @@ export const sendRecommendationEmail = async (email: string, senderName: string,
         return;
     }
 
-    const domain = process.env.AUTH_URL || process.env.NEXTAUTH_URL || "http://localhost:3000";
+    const domain = process.env.NEXT_PUBLIC_APP_URL || process.env.AUTH_URL || process.env.NEXTAUTH_URL || "http://localhost:3000";
     const mediaLabel = mediaType === "movie" ? "film" : "dizi";
     const posterUrl = posterPath ? `https://image.tmdb.org/t/p/w300${posterPath}` : null;
     const mediaLink = `${domain}/${mediaType}/${mediaId}`;
