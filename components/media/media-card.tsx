@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { Star, Send, Globe, X, User } from "lucide-react";
+import { Star, Send, Globe, X, User, Clock } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { AutoScrollText } from "@/components/ui/auto-scroll-text";
 import { RecommendModal } from "./recommend-modal";
@@ -30,6 +30,7 @@ type MediaCardProps = {
         type: string;
     };
     compact?: boolean;
+    genres?: string[];
 };
 
 const IMAGE_BASE_URL = "https://image.tmdb.org/t/p/w500";
@@ -69,7 +70,8 @@ export function MediaCard({
     overview,
     watchProviders,
     friend,
-    compact = false
+    compact = false,
+    genres
 }: MediaCardProps) {
     type FriendRating = {
         userId: string;
@@ -138,6 +140,38 @@ export function MediaCard({
                     fullWidth ? "w-full" : compact ? "w-20 sm:w-28 md:w-32" : "w-[42vw] sm:w-36 md:w-44 lg:w-48"
                 )}
             >
+                {/* External Top Badges (Platforms and Genres) */}
+                {type !== "person" && ((genres && genres.length > 0) || (watchProviders?.flatrate)) && (
+                    <div className="flex items-end justify-between w-full px-2 mb-1 z-20 relative pointer-events-none">
+                        {/* Platforms */}
+                        <div className="flex -space-x-1.5 z-20">
+                            {watchProviders?.flatrate?.slice(0, 3).map((provider: any) => (
+                                <div key={provider.provider_id} className="w-5 h-5 md:w-6 md:h-6 rounded-full overflow-hidden border-2 border-[#1e293b] shadow-md relative pointer-events-auto" title={provider.provider_name}>
+                                    <img 
+                                        src={`https://image.tmdb.org/t/p/original${provider.logo_path}`} 
+                                        alt={provider.provider_name}
+                                        className="w-full h-full object-cover"
+                                    />
+                                </div>
+                            ))}
+                        </div>
+
+                        {/* Genres */}
+                        {genres && genres.length > 0 && (
+                            <div className="flex bg-black/95 rounded-md border border-amber-400/50 overflow-hidden shadow-lg z-20 ml-auto pointer-events-auto">
+                                {genres.map((g, i) => (
+                                    <span key={g} className={cn(
+                                        "px-1.5 py-0.5 md:px-2 md:py-1 text-[8px] md:text-[9px] font-black text-amber-400 uppercase tracking-wider",
+                                        i > 0 && "border-l border-amber-400/30"
+                                    )}>
+                                        {g}
+                                    </span>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                )}
+
                 <div className={cn(
                     "relative aspect-[2/3] rounded-xl md:rounded-2xl bg-slate-800 shadow-xl transition-all duration-500 group-hover:scale-[1.03] group-hover:shadow-2xl",
                     type === "movie"
@@ -162,6 +196,8 @@ export function MediaCard({
                             </span>
                         </div>
                     )}
+
+
 
                     {/* Visual Content Wrapper with overflow-hidden */}
                     <div className="absolute inset-0 rounded-xl md:rounded-2xl overflow-hidden z-0">
@@ -268,22 +304,6 @@ export function MediaCard({
                                     • {formatRuntime(runtime)}
                                 </span>
                             )}
-                            {watchProviders?.flatrate && (
-                                <div className="flex items-center gap-1">
-                                    <span className="text-neutral-600 font-black text-[9px]">•</span>
-                                    <div className="flex gap-0.5">
-                                        {watchProviders.flatrate.slice(0, 3).map((provider: any) => (
-                                            <div key={provider.provider_id} className="w-3.5 h-3.5 rounded-[3px] overflow-hidden border border-white/10">
-                                                <img 
-                                                    src={`https://image.tmdb.org/t/p/original${provider.logo_path}`} 
-                                                    alt={provider.provider_name}
-                                                    className="w-full h-full object-cover"
-                                                />
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
-                            )}
                         </div>
                     )}
                 </div>
@@ -294,7 +314,15 @@ export function MediaCard({
                         <div className="absolute inset-x-0 bottom-[-8px] left-1/2 -translate-x-1/2 w-4 h-4 bg-[#1b2334] border-r border-b border-white/10 rotate-45" />
                         
                         <div className="flex items-center justify-between mb-2">
-                            <h4 className="text-xs font-black text-amber-400 uppercase tracking-widest">Özet</h4>
+                            <div className="flex items-center gap-2">
+                                <h4 className="text-xs font-black text-amber-400 uppercase tracking-widest">Özet</h4>
+                                {runtime && (
+                                    <span className="text-[10px] font-bold text-neutral-400 bg-white/5 px-1.5 py-0.5 rounded-md border border-white/5 flex items-center gap-1">
+                                        <Clock size={10} />
+                                        {formatRuntime(runtime)}
+                                    </span>
+                                )}
+                            </div>
                             {watchProviders?.flatrate && (
                                 <div className="flex gap-1">
                                     {watchProviders.flatrate.slice(0, 2).map((provider: any) => (

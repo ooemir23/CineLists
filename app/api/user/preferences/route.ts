@@ -16,8 +16,21 @@ export async function GET() {
                 platforms: true,
             }
         });
+        const legacyMap: Record<string, string> = {
+            "netflix": "8",
+            "disney": "337",
+            "prime": "119",
+            "blutv": "301",
+            "mubi": "11",
+            "apple": "2"
+        };
 
-        return NextResponse.json(user);
+        const mappedPlatforms = (user?.platforms || []).map(p => legacyMap[p] || p);
+
+        return NextResponse.json({
+            ...user,
+            platforms: mappedPlatforms
+        });
     } catch (error) {
         console.error("Error fetching user preferences:", error);
         return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });

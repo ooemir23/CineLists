@@ -190,15 +190,15 @@ export function HeroSlider({ items, friendPopularIds = [] }: HeroSliderProps) {
                             </div>
                         </motion.div>
 
-                        <div className="flex-1 flex flex-col justify-center">
-                            <div className="flex flex-col items-start gap-8">
-                                <div className="max-w-4xl space-y-6">
-                                    <Link href={`/${currentItem.media_type}/${currentItem.id}`} className="space-y-4 block group/content">
+                        <div className="flex-1 flex flex-col justify-end mb-12 lg:mb-16">
+                            <div className="flex flex-col items-start gap-6">
+                                <div className="max-w-3xl space-y-4">
+                                    <Link href={`/${currentItem.media_type}/${currentItem.id}`} className="space-y-3 block group/content">
                                         <motion.h2
                                             initial={{ y: 30, opacity: 0 }}
                                             animate={{ y: 0, opacity: 1 }}
                                             transition={{ delay: 0.3, duration: 0.6 }}
-                                            className="text-4xl md:text-5xl lg:text-6xl font-black text-white leading-tight tracking-tighter drop-shadow-2xl italic uppercase group-hover/content:text-amber-400 transition-colors"
+                                            className="text-3xl md:text-4xl lg:text-5xl font-black text-white leading-tight tracking-tighter drop-shadow-2xl italic uppercase group-hover/content:text-amber-400 transition-colors"
                                         >
                                             {currentItem.title}
                                         </motion.h2>
@@ -206,7 +206,7 @@ export function HeroSlider({ items, friendPopularIds = [] }: HeroSliderProps) {
                                             initial={{ y: 30, opacity: 0 }}
                                             animate={{ y: 0, opacity: 1 }}
                                             transition={{ delay: 0.4, duration: 0.6 }}
-                                            className="text-lg text-neutral-300 font-bold max-w-2xl line-clamp-3 leading-relaxed drop-shadow-md border-l-4 border-amber-400 pl-6 group-hover/content:border-white transition-colors"
+                                            className="text-base text-neutral-300 font-bold max-w-xl line-clamp-3 leading-relaxed drop-shadow-md border-l-4 border-amber-400 pl-5 group-hover/content:border-white transition-colors"
                                         >
                                             {currentItem.overview}
                                         </motion.p>

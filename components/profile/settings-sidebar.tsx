@@ -16,7 +16,7 @@ export function SettingsSidebar() {
     const pathname = usePathname();
 
     return (
-        <div className="w-full md:w-64 bg-white/5 border-b md:border-b-0 md:border-r border-white/5 p-6 flex flex-col gap-2">
+        <div className="w-full md:w-64 border-b md:border-b-0 md:border-r border-white/5 md:pr-8 py-4 md:py-8 flex flex-col gap-2">
             {tabs.map((tab) => {
                 const Icon = tab.icon;
                 const isActive = pathname === tab.href || pathname.startsWith(tab.href);
@@ -25,13 +25,13 @@ export function SettingsSidebar() {
                         key={tab.id}
                         href={tab.href}
                         className={cn(
-                            "flex items-center gap-3 px-4 py-3 rounded-2xl transition-all font-bold text-sm",
+                            "flex items-center gap-3 px-4 py-3.5 rounded-2xl transition-all font-bold text-sm",
                             isActive
-                                ? "bg-primary text-background shadow-lg shadow-primary/20"
+                                ? "bg-amber-400 text-slate-950 shadow-lg shadow-amber-400/20"
                                 : "text-neutral-400 hover:text-white hover:bg-white/5"
                         )}
                     >
-                        <Icon size={18} />
+                        <Icon size={18} className={cn(isActive ? "text-slate-950" : "text-neutral-500")} />
                         {tab.label}
                     </Link>
                 );

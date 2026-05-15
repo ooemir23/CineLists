@@ -193,19 +193,15 @@ export function HomeDiscoverySection() {
         const prefs = userPreferences;
         if (!prefs) return;
 
-        if (prefs.genres) {
-            const genreIds = prefs.genres.map((gName: string) => {
-                const opt = genreOptions.find(o => o.label.toLowerCase() === gName.toLowerCase());
-                return opt?.id;
-            }).filter(Boolean) as string[];
-            setStagedGenres(genreIds);
+        if (prefs.genres && prefs.genres.length > 0) {
+            // prefs.genres already contains TMDB IDs
+            setGenres(prefs.genres);
+            setStagedGenres(prefs.genres);
         }
-        if (prefs.platforms) {
-            const providerIds = prefs.platforms.map((pName: string) => {
-                const opt = providerOptions.find(o => o.label.toLowerCase() === pName.toLowerCase());
-                return opt?.id;
-            }).filter(Boolean) as string[];
-            setStagedProviders(providerIds);
+        if (prefs.platforms && prefs.platforms.length > 0) {
+            // prefs.platforms already contains TMDB IDs
+            setProviders(prefs.platforms);
+            setStagedProviders(prefs.platforms);
         }
     };
 
@@ -266,7 +262,7 @@ export function HomeDiscoverySection() {
                 url.searchParams.set("timeWindow", activeTimeWindow);
                 url.searchParams.set("page", page.toString());
                 
-                if (genres.length > 0) url.searchParams.set("genre", genres.join(","));
+                if (genres.length > 0) url.searchParams.set("genre", genres.join("|")); // TMDB uses | for OR for genres too
                 if (years.length > 0) url.searchParams.set("year", years.join(","));
                 if (ratings.length > 0) url.searchParams.set("rating", Math.min(...ratings.map(Number)).toString()); // Take lowest rating for gte
                 if (providers.length > 0) url.searchParams.set("provider", providers.join("|")); // TMDB uses | for OR
@@ -778,6 +774,7 @@ export function HomeDiscoverySection() {
                                         watchProviders={item.watch_providers}
                                         friend={item.friend}
                                         compact={viewMode === "compact"}
+                                        genres={item.genre_ids?.map((id: number) => genreOptions.find(o => o.id === id.toString())?.label).filter(Boolean).slice(0, 2)}
                                         fullWidth
                                     />
                                 </div>
@@ -799,6 +796,14 @@ export function HomeDiscoverySection() {
                                             <span className="px-2 py-0.5 rounded-md bg-amber-400 text-[10px] font-black text-black uppercase">
                                                 {item.media_type === "tv" ? "DİZİ" : "FİLM"}
                                             </span>
+                                            {item.genre_ids?.map((id: number) => {
+                                                const gLabel = genreOptions.find(o => o.id === id.toString())?.label;
+                                                return gLabel ? (
+                                                    <span key={id} className="px-2 py-0.5 rounded-md bg-amber-400/10 border border-amber-400/20 text-[10px] font-black text-amber-400 uppercase">
+                                                        {gLabel}
+                                                    </span>
+                                                ) : null;
+                                            }).slice(0, 3)}
                                             <div className="flex items-center gap-1 text-amber-400">
                                                 <Star size={14} fill="currentColor" />
                                                 <span className="text-sm font-black">{item.vote_average?.toFixed(1)}</span>
