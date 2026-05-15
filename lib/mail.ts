@@ -92,7 +92,11 @@ export const sendRecommendationEmail = async (params: {
     const posterUrl = posterPath ? `https://image.tmdb.org/t/p/w400${posterPath}` : null;
     const backdropUrl = backdropPath ? `https://image.tmdb.org/t/p/w780${backdropPath}` : posterUrl;
     const mediaLink = `${domain}/${mediaType}/${mediaId}`;
-    const addToWatchlistLink = `${domain}/api/media/action?tmdbId=${mediaId}&type=${mediaType.toUpperCase()}&action=PLAN_TO_WATCH&redirect=true`;
+    const baseUrl = `${domain}/api/media/action?tmdbId=${mediaId}&type=${mediaType.toUpperCase()}&redirect=true`;
+    
+    const watchlistLink = `${baseUrl}&action=PLAN_TO_WATCH`;
+    const watchedLink = `${baseUrl}&action=WATCHED`;
+    const watchingLink = `${baseUrl}&action=WATCHING`;
 
     const formattedRuntime = runtime ? (runtime > 60 ? `${Math.floor(runtime / 60)}s ${runtime % 60}dk` : `${runtime}dk`) : null;
 
@@ -103,7 +107,7 @@ export const sendRecommendationEmail = async (params: {
             subject: `${senderName} sana bir ${mediaLabel.toLowerCase()} tavsiye etti!`,
             html: `
                 <div style="background-color: #020617; ${backdropUrl ? `background-image: linear-gradient(rgba(2, 6, 23, 0.94), rgba(2, 6, 23, 0.94)), url('${backdropUrl}'); background-size: cover; background-position: center;` : ''} padding: 60px 0; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #f8fafc; text-align: center; min-height: 100%;">
-                    <div style="max-width: 720px; margin: 0 auto; background-color: rgba(15, 23, 42, 0.8); border: 1px solid rgba(255,255,255,0.08); border-radius: 40px; overflow: hidden; box-shadow: 0 60px 120px -20px rgba(0, 0, 0, 0.8); text-align: left;">
+                    <div style="max-width: 740px; margin: 0 auto; background-color: rgba(15, 23, 42, 0.8); border: 1px solid rgba(255,255,255,0.08); border-radius: 40px; overflow: hidden; box-shadow: 0 60px 120px -20px rgba(0, 0, 0, 0.8); text-align: left;">
                         
                         <!-- Header with Sender Info -->
                         <div style="padding: 40px 40px 20px 40px; text-align: left; display: flex; align-items: center; justify-content: space-between;">
@@ -144,7 +148,7 @@ export const sendRecommendationEmail = async (params: {
                                         </div>
 
                                         <p style="color: #94a3b8; font-size: 13px; line-height: 1.6; margin: 0 0 20px 0; font-weight: 500;">
-                                            ${overview ? (overview.length > 300 ? overview.substring(0, 300) + '...' : overview) : 'Bu içerik hakkında özet bulunmuyor.'}
+                                            ${overview ? (overview.length > 250 ? overview.substring(0, 250) + '...' : overview) : 'Bu içerik hakkında özet bulunmuyor.'}
                                         </p>
 
                                         ${platforms && platforms.length > 0 ? `
@@ -163,7 +167,7 @@ export const sendRecommendationEmail = async (params: {
                                     </div>
 
                                     <!-- Column 3: Thoughts & Buttons -->
-                                    <div style="display: table-cell; width: 200px; vertical-align: top;">
+                                    <div style="display: table-cell; width: 220px; vertical-align: top;">
                                         ${message ? `
                                             <div style="margin-bottom: 20px; padding: 18px; background: rgba(255, 255, 255, 0.03); border-left: 4px solid #fbbf24; border-radius: 16px; border: 1px solid rgba(255,255,255,0.05);">
                                                 <p style="margin: 0; color: #fbbf24; font-size: 9px; font-weight: 900; text-transform: uppercase; margin-bottom: 6px; letter-spacing: 0.5px;">DÜŞÜNCELERİ</p>
@@ -171,15 +175,21 @@ export const sendRecommendationEmail = async (params: {
                                             </div>
                                         ` : ''}
 
-                                        ${senderRating ? `
-                                            <div style="margin-bottom: 15px; text-align: center; padding: 10px; background: rgba(251, 191, 36, 0.1); border-radius: 12px; border: 1px solid rgba(251, 191, 36, 0.2);">
-                                                <span style="color: #fbbf24; font-size: 12px; font-weight: 800;">👤 Puanı: ${senderRating}</span>
-                                            </div>
-                                        ` : ''}
-
                                         <div style="margin-top: 10px;">
                                             <a href="${mediaLink}" style="display: block; background-color: #fbbf24; color: #020617; padding: 14px; border-radius: 14px; font-weight: 900; text-decoration: none; text-transform: uppercase; font-size: 12px; letter-spacing: 0.5px; margin-bottom: 10px; text-align: center; box-shadow: 0 10px 20px rgba(251, 191, 36, 0.15);">Detayları İncele</a>
-                                            <a href="${addToWatchlistLink}" style="display: block; background-color: rgba(255,255,255,0.05); color: #ffffff; padding: 12px; border-radius: 14px; font-weight: 800; text-decoration: none; text-transform: uppercase; font-size: 11px; border: 1px solid rgba(255,255,255,0.1); text-align: center;">➕ Liste</a>
+                                            
+                                            <div style="display: table; width: 100%; border-collapse: separate; border-spacing: 0;">
+                                                <div style="display: table-row;">
+                                                    <div style="display: table-cell; width: 50%; padding-right: 5px;">
+                                                        <a href="${watchedLink}" style="display: block; background-color: rgba(34, 197, 94, 0.1); color: #22c55e; padding: 12px; border-radius: 14px; font-weight: 800; text-decoration: none; text-transform: uppercase; font-size: 10px; border: 1px solid rgba(34, 197, 94, 0.2); text-align: center;">✅ İzledim</a>
+                                                    </div>
+                                                    <div style="display: table-cell; width: 50%; padding-left: 5px;">
+                                                        <a href="${watchingLink}" style="display: block; background-color: rgba(59, 130, 246, 0.1); color: #3b82f6; padding: 12px; border-radius: 14px; font-weight: 800; text-decoration: none; text-transform: uppercase; font-size: 10px; border: 1px solid rgba(59, 130, 246, 0.2); text-align: center;">📺 İzliyorum</a>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <a href="${watchlistLink}" style="display: block; background-color: rgba(255,255,255,0.05); color: #ffffff; padding: 12px; border-radius: 14px; font-weight: 800; text-decoration: none; text-transform: uppercase; font-size: 11px; border: 1px solid rgba(255,255,255,0.1); text-align: center; margin-top: 10px;">➕ Listeme Ekle</a>
                                         </div>
                                     </div>
 

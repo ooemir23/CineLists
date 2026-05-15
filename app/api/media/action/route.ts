@@ -25,6 +25,8 @@ export async function GET(request: Request) {
     }
 
     let targetUrl = "/";
+    let message = "success";
+
     try {
         // 1. Ensure MediaItem exists
         let media = await prisma.mediaItem.findUnique({
@@ -54,39 +56,56 @@ export async function GET(request: Request) {
         if (media) {
             targetUrl = `/${type.toLowerCase()}/${tmdbId}`;
             
-            // 2. Add to ToWatch (Watchlist) if it doesn't exist
-            const existing = await prisma.toWatch.findUnique({
-                where: {
-                    userId_mediaId: {
-                        userId: session.user.id,
-                        mediaId: media.id,
-                    },
-                },
-            });
-
-            if (!existing) {
-                // Remove from watched first if it exists
+            if (action === "WATCHED") {
+                // Add to watched
+                await prisma.watched.upsert({
+                    where: { userId_mediaId: { userId: session.user.id, mediaId: media.id } },
+                    update: { watchedAt: new Date() },
+                    create: { userId: session.user.id, mediaId: media.id }
+                });
+                // Remove from toWatch
+                await prisma.toWatch.deleteMany({
+                    where: { userId: session.user.id, mediaId: media.id }
+                });
+                message = "watched";
+            } else if (action === "WATCHING") {
+                // Add to toWatch with status WATCHING
+                await prisma.toWatch.upsert({
+                    where: { userId_mediaId: { userId: session.user.id, mediaId: media.id } },
+                    update: { status: "WATCHING" },
+                    create: { userId: session.user.id, mediaId: media.id, status: "WATCHING" }
+                });
+                // Remove from watched
                 await prisma.watched.deleteMany({
                     where: { userId: session.user.id, mediaId: media.id }
                 });
-
-                await prisma.toWatch.create({
-                    data: {
-                        userId: session.user.id,
-                        mediaId: media.id,
-                    },
+                message = "watching";
+            } else if (action === "PLAN_TO_WATCH") {
+                // Add to toWatch with status PLAN_TO_WATCH
+                await prisma.toWatch.upsert({
+                    where: { userId_mediaId: { userId: session.user.id, mediaId: media.id } },
+                    update: { status: "PLAN_TO_WATCH" },
+                    create: { userId: session.user.id, mediaId: media.id, status: "PLAN_TO_WATCH" }
                 });
+                // Remove from watched
+                await prisma.watched.deleteMany({
+                    where: { userId: session.user.id, mediaId: media.id }
+                });
+                message = "added";
             }
         }
     } catch (error) {
         console.error("Email action error details:", error);
-        // We continue to redirect even on error, or we could redirect to an error page
     }
 
     if (shouldRedirect) {
         revalidatePath("/watchlist");
+        revalidatePath("/social"); // Revalidate social for activities
         if (targetUrl !== "/") {
             revalidatePath(targetUrl);
+            const finalUrl = new URL(targetUrl, process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000");
+            finalUrl.searchParams.set("actionMsg", message);
+            return redirect(finalUrl.toString().replace(finalUrl.origin, ""));
         }
         return redirect(targetUrl);
     }

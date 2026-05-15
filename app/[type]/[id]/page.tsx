@@ -18,6 +18,8 @@ import { TrailerButton } from "@/components/media/trailer-button";
 import { DetailTabs } from "@/components/media/detail-tabs";
 import { Metadata } from "next";
 
+import { ActionNotification } from "@/components/media/action-notification";
+
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const { type, id } = await params;
     const data = await tmdb.getDetails(type as "movie" | "tv", id).catch(() => null);
@@ -136,6 +138,7 @@ export default async function DetailsPage(props: Props) {
 
     return (
         <div className="relative min-h-screen">
+            <ActionNotification />
 
             {/* ── BACKGROUND (sadece üst header bölgesi) ── */}
             <div className="absolute top-0 left-0 right-0 h-[520px] z-0 pointer-events-none overflow-hidden">
