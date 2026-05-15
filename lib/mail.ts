@@ -192,7 +192,7 @@ export const sendRecommendationEmail = async (params: {
 
                         <!-- Thoughts Section (Bottom Full Width) -->
                         ${message ? `
-                            <div style="padding: 0 40px 30px 40px;">
+                            <div style="padding: 0 40px 10px 40px;">
                                 <div style="padding: 20px; background: rgba(255, 255, 255, 0.03); border-left: 4px solid #fbbf24; border-radius: 20px; border: 1px solid rgba(255,255,255,0.05);">
                                     <p style="margin: 0; color: #fbbf24; font-size: 9px; font-weight: 900; text-transform: uppercase; margin-bottom: 8px; letter-spacing: 0.5px;">DÜŞÜNCELERİ</p>
                                     <p style="margin: 0; color: #f8fafc; font-size: 14px; font-weight: 500; font-style: italic; line-height: 1.5;">"${message}"</p>
@@ -200,13 +200,9 @@ export const sendRecommendationEmail = async (params: {
                             </div>
                         ` : ''}
 
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Footer -->
-                        <div style="padding: 30px 40px; text-align: center; border-top: 1px solid rgba(255,255,255,0.05); background-color: rgba(2, 6, 23, 0.5);">
-                            <span style="color: #ffffff; font-size: 18px; font-weight: 900; font-style: italic; opacity: 0.5;">CineLists</span>
+                        <!-- Branding inside card -->
+                        <div style="padding: 10px 40px 30px 40px; text-align: center;">
+                            <span style="color: #ffffff; font-size: 18px; font-weight: 900; font-style: italic; opacity: 0.35;">CineLists</span>
                         </div>
                     </div>
                 </div>
