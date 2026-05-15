@@ -28,7 +28,7 @@ type DiscoverItem = {
     friend?: any;
     genre_ids?: number[];
     statusLabel?: string;
-    statusType?: string;
+    statusType?: "watching" | "plan_to_watch";
     addedAt?: string;
     targetDate?: string;
 };
