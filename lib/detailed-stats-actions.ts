@@ -322,11 +322,11 @@ export async function getTemporalStats(userId: string): Promise<TemporalStats> {
 
     const mostActiveMonth = monthlyActivity.length > 0
         ? monthlyActivity.reduce((max, curr) => curr.count > max.count ? curr : max).month
-        : 'Bilinmiyor';
+        : 'Tarih Bekleniyor';
 
     const mostActiveDay = weeklyPattern.length > 0
         ? weeklyPattern.reduce((max, curr) => curr.count > max.count ? curr : max).day
-        : 'Bilinmiyor';
+        : 'Tarih Bekleniyor';
 
     return {
         monthlyActivity,
@@ -351,7 +351,7 @@ export async function getPersonalInsights(userId: string): Promise<PersonalInsig
         })
     ]);
 
-    const favoriteGenre = genreBreakdown.length > 0 ? genreBreakdown[0].genre : 'Bilinmiyor';
+    const favoriteGenre = genreBreakdown.length > 0 ? genreBreakdown[0].genre : 'Tarih Bekleniyor';
     const favoriteGenreCount = genreBreakdown.length > 0 ? genreBreakdown[0].count : 0;
 
     // Platform analizi
@@ -363,14 +363,14 @@ export async function getPersonalInsights(userId: string): Promise<PersonalInsig
     });
     const mostUsedPlatform = Object.keys(platformCount).length > 0
         ? Object.entries(platformCount).reduce((max, curr) => curr[1] > max[1] ? curr : max)[0]
-        : 'Bilinmiyor';
+        : 'Tarih Bekleniyor';
 
     // Puan verme eğilimi
     const ratings = activities.filter(a => a.rating).map(a => a.rating!);
     const avgRating = ratings.length > 0
         ? ratings.reduce((sum, r) => sum + r, 0) / ratings.length
         : 0;
-    const averageRatingTendency = avgRating >= 4 ? 'Cömert' : avgRating >= 3 ? 'Dengeli' : avgRating > 0 ? 'Seçici' : 'Bilinmiyor';
+    const averageRatingTendency = avgRating >= 4 ? 'Cömert' : avgRating >= 3 ? 'Dengeli' : avgRating > 0 ? 'Seçici' : 'Tarih Bekleniyor';
 
     // Kiminle izleme analizi
     const watchedWithCount: Record<string, number> = {};
@@ -414,7 +414,7 @@ export async function getPersonalInsights(userId: string): Promise<PersonalInsig
     });
     const mostRecommendedByPerson = Object.keys(recommendedByCount).length > 0
         ? Object.entries(recommendedByCount).reduce((max, curr) => curr[1] > max[1] ? curr : max)[0]
-        : 'Bilinmiyor';
+        : 'Tarih Bekleniyor';
 
     // Aktif gün sayısı
     const firstActivity = activities.length > 0

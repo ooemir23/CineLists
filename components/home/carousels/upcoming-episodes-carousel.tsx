@@ -64,14 +64,24 @@ export function UpcomingEpisodesCarousel({ episodes }: UpcomingEpisodesCarouselP
         return diffDays <= 7;
     }).length;
 
-    const formatFullDate = (dateStr: string | null) => {
-        if (!dateStr) return "Bilinmiyor";
-        const date = new Date(dateStr);
-        return date.toLocaleDateString("tr-TR", {
-            day: "numeric",
-            month: "long",
-            weekday: "long",
-        });
+    const formatFullDate = (episode: UpcomingEpisode) => {
+        if (episode.nextEpisodeDate) {
+            const date = new Date(episode.nextEpisodeDate);
+            return date.toLocaleDateString("tr-TR", {
+                day: "numeric",
+                month: "long",
+                weekday: "long",
+            });
+        }
+
+        if (episode.mediaType === "tv") {
+            if (episode.showStatus === "Ended" || episode.showStatus === "Canceled") {
+                return "Final Yaptı";
+            }
+            return "Yeni Sezon Açıklanmadı";
+        }
+
+        return "Tarih Bekleniyor";
     };
 
     const formatDaysLeft = (dateStr: string | null) => {
@@ -96,7 +106,7 @@ export function UpcomingEpisodesCarousel({ episodes }: UpcomingEpisodesCarouselP
         if (episode.nextEpisodeSeason) {
             return `${episode.nextEpisodeSeason}. Sezon`;
         }
-        return "Sonraki bolum";
+        return "BÖLÜM DURUMU";
     };
 
     return (
@@ -225,13 +235,13 @@ export function UpcomingEpisodesCarousel({ episodes }: UpcomingEpisodesCarouselP
                                     <div className="flex-1 min-w-0 flex flex-col justify-between gap-2">
                                         <div className="min-w-0">
                                             <h4 className="text-sm font-black text-white line-clamp-1 group-hover:text-blue-400 transition-colors">
-                                                {episode.showTitle}
+                                                {episode.showTitle} (v2)
                                             </h4>
                                             <p className="text-xs text-blue-200/90 mt-0.5 line-clamp-1 font-bold">
                                                 {formatEpisodeInfo(episode)}
                                             </p>
                                             <p className="text-sm text-white font-black tracking-tight mt-1 line-clamp-1">
-                                                {formatFullDate(episode.nextEpisodeDate)}
+                                                {formatFullDate(episode)}
                                             </p>
                                         </div>
 

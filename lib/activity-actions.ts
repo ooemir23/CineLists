@@ -536,7 +536,7 @@ export async function getMediaMetadataBulk(items: { id: number; type: "movie" | 
                             create: {
                                 tmdbId: item.id,
                                 type: item.type === "movie" ? "MOVIE" : "TV",
-                                title: details.title || details.name || "Bilinmiyor",
+                                title: details.title || details.name || "Tarih Bekleniyor",
                                 posterPath: details.poster_path,
                                 genres: details.genres?.map((g: any) => g.name) || [],
                                 runtime: validRuntime

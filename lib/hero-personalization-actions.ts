@@ -29,6 +29,7 @@ export interface UpcomingEpisode {
     statusType?: "watching" | "plan_to_watch";
     addedAt?: Date;
     mediaType: "movie" | "tv";
+    showStatus?: string;
 }
 
 export interface FriendStats {
@@ -241,6 +242,7 @@ export async function getWatchedShowsNextEpisodes(): Promise<UpcomingEpisode[]> 
                             statusType: item.statusType,
                             addedAt: item.addedAt,
                             mediaType: "tv",
+                            showStatus: showData.status,
                         });
                     }
                 } catch (error) {
@@ -269,6 +271,7 @@ export async function getWatchedShowsNextEpisodes(): Promise<UpcomingEpisode[]> 
                         statusType: item.statusType,
                         addedAt: item.addedAt,
                         mediaType: "movie",
+                        showStatus: movieData.status,
                     });
                 } catch (error) {
                     console.error(`Error fetching movie data for ${item.media.tmdbId}:`, error);

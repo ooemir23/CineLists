@@ -16,7 +16,7 @@ export function UpcomingEpisodesWidget({ episodes }: UpcomingEpisodesWidgetProps
     }
 
     const formatDate = (dateStr: string | null) => {
-        if (!dateStr) return "Tarih Bilinmiyor";
+        if (!dateStr) return "Tarih Bekleniyor";
         const date = new Date(dateStr);
         return date.toLocaleDateString("tr-TR", { month: "short", day: "numeric" });
     };

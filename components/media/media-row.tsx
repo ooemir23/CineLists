@@ -57,7 +57,7 @@ export async function MediaRow({ title, items, type, href }: MediaRowProps) {
                     <MediaCard
                         key={item.id}
                         id={item.id}
-                        title={item.title || item.name || "Bilinmiyor"}
+                        title={item.title || item.name || "Tarih Bekleniyor"}
                         originalTitle={item.original_title || item.original_name}
                         posterPath={item.poster_path}
                         voteAverage={item.vote_average}

@@ -183,11 +183,27 @@ export async function GET(request: NextRequest) {
                                         if (diffDays >= 0 && diffDays <= 7) {
                                             const formattedDate = airDate.toLocaleDateString("tr-TR", { day: "2-digit", month: "2-digit" });
                                             statusLabel = `Yeni Bölüm Yayında: ${formattedDate} (S${lastEp.season_number} B${lastEp.episode_number})`;
+                                        } else {
+                                            // Fallback to show status if last episode was long ago
+                                            if (details.status === "Ended" || details.status === "Canceled") {
+                                                statusLabel = "Final Yaptı";
+                                            } else {
+                                                statusLabel = "Yeni Sezon Açıklanmadı";
+                                            }
+                                        }
+                                    } else {
+                                        // No next or last episode info
+                                        if (details.status === "Ended" || details.status === "Canceled") {
+                                            statusLabel = "Final Yaptı";
+                                        } else {
+                                            statusLabel = "Yeni Sezon Açıklanmadı";
                                         }
                                     }
                                 } catch (e) {
                                     console.error("Error fetching next episode for", item.media.title, e);
                                 }
+                            } else if (item.media.type === "MOVIE") {
+                                statusLabel = "Vizyon Tarihi Belirsiz";
                             }
                             return {
                                 id: item.media.tmdbId,
@@ -201,21 +217,41 @@ export async function GET(request: NextRequest) {
                                 targetDate
                             };
                         }))),
-                        ...toWatch.map(item => {
-                            const diffDays = Math.floor((new Date().getTime() - new Date(item.addedAt).getTime()) / (1000 * 60 * 60 * 24));
-                            const statusLabel = diffDays > 0 ? `${diffDays} gündür izlemedin` : "Hala izlemedin";
+                        ...(await Promise.all(toWatch.map(async (item) => {
+                            const displayDate = null;
+                            let showStatus = "";
+                            if (!displayDate && mediaType === "tv") {
+                                try {
+                                    const details = await tmdb.getTVShow(item.media.tmdbId.toString());
+                                    showStatus = details.status;
+                                } catch (e) {}
+                            }
+
+                            let statusLabel = "Tarih Bekleniyor";
+                            if (displayDate) {
+                                statusLabel = new Date(displayDate).toLocaleDateString("tr-TR");
+                            } else if (mediaType === "tv") {
+                                if (showStatus === "Ended" || showStatus === "Canceled") {
+                                    statusLabel = "Final Yaptı";
+                                } else {
+                                    statusLabel = "Yeni Sezon Açıklanmadı";
+                                }
+                            } else if (mediaType === "movie") {
+                                statusLabel = "Vizyon Tarihi Belirsiz";
+                            }
+
                             return {
                                 id: item.media.tmdbId,
                                 title: item.media.title,
                                 poster_path: item.media.posterPath,
-                                media_type: item.media.type.toLowerCase(),
+                                media_type: mediaType,
                                 vote_average: item.media.voteAverage || 0,
                                 statusLabel,
                                 statusType: "plan_to_watch",
                                 addedAt: item.addedAt,
-                                targetDate: null
+                                targetDate: displayDate
                             };
-                        })
+                        })))
                     ].sort(() => Math.random() - 0.5);
                 }
 

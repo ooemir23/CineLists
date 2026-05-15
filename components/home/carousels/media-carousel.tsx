@@ -29,7 +29,7 @@ export function MediaCarousel({ items, title, icon, color = "text-primary" }: Me
     };
 
     const getTitle = (item: MediaCarouselItem) => {
-        return item.title || item.name || "Bilinmiyor";
+        return item.title || item.name || "Tarih Bekleniyor";
     };
 
     const getPosterPath = (item: MediaCarouselItem) => {
