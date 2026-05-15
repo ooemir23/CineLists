@@ -27,6 +27,10 @@ type DiscoverItem = {
     watch_providers?: any;
     friend?: any;
     genre_ids?: number[];
+    statusLabel?: string;
+    statusType?: string;
+    addedAt?: string;
+    targetDate?: string;
 };
 
 const categoryOptions = [
