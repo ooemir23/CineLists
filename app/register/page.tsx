@@ -1,9 +1,9 @@
 import { registerUser } from "@/lib/auth-actions";
-import { Film, Mail, Lock, ArrowRight, UserPlus } from "lucide-react";
+import { Mail, Lock, UserPlus } from "lucide-react";
 import Link from "next/link";
 import { SocialAuth } from "@/components/auth/social-auth";
 import { PosterBackground } from "@/components/auth/poster-background";
-import Image from "next/image";
+import { BrandLogo } from "@/components/layout/brand-logo";
 
 type RegisterPageProps = {
     searchParams: Promise<{ error?: string }>;
@@ -31,16 +31,7 @@ export default async function RegisterPage({ searchParams }: RegisterPageProps) 
             <div className="w-full max-w-md relative z-20 animate-in fade-in zoom-in-95 duration-500">
                 {/* Logo & Header */}
                 <div className="text-center mb-8">
-                    <Link href="/" className="inline-flex items-center gap-2 mb-6 group transition-transform hover:scale-105">
-                        <Image 
-                            src="/cinelists-logo.png" 
-                            alt="CineLists Logo" 
-                            width={180} 
-                            height={50} 
-                            className="h-12 w-auto object-contain"
-                            priority
-                        />
-                    </Link>
+                    <BrandLogo href="/" size="lg" className="mb-6 justify-center" />
                     <h1 className="text-3xl font-black text-white tracking-tight uppercase mb-2">Aramıza Katıl</h1>
                     <p className="text-neutral-400 font-medium">Kendi listelerini oluştur ve paylaşmaya başla.</p>
                 </div>

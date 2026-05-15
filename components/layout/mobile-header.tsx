@@ -1,25 +1,21 @@
 "use client";
 
 import React from "react";
-import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Film, Bell } from "lucide-react";
-import { motion } from "framer-motion";
-import Image from "next/image";
 import { NotificationBell } from "./notification-bell";
+import { BrandLogo } from "./brand-logo";
 
 export function MobileHeader() {
   const pathname = usePathname();
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-[3000] h-16 bg-slate-950/50 backdrop-blur-2xl border-b border-white/5 flex items-center justify-between px-5 sm:hidden">
-      {/* Left Spacer for centering logo if needed, or place notifications here */}
-      <div className="w-10" /> 
+    <header className="fixed top-0 left-0 right-0 z-[3000] h-16 bg-slate-900/95 backdrop-blur-xl border-b border-white/5 shadow-[0_10px_30px_-15px_rgba(0,0,0,0.55)] flex items-center justify-between px-4 sm:hidden">
+      <div className="w-10" />
 
-      {/* Modern Logo Section */}
-      <Link
+      <BrandLogo
         href="/"
-        className="flex items-center gap-2.5 group transition-all active:scale-95 cursor-pointer"
+        size="sm"
+        className="justify-center"
         onClick={(e) => {
           window.dispatchEvent(new CustomEvent("close-all-overlays"));
           if (pathname === "/") {
@@ -27,16 +23,7 @@ export function MobileHeader() {
             window.scrollTo({ top: 0, behavior: "smooth" });
           }
         }}
-      >
-        <Image 
-          src="/cinelists-logo.png" 
-          alt="CineLists Logo" 
-          width={120} 
-          height={32} 
-          className="h-8 w-auto object-contain"
-          priority
-        />
-      </Link>
+      />
 
       {/* Right Side Actions */}
       <div className="flex items-center justify-end w-10">

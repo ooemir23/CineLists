@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { createPortal } from "react-dom";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import Image from "next/image";
@@ -36,16 +35,13 @@ interface TopNavProps {
 
 export function TopNav({ user }: TopNavProps) {
   const pathname = usePathname();
-  const [menuOpen, setMenuOpen] = useState(false);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
-  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 10);
     };
-    setMounted(true);
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
@@ -94,10 +90,13 @@ export function TopNav({ user }: TopNavProps) {
                 }
               }}
             >
-              <div className="w-10 h-10 bg-amber-400 rounded-xl flex items-center justify-center rotate-3 group-hover:rotate-0 transition-transform">
+              <div className="w-10 h-10 bg-amber-400 rounded-xl flex items-center justify-center rotate-3 group-hover:rotate-0 transition-transform shadow-[0_8px_20px_rgba(251,191,36,0.25)]">
                 <Film size={24} className="text-slate-950" />
               </div>
-              <span className="tracking-tighter hidden md:block"><span className="text-amber-400">cine</span>lists</span>
+              <span className="tracking-tighter italic">
+                <span className="text-amber-400">cine</span>
+                <span className="text-white">lists</span>
+              </span>
             </Link>
           </div>
 
@@ -246,7 +245,6 @@ export function TopNav({ user }: TopNavProps) {
                 className={`flex items-center gap-2 h-full transition-all duration-200 px-3 py-1.5 rounded-2xl group ${profileMenuOpen ? 'bg-amber-400/10 text-amber-400' : 'hover:bg-white/5 text-slate-400'}`}
                 onClick={() => {
                   setProfileMenuOpen(!profileMenuOpen);
-                  setMenuOpen(false);
                 }}
               >
                 <div className="relative w-8 h-8 rounded-xl overflow-hidden border border-white/10 group-hover:border-amber-400/50 transition-colors">
@@ -297,7 +295,7 @@ export function TopNav({ user }: TopNavProps) {
       </header>
 
       <AnimatePresence>
-        {profileMenuOpen && mounted && (
+        {profileMenuOpen && (
           <>
             <motion.div
               initial={{ opacity: 0 }}
