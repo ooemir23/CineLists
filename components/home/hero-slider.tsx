@@ -125,7 +125,7 @@ export function HeroSlider({ items, friendPopularIds = [] }: HeroSliderProps) {
                     <div className="absolute inset-0 bg-gradient-to-r from-[#020617]/80 via-[#020617]/20 to-transparent z-10" />
                     <div className="absolute inset-0 bg-black/20 z-10" />
 
-                    <div className="absolute inset-0 z-20 flex flex-col p-6 md:p-8 lg:p-10">
+                    <div className="absolute inset-0 z-20 flex flex-col p-6 pt-4 md:pt-5 lg:pt-6 md:p-8 lg:p-10">
                         {/* Top Metadata Tags */}
                         <motion.div
                             initial={{ y: -20, opacity: 0 }}
@@ -190,10 +190,10 @@ export function HeroSlider({ items, friendPopularIds = [] }: HeroSliderProps) {
                             </div>
                         </motion.div>
 
-                        <div className="flex-1 flex flex-col justify-end mb-12 lg:mb-16">
+                        <div className="flex-1 flex flex-col justify-end mb-4 lg:mb-6">
                             <div className="flex flex-col items-start gap-6">
                                 <div className="max-w-3xl space-y-4">
-                                    <Link href={`/${currentItem.media_type}/${currentItem.id}`} className="space-y-3 block group/content">
+                                    <Link href={`/${currentItem.media_type}/${currentItem.id}`} className="space-y-2 block group/content">
                                         <motion.h2
                                             initial={{ y: 30, opacity: 0 }}
                                             animate={{ y: 0, opacity: 1 }}
@@ -206,7 +206,7 @@ export function HeroSlider({ items, friendPopularIds = [] }: HeroSliderProps) {
                                             initial={{ y: 30, opacity: 0 }}
                                             animate={{ y: 0, opacity: 1 }}
                                             transition={{ delay: 0.4, duration: 0.6 }}
-                                            className="text-base text-neutral-300 font-bold max-w-xl line-clamp-3 leading-relaxed drop-shadow-md border-l-4 border-amber-400 pl-5 group-hover/content:border-white transition-colors"
+                                            className="text-sm md:text-base text-neutral-300 font-bold max-w-xl line-clamp-3 leading-relaxed drop-shadow-md border-l-4 border-amber-400 pl-5 group-hover/content:border-white transition-colors"
                                         >
                                             {currentItem.overview}
                                         </motion.p>
