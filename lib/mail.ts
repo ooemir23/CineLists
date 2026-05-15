@@ -2,6 +2,7 @@ import { Resend } from "resend";
 
 const resendApiKey = process.env.RESEND_API_KEY;
 const resend = resendApiKey ? new Resend(resendApiKey) : null;
+const FROM_EMAIL = process.env.MAIL_FROM || "CineLists <info@cinelists.com>";
 
 export const sendPasswordResetEmail = async (email: string, token: string) => {
     if (!resend) {
@@ -13,7 +14,7 @@ export const sendPasswordResetEmail = async (email: string, token: string) => {
 
     try {
         const data = await resend.emails.send({
-            from: "CineLists <info@cinelists.com>",
+            from: FROM_EMAIL,
             to: email,
             subject: "Şifrenizi Sıfırlayın",
             html: `
@@ -76,7 +77,7 @@ export const sendRecommendationEmail = async (email: string, senderName: string,
 
     try {
         await resend.emails.send({
-            from: "CineLists <info@cinelists.com>",
+            from: FROM_EMAIL,
             to: email,
             subject: `${senderName} sana bir ${mediaLabel} tavsiye etti!`,
             html: `
@@ -136,7 +137,12 @@ export const sendRecommendationEmail = async (email: string, senderName: string,
                 </div>
             `,
         });
-    } catch (error) {
-        console.error("Recommendation email error:", error);
+    } catch (error: any) {
+        console.error("Recommendation email error details:", {
+            error: error.message,
+            stack: error.stack,
+            email,
+            mediaTitle
+        });
     }
 };

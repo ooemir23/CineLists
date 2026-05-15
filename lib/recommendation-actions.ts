@@ -68,16 +68,25 @@ export async function recommendMedia(params: {
 
     // 4. Send Email Notification
     if (receiver?.email) {
-        // Fire and forget email to not block the response
-        sendRecommendationEmail(
-            receiver.email,
-            session.user.name || "Bir arkadaşın",
-            title,
-            mediaType,
-            mediaId,
-            posterPath,
-            message
-        );
+        // Await email to ensure it's sent before the function finishes (important for serverless)
+        try {
+            await sendRecommendationEmail(
+                receiver.email,
+                session.user.name || "Bir arkadaşın",
+                title,
+                mediaType,
+                mediaId,
+                posterPath,
+                message
+            );
+        } catch (error: any) {
+            console.error("Recommendation email error details:", {
+                error: error.message,
+                stack: error.stack,
+                email: receiver.email,
+                mediaTitle: title
+            });
+        }
     }
 
     revalidatePath("/feed");
