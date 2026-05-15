@@ -12,8 +12,8 @@ export default async function CommunityPage(props: { searchParams: Promise<{ q?:
     const query = searchParams?.q || "";
     const currentUserId = session?.user?.id;
 
-    let users = [];
-    let topUsers = [];
+    let users: any[] = [];
+    let topUsers: any[] = [];
 
     if (query) {
         users = await searchUsers(query);
