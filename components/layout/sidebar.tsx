@@ -24,8 +24,8 @@ export function Sidebar({ user }: SidebarProps) {
     return (
         <aside className="fixed left-0 top-0 z-40 h-screen w-64 border-r border-white/10 bg-card/80 backdrop-blur-xl hidden md:flex flex-col">
             <div className="flex h-16 items-center px-6 border-b border-white/10">
-                <Link href="/" className="flex items-center gap-2 font-bold text-2xl tracking-tighter text-white">
-                    <span className="text-primary">cine</span>lists
+                <Link href="/" className="flex items-center gap-2 font-bold text-2xl tracking-tighter text-white group transition-transform hover:scale-105">
+                    <span className="text-amber-400">cine</span>lists
                 </Link>
             </div>
 

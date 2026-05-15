@@ -3,9 +3,9 @@
 import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import Image from "next/image";
 import { Film, Bell } from "lucide-react";
 import { motion } from "framer-motion";
+import Image from "next/image";
 import { NotificationBell } from "./notification-bell";
 
 export function MobileHeader() {
@@ -19,7 +19,7 @@ export function MobileHeader() {
       {/* Modern Logo Section */}
       <Link
         href="/"
-        className="flex items-center group transition-all active:scale-95 cursor-pointer"
+        className="flex items-center gap-2.5 group transition-all active:scale-95 cursor-pointer"
         onClick={(e) => {
           window.dispatchEvent(new CustomEvent("close-all-overlays"));
           if (pathname === "/") {
@@ -29,11 +29,11 @@ export function MobileHeader() {
         }}
       >
         <Image 
-          src="/logo.png" 
-          alt="CineLists" 
-          width={140} 
-          height={48} 
-          className="h-10 w-auto object-contain"
+          src="/cinelists-logo.png" 
+          alt="CineLists Logo" 
+          width={120} 
+          height={32} 
+          className="h-8 w-auto object-contain"
           priority
         />
       </Link>

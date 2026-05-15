@@ -3,6 +3,7 @@ import { Film, Mail, Lock, ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { SocialAuth } from "@/components/auth/social-auth";
 import { PosterBackground } from "@/components/auth/poster-background";
+import Image from "next/image";
 
 type LoginPageProps = {
     searchParams: Promise<{ error?: string; reset?: string }>;
@@ -28,11 +29,15 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
             <div className="w-full max-w-md relative z-20 animate-in fade-in zoom-in-95 duration-500">
                 {/* Logo & Header */}
                 <div className="text-center mb-8">
-                    <Link href="/" className="inline-flex items-center gap-2 mb-6 group">
-                        <div className="bg-amber-400 p-2.5 rounded-2xl shadow-lg shadow-amber-400/20 group-hover:scale-110 transition-transform duration-300">
-                            <Film className="w-8 h-8 text-slate-950" strokeWidth={2.5} />
-                        </div>
-                        <span className="text-3xl font-black text-white tracking-tighter uppercase italic">CineLists</span>
+                    <Link href="/" className="inline-flex items-center gap-2 mb-6 group transition-transform hover:scale-105">
+                        <Image 
+                            src="/cinelists-logo.png" 
+                            alt="CineLists Logo" 
+                            width={180} 
+                            height={50} 
+                            className="h-12 w-auto object-contain"
+                            priority
+                        />
                     </Link>
                     <h1 className="text-3xl font-black text-white tracking-tight uppercase mb-2">Tekrar Hoş Geldin</h1>
                     <p className="text-neutral-400 font-medium">Sinema dünyasına kaldığın yerden devam et.</p>
