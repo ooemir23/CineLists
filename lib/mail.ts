@@ -205,3 +205,61 @@ export const sendRecommendationEmail = async (params: {
         });
     }
 };
+
+export const sendDailyReminderEmail = async (email: string, userName: string, shows: { title: string, posterPath: string | null, episodeInfo: string, platforms: string[] }[]) => {
+    if (!resend) return;
+
+    const domain = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+
+    try {
+        await resend.emails.send({
+            from: FROM_EMAIL,
+            to: email,
+            subject: `🍿 Bugün Yayında! Senin için ${shows.length} yeni bölüm var`,
+            html: `
+                <div style="background-color: #020617; padding: 40px 10px; font-family: 'Inter', sans-serif; color: #f8fafc; text-align: center;">
+                    <div style="max-width: 600px; margin: 0 auto; background-color: #0f172a; border: 1px solid #1e293b; border-radius: 40px; overflow: hidden; box-shadow: 0 50px 100px -20px rgba(0, 0, 0, 0.7);">
+                        
+                        <!-- Header -->
+                        <div style="padding: 40px 20px; background: linear-gradient(to bottom, #1e293b, #0f172a);">
+                            <div style="background-color: #fbbf24; width: 60px; height: 60px; border-radius: 20px; margin: 0 auto 20px auto; display: flex; align-items: center; justify-content: center; font-size: 30px; line-height: 60px;">🍿</div>
+                            <h1 style="color: #ffffff; font-size: 28px; font-weight: 900; margin: 0; letter-spacing: -1px;">GÜNAYDIN ${userName.toUpperCase()}!</h1>
+                            <p style="color: #94a3b8; font-size: 14px; font-weight: 600; margin-top: 10px;">Takip ettiğin dizilerin yeni bölümleri bugün yayında.</p>
+                        </div>
+
+                        <!-- Shows List -->
+                        <div style="padding: 30px;">
+                            ${shows.map(show => `
+                                <div style="display: table; width: 100%; margin-bottom: 25px; background: rgba(255,255,255,0.02); border: 1px solid #1e293b; border-radius: 24px; padding: 15px; text-align: left;">
+                                    <div style="display: table-row;">
+                                        <div style="display: table-cell; width: 80px; vertical-align: middle;">
+                                            <img src="https://image.tmdb.org/t/p/w200${show.posterPath}" style="width: 80px; border-radius: 12px;" />
+                                        </div>
+                                        <div style="display: table-cell; vertical-align: middle; padding-left: 20px;">
+                                            <h3 style="color: #ffffff; font-size: 18px; font-weight: 800; margin: 0;">${show.title}</h3>
+                                            <p style="color: #fbbf24; font-size: 13px; font-weight: 700; margin: 5px 0;">${show.episodeInfo}</p>
+                                            <div style="color: #64748b; font-size: 11px; font-weight: 600;">
+                                                ${show.platforms.join(' • ')}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            `).join('')}
+
+                            <a href="${domain}/calendar" style="display: block; background-color: #fbbf24; color: #020617; padding: 20px; border-radius: 20px; font-weight: 900; text-decoration: none; text-transform: uppercase; font-size: 14px; letter-spacing: 1px; margin-top: 20px; text-align: center;">
+                                Takvimi Görüntüle
+                            </a>
+                        </div>
+
+                        <!-- Footer -->
+                        <div style="padding: 30px; border-top: 1px solid #1e293b; opacity: 0.5;">
+                            <span style="color: #ffffff; font-size: 16px; font-weight: 900; font-style: italic;">CineLists</span>
+                        </div>
+                    </div>
+                </div>
+            `
+        });
+    } catch (error) {
+        console.error("Daily reminder email error:", error);
+    }
+};
