@@ -24,7 +24,7 @@ type RecommendModalProps = {
 export function RecommendModal({ mediaId, title, type, posterPath, onClose }: RecommendModalProps) {
     const [friends, setFriends] = useState<Friend[]>([]);
     const [searchQuery, setSearchQuery] = useState("");
-    const [selectedFriendId, setSelectedFriendId] = useState<string | null>(null);
+    const [selectedFriendIds, setSelectedFriendIds] = useState<string[]>([]);
     const [message, setMessage] = useState("");
     const [isLoading, setIsLoading] = useState(true);
     const [isSearching, setIsSearching] = useState(false);
@@ -33,7 +33,7 @@ export function RecommendModal({ mediaId, title, type, posterPath, onClose }: Re
     const [copySuccess, setCopySuccess] = useState(false);
 
     const shareUrl = typeof window !== "undefined" ? `${window.location.origin}/${type}/${mediaId}` : "";
-    const shareText = `WatchOn'da ${title} içeriğine bakmalısın!`;
+    const shareText = `CineLists'da ${title} içeriğine bakmalısın!`;
 
     useEffect(() => {
         async function loadInitial() {
@@ -57,7 +57,6 @@ export function RecommendModal({ mediaId, title, type, posterPath, onClose }: Re
             setIsSearching(true);
             try {
                 const results = await searchUsers(searchQuery);
-                // Merge with current friends to avoid duplicates and keep local list
                 setFriends(prev => {
                     const existingIds = new Set(prev.map(f => f.id));
                     const newUsers = results.filter(u => !existingIds.has(u.id));
@@ -112,20 +111,34 @@ export function RecommendModal({ mediaId, title, type, posterPath, onClose }: Re
         f.name?.toLowerCase().includes(searchQuery.toLowerCase())
     );
 
+    const toggleFriendSelection = (id: string) => {
+        setSelectedFriendIds(prev => 
+            prev.includes(id) 
+                ? prev.filter(fid => fid !== id) 
+                : [...prev, id]
+        );
+    };
+
     const handleRecommend = () => {
-        if (!selectedFriendId) return;
+        if (selectedFriendIds.length === 0) return;
 
         startTransition(async () => {
-            const result = await recommendMedia({
-                receiverId: selectedFriendId,
-                mediaId,
-                mediaType: type,
-                title,
-                posterPath,
-                message: message.trim() || undefined
-            });
+            // Send recommendations in parallel
+            const promises = selectedFriendIds.map(id => 
+                recommendMedia({
+                    receiverId: id,
+                    mediaId,
+                    mediaType: type,
+                    title,
+                    posterPath,
+                    message: message.trim() || undefined
+                })
+            );
 
-            if (result.success) {
+            const results = await Promise.all(promises);
+            const anySuccess = results.some(r => r.success);
+
+            if (anySuccess) {
                 setSuccess(true);
                 setTimeout(() => {
                     onClose();
@@ -135,10 +148,10 @@ export function RecommendModal({ mediaId, title, type, posterPath, onClose }: Re
     };
 
     return (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-300">
-            <div className="w-full max-w-md bg-neutral-900 border border-white/10 rounded-[2.5rem] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300">
+        <div className="fixed inset-0 z-[6000] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-300">
+            <div className="w-full max-w-md bg-neutral-900 border border-white/10 rounded-[2.5rem] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300 mt-16 md:mt-0">
                 {/* Header */}
-                <div className="p-6 border-b border-white/5 flex items-center justify-between bg-gradient-to-r from-primary/10 to-transparent">
+                <div className="p-6 border-b border-white/5 flex items-center justify-between bg-gradient-to-r from-amber-400/10 to-transparent">
                     <div>
                         <h2 className="text-xl font-black text-white tracking-tight">Tavsiye Et</h2>
                         <p className="text-xs text-neutral-400 font-bold uppercase tracking-widest mt-1 line-clamp-1">{title}</p>
@@ -154,14 +167,14 @@ export function RecommendModal({ mediaId, title, type, posterPath, onClose }: Re
                             <Check className="w-10 h-10 text-emerald-500" />
                         </div>
                         <h3 className="text-2xl font-black text-white">Tavsiyen Gönderildi!</h3>
-                        <p className="text-neutral-400 font-medium">Arkadaşına bildirim gönderdik.</p>
+                        <p className="text-neutral-400 font-medium">Arkadaşlarına bildirim gönderdik.</p>
                     </div>
                 ) : (
                     <div className="p-6 space-y-6">
                         {/* Search */}
                         <div className="relative">
                             {isSearching ? (
-                                <Loader2 className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-primary animate-spin" />
+                                <Loader2 className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-amber-400 animate-spin" />
                             ) : (
                                 <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-500" />
                             )}
@@ -170,7 +183,7 @@ export function RecommendModal({ mediaId, title, type, posterPath, onClose }: Re
                                 placeholder="Arkadaş veya kullanıcı ara..."
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
-                                className="w-full bg-white/5 border border-white/5 rounded-2xl pl-11 pr-4 py-3 text-sm font-bold text-white focus:outline-none focus:ring-1 focus:ring-primary/40 transition-all"
+                                className="w-full bg-white/5 border border-white/5 rounded-2xl pl-11 pr-4 py-3 text-sm font-bold text-white focus:outline-none focus:ring-1 focus:ring-amber-400/40 transition-all"
                             />
                         </div>
 
@@ -178,7 +191,7 @@ export function RecommendModal({ mediaId, title, type, posterPath, onClose }: Re
                         <div className="max-h-[220px] overflow-y-auto space-y-2 pr-2 custom-scrollbar">
                             {isLoading ? (
                                 <div className="flex flex-col items-center justify-center py-8 gap-3">
-                                    <Loader2 className="w-6 h-6 text-primary animate-spin" />
+                                    <Loader2 className="w-6 h-6 text-amber-400 animate-spin" />
                                     <span className="text-xs font-bold text-neutral-500 uppercase tracking-widest">Arkadaşlar Yükleniyor...</span>
                                 </div>
                             ) : filteredFriends.length === 0 ? (
@@ -186,34 +199,37 @@ export function RecommendModal({ mediaId, title, type, posterPath, onClose }: Re
                                     <p className="text-neutral-500 text-sm font-medium">Sonuç bulunamadı.</p>
                                 </div>
                             ) : (
-                                filteredFriends.map((friend) => (
-                                    <button
-                                        key={friend.id}
-                                        onClick={() => setSelectedFriendId(friend.id)}
-                                        className={cn(
-                                            "w-full flex items-center gap-3 p-3 rounded-2xl border transition-all active:scale-[0.98]",
-                                            selectedFriendId === friend.id
-                                                ? "bg-primary/20 border-primary/40"
-                                                : "bg-white/5 border-transparent hover:border-white/10 hover:bg-white/10"
-                                        )}
-                                    >
-                                        <div className="relative w-10 h-10 rounded-full overflow-hidden shrink-0 border border-white/10">
-                                            {friend.image ? (
-                                                <Image src={friend.image} alt={friend.name || "User"} fill className="object-cover" />
-                                            ) : (
-                                                <div className="w-full h-full bg-neutral-800 flex items-center justify-center">
-                                                    <UserIcon className="w-5 h-5 text-neutral-500" />
+                                filteredFriends.map((friend) => {
+                                    const isSelected = selectedFriendIds.includes(friend.id);
+                                    return (
+                                        <button
+                                            key={friend.id}
+                                            onClick={() => toggleFriendSelection(friend.id)}
+                                            className={cn(
+                                                "w-full flex items-center gap-3 p-3 rounded-2xl border transition-all active:scale-[0.98]",
+                                                isSelected
+                                                    ? "bg-amber-400/20 border-amber-400/40"
+                                                    : "bg-white/5 border-transparent hover:border-white/10 hover:bg-white/10"
+                                            )}
+                                        >
+                                            <div className="relative w-10 h-10 rounded-full overflow-hidden shrink-0 border border-white/10">
+                                                {friend.image ? (
+                                                    <Image src={friend.image} alt={friend.name || "User"} fill className="object-cover" />
+                                                ) : (
+                                                    <div className="w-full h-full bg-neutral-800 flex items-center justify-center">
+                                                        <UserIcon className="w-5 h-5 text-neutral-500" />
+                                                    </div>
+                                                )}
+                                            </div>
+                                            <span className="font-bold text-sm text-white truncate">{friend.name}</span>
+                                            {isSelected && (
+                                                <div className="ml-auto w-5 h-5 bg-amber-400 rounded-full flex items-center justify-center">
+                                                    <Check className="w-3 h-3 text-slate-900" />
                                                 </div>
                                             )}
-                                        </div>
-                                        <span className="font-bold text-sm text-white truncate">{friend.name}</span>
-                                        {selectedFriendId === friend.id && (
-                                            <div className="ml-auto w-5 h-5 bg-primary rounded-full flex items-center justify-center">
-                                                <Check className="w-3 h-3 text-white" />
-                                            </div>
-                                        )}
-                                    </button>
-                                ))
+                                        </button>
+                                    );
+                                })
                             )}
                         </div>
 
@@ -225,7 +241,7 @@ export function RecommendModal({ mediaId, title, type, posterPath, onClose }: Re
                                 value={message}
                                 onChange={(e) => setMessage(e.target.value)}
                                 rows={2}
-                                className="w-full bg-white/5 border border-white/5 rounded-2xl px-4 py-3 text-sm font-medium text-white focus:outline-none focus:ring-1 focus:ring-primary/40 resize-none hover:bg-white/[0.08] transition-all"
+                                className="w-full bg-white/5 border border-white/5 rounded-2xl px-4 py-3 text-sm font-medium text-white focus:outline-none focus:ring-1 focus:ring-amber-400/40 resize-none hover:bg-white/[0.08] transition-all"
                             />
                         </div>
 
@@ -265,7 +281,7 @@ export function RecommendModal({ mediaId, title, type, posterPath, onClose }: Re
                                     title="Bağlantıyı Kopyala"
                                 >
                                     {copySuccess ? (
-                                        <Check className="w-5 h-5 text-amber-500" />
+                                        <Check className="w-5 h-5 text-amber-400" />
                                     ) : (
                                         <LinkIcon className="w-5 h-5 text-neutral-400 group-hover:scale-110 transition-transform" />
                                     )}
@@ -276,16 +292,18 @@ export function RecommendModal({ mediaId, title, type, posterPath, onClose }: Re
                         {/* Actions */}
                         <div className="pt-2">
                             <button
-                                disabled={!selectedFriendId || isPending}
+                                disabled={selectedFriendIds.length === 0 || isPending}
                                 onClick={handleRecommend}
-                                className="w-full py-4 bg-primary text-white rounded-2xl font-black text-sm uppercase tracking-widest shadow-xl shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-all disabled:opacity-50 disabled:hover:scale-100 flex items-center justify-center gap-2"
+                                className="w-full py-4 bg-amber-400 text-slate-950 rounded-2xl font-black text-sm uppercase tracking-widest shadow-xl shadow-amber-400/20 hover:scale-[1.02] active:scale-95 transition-all disabled:opacity-50 disabled:hover:scale-100 flex items-center justify-center gap-2"
                             >
                                 {isPending ? (
                                     <Loader2 className="w-5 h-5 animate-spin" />
                                 ) : (
                                     <>
                                         <Send className="w-4 h-4" />
-                                        Arkadaşına Tavsiye Gönder
+                                        {selectedFriendIds.length > 1 
+                                            ? `${selectedFriendIds.length} Kişiye Tavsiye Gönder` 
+                                            : "Arkadaşına Tavsiye Gönder"}
                                     </>
                                 )}
                             </button>

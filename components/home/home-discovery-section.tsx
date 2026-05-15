@@ -110,7 +110,7 @@ const COUNTRY_OPTIONS = [
 export function HomeDiscoverySection() {
     const headerRef = useRef<HTMLDivElement>(null);
     const userTriggeredRef = useRef(false);
-    const [activeType, setActiveType] = useState<MenuType>("movie");
+    const [activeType, setActiveType] = useState<MenuType>("all");
     const [activeCategory, setActiveCategory] = useState<MenuCategory>("trending");
     const [activeTimeWindow, setActiveTimeWindow] = useState<"day" | "week" | "month">("day");
     
@@ -128,6 +128,7 @@ export function HomeDiscoverySection() {
     const [languages, setLanguages] = useState<string[]>([]);
     const [countries, setCountries] = useState<string[]>([]);
     const [viewMode, setViewMode] = useState<"grid" | "list" | "compact">("grid");
+    const [upcomingFilter, setUpcomingFilter] = useState<"today" | "week" | "all">("all");
 
     const [items, setItems] = useState<DiscoverItem[]>([]);
     const [page, setPage] = useState(1);
@@ -262,6 +263,9 @@ export function HomeDiscoverySection() {
                 url.searchParams.set("category", activeCategory);
                 url.searchParams.set("timeWindow", activeTimeWindow);
                 url.searchParams.set("page", page.toString());
+                if (activeCategory === "upcoming") {
+                    url.searchParams.set("upcomingFilter", upcomingFilter);
+                }
                 
                 if (genres.length > 0) url.searchParams.set("genre", genres.join("|")); // TMDB uses | for OR for genres too
                 if (years.length > 0) url.searchParams.set("year", years.join(","));
@@ -293,7 +297,7 @@ export function HomeDiscoverySection() {
 
         fetchData();
         return () => controller.abort();
-    }, [activeType, activeCategory, activeTimeWindow, genres, years, ratings, providers, languages, countries, page]);
+    }, [activeType, activeCategory, activeTimeWindow, genres, years, ratings, providers, languages, countries, page, upcomingFilter]);
 
     const [isFilterSheetOpen, setIsFilterSheetOpen] = useState(false);
 
@@ -567,17 +571,45 @@ export function HomeDiscoverySection() {
                                         setActiveCategory(opt.id as MenuCategory);
                                     }}
                                     className={cn(
-                                        "flex-none flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-full text-[9px] md:text-xs font-black transition-all uppercase tracking-widest whitespace-nowrap",
+                                        "flex-none flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-full text-[9px] md:text-xs font-black transition-all uppercase tracking-widest whitespace-nowrap",
                                         activeCategory === opt.id
                                             ? "bg-white/10 text-white border border-white/15"
                                             : "text-neutral-500 hover:text-white"
                                     )}
                                 >
-                                    <opt.icon size={12} className={cn("md:w-3.5 md:h-3.5", activeCategory === opt.id ? "text-amber-400" : "")} />
-                                    {opt.label}
+                                    <div className={cn(
+                                        "flex items-center gap-1.5",
+                                        activeCategory === opt.id && opt.id === "upcoming" && "flex-col gap-0.5 -mt-1"
+                                    )}>
+                                        <opt.icon size={12} className={cn("md:w-3.5 md:h-3.5", activeCategory === opt.id ? "text-amber-400" : "")} />
+                                        <span>{opt.label}</span>
+                                    </div>
                                 </button>
                             ))}
                         </div>
+
+                        {/* Sub-filters for Takvim */}
+                        {activeCategory === "upcoming" && (
+                            <div className="flex bg-[#1b2334]/80 p-1 rounded-full border border-white/5 backdrop-blur-xl animate-in slide-in-from-left-2 duration-300">
+                                {["all", "today", "week"].map((f) => (
+                                    <button
+                                        key={f}
+                                        onClick={() => {
+                                            markUserTriggered();
+                                            setUpcomingFilter(f as any);
+                                        }}
+                                        className={cn(
+                                            "px-3 py-1.5 rounded-full text-[8px] md:text-[9px] font-black uppercase tracking-wider transition-all",
+                                            upcomingFilter === f
+                                                ? "bg-amber-400 text-black shadow-lg"
+                                                : "text-neutral-500 hover:text-white"
+                                        )}
+                                    >
+                                        {f === "all" ? "Tümü" : f === "today" ? "Bugün" : "Hafta"}
+                                    </button>
+                                ))}
+                            </div>
+                        )}
 
                         {/* Mobile Filter Trigger */}
                         <button
@@ -774,6 +806,8 @@ export function HomeDiscoverySection() {
                                         overview={item.overview}
                                         watchProviders={item.watch_providers}
                                         friend={item.friend}
+                                        statusLabel={item.statusLabel}
+                                        statusType={item.statusType}
                                         compact={viewMode === "compact"}
                                         genres={item.genre_ids?.map((id: number) => genreOptions.find(o => o.id === id.toString())?.label).filter((l): l is string => Boolean(l)).slice(0, 2)}
                                         fullWidth

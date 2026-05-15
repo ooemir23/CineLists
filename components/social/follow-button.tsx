@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { UserPlus, UserCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { toggleFollow } from "@/lib/social-actions";
+import { toast } from "sonner";
 
 interface FollowButtonProps {
   targetUserId: string;
@@ -18,22 +20,26 @@ export function FollowButton({
   const [isFollowing, setIsFollowing] = useState(initialIsFollowing);
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleFollowClick = async () => {
+  const handleFollowClick = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
     setIsLoading(true);
     try {
-      const response = await fetch(`/api/follow`, {
-        method: isFollowing ? "DELETE" : "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ targetUserId }),
-      });
-
-      if (response.ok) {
-        const newFollowingState = !isFollowing;
-        setIsFollowing(newFollowingState);
-        onFollowChange?.(newFollowingState);
+      const result = await toggleFollow(targetUserId);
+      
+      if (result.error) {
+        toast.error(result.error);
+        return;
       }
+
+      const newState = result.isFollowing;
+      setIsFollowing(newState as boolean);
+      onFollowChange?.(newState as boolean);
+      toast.success(newState ? "Takip edildi" : "Takip bırakıldı");
     } catch (error) {
-      console.error("Follow/Unfollow error:", error);
+      console.error("Follow error:", error);
+      toast.error("Bir hata oluştu");
     } finally {
       setIsLoading(false);
     }

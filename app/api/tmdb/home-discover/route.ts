@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { tmdb } from "@/lib/tmdb";
 import { getFriendsActivity } from "@/lib/feed-actions";
+import { auth } from "@/auth";
+import { prisma } from "@/lib/prisma";
 
 export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams;
@@ -16,6 +18,7 @@ export async function GET(request: NextRequest) {
     const language = searchParams.get("language");
     const country = searchParams.get("country");
     const sortBy = searchParams.get("sortBy") || "popularity.desc";
+    const upcomingFilter = searchParams.get("upcomingFilter") || "all";
 
     try {
         let results: any[] = [];
@@ -23,6 +26,16 @@ export async function GET(request: NextRequest) {
         // If any discovery filters are present, force category to discover
         const isDiscovering = genre || year || rating || provider || language || (sortBy !== "popularity.desc");
         const currentCategory = isDiscovering ? "discover" : category;
+
+        const session = await auth();
+        let watchedIds: Set<number> = new Set();
+        if (session?.user?.id) {
+            const watched = await prisma.watched.findMany({
+                where: { userId: session.user.id },
+                select: { media: { select: { tmdbId: true } } }
+            });
+            watchedIds = new Set(watched.map(w => w.media.tmdbId));
+        }
 
         if (currentCategory === "friends") {
             const activities = await getFriendsActivity();
@@ -123,7 +136,119 @@ export async function GET(request: NextRequest) {
             }
 
             if (currentCategory === "upcoming") {
-                return mediaType === "movie" ? tmdb.getUpcomingMovies({ page }) : tmdb.getOnTheAirTV({ page });
+                const session = await auth();
+                let userItems: any[] = [];
+                
+                if (session?.user?.id) {
+                    const [watching, toWatch] = await Promise.all([
+                        prisma.toWatch.findMany({
+                            where: { 
+                                userId: session.user.id, 
+                                status: "WATCHING",
+                                media: { type: mediaType === "movie" ? "MOVIE" : "TV" }
+                            },
+                            include: { media: true },
+                        }),
+                        prisma.toWatch.findMany({
+                            where: { 
+                                userId: session.user.id, 
+                                status: "PLAN_TO_WATCH",
+                                media: { type: mediaType === "movie" ? "MOVIE" : "TV" }
+                            },
+                            include: { media: true },
+                        }),
+                    ]);
+
+                    userItems = [
+                        ...(await Promise.all(watching.map(async (item) => {
+                            let statusLabel = "Şu An İzleniyor";
+                            let targetDate = null;
+                            if (item.media.type === "TV") {
+                                try {
+                                    const details = await tmdb.getTVShow(item.media.tmdbId.toString());
+                                    const nextEp = details.next_episode_to_air;
+                                    const lastEp = details.last_episode_to_air;
+                                    
+                                    if (nextEp) {
+                                        targetDate = nextEp.air_date;
+                                        const airDate = new Date(nextEp.air_date);
+                                        const formattedDate = airDate.toLocaleDateString("tr-TR", { day: "2-digit", month: "2-digit" });
+                                        statusLabel = `Yeni Bölüm: ${formattedDate} (S${nextEp.season_number} B${nextEp.episode_number})`;
+                                    } else if (lastEp) {
+                                        targetDate = lastEp.air_date;
+                                        const airDate = new Date(lastEp.air_date);
+                                        const now = new Date();
+                                        const diffDays = (now.getTime() - airDate.getTime()) / (1000 * 60 * 60 * 24);
+                                        
+                                        if (diffDays >= 0 && diffDays <= 7) {
+                                            const formattedDate = airDate.toLocaleDateString("tr-TR", { day: "2-digit", month: "2-digit" });
+                                            statusLabel = `Yeni Bölüm Yayında: ${formattedDate} (S${lastEp.season_number} B${lastEp.episode_number})`;
+                                        }
+                                    }
+                                } catch (e) {
+                                    console.error("Error fetching next episode for", item.media.title, e);
+                                }
+                            }
+                            return {
+                                id: item.media.tmdbId,
+                                title: item.media.title,
+                                poster_path: item.media.posterPath,
+                                media_type: item.media.type.toLowerCase(),
+                                vote_average: item.media.voteAverage || 0,
+                                statusLabel,
+                                statusType: "watching",
+                                addedAt: item.addedAt,
+                                targetDate
+                            };
+                        }))),
+                        ...toWatch.map(item => {
+                            const diffDays = Math.floor((new Date().getTime() - new Date(item.addedAt).getTime()) / (1000 * 60 * 60 * 24));
+                            const statusLabel = diffDays > 0 ? `${diffDays} gündür izlemedin` : "Hala izlemedin";
+                            return {
+                                id: item.media.tmdbId,
+                                title: item.media.title,
+                                poster_path: item.media.posterPath,
+                                media_type: item.media.type.toLowerCase(),
+                                vote_average: item.media.voteAverage || 0,
+                                statusLabel,
+                                statusType: "plan_to_watch",
+                                addedAt: item.addedAt,
+                                targetDate: null
+                            };
+                        })
+                    ].sort(() => Math.random() - 0.5);
+                }
+
+                const tmdbResults = mediaType === "movie" ? await tmdb.getUpcomingMovies({ page }) : await tmdb.getOnTheAirTV({ page });
+                
+                let filteredTmdbResults = (tmdbResults?.results || []).filter((item: any) => !watchedIds.has(item.id));
+
+                if (upcomingFilter !== "all") {
+                    const now = new Date();
+                    const isToday = (d: Date) => d.getDate() === now.getDate() && d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+                    const isThisWeek = (d: Date) => {
+                        const diff = (d.getTime() - now.getTime()) / (1000 * 60 * 60 * 24);
+                        return diff >= -1 && diff <= 7;
+                    };
+
+                    const filterFn = upcomingFilter === "today" ? isToday : isThisWeek;
+
+                    userItems = userItems.filter(item => {
+                        return (item as any).targetDate ? filterFn(new Date((item as any).targetDate)) : (upcomingFilter === "all");
+                    });
+
+                    filteredTmdbResults = filteredTmdbResults.filter(item => {
+                        const date = item.release_date || item.first_air_date;
+                        return date ? filterFn(new Date(date)) : false;
+                    });
+                }
+
+                if (userItems.length > 0 && page === "1") {
+                    const combined = [...userItems, ...filteredTmdbResults];
+                    return { ...tmdbResults, results: combined };
+                }
+
+                return { ...tmdbResults, results: filteredTmdbResults };
             }
 
             return tmdb.discover(mediaType, { ...discoverParams, ...(mediaType === "tv" && year ? { first_air_date_year: year } : {}) });
@@ -161,10 +286,16 @@ export async function GET(request: NextRequest) {
                 ...(tvData?.results || []).map((item: any) => ({ ...item, media_type: "tv" })),
             ].sort((a, b) => (b.popularity || 0) - (a.popularity || 0));
 
-            results = await enrichResults(combined);
+            // Filter out watched items
+            const filtered = combined.filter(item => !watchedIds.has(item.id));
+            results = await enrichResults(filtered);
         } else {
             const data = await fetchTypeResults(type as "movie" | "tv");
-            results = await enrichResults((data?.results || []).map((item: any) => ({ ...item, media_type: type })));
+            const combined = (data?.results || []).map((item: any) => ({ ...item, media_type: type }));
+            
+            // Filter out watched items
+            const filtered = combined.filter(item => !watchedIds.has(item.id));
+            results = await enrichResults(filtered);
         }
 
         return NextResponse.json({ results });

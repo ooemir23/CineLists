@@ -58,6 +58,8 @@ export const metadata: Metadata = {
   }
 };
 
+import { Toaster } from "sonner";
+
 export default async function RootLayout({
   children,
 }: Readonly<{
@@ -77,6 +79,7 @@ export default async function RootLayout({
             </ErrorBoundary>
           </main>
           <MobileDock user={session?.user} />
+          <Toaster theme="dark" position="bottom-right" richColors />
         </div>
       </body>
     </html>

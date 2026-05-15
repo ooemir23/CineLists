@@ -1,22 +1,25 @@
 import { auth } from "@/auth";
 import { getLeaderboard } from "@/lib/stats-actions";
 import { getDetailedUserStats } from "@/lib/detailed-stats-actions";
-import { BarChart3, Film, Tv, Layers, Clock, MessageSquare, Send, Star, Users, TrendingUp } from "lucide-react";
+import { getUserAchievements } from "@/lib/achievement-actions";
+import { BarChart3, Film, Tv, Layers, Clock, MessageSquare, Send, Star, Users, TrendingUp, Award } from "lucide-react";
 import Leaderboard from "@/components/stats/leaderboard";
 import { StatCard, TimeStatCard } from "@/components/stats/stats-cards";
 import GenreChart from "@/components/stats/genre-chart";
 import ActivityTimeline from "@/components/stats/activity-timeline";
 import WeeklyPatternChart from "@/components/stats/weekly-pattern-chart";
 import InsightsSection from "@/components/stats/insights-section";
+import { AchievementGrid } from "@/components/achievements/achievement-grid";
 import { redirect } from "next/navigation";
 
 export default async function StatsPage() {
     const session = await auth();
-    if (!session?.user) redirect("/login");
+    if (!session?.user?.id) redirect("/login");
 
-    const [detailedStats, leaderboard] = await Promise.all([
+    const [detailedStats, leaderboard, achievementsData] = await Promise.all([
         getDetailedUserStats(session.user.id),
-        getLeaderboard()
+        getLeaderboard(),
+        getUserAchievements(session.user.id)
     ]);
 
     if (!detailedStats) return null;
@@ -166,6 +169,59 @@ export default async function StatsPage() {
 
                     {/* Personal Insights */}
                     <InsightsSection insights={personalInsights} />
+
+                    {/* Achievements / Rozetler Section moved from old page */}
+                    <div className="mt-16 pt-10 border-t border-white/10">
+                        <div className="flex items-center gap-3 mb-6">
+                            <Award className="w-8 h-8 text-amber-400" />
+                            <h2 className="text-2xl md:text-3xl font-black text-white tracking-tight">Rozetlerim</h2>
+                        </div>
+                        {achievementsData && (
+                            <>
+                                <div className="bg-white/5 border border-white/10 rounded-2xl p-6 mb-8">
+                                    <div className="flex items-center justify-between mb-3">
+                                        <span className="text-sm font-bold text-white">
+                                            {achievementsData.totalUnlocked} / {achievementsData.totalPossible} Rozet
+                                        </span>
+                                        <span className="text-sm font-bold text-amber-400">
+                                            %{Math.round((achievementsData.totalUnlocked / achievementsData.totalPossible) * 100)}
+                                        </span>
+                                    </div>
+                                    <div className="w-full h-3 bg-white/10 rounded-full overflow-hidden">
+                                        <div
+                                            className="h-full bg-gradient-to-r from-amber-400 to-orange-500 rounded-full transition-all duration-1000"
+                                            style={{
+                                                width: `${(achievementsData.totalUnlocked / achievementsData.totalPossible) * 100}%`,
+                                            }}
+                                        />
+                                    </div>
+                                    <p className="text-xs text-neutral-500 mt-2">
+                                        {achievementsData.totalPossible - achievementsData.totalUnlocked} rozet daha kazanabilirsin!
+                                    </p>
+                                </div>
+
+                                <div className="space-y-10">
+                                    {Object.entries({
+                                        watch: { label: "İzleme", items: achievementsData.achievements.filter((a: any) => a.category === "watch") },
+                                        rate: { label: "Puanlama & İnceleme", items: achievementsData.achievements.filter((a: any) => a.category === "rate") },
+                                        social: { label: "Sosyal", items: achievementsData.achievements.filter((a: any) => a.category === "social") },
+                                        list: { label: "Listeler", items: achievementsData.achievements.filter((a: any) => a.category === "list") },
+                                        special: { label: "Özel", items: achievementsData.achievements.filter((a: any) => a.category === "special") },
+                                    }).map(([key, category]) => (
+                                        <div key={key}>
+                                            <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
+                                                {category.label}
+                                                <span className="text-xs text-neutral-500 font-normal">
+                                                    ({category.items.filter((i: any) => i.unlocked).length}/{category.items.length})
+                                                </span>
+                                            </h3>
+                                            <AchievementGrid achievements={category.items} />
+                                        </div>
+                                    ))}
+                                </div>
+                            </>
+                        )}
+                    </div>
                 </div>
 
                 {/* Sidebar Column */}

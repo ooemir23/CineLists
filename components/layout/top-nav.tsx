@@ -16,6 +16,8 @@ import {
   LogOut,
   User,
   MessageCircle,
+  Users,
+  Eye,
 } from "lucide-react";
 import { NotificationBell } from "./notification-bell";
 import { handleSignOut } from "@/lib/auth-actions";
@@ -59,13 +61,14 @@ export function TopNav({ user }: TopNavProps) {
     if (pathname.startsWith("/search")) return "explore";
     if (pathname.startsWith("/profile")) return "profile";
     if (pathname.startsWith("/watched")) return "watched";
+    if (pathname.startsWith("/watching")) return "watching";
     if (pathname.startsWith("/watchlist")) return "watchlist";
     if (pathname.startsWith("/achievements")) return "achievements";
     if (pathname.startsWith("/stats")) return "stats";
     return "";
   };
   const activeView = getActiveView();
-  const desktopLibraryItems = libraryNavItems.filter((item) => !["watchlist", "watched"].includes(item.key));
+  const desktopLibraryItems = libraryNavItems.filter((item) => !["watchlist", "watched", "watching"].includes(item.key));
 
   return (
     <>
@@ -112,7 +115,18 @@ export function TopNav({ user }: TopNavProps) {
                 <span className="text-[10px] mt-0.5 font-bold uppercase tracking-wider">İzlenenler</span>
               </Link>
 
-              {/* Listem */}
+              {/* İzliyorum */}
+              <Link
+                href="/watching"
+                className={`flex flex-col items-center justify-center h-full transition-all duration-200 px-3 group ${activeView === 'watching' ? 'text-sky-400' : inactiveColor}`}
+              >
+                <div className={`p-1.5 rounded-xl transition-colors ${activeView === 'watching' ? 'bg-sky-400/10' : 'group-hover:bg-white/5'}`}>
+                  <Eye size={22} />
+                </div>
+                <span className="text-[10px] mt-0.5 font-bold uppercase tracking-wider">İzliyorum</span>
+              </Link>
+
+              {/* Takip Ettiklerim */}
               <Link
                 href="/watchlist"
                 className={`flex flex-col items-center justify-center h-full transition-all duration-200 px-3 group ${activeView === 'watchlist' ? activeColor : inactiveColor}`}
@@ -120,7 +134,7 @@ export function TopNav({ user }: TopNavProps) {
                 <div className={`p-1.5 rounded-xl transition-colors ${activeView === 'watchlist' ? 'bg-amber-400/10' : 'group-hover:bg-white/5'}`}>
                   <Bookmark size={22} />
                 </div>
-                <span className="text-[10px] mt-0.5 font-bold uppercase tracking-wider">Listem</span>
+                <span className="text-[10px] mt-0.5 font-bold uppercase tracking-wider whitespace-nowrap">Takip Ettiklerim</span>
               </Link>
             </div>
 
@@ -177,7 +191,7 @@ export function TopNav({ user }: TopNavProps) {
                 <div className={`p-1.5 rounded-xl transition-colors ${activeView === 'feed' ? 'bg-amber-400/10' : 'group-hover:bg-white/5'}`}>
                   <Compass size={22} />
                 </div>
-                <span className="text-[10px] mt-0.5 font-bold uppercase tracking-wider">Akış</span>
+                <span className="text-[10px] mt-0.5 font-bold uppercase tracking-wider">Sosyal Akış</span>
               </Link>
 
               {/* İstatistikler */}
@@ -189,6 +203,17 @@ export function TopNav({ user }: TopNavProps) {
                   <BarChart3 size={22} />
                 </div>
                 <span className="text-[10px] mt-0.5 font-bold uppercase tracking-wider">İstatistik</span>
+              </Link>
+
+              {/* Topluluk */}
+              <Link
+                href="/community"
+                className={`flex flex-col items-center justify-center h-full transition-all duration-200 px-3 group ${activeView === 'community' ? activeColor : inactiveColor}`}
+              >
+                <div className={`p-1.5 rounded-xl transition-colors ${activeView === 'community' ? 'bg-amber-400/10' : 'group-hover:bg-white/5'}`}>
+                  <Users size={22} />
+                </div>
+                <span className="text-[10px] mt-0.5 font-bold uppercase tracking-wider">Topluluk</span>
               </Link>
 
               {desktopLibraryItems.map((item) => (

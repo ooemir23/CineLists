@@ -31,6 +31,8 @@ type MediaCardProps = {
     };
     compact?: boolean;
     genres?: string[];
+    statusLabel?: string;
+    statusType?: "watching" | "plan_to_watch";
 };
 
 const IMAGE_BASE_URL = "https://image.tmdb.org/t/p/w500";
@@ -71,7 +73,9 @@ export function MediaCard({
     watchProviders,
     friend,
     compact = false,
-    genres
+    genres,
+    statusLabel,
+    statusType
 }: MediaCardProps) {
     type FriendRating = {
         userId: string;
@@ -141,6 +145,16 @@ export function MediaCard({
                 )}
             >
                 {/* External Top Badges (Platforms and Genres) */}
+                {statusLabel && (
+                    <div className={cn(
+                        "absolute -top-2 left-1/2 -translate-x-1/2 z-[60] px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest shadow-lg border backdrop-blur-md whitespace-nowrap animate-in fade-in slide-in-from-top-1 duration-300",
+                        statusType === "watching" 
+                            ? "bg-sky-500/90 text-white border-sky-400 shadow-sky-500/20" 
+                            : "bg-amber-500/90 text-slate-950 border-amber-400 shadow-amber-500/20"
+                    )}>
+                        {statusLabel}
+                    </div>
+                )}
                 {type !== "person" && ((genres && genres.length > 0) || (watchProviders?.flatrate)) && (
                     <div className="flex items-end justify-between w-full px-2 mb-1 z-20 relative pointer-events-none">
                         {/* Platforms */}
@@ -174,11 +188,15 @@ export function MediaCard({
 
                 <div className={cn(
                     "relative aspect-[2/3] rounded-xl md:rounded-2xl bg-slate-800 shadow-xl transition-all duration-500 group-hover:scale-[1.03] group-hover:shadow-2xl",
-                    type === "movie"
-                        ? "group-hover:ring-2 group-hover:ring-amber-500/50 group-hover:shadow-amber-500/20"
-                        : type === "tv"
-                            ? "group-hover:ring-2 group-hover:ring-blue-500/50 group-hover:shadow-blue-500/20"
-                            : "group-hover:ring-2 group-hover:ring-primary/50",
+                    statusType === "plan_to_watch" 
+                        ? "ring-2 ring-rose-500/50 shadow-rose-500/20" 
+                        : statusType === "watching" 
+                            ? "ring-2 ring-sky-500/50 shadow-sky-500/20" 
+                            : type === "movie"
+                                ? "group-hover:ring-2 group-hover:ring-amber-500/50 group-hover:shadow-amber-500/20"
+                                : type === "tv"
+                                    ? "group-hover:ring-2 group-hover:ring-blue-500/50 group-hover:shadow-blue-500/20"
+                                    : "group-hover:ring-2 group-hover:ring-primary/50",
                     type === "person" && "aspect-square rounded-full border-4 border-white/5 group-hover:border-primary/50"
                 )}>
                     {/* Friend Activity Overlay */}
@@ -244,13 +262,28 @@ export function MediaCard({
                     {/* Label and Ratings Row */}
                     {type !== "person" && (
                         <div className="flex items-center justify-between gap-1 overflow-hidden">
-                            <span className={cn(
-                                "font-black uppercase tracking-[0.1em] shrink-0",
-                                compact ? "text-[7px]" : "text-[8px] md:text-[9px]",
-                                type === "movie" ? "text-amber-500" : "text-blue-500"
-                            )}>
-                                {type === "movie" ? "Film" : "Dizi"}
-                            </span>
+                            <div className="flex items-center gap-1.5 shrink-0">
+                                <span className={cn(
+                                    "font-black uppercase tracking-[0.1em]",
+                                    compact ? "text-[7px]" : "text-[8px] md:text-[9px]",
+                                    type === "movie" ? "text-amber-500" : "text-blue-500"
+                                )}>
+                                    {type === "movie" ? "Film" : "Dizi"}
+                                </span>
+                                {(releaseDate || runtime) && (
+                                    <>
+                                        <span className="text-neutral-600 font-black text-[8px]">•</span>
+                                        <span className={cn(
+                                            "font-bold text-neutral-500 flex items-center gap-1 uppercase tracking-wider",
+                                            compact ? "text-[7px]" : "text-[8px] md:text-[9px]"
+                                        )}>
+                                            {releaseDate && new Date(releaseDate).getFullYear()}
+                                            {releaseDate && runtime && <span className="text-neutral-600 font-black text-[8px] mx-0.5">•</span>}
+                                            {runtime && formatRuntime(runtime)}
+                                        </span>
+                                    </>
+                                )}
+                            </div>
 
                             <div className={cn("flex items-center flex-1 justify-end min-w-0", compact ? "gap-0.5" : "gap-1 md:gap-2")}>
                                 {/* TMDB Global Rating */}
@@ -286,25 +319,12 @@ export function MediaCard({
                         <AutoScrollText text={title} />
                     </div>
                     {originalTitle && originalTitle !== title && type !== "person" && (
-                        <p className="text-[8px] md:text-[10px] font-bold text-neutral-500 uppercase tracking-tight truncate opacity-80">
+                        <p className="text-[8px] md:text-[10px] font-bold text-neutral-500 uppercase tracking-tight truncate opacity-80 mt-[-2px]">
                             {originalTitle}
                         </p>
                     )}
-                    {type === "person" ? (
-                        <span className="text-xs text-primary/80 font-bold uppercase tracking-widest">Sanatçı</span>
-                    ) : (
-                        <div className="flex items-center flex-wrap gap-x-2 gap-y-1 mt-0.5">
-                            {releaseDate && (
-                                <span className="text-[11px] font-bold text-neutral-500">
-                                    {new Date(releaseDate).getFullYear()}
-                                </span>
-                            )}
-                            {runtime && (
-                                <span className="text-[11px] font-medium text-neutral-500">
-                                    • {formatRuntime(runtime)}
-                                </span>
-                            )}
-                        </div>
+                    {type === "person" && (
+                        <span className="text-xs text-primary/80 font-bold uppercase tracking-widest mt-0.5">Sanatçı</span>
                     )}
                 </div>
 

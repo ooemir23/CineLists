@@ -147,6 +147,62 @@ export async function toggleWatchedStatus(mediaId: number, type: "movie" | "tv",
     }
 }
 
+export async function setWatchStatus(mediaId: number, type: "movie" | "tv", title: string, posterPath: string | null, status: "PLAN_TO_WATCH" | "WATCHING") {
+    const session = await auth();
+    if (!session?.user?.id) return { error: "Giriş yapmalısınız" };
+
+    let media = await prisma.mediaItem.findUnique({
+        where: { tmdbId: mediaId },
+    });
+
+    if (!media) {
+        const details = await tmdb.getDetails(type, mediaId.toString());
+        const genres = details.genres?.map((g: any) => g.name) || [];
+
+        media = await prisma.mediaItem.create({
+            data: {
+                tmdbId: mediaId,
+                type: type === "movie" ? "MOVIE" : "TV",
+                title: title,
+                posterPath: posterPath,
+                genres: genres,
+                voteAverage: details.vote_average || 0,
+                runtime: type === "movie" ? details.runtime : null,
+            },
+        });
+    }
+
+    // Remove from watched if moving to a to-watch state
+    await prisma.watched.deleteMany({
+        where: {
+            userId: session.user.id,
+            mediaId: media.id,
+        },
+    });
+
+    // Upsert toWatch with specific status
+    await prisma.toWatch.upsert({
+        where: {
+            userId_mediaId: {
+                userId: session.user.id,
+                mediaId: media.id,
+            },
+        },
+        update: { status: status as any },
+        create: {
+            userId: session.user.id,
+            mediaId: media.id,
+            status: status as any,
+        },
+    });
+
+    revalidatePath("/watchlist");
+    revalidatePath("/profile");
+    revalidatePath(`/${type}/${mediaId}`);
+
+    return { success: true };
+}
+
 export async function getWatchStatus(mediaId: number) {
     const session = await auth();
     if (!session?.user?.id) return null;
@@ -177,7 +233,7 @@ export async function getWatchStatus(mediaId: number) {
         },
     });
 
-    if (toWatch) return "PLAN_TO_WATCH";
+    if (toWatch) return toWatch.status;
 
     return null;
 }

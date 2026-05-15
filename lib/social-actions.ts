@@ -102,7 +102,11 @@ export async function searchUsers(query: string) {
             username: true,
             image: true,
             _count: {
-                select: { followedBy: true },
+                select: { 
+                    followedBy: true,
+                    achievements: true,
+                    activities: true
+                },
             },
         },
         take: 10,
@@ -110,7 +114,42 @@ export async function searchUsers(query: string) {
 
     return users.map(u => ({
         ...u,
-        followersCount: (u as any)._count.followedBy
+        followersCount: u._count.followedBy,
+        achievementsCount: u._count.achievements,
+        activitiesCount: u._count.activities
+    }));
+}
+
+export async function getGlobalActiveUsers() {
+    // Get top 10 users by achievement count + activity count
+    // Since we can't easily sum counts in prisma findMany orderBy, 
+    // we'll get users with their counts and sort in JS, or just use achievement count for simplicity.
+    const users = await prisma.user.findMany({
+        take: 10,
+        orderBy: [
+            { achievements: { _count: 'desc' } },
+            { activities: { _count: 'desc' } }
+        ],
+        select: {
+            id: true,
+            name: true,
+            username: true,
+            image: true,
+            _count: {
+                select: { 
+                    followedBy: true,
+                    achievements: true,
+                    activities: true
+                }
+            }
+        }
+    });
+
+    return users.map(u => ({
+        ...u,
+        followersCount: u._count.followedBy,
+        achievementsCount: u._count.achievements,
+        activitiesCount: u._count.activities
     }));
 }
 

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, Search, Heart, User, LogOut, LogIn, Users, Bell, Activity, MessageSquare, BarChart3, Check, Award } from "lucide-react";
+import { Home, Search, Heart, User, LogOut, LogIn, Users, Bell, Activity, MessageSquare, BarChart3, Check, Award, Eye } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
 
@@ -56,6 +56,18 @@ export function Sidebar({ user }: SidebarProps) {
                 </Link>
 
                 <Link
+                    href="/watching"
+                    className={cn(
+                        "flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 group text-sm font-medium",
+                        pathname === "/watching"
+                            ? "bg-sky-500/20 text-sky-400 shadow-[0_0_20px_-5px_rgba(14,165,233,0.5)]"
+                            : "text-neutral-400 hover:text-white hover:bg-white/5"
+                    )}
+                >
+                    <Eye className={cn("w-5 h-5", pathname === "/watching" ? "text-sky-400" : "text-neutral-500 group-hover:text-white")} />
+                    İzliyorum
+                </Link>
+                <Link
                     href="/watchlist"
                     className={cn(
                         "flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 group text-sm font-medium",
@@ -64,8 +76,8 @@ export function Sidebar({ user }: SidebarProps) {
                             : "text-neutral-400 hover:text-white hover:bg-white/5"
                     )}
                 >
-                    <Heart className={cn("w-5 h-5", pathname === "/watchlist" ? "text-primary" : "text-neutral-500 group-hover:text-white")} />
-                    Listem
+                    <Bookmark className={cn("w-5 h-5", pathname === "/watchlist" ? "text-primary" : "text-neutral-500 group-hover:text-white")} />
+                    Takip Ettiklerim
                 </Link>
                 <Link
                     href="/watched"
@@ -90,7 +102,7 @@ export function Sidebar({ user }: SidebarProps) {
                     )}
                 >
                     <Activity className={cn("w-5 h-5", pathname === "/feed" ? "text-primary" : "text-neutral-500 group-hover:text-white")} />
-                    Akış
+                    Sosyal Akış
                 </Link>
                 <Link
                     href="/notifications"

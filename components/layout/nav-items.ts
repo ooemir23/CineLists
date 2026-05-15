@@ -8,6 +8,7 @@ import {
   MessageCircle,
   User,
   Users,
+  Eye,
 } from "lucide-react";
 
 export type NavItem = {
@@ -21,6 +22,14 @@ export type NavItem = {
 
 export const libraryNavItems: NavItem[] = [
   {
+    key: "watching",
+    href: "/watching",
+    label: "İzliyorum",
+    icon: Eye,
+    iconBgClass: "bg-sky-500/10",
+    iconTextClass: "text-sky-400",
+  },
+  {
     key: "watched",
     href: "/watched",
     label: "İzlenenler",
@@ -31,19 +40,10 @@ export const libraryNavItems: NavItem[] = [
   {
     key: "watchlist",
     href: "/watchlist",
-    label: "Listem",
+    label: "Takip Ettiklerim",
     icon: Bookmark,
     iconBgClass: "bg-amber-500/10",
     iconTextClass: "text-amber-400",
-  },
-
-  {
-    key: "achievements",
-    href: "/achievements",
-    label: "Rozetler",
-    icon: Award,
-    iconBgClass: "bg-yellow-500/10",
-    iconTextClass: "text-yellow-400",
   },
 ];
 
@@ -71,14 +71,6 @@ export const profileNavItems: NavItem[] = [
     icon: Bell,
     iconBgClass: "bg-rose-400/10",
     iconTextClass: "text-rose-400",
-  },
-  {
-    key: "community",
-    href: "/community",
-    label: "Topluluk",
-    icon: Users,
-    iconBgClass: "bg-indigo-400/10",
-    iconTextClass: "text-indigo-400",
   },
 ];
 

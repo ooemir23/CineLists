@@ -26,6 +26,9 @@ export interface UpcomingEpisode {
     platformLogos?: { name: string; logoPath: string | null }[];
     posterPath: string | null;
     voteAverage: number;
+    statusType?: "watching" | "plan_to_watch";
+    addedAt?: Date;
+    mediaType: "movie" | "tv";
 }
 
 export interface FriendStats {
@@ -129,69 +132,163 @@ export async function getFavoriteActorsUpcoming(): Promise<UpcomingActorProject[
 }
 
 /**
- * Get next episodes for watched TV shows
+ * Get next episodes for watched TV shows + currently watching shows
  */
 export async function getWatchedShowsNextEpisodes(): Promise<UpcomingEpisode[]> {
     try {
         const session = await auth();
         if (!session?.user?.id) return [];
 
-        // Get watched shows (TV only)
-        const watchedShows = await prisma.watched.findMany({
-            where: {
-                userId: session.user.id,
-                media: { type: "TV" },
-            },
-            include: { media: true },
-            take: 5,
-            orderBy: { watchedAt: "desc" },
-        });
+        // Get watched shows (TV only) + Currently watching shows + Plan to watch shows
+        const [watchedShows, watchingShows, planToWatchShows] = await Promise.all([
+            prisma.watched.findMany({
+                where: {
+                    userId: session.user.id,
+                    media: { type: "TV" },
+                },
+                include: { media: true },
+                take: 5,
+                orderBy: { watchedAt: "desc" },
+            }),
+            prisma.toWatch.findMany({
+                where: {
+                    userId: session.user.id,
+                    status: "WATCHING",
+                    media: { type: "TV" },
+                },
+                include: { media: true },
+                take: 5,
+                orderBy: { addedAt: "desc" },
+            }),
+            prisma.toWatch.findMany({
+                where: {
+                    userId: session.user.id,
+                    status: "PLAN_TO_WATCH",
+                },
+                include: { media: true },
+                take: 20,
+                orderBy: { addedAt: "desc" },
+            })
+        ]);
 
-        if (watchedShows.length === 0) return [];
+        const combinedShows = [
+            ...watchedShows.map(w => ({ media: w.media, statusType: undefined, addedAt: w.watchedAt })),
+            ...watchingShows.map(w => ({ media: w.media, statusType: "watching" as const, addedAt: w.addedAt })),
+            ...planToWatchShows.map(w => ({ media: w.media, statusType: "plan_to_watch" as const, addedAt: w.addedAt }))
+        ];
+
+        // Dedup by media ID
+        const uniqueShows = Array.from(new Map(combinedShows.map(s => [s.media.id, s])).values());
+
+        if (uniqueShows.length === 0) return [];
 
         const episodes: UpcomingEpisode[] = [];
 
-        for (const watched of watchedShows) {
-            try {
-                const showData = await tmdb.getTVShow(watched.media.tmdbId.toString());
-                if (!showData || !showData.seasons) continue;
+        for (const item of uniqueShows) {
+            if (item.media.type === "TV") {
+                try {
+                    const showData = await tmdb.getTVShow(item.media.tmdbId.toString());
+                    if (!showData || !showData.seasons) continue;
 
-                // Get next air date from show data
-                const nextEpisodeDate = showData.next_episode_to_air?.air_date;
-                const nextEpisodeTitle = showData.next_episode_to_air?.name ?? null;
-                const nextEpisodeSeason = showData.next_episode_to_air?.season_number ?? null;
-                const nextEpisodeNumber = showData.next_episode_to_air?.episode_number ?? null;
-                const networks = (showData.networks || []).map((n: any) => n.name);
+                    // Get next air date or last air date from show data
+                    const nextEpisodeDate = showData.next_episode_to_air?.air_date ?? null;
+                    const nextEpisodeTitle = showData.next_episode_to_air?.name ?? null;
+                    const nextEpisodeSeason = showData.next_episode_to_air?.season_number ?? null;
+                    const nextEpisodeNumber = showData.next_episode_to_air?.episode_number ?? null;
 
-                // Get watch providers
-                const providers = await tmdb.getWatchProviders("tv", watched.media.tmdbId.toString());
-                const platformEntries = (providers?.results?.TR?.flatrate || []).slice(0, 3);
-                const platformNames = platformEntries.map((p: any) => p.provider_name);
-                const platformLogos = platformEntries.map((p: any) => ({
-                    name: p.provider_name,
-                    logoPath: p.logo_path || null,
-                }));
+                    const lastEpisodeDate = showData.last_episode_to_air?.air_date ?? null;
+                    const lastEpisodeTitle = showData.last_episode_to_air?.name ?? null;
+                    const lastEpisodeSeason = showData.last_episode_to_air?.season_number ?? null;
+                    const lastEpisodeNumber = showData.last_episode_to_air?.episode_number ?? null;
 
-                if (nextEpisodeDate || platformNames.length > 0) {
-                    episodes.push({
-                        showId: watched.media.tmdbId,
-                        showTitle: watched.media.title,
-                        nextEpisodeDate: nextEpisodeDate,
-                        nextEpisodeTitle: nextEpisodeTitle,
-                        nextEpisodeSeason: nextEpisodeSeason,
-                        nextEpisodeNumber: nextEpisodeNumber,
-                        platforms: platformNames || networks,
-                        platformLogos: platformLogos,
-                        posterPath: watched.media.posterPath,
-                        voteAverage: watched.media.voteAverage || 0,
-                    });
+                    const networks = (showData.networks || []).map((n: any) => n.name);
+
+                    // Check if last episode was recent (last 7 days)
+                    let isRecent = false;
+                    if (lastEpisodeDate) {
+                        const airDate = new Date(lastEpisodeDate);
+                        const now = new Date();
+                        const diffDays = (now.getTime() - airDate.getTime()) / (1000 * 60 * 60 * 24);
+                        isRecent = diffDays >= 0 && diffDays <= 7;
+                    }
+
+                    const displayDate = nextEpisodeDate || (isRecent ? lastEpisodeDate : null);
+                    const displayTitle = nextEpisodeDate ? nextEpisodeTitle : (isRecent ? lastEpisodeTitle : null);
+                    const displaySeason = nextEpisodeDate ? nextEpisodeSeason : (isRecent ? lastEpisodeSeason : null);
+                    const displayNumber = nextEpisodeDate ? nextEpisodeNumber : (isRecent ? lastEpisodeNumber : null);
+
+                    // Get watch providers
+                    const providers = await tmdb.getWatchProviders("tv", item.media.tmdbId.toString());
+                    const platformEntries = (providers?.results?.TR?.flatrate || []).slice(0, 3);
+                    const platformNames = platformEntries.map((p: any) => p.provider_name);
+                    const platformLogos = platformEntries.map((p: any) => ({
+                        name: p.provider_name,
+                        logoPath: p.logo_path || null,
+                    }));
+
+                    if (displayDate || platformNames.length > 0 || item.statusType === "plan_to_watch") {
+                        episodes.push({
+                            showId: item.media.tmdbId,
+                            showTitle: item.media.title,
+                            nextEpisodeDate: displayDate,
+                            nextEpisodeTitle: displayTitle,
+                            nextEpisodeSeason: displaySeason,
+                            nextEpisodeNumber: displayNumber,
+                            platforms: platformNames.length > 0 ? platformNames : networks,
+                            platformLogos: platformLogos,
+                            posterPath: item.media.posterPath,
+                            voteAverage: item.media.voteAverage || 0,
+                            statusType: item.statusType,
+                            addedAt: item.addedAt,
+                            mediaType: "tv",
+                        });
+                    }
+                } catch (error) {
+                    console.error(`Error fetching episodes for show ${item.media.tmdbId}:`, error);
                 }
-            } catch (error) {
-                console.error(`Error fetching episodes for show ${watched.media.tmdbId}:`, error);
+            } else {
+                // It's a Movie
+                try {
+                    const movieData = await tmdb.getDetails("movie", item.media.tmdbId.toString());
+                    const providers = await tmdb.getWatchProviders("movie", item.media.tmdbId.toString());
+                    const platformEntries = (providers?.results?.TR?.flatrate || []).slice(0, 3);
+                    const platformNames = platformEntries.map((p: any) => p.provider_name);
+                    const platformLogos = platformEntries.map((p: any) => ({
+                        name: p.provider_name,
+                        logoPath: p.logo_path || null,
+                    }));
+
+                    episodes.push({
+                        showId: item.media.tmdbId,
+                        showTitle: item.media.title,
+                        nextEpisodeDate: movieData.release_date || null,
+                        platforms: platformNames,
+                        platformLogos: platformLogos,
+                        posterPath: item.media.posterPath,
+                        voteAverage: item.media.voteAverage || 0,
+                        statusType: item.statusType,
+                        addedAt: item.addedAt,
+                        mediaType: "movie",
+                    });
+                } catch (error) {
+                    console.error(`Error fetching movie data for ${item.media.tmdbId}:`, error);
+                }
             }
         }
 
-        return episodes.slice(0, 3); // Limit to top 3
+        // Sort by date (past to future, with nulls at the end)
+        const sorted = episodes.sort((a, b) => {
+            if (!a.nextEpisodeDate && !b.nextEpisodeDate) return 0;
+            if (!a.nextEpisodeDate) return 1;
+            if (!b.nextEpisodeDate) return -1;
+            return new Date(a.nextEpisodeDate).getTime() - new Date(b.nextEpisodeDate).getTime();
+        });
+
+        // Mix in some randomness but keep the top few somewhat stable
+        const prioritized = sorted.slice(0, 5);
+        const others = sorted.slice(5).sort(() => Math.random() - 0.5);
+
+        return [...prioritized, ...others].slice(0, 20);
     } catch (error) {
         console.error("Error getting next episodes:", error);
         return [];
@@ -323,9 +420,9 @@ export async function getFollowedHighlights(): Promise<FollowedHighlight[]> {
                     const lastEpisodeDate = data.last_episode_to_air?.air_date || null;
                     const nextEpisodeDate = data.next_episode_to_air?.air_date || null;
                     if (isWithinDays(lastEpisodeDate, 7)) {
-                        eventLabel = "Yeni Bolum";
+                        eventLabel = "Yeni Bölüm";
                     } else if (isWithinNextDays(nextEpisodeDate, 7)) {
-                        eventLabel = "Yeni Bolum Yakinda";
+                        eventLabel = "Yeni Bölüm Yakında";
                     }
                 }
 
@@ -337,7 +434,7 @@ export async function getFollowedHighlights(): Promise<FollowedHighlight[]> {
                 }
 
                 if (!eventLabel && matchesPlatforms(flatrate, preferredPlatforms)) {
-                    eventLabel = "Platformda Yayinda";
+                    eventLabel = "Platformda Yayında";
                 }
 
                 if (!eventLabel) return null;

@@ -114,7 +114,7 @@ export function MobileDock({ user }: MobileDockProps) {
             onClick={() => { setMenuOpen(false); setProfileMenuOpen(false); }}
           >
             <Compass size={22} strokeWidth={activeView === 'feed' ? 2.5 : 2} />
-            <span className="text-[9px] font-black uppercase tracking-tighter">Akış</span>
+            <span className="text-[9px] font-black uppercase tracking-tighter text-center">Sosyal Akış</span>
           </Link>
 
           {/* Profilim menü tuşu */}

@@ -141,14 +141,20 @@ model Watched {
 }
 
 model ToWatch {
-  id      String    @id @default(cuid())
+  id      String      @id @default(cuid())
   userId  String
   mediaId String
-  addedAt DateTime  @default(now())
-  media   MediaItem @relation(fields: [mediaId], references: [id])
-  user    User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  addedAt DateTime    @default(now())
+  status  WatchStatus @default(PLAN_TO_WATCH)
+  media   MediaItem   @relation(fields: [mediaId], references: [id])
+  user    User        @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, mediaId])
+}
+
+enum WatchStatus {
+  PLAN_TO_WATCH
+  WATCHING
 }
 
 model Activity {

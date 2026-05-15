@@ -3,6 +3,7 @@
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
+import { sendRecommendationEmail } from "@/lib/mail";
 
 export async function recommendMedia(params: {
     receiverId: string;
@@ -20,6 +21,12 @@ export async function recommendMedia(params: {
     }
 
     const { receiverId, mediaId, mediaType, title, posterPath, message } = params;
+
+    // 0. Get receiver info
+    const receiver = await prisma.user.findUnique({
+        where: { id: receiverId },
+        select: { email: true, name: true }
+    });
 
     // 1. Ensure MediaItem exists in DB
     let media = await prisma.mediaItem.findUnique({
@@ -58,6 +65,20 @@ export async function recommendMedia(params: {
             link: `/${mediaType}/${mediaId}`,
         },
     });
+
+    // 4. Send Email Notification
+    if (receiver?.email) {
+        // Fire and forget email to not block the response
+        sendRecommendationEmail(
+            receiver.email,
+            session.user.name || "Bir arkadaşın",
+            title,
+            mediaType,
+            mediaId,
+            posterPath,
+            message
+        );
+    }
 
     revalidatePath("/feed");
     return { success: true, recommendation };
