@@ -128,11 +128,11 @@ export const sendRecommendationEmail = async (params: {
                         </div>
 
                         <!-- Main Grid Layout -->
-                        <div style="padding: 20px 40px 40px 40px;">
+                        <div style="padding: 20px 40px 10px 40px;">
                             <div style="display: table; width: 100%; border-collapse: separate; border-spacing: 0;">
                                 <div style="display: table-row;">
                                     
-                                    <!-- Column 1: Poster & Type & Platforms -->
+                                    <!-- Column 1: Poster & Label/Platforms -->
                                     <div style="display: table-cell; width: 160px; vertical-align: top; padding-right: 30px;">
                                         <a href="${mediaLink}" style="text-decoration: none; border: none; outline: none;">
                                             ${posterUrl ? 
@@ -140,18 +140,16 @@ export const sendRecommendationEmail = async (params: {
                                                 `<div style="width: 160px; height: 240px; background-color: rgba(255,255,255,0.05); border-radius: 20px;"></div>`
                                             }
                                         </a>
-                                        <div style="margin-top: 15px; text-align: center;">
-                                            <div style="background: #fbbf24; color: #020617; padding: 4px 10px; border-radius: 6px; font-size: 9px; font-weight: 900; display: inline-block; text-transform: uppercase; margin-bottom: 12px;">${mediaLabel}</div>
+                                        <div style="margin-top: 15px; text-align: center; display: flex; align-items: center; justify-content: center; gap: 8px; flex-wrap: wrap;">
+                                            <div style="background: #fbbf24; color: #020617; padding: 4px 10px; border-radius: 6px; font-size: 9px; font-weight: 900; text-transform: uppercase; white-space: nowrap;">${mediaLabel}</div>
                                             
                                             ${platforms && platforms.length > 0 ? `
-                                                <div style="display: block; margin-top: 5px;">
-                                                    <div style="display: inline-flex; justify-content: center; flex-wrap: wrap; gap: 6px;">
-                                                        ${platforms.slice(0, 3).map(p => `
-                                                            <div style="background: rgba(255,255,255,0.05); padding: 5px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05);" title="${p.name}">
-                                                                ${p.logo ? `<img src="https://image.tmdb.org/t/p/w92${p.logo}" style="width: 18px; height: 18px; border-radius: 4px; display: block;" />` : ''}
-                                                            </div>
-                                                        `).join('')}
-                                                    </div>
+                                                <div style="display: inline-flex; align-items: center; gap: 6px;">
+                                                    ${platforms.slice(0, 3).map(p => `
+                                                        <div style="background: rgba(255,255,255,0.08); padding: 4px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.1);" title="${p.name}">
+                                                            ${p.logo ? `<img src="https://image.tmdb.org/t/p/w92${p.logo}" style="width: 16px; height: 16px; border-radius: 3px; display: block;" />` : ''}
+                                                        </div>
+                                                    `).join('')}
                                                 </div>
                                             ` : ''}
                                         </div>
@@ -172,30 +170,35 @@ export const sendRecommendationEmail = async (params: {
                                         </a>
                                     </div>
 
-                                    <!-- Column 3: Thoughts & Buttons -->
+                                    <!-- Column 3: Actions -->
                                     <div style="display: table-cell; width: 220px; vertical-align: top;">
-                                        ${message ? `
-                                            <div style="margin-bottom: 20px; padding: 18px; background: rgba(255, 255, 255, 0.03); border-left: 4px solid #fbbf24; border-radius: 16px; border: 1px solid rgba(255,255,255,0.05);">
-                                                <p style="margin: 0; color: #fbbf24; font-size: 9px; font-weight: 900; text-transform: uppercase; margin-bottom: 6px; letter-spacing: 0.5px;">DÜŞÜNCELERİ</p>
-                                                <p style="margin: 0; color: #f8fafc; font-size: 13px; font-weight: 500; font-style: italic; line-height: 1.4;">"${message}"</p>
-                                            </div>
-                                        ` : ''}
-
-                                        <div style="margin-top: 10px;">
-                                            <div style="display: table; width: 100%; border-collapse: separate; border-spacing: 0;">
-                                                <div style="display: table-row;">
-                                                    <div style="display: table-cell; width: 50%; padding-right: 5px;">
-                                                        <a href="${watchedLink}" style="display: block; background-color: rgba(34, 197, 94, 0.1); color: #22c55e; padding: 12px; border-radius: 14px; font-weight: 800; text-decoration: none; text-transform: uppercase; font-size: 10px; border: 1px solid rgba(34, 197, 94, 0.2); text-align: center;">✅ İzledim</a>
-                                                    </div>
-                                                    <div style="display: table-cell; width: 50%; padding-left: 5px;">
-                                                        <a href="${watchingLink}" style="display: block; background-color: rgba(59, 130, 246, 0.1); color: #3b82f6; padding: 12px; border-radius: 14px; font-weight: 800; text-decoration: none; text-transform: uppercase; font-size: 10px; border: 1px solid rgba(59, 130, 246, 0.2); text-align: center;">📺 İzliyorum</a>
-                                                    </div>
+                                        <div style="display: table; width: 100%; border-collapse: separate; border-spacing: 0;">
+                                            <div style="display: table-row;">
+                                                <div style="display: table-cell; width: 50%; padding-right: 5px;">
+                                                    <a href="${watchedLink}" style="display: block; background-color: rgba(34, 197, 94, 0.1); color: #22c55e; padding: 12px; border-radius: 14px; font-weight: 800; text-decoration: none; text-transform: uppercase; font-size: 10px; border: 1px solid rgba(34, 197, 94, 0.2); text-align: center;">✅ İzledim</a>
+                                                </div>
+                                                <div style="display: table-cell; width: 50%; padding-left: 5px;">
+                                                    <a href="${watchingLink}" style="display: block; background-color: rgba(59, 130, 246, 0.1); color: #3b82f6; padding: 12px; border-radius: 14px; font-weight: 800; text-decoration: none; text-transform: uppercase; font-size: 10px; border: 1px solid rgba(59, 130, 246, 0.2); text-align: center;">📺 İzliyorum</a>
                                                 </div>
                                             </div>
-
-                                            <a href="${watchlistLink}" style="display: block; background-color: rgba(255,255,255,0.05); color: #ffffff; padding: 12px; border-radius: 14px; font-weight: 800; text-decoration: none; text-transform: uppercase; font-size: 11px; border: 1px solid rgba(255,255,255,0.1); text-align: center; margin-top: 10px;">➕ Listeme Ekle</a>
                                         </div>
+
+                                        <a href="${watchlistLink}" style="display: block; background-color: rgba(255,255,255,0.05); color: #ffffff; padding: 12px; border-radius: 14px; font-weight: 800; text-decoration: none; text-transform: uppercase; font-size: 11px; border: 1px solid rgba(255,255,255,0.1); text-align: center; margin-top: 10px;">➕ Listeme Ekle</a>
                                     </div>
+
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Thoughts Section (Bottom Full Width) -->
+                        ${message ? `
+                            <div style="padding: 0 40px 30px 40px;">
+                                <div style="padding: 20px; background: rgba(255, 255, 255, 0.03); border-left: 4px solid #fbbf24; border-radius: 20px; border: 1px solid rgba(255,255,255,0.05);">
+                                    <p style="margin: 0; color: #fbbf24; font-size: 9px; font-weight: 900; text-transform: uppercase; margin-bottom: 8px; letter-spacing: 0.5px;">DÜŞÜNCELERİ</p>
+                                    <p style="margin: 0; color: #f8fafc; font-size: 14px; font-weight: 500; font-style: italic; line-height: 1.5;">"${message}"</p>
+                                </div>
+                            </div>
+                        ` : ''}
 
                                 </div>
                             </div>
