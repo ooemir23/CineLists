@@ -65,6 +65,7 @@ export function TopNav({ user }: TopNavProps) {
     if (pathname.startsWith("/watchlist")) return "watchlist";
     if (pathname.startsWith("/achievements")) return "achievements";
     if (pathname.startsWith("/stats")) return "stats";
+    if (pathname.startsWith("/community")) return "community";
     return "";
   };
   const activeView = getActiveView();

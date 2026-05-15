@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, Search, Heart, User, LogOut, LogIn, Users, Bell, Activity, MessageSquare, BarChart3, Check, Award, Eye } from "lucide-react";
+import { Home, Search, Heart, User, LogOut, LogIn, Users, Bell, Activity, MessageSquare, BarChart3, Check, Award, Eye, Bookmark } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
 
