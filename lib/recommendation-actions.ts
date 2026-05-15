@@ -7,7 +7,7 @@ import { revalidatePath } from "next/cache";
 import { sendRecommendationEmail } from "@/lib/mail";
 
 export async function recommendMedia(params: {
-    receiverId: string;
+    receiverId: string; // This can now be a userId or an email
     mediaId: number;
     mediaType: "movie" | "tv";
     title: string;
@@ -21,20 +21,25 @@ export async function recommendMedia(params: {
         return { error: "Tavsiye göndermek için giriş yapmalısınız" };
     }
 
-    const { receiverId, mediaId, mediaType, title, posterPath, message } = params;
+    const { receiverId: receiverIdOrEmail, mediaId, mediaType, title, posterPath, message } = params;
 
-    const receiver = await prisma.user.findUnique({
-        where: { id: receiverId },
-        select: { email: true, name: true }
+    // Check if input is an email
+    const isEmail = receiverIdOrEmail.includes("@");
+    
+    // Try to find receiver by ID or Email
+    let receiver = await prisma.user.findFirst({
+        where: isEmail 
+            ? { email: receiverIdOrEmail } 
+            : { id: receiverIdOrEmail },
+        select: { id: true, email: true, name: true }
     });
 
-    // 0.1 Get sender info
     const sender = await prisma.user.findUnique({
         where: { id: session.user.id },
         select: { image: true }
     });
 
-    // 1. Ensure MediaItem exists in DB
+    // Ensure MediaItem exists in DB
     let media = await prisma.mediaItem.findUnique({
         where: { tmdbId: mediaId },
     });
@@ -52,54 +57,56 @@ export async function recommendMedia(params: {
         });
     }
 
-    // 2. Create Recommendation
-    const recommendation = await prisma.recommendation.create({
-        data: {
-            senderId: session.user.id,
-            receiverId,
-            mediaId: media.id,
-            message: message || null,
-        },
-    });
+    // Determine the target email
+    const targetEmail = receiver?.email || (isEmail ? receiverIdOrEmail : null);
 
-    // 2.1 Get sender's rating for this media (if any)
-    const senderWatched = await prisma.watched.findUnique({
-        where: {
-            userId_mediaId: {
-                userId: session.user.id,
-                mediaId: media.id
-            }
-        },
-        select: { rating: true }
-    });
+    // If we have a registered user, record the recommendation in DB
+    if (receiver) {
+        await prisma.recommendation.create({
+            data: {
+                senderId: session.user.id,
+                receiverId: receiver.id,
+                mediaId: media.id,
+                message: message || null,
+            },
+        });
 
-    // 3. Create Notification
-    await prisma.indicates.create({
-        data: {
-            userId: receiverId,
-            type: "NEW_RECOMMENDATION",
-            message: `${session.user.name || "Birisi"} sana bir ${mediaType === "movie" ? "film" : "dizi"} tavsiye etti: ${title}`,
-            link: `/${mediaType}/${mediaId}`,
-        },
-    });
+        // Create Notification
+        await prisma.indicates.create({
+            data: {
+                userId: receiver.id,
+                type: "NEW_RECOMMENDATION",
+                message: `${session.user.name || "Birisi"} sana bir ${mediaType === "movie" ? "film" : "dizi"} tavsiye etti: ${title}`,
+                link: `/${mediaType}/${mediaId}`,
+            },
+        });
+    }
 
-    // 4. Send Email Notification
-    if (receiver?.email) {
-        // Fetch extra details for a richer email
-        const [details, providers] = await Promise.all([
-            tmdb.getDetails(mediaType, mediaId.toString()).catch(() => null),
-            tmdb.getWatchProviders(mediaType, mediaId.toString()).catch(() => null)
-        ]);
+    // Fetch extra details for the email
+    const [details, providers, senderWatched] = await Promise.all([
+        tmdb.getDetails(mediaType, mediaId.toString()).catch(() => null),
+        tmdb.getWatchProviders(mediaType, mediaId.toString()).catch(() => null),
+        prisma.watched.findUnique({
+            where: {
+                userId_mediaId: {
+                    userId: session.user.id,
+                    mediaId: media.id
+                }
+            },
+            select: { rating: true }
+        })
+    ]);
 
+    // Send Email Notification if we have an email address
+    if (targetEmail) {
         const trProviders = providers?.results?.TR?.flatrate?.map((p: any) => ({
             name: p.provider_name,
             logo: p.logo_path
         })) || [];
 
-        // Await email to ensure it's sent before the function finishes (important for serverless)
         try {
             await sendRecommendationEmail({
-                email: receiver.email,
+                email: targetEmail,
                 senderName: session.user.name || "Bir arkadaşın",
                 senderImage: sender?.image,
                 mediaTitle: title,
@@ -115,17 +122,12 @@ export async function recommendMedia(params: {
                 backdropPath: details?.backdrop_path
             });
         } catch (error: any) {
-            console.error("Recommendation email error details:", {
-                error: error.message,
-                stack: error.stack,
-                email: receiver.email,
-                mediaTitle: title
-            });
+            console.error("Recommendation email error:", { error: error.message, targetEmail });
         }
     }
 
     revalidatePath("/feed");
-    return { success: true, recommendation };
+    return { success: true };
 }
 
 export async function getReceivedRecommendation(tmdbId: number) {

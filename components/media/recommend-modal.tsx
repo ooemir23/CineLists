@@ -107,9 +107,15 @@ export function RecommendModal({ mediaId, title, type, posterPath, onClose }: Re
         setTimeout(() => setCopySuccess(false), 2000);
     };
 
+    const isEmail = (query: string) => {
+        return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(query);
+    };
+
     const filteredFriends = friends.filter(f =>
         f.name?.toLowerCase().includes(searchQuery.toLowerCase())
     );
+
+    const isQueryAnEmail = isEmail(searchQuery);
 
     const toggleFriendSelection = (id: string) => {
         setSelectedFriendIds(prev => 
@@ -189,12 +195,37 @@ export function RecommendModal({ mediaId, title, type, posterPath, onClose }: Re
 
                         {/* Friends List */}
                         <div className="max-h-[220px] overflow-y-auto space-y-2 pr-2 custom-scrollbar">
+                            {isQueryAnEmail && !friends.some(f => f.name?.toLowerCase() === searchQuery.toLowerCase()) && (
+                                <button
+                                    onClick={() => toggleFriendSelection(searchQuery)}
+                                    className={cn(
+                                        "w-full flex items-center gap-3 p-3 rounded-2xl border transition-all active:scale-[0.98]",
+                                        selectedFriendIds.includes(searchQuery)
+                                            ? "bg-amber-400/20 border-amber-400/40"
+                                            : "bg-amber-400/10 border-amber-400/20 hover:bg-amber-400/20"
+                                    )}
+                                >
+                                    <div className="w-10 h-10 rounded-full bg-amber-400/20 flex items-center justify-center shrink-0 border border-amber-400/30">
+                                        <Send className="w-5 h-5 text-amber-400" />
+                                    </div>
+                                    <div className="flex flex-col items-start overflow-hidden">
+                                        <span className="font-bold text-sm text-white truncate">{searchQuery}</span>
+                                        <span className="text-[10px] text-amber-400 font-bold uppercase">Mail ile Davet Gönder</span>
+                                    </div>
+                                    {selectedFriendIds.includes(searchQuery) && (
+                                        <div className="ml-auto w-5 h-5 bg-amber-400 rounded-full flex items-center justify-center">
+                                            <Check className="w-3 h-3 text-slate-900" />
+                                        </div>
+                                    )}
+                                </button>
+                            )}
+
                             {isLoading ? (
                                 <div className="flex flex-col items-center justify-center py-8 gap-3">
                                     <Loader2 className="w-6 h-6 text-amber-400 animate-spin" />
                                     <span className="text-xs font-bold text-neutral-500 uppercase tracking-widest">Arkadaşlar Yükleniyor...</span>
                                 </div>
-                            ) : filteredFriends.length === 0 ? (
+                            ) : filteredFriends.length === 0 && !isQueryAnEmail ? (
                                 <div className="text-center py-8">
                                     <p className="text-neutral-500 text-sm font-medium">Sonuç bulunamadı.</p>
                                 </div>
