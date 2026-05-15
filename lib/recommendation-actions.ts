@@ -22,10 +22,15 @@ export async function recommendMedia(params: {
 
     const { receiverId, mediaId, mediaType, title, posterPath, message } = params;
 
-    // 0. Get receiver info
     const receiver = await prisma.user.findUnique({
         where: { id: receiverId },
         select: { email: true, name: true }
+    });
+
+    // 0.1 Get sender info
+    const sender = await prisma.user.findUnique({
+        where: { id: session.user.id },
+        select: { image: true }
     });
 
     // 1. Ensure MediaItem exists in DB
@@ -68,17 +73,29 @@ export async function recommendMedia(params: {
 
     // 4. Send Email Notification
     if (receiver?.email) {
+        // Fetch extra details for a richer email
+        const [details, providers] = await Promise.all([
+            tmdb.getDetails(mediaType, mediaId.toString()).catch(() => null),
+            tmdb.getWatchProviders(mediaType, mediaId.toString()).catch(() => null)
+        ]);
+
+        const trProviders = providers?.results?.TR?.flatrate?.map((p: any) => p.provider_name) || [];
+
         // Await email to ensure it's sent before the function finishes (important for serverless)
         try {
-            await sendRecommendationEmail(
-                receiver.email,
-                session.user.name || "Bir arkadaşın",
-                title,
+            await sendRecommendationEmail({
+                email: receiver.email,
+                senderName: session.user.name || "Bir arkadaşın",
+                senderImage: sender?.image,
+                mediaTitle: title,
                 mediaType,
                 mediaId,
                 posterPath,
-                message
-            );
+                message,
+                overview: details?.overview,
+                runtime: mediaType === "movie" ? details?.runtime : (details?.episode_run_time?.[0] || null),
+                platforms: trProviders
+            });
         } catch (error: any) {
             console.error("Recommendation email error details:", {
                 error: error.message,
