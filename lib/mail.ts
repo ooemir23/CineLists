@@ -102,10 +102,10 @@ export const sendRecommendationEmail = async (params: {
             to: email,
             subject: `${senderName} sana bir ${mediaLabel.toLowerCase()} tavsiye etti!`,
             html: `
-                <div style="background-color: #020617; ${backdropUrl ? `background-image: linear-gradient(rgba(2, 6, 23, 0.92), rgba(2, 6, 23, 0.92)), url('${backdropUrl}'); background-size: cover; background-position: center;` : ''} padding: 60px 0; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #f8fafc; text-align: center; min-height: 100%;">
-                    <div style="max-width: 720px; margin: 0 auto; background-color: #0f172a; border: 1px solid #1e293b; border-radius: 40px; overflow: hidden; box-shadow: 0 60px 120px -20px rgba(0, 0, 0, 0.8); text-align: left;">
+                <div style="background-color: #020617; ${backdropUrl ? `background-image: linear-gradient(rgba(2, 6, 23, 0.94), rgba(2, 6, 23, 0.94)), url('${backdropUrl}'); background-size: cover; background-position: center;` : ''} padding: 60px 0; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #f8fafc; text-align: center; min-height: 100%;">
+                    <div style="max-width: 720px; margin: 0 auto; background-color: rgba(15, 23, 42, 0.8); border: 1px solid rgba(255,255,255,0.08); border-radius: 40px; overflow: hidden; box-shadow: 0 60px 120px -20px rgba(0, 0, 0, 0.8); text-align: left;">
                         
-                        <!-- Header with Sender Info (No Backdrop Inside Card) -->
+                        <!-- Header with Sender Info -->
                         <div style="padding: 40px 40px 20px 40px; text-align: left; display: flex; align-items: center; justify-content: space-between;">
                             <div style="display: flex; align-items: center; gap: 15px;">
                                 ${senderImage ? 
@@ -124,18 +124,18 @@ export const sendRecommendationEmail = async (params: {
                             <div style="display: table; width: 100%; border-collapse: separate; border-spacing: 0;">
                                 <div style="display: table-row;">
                                     
-                                    <!-- Column 1: Poster (Left) -->
+                                    <!-- Column 1: Poster -->
                                     <div style="display: table-cell; width: 160px; vertical-align: top; padding-right: 30px;">
                                         ${posterUrl ? 
                                             `<img src="${posterUrl}" style="width: 160px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 20px 40px rgba(0,0,0,0.5);" />` :
-                                            `<div style="width: 160px; height: 240px; background-color: #1e293b; border-radius: 20px;"></div>`
+                                            `<div style="width: 160px; height: 240px; background-color: rgba(255,255,255,0.05); border-radius: 20px;"></div>`
                                         }
                                         <div style="margin-top: 15px; text-align: center;">
                                             <div style="background: #fbbf24; color: #020617; padding: 4px 10px; border-radius: 6px; font-size: 9px; font-weight: 900; display: inline-block; text-transform: uppercase;">${mediaLabel}</div>
                                         </div>
                                     </div>
 
-                                    <!-- Column 2: Summary & Info (Middle) -->
+                                    <!-- Column 2: Summary -->
                                     <div style="display: table-cell; vertical-align: top; padding-right: 30px;">
                                         <h3 style="color: #ffffff; font-size: 26px; font-weight: 900; margin: 0 0 10px 0; line-height: 1.1; letter-spacing: -0.8px;">${mediaTitle}</h3>
                                         
@@ -152,7 +152,7 @@ export const sendRecommendationEmail = async (params: {
                                                 <p style="color: #64748b; font-size: 10px; font-weight: 800; text-transform: uppercase; margin-bottom: 8px; letter-spacing: 0.5px;">Şuradan İzle:</p>
                                                 <div style="display: flex; flex-wrap: wrap; gap: 8px;">
                                                     ${platforms.slice(0, 3).map(p => `
-                                                        <div style="display: inline-flex; align-items: center; gap: 6px; background: rgba(255,255,255,0.03); padding: 6px 10px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.05);">
+                                                        <div style="display: inline-flex; align-items: center; gap: 6px; background: rgba(255,255,255,0.05); padding: 6px 10px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.05);">
                                                             ${p.logo ? `<img src="https://image.tmdb.org/t/p/w92${p.logo}" style="width: 14px; height: 14px; border-radius: 3px;" />` : ''}
                                                             <span style="color: #ffffff; font-size: 11px; font-weight: 700;">${p.name}</span>
                                                         </div>
@@ -162,24 +162,24 @@ export const sendRecommendationEmail = async (params: {
                                         ` : ''}
                                     </div>
 
-                                    <!-- Column 3: Thoughts & Buttons (Right) -->
+                                    <!-- Column 3: Thoughts & Buttons -->
                                     <div style="display: table-cell; width: 200px; vertical-align: top;">
                                         ${message ? `
-                                            <div style="margin-bottom: 20px; padding: 18px; background: rgba(251, 191, 36, 0.05); border-left: 4px solid #fbbf24; border-radius: 16px;">
+                                            <div style="margin-bottom: 20px; padding: 18px; background: rgba(255, 255, 255, 0.03); border-left: 4px solid #fbbf24; border-radius: 16px; border: 1px solid rgba(255,255,255,0.05);">
                                                 <p style="margin: 0; color: #fbbf24; font-size: 9px; font-weight: 900; text-transform: uppercase; margin-bottom: 6px; letter-spacing: 0.5px;">DÜŞÜNCELERİ</p>
                                                 <p style="margin: 0; color: #f8fafc; font-size: 13px; font-weight: 500; font-style: italic; line-height: 1.4;">"${message}"</p>
                                             </div>
                                         ` : ''}
 
                                         ${senderRating ? `
-                                            <div style="margin-bottom: 15px; text-align: center; padding: 10px; background: rgba(255,255,255,0.03); border-radius: 12px; border: 1px solid rgba(255,255,255,0.05);">
+                                            <div style="margin-bottom: 15px; text-align: center; padding: 10px; background: rgba(251, 191, 36, 0.1); border-radius: 12px; border: 1px solid rgba(251, 191, 36, 0.2);">
                                                 <span style="color: #fbbf24; font-size: 12px; font-weight: 800;">👤 Puanı: ${senderRating}</span>
                                             </div>
                                         ` : ''}
 
                                         <div style="margin-top: 10px;">
                                             <a href="${mediaLink}" style="display: block; background-color: #fbbf24; color: #020617; padding: 14px; border-radius: 14px; font-weight: 900; text-decoration: none; text-transform: uppercase; font-size: 12px; letter-spacing: 0.5px; margin-bottom: 10px; text-align: center; box-shadow: 0 10px 20px rgba(251, 191, 36, 0.15);">Detayları İncele</a>
-                                            <a href="${addToWatchlistLink}" style="display: block; background-color: rgba(255,255,255,0.03); color: #ffffff; padding: 12px; border-radius: 14px; font-weight: 800; text-decoration: none; text-transform: uppercase; font-size: 11px; border: 1px solid #1e293b; text-align: center;">➕ Liste</a>
+                                            <a href="${addToWatchlistLink}" style="display: block; background-color: rgba(255,255,255,0.05); color: #ffffff; padding: 12px; border-radius: 14px; font-weight: 800; text-decoration: none; text-transform: uppercase; font-size: 11px; border: 1px solid rgba(255,255,255,0.1); text-align: center;">➕ Liste</a>
                                         </div>
                                     </div>
 
@@ -188,8 +188,8 @@ export const sendRecommendationEmail = async (params: {
                         </div>
 
                         <!-- Footer -->
-                        <div style="padding: 30px 40px; text-align: center; border-top: 1px solid #1e293b; background-color: #0b1222;">
-                            <span style="color: #ffffff; font-size: 18px; font-weight: 900; font-style: italic; opacity: 0.8; letter-spacing: -0.5px;">CineLists</span>
+                        <div style="padding: 30px 40px; text-align: center; border-top: 1px solid rgba(255,255,255,0.05); background-color: rgba(2, 6, 23, 0.5);">
+                            <span style="color: #ffffff; font-size: 18px; font-weight: 900; font-style: italic; opacity: 0.5;">CineLists</span>
                         </div>
                     </div>
                 </div>
