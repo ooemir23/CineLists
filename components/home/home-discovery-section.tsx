@@ -26,6 +26,7 @@ type DiscoverItem = {
     runtime?: number;
     watch_providers?: any;
     friend?: any;
+    genre_ids?: number[];
 };
 
 const categoryOptions = [
@@ -774,7 +775,7 @@ export function HomeDiscoverySection() {
                                         watchProviders={item.watch_providers}
                                         friend={item.friend}
                                         compact={viewMode === "compact"}
-                                        genres={item.genre_ids?.map((id: number) => genreOptions.find(o => o.id === id.toString())?.label).filter(Boolean).slice(0, 2)}
+                                        genres={item.genre_ids?.map((id: number) => genreOptions.find(o => o.id === id.toString())?.label).filter((l): l is string => Boolean(l)).slice(0, 2)}
                                         fullWidth
                                     />
                                 </div>

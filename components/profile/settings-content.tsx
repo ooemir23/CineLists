@@ -42,6 +42,7 @@ type UserData = {
     favoriteGenres: string[];
     platforms: string[];
     allGenres: { id: number; name: string }[];
+    allPlatforms?: { id: string; name: string; icon: string }[];
 };
 
 type SettingsContentProps = {
