@@ -24,6 +24,7 @@ export async function GET(request: Request) {
         return new Response("Missing parameters", { status: 400 });
     }
 
+    let targetUrl = "/";
     try {
         // 1. Ensure MediaItem exists
         let media = await prisma.mediaItem.findUnique({
@@ -51,6 +52,8 @@ export async function GET(request: Request) {
         }
 
         if (media) {
+            targetUrl = `/${type.toLowerCase()}/${tmdbId}`;
+            
             // 2. Add to ToWatch (Watchlist) if it doesn't exist
             const existing = await prisma.toWatch.findUnique({
                 where: {
@@ -75,16 +78,18 @@ export async function GET(request: Request) {
                 });
             }
         }
-
-        if (shouldRedirect) {
-            revalidatePath("/watchlist");
-            revalidatePath(`/${type.toLowerCase()}/${tmdbId}`);
-            return redirect(`/${type.toLowerCase()}/${tmdbId}`);
-        }
-
-        return Response.json({ success: true });
     } catch (error) {
-        console.error("Email action error:", error);
-        return redirect("/");
+        console.error("Email action error details:", error);
+        // We continue to redirect even on error, or we could redirect to an error page
     }
+
+    if (shouldRedirect) {
+        revalidatePath("/watchlist");
+        if (targetUrl !== "/") {
+            revalidatePath(targetUrl);
+        }
+        return redirect(targetUrl);
+    }
+
+    return Response.json({ success: targetUrl !== "/" });
 }
