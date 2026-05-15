@@ -2,6 +2,7 @@
 
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import { tmdb } from "@/lib/tmdb";
 import { revalidatePath } from "next/cache";
 import { sendRecommendationEmail } from "@/lib/mail";
 
