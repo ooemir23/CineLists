@@ -286,15 +286,13 @@ export async function GET(request: NextRequest) {
                 ...(tvData?.results || []).map((item: any) => ({ ...item, media_type: "tv" })),
             ].sort((a, b) => (b.popularity || 0) - (a.popularity || 0));
 
-            // Filter out watched items
-            const filtered = combined.filter(item => !watchedIds.has(item.id));
+            const filtered = combined.filter((item: any) => !watchedIds.has(item.id));
             results = await enrichResults(filtered);
         } else {
             const data = await fetchTypeResults(type as "movie" | "tv");
             const combined = (data?.results || []).map((item: any) => ({ ...item, media_type: type }));
             
-            // Filter out watched items
-            const filtered = combined.filter(item => !watchedIds.has(item.id));
+            const filtered = combined.filter((item: any) => !watchedIds.has(item.id));
             results = await enrichResults(filtered);
         }
 
