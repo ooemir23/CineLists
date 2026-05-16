@@ -2,6 +2,7 @@
 
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import { unstable_cache } from "next/cache";
 
 export type FeedActivity = {
     id: string;
@@ -48,14 +49,9 @@ export type FeedActivity = {
     };
 };
 
-export async function getFriendsActivity(): Promise<FeedActivity[]> {
-    const session = await auth();
-    if (!session?.user?.id) {
-        return [];
-    }
-
+async function getFriendsActivityForUser(userId: string): Promise<FeedActivity[]> {
     const following = await prisma.follow.findMany({
-        where: { followerId: session.user.id },
+        where: { followerId: userId },
         select: { followingId: true },
     });
 
@@ -107,8 +103,8 @@ export async function getFriendsActivity(): Promise<FeedActivity[]> {
     const mappedActivities: FeedActivity[] = activities.map(a => a as unknown as FeedActivity);
 
     const mappedComments: FeedActivity[] = comments.map(c => {
-        const media = c.episode?.media || c.activity?.media;
-        const episode = c.episode || c.activity?.episode;
+        const media = (c.episode?.media || c.activity?.media) as FeedActivity["media"] | undefined;
+        const episode = (c.episode || c.activity?.episode) as FeedActivity["episode"];
 
         if (!media) return null;
 
@@ -119,8 +115,8 @@ export async function getFriendsActivity(): Promise<FeedActivity[]> {
             content: c.content,
             user: c.user,
             votes: 0,
-            media: media as any,
-            episode: episode as any,
+            media,
+            episode,
             _count: { comments: 0 }
         } as FeedActivity;
     }).filter((a): a is FeedActivity => a !== null);
@@ -131,7 +127,7 @@ export async function getFriendsActivity(): Promise<FeedActivity[]> {
         createdAt: w.addedAt,
         user: w.user,
         votes: 0,
-        media: w.media as any,
+        media: w.media as FeedActivity["media"],
         _count: { comments: 0 }
     } as FeedActivity));
 
@@ -203,4 +199,19 @@ export async function getFriendsActivity(): Promise<FeedActivity[]> {
     }
 
     return groupedActivities.slice(0, 30);
+}
+
+const cachedGetFriendsActivityForUser = unstable_cache(
+    getFriendsActivityForUser,
+    ["friends-activity"],
+    { revalidate: 120 }
+);
+
+export async function getFriendsActivity(): Promise<FeedActivity[]> {
+    const session = await auth();
+    if (!session?.user?.id) {
+        return [];
+    }
+
+    return cachedGetFriendsActivityForUser(session.user.id);
 }

@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { tmdb } from "@/lib/tmdb";
+import { unstable_cache } from "next/cache";
 
 const PLATFORM_MAP: Record<string, string> = {
     "netflix": "8",
@@ -10,7 +11,38 @@ const PLATFORM_MAP: Record<string, string> = {
     "apple": "2",
 };
 
-export async function getPersonalizedRecommendations(userId: string) {
+type TmdbGenre = {
+    id: number;
+    name: string;
+};
+
+type DiscoverItem = {
+    id: number;
+    title?: string;
+    name?: string;
+    original_title?: string;
+    original_name?: string;
+    poster_path?: string | null;
+    vote_average?: number;
+    popularity?: number;
+    release_date?: string;
+    first_air_date?: string;
+    overview?: string;
+    mediaType?: "movie" | "tv";
+    isSocial?: boolean;
+    socialCount?: number;
+};
+
+type SocialMediaRecord = {
+    tmdbId: number;
+    type: string;
+    title: string;
+    posterPath: string | null;
+    backdropPath: string | null;
+    genres: string[];
+};
+
+async function getPersonalizedRecommendationsForUser(userId: string) {
     // 1. Fetch user profile
     const user = await prisma.user.findUnique({
         where: { id: userId },
@@ -63,7 +95,7 @@ export async function getPersonalizedRecommendations(userId: string) {
     });
     const followingIds = following.map(f => f.followingId);
 
-    let friendsPopularItems: any[] = [];
+    let friendsPopularItems: DiscoverItem[] = [];
     if (followingIds.length > 0) {
         const friendsWatched = await prisma.watched.findMany({
             where: {
@@ -75,11 +107,14 @@ export async function getPersonalizedRecommendations(userId: string) {
         });
 
         // Count occurrences
-        const counts: Record<number, { count: number, media: any }> = {};
+        const counts: Record<number, { count: number; media: SocialMediaRecord }> = {};
         friendsWatched.forEach(w => {
             if (!excludeIds.has(w.media.tmdbId)) {
                 if (!counts[w.media.tmdbId]) {
-                    counts[w.media.tmdbId] = { count: 0, media: w.media };
+                    counts[w.media.tmdbId] = {
+                        count: 0,
+                        media: w.media as SocialMediaRecord,
+                    };
                 }
                 counts[w.media.tmdbId].count++;
             }
@@ -91,7 +126,7 @@ export async function getPersonalizedRecommendations(userId: string) {
             .map(item => ({
                 ...item.media,
                 id: item.media.tmdbId,
-                mediaType: item.media.type.toLowerCase(),
+                mediaType: item.media.type.toLowerCase() as "movie" | "tv",
                 isSocial: true,
                 socialCount: item.count
             }));
@@ -106,7 +141,7 @@ export async function getPersonalizedRecommendations(userId: string) {
     const genreNameToId: Record<string, number> = {};
     const genreIdToName: Record<number, string> = {};
 
-    [...movieGenres.genres, ...tvGenres.genres].forEach((g: any) => {
+    [...movieGenres.genres, ...tvGenres.genres].forEach((g: TmdbGenre) => {
         genreNameToId[g.name.toLowerCase()] = g.id;
         genreIdToName[g.id] = g.name;
     });
@@ -146,8 +181,6 @@ export async function getPersonalizedRecommendations(userId: string) {
         params["with_watch_providers"] = providerIds.join("|");
     }
 
-    console.log("RECOMMENDATION_PARAMS (FIXED):", params);
-
     // 7. Fetch results from TMDB
     const [movies, tv] = await Promise.all([
         tmdb.discover("movie", params),
@@ -155,17 +188,44 @@ export async function getPersonalizedRecommendations(userId: string) {
     ]);
 
     // 8. Combine, filter out already watched, and shuffle/sort
-    const combinedResults = [
+    const normalizeDiscoverItem = (item: Record<string, unknown>, mediaType: "movie" | "tv"): DiscoverItem => ({
+        id: Number(item.id),
+        title: typeof item.title === "string" ? item.title : undefined,
+        name: typeof item.name === "string" ? item.name : undefined,
+        original_title: typeof item.original_title === "string" ? item.original_title : undefined,
+        original_name: typeof item.original_name === "string" ? item.original_name : undefined,
+        poster_path: typeof item.poster_path === "string" ? item.poster_path : null,
+        vote_average: typeof item.vote_average === "number" ? item.vote_average : 0,
+        popularity: typeof item.popularity === "number" ? item.popularity : 0,
+        release_date: typeof item.release_date === "string" ? item.release_date : undefined,
+        first_air_date: typeof item.first_air_date === "string" ? item.first_air_date : undefined,
+        overview: typeof item.overview === "string" ? item.overview : undefined,
+        mediaType,
+    });
+
+    const movieResults = (movies.results || []) as Record<string, unknown>[];
+    const tvResults = (tv.results || []) as Record<string, unknown>[];
+
+    const combinedResults: DiscoverItem[] = [
         ...friendsPopularItems,
-        ...movies.results.map((m: any) => ({ ...m, mediaType: "movie" })),
-        ...tv.results.map((t: any) => ({ ...t, mediaType: "tv" })),
+        ...movieResults.map((m) => normalizeDiscoverItem(m, "movie")),
+        ...tvResults.map((t) => normalizeDiscoverItem(t, "tv")),
     ]
-        .filter((m: any) => !excludeIds.has(m.id))
+        .filter((m) => !excludeIds.has(m.id))
         .sort((a, b) => {
             if (a.isSocial && !b.isSocial) return -1;
             if (!a.isSocial && b.isSocial) return 1;
-            return b.popularity - a.popularity;
+            return (b.popularity || 0) - (a.popularity || 0);
         });
+
+    const fallbackResults: DiscoverItem[] =
+        combinedResults.length > 0
+            ? combinedResults
+            : [
+                ...movieResults.map((m) => normalizeDiscoverItem(m, "movie")),
+                ...tvResults.map((t) => normalizeDiscoverItem(t, "tv")),
+            ]
+                .sort((a, b) => (b.popularity || 0) - (a.popularity || 0));
 
     const ID_TO_PLATFORM_NAME: Record<string, string> = {
         "8": "Netflix",
@@ -187,7 +247,7 @@ export async function getPersonalizedRecommendations(userId: string) {
     }).filter(Boolean);
 
     return {
-        results: combinedResults.slice(0, 12),
+        results: fallbackResults.slice(0, 12),
         reasons: {
             favorites: favoriteGenreList,
             organic: organicGenreList as { id: number; name: string }[],
@@ -195,4 +255,14 @@ export async function getPersonalizedRecommendations(userId: string) {
             friendsCount: friendsPopularItems.length
         }
     };
+}
+
+const cachedGetPersonalizedRecommendations = unstable_cache(
+    getPersonalizedRecommendationsForUser,
+    ["personalized-recommendations"],
+    { revalidate: 300 }
+);
+
+export async function getPersonalizedRecommendations(userId: string) {
+    return cachedGetPersonalizedRecommendations(userId);
 }

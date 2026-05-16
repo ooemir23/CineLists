@@ -234,9 +234,10 @@ export async function GET(request: NextRequest) {
                 }
 
                 const tmdbResults = mediaType === "movie" ? await tmdb.getUpcomingMovies({ page }) : await tmdb.getOnTheAirTV({ page });
-                let filteredTmdbResults = (tmdbResults?.results || [])
-                .filter((item: Record<string, unknown>) => !watchedIdSet.has(Number(item.id)))
-                    .map((item: Record<string, unknown>) => asDiscoverResult(item, mediaType));
+                const rawTmdbResults = (tmdbResults?.results || []) as Record<string, unknown>[];
+                let filteredTmdbResults: DiscoverResult[] = rawTmdbResults
+                    .filter((item) => !watchedIdSet.has(Number(item.id)))
+                    .map((item) => asDiscoverResult(item, mediaType));
 
                 if (upcomingFilter !== "all") {
                     const now = new Date();
@@ -265,16 +266,19 @@ export async function GET(request: NextRequest) {
 
         if (type === "all") {
             const [movieData, tvData] = await Promise.all([fetchTypeResults("movie"), fetchTypeResults("tv")]);
+            const movieResults = (movieData?.results || []) as Record<string, unknown>[];
+            const tvResults = (tvData?.results || []) as Record<string, unknown>[];
             const combined = [
-                ...(movieData?.results || []).map((item: Record<string, unknown>) => asDiscoverResult(item, "movie")),
-                ...(tvData?.results || []).map((item: Record<string, unknown>) => asDiscoverResult(item, "tv")),
+                ...movieResults.map((item) => asDiscoverResult(item, "movie")),
+                ...tvResults.map((item) => asDiscoverResult(item, "tv")),
             ].sort((a, b) => (b.popularity || 0) - (a.popularity || 0));
 
             results = combined.filter((item) => !watchedIdSet.has(item.id));
         } else {
             const data = await fetchTypeResults(type as "movie" | "tv");
-            results = (data?.results || [])
-                .map((item: Record<string, unknown>) => asDiscoverResult(item, type as "movie" | "tv"))
+            const typedResults = (data?.results || []) as Record<string, unknown>[];
+            results = typedResults
+                .map((item) => asDiscoverResult(item, type as "movie" | "tv"))
                 .filter((item) => !watchedIdSet.has(item.id));
         }
 

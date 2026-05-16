@@ -28,7 +28,7 @@ type MediaCardProps = {
         name: string | null;
         image: string | null;
         type: string;
-    };
+    } | null;
     compact?: boolean;
     genres?: string[];
     statusLabel?: string;

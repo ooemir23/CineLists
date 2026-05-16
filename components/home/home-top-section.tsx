@@ -1,65 +1,58 @@
-import { tmdb } from "@/lib/tmdb";
 import { auth } from "@/auth";
-import { prisma } from "@/lib/prisma";
+import { tmdb } from "@/lib/tmdb";
+import { getWatchedShowsNextEpisodes } from "@/lib/hero-personalization-actions";
 import Link from "next/link";
 import { ArrowRight, Rss } from "lucide-react";
-import { FriendsActivity } from "./friends-activity";
 import { HeroSlider } from "./hero-slider";
-import {
-    getWatchedShowsNextEpisodes,
-    getFriendsViewingStats,
-    getFollowedHighlights,
-    getPlatformHighlights,
-    getTodayHighlights,
-    getContinueWatchingHighlights,
-    getFriendsTrendingHighlights,
-} from "@/lib/hero-personalization-actions";
+import { FriendsActivity } from "./friends-activity";
 import { UpcomingEpisodesCarousel } from "./carousels/upcoming-episodes-carousel";
 
-export async function HomeTopSection({ personalizedResults }: { personalizedResults?: any[] }) {
+type PersonalizedResult = {
+    mediaType?: "movie" | "tv";
+    genreIds?: number[];
+    backdrop_path?: string | null;
+    [key: string]: unknown;
+};
+
+type HeroItem = {
+    id: number;
+    title: string;
+    overview: string;
+    backdrop_path: string | null;
+    vote_average: number;
+    media_type: "movie" | "tv";
+    category: "trending" | "upcoming" | "tv" | "popular" | "personalized";
+};
+
+export async function HomeTopSection({ personalizedResults }: { personalizedResults?: PersonalizedResult[] }) {
     const session = await auth();
 
-    // Fetch diverse content for the slider - use personalized data
-    const [trendingMovies, upcomingMovies, trendingTV, popularMovies, upcomingEpisodes, friendStats, followedHighlights, platformHighlights, todayHighlights, continueHighlights, friendsTrendingHighlights, userPreferences] = await Promise.all([
+    const [trendingMovies, upcomingMovies, trendingTV, popularMovies, upcomingEpisodes] = await Promise.all([
         tmdb.getTrendingMovies(),
         tmdb.getUpcomingMovies(),
         tmdb.getTrendingTV(),
         tmdb.getPopular("movie"),
         getWatchedShowsNextEpisodes(),
-        getFriendsViewingStats(),
-        getFollowedHighlights(),
-        getPlatformHighlights(),
-        getTodayHighlights(),
-        getContinueWatchingHighlights(),
-        getFriendsTrendingHighlights(),
-        (async () => {
-            if (!session?.user?.id) return { favoriteGenres: [], platforms: [] };
-            return prisma.user.findUnique({
-                where: { id: session.user.id },
-                select: { favoriteGenres: true, platforms: true },
-            }) || { favoriteGenres: [], platforms: [] };
-        })(),
     ]);
 
-    // Build hero slider items with personalized content
     const trendingMovie = trendingMovies?.results?.[0];
     const upcomingMovie = upcomingMovies?.results?.[0];
     const trendingTv = trendingTV?.results?.[0];
     const popularMovie = popularMovies?.results?.[1] || popularMovies?.results?.[0];
 
-    const trendingItems = [
+    const trendingItems: HeroItem[] = [
         trendingMovie
             ? {
                 ...trendingMovie,
                 media_type: "movie",
-                category: "trending"
+                category: "trending",
             }
             : null,
         upcomingMovie
             ? {
                 ...upcomingMovie,
                 media_type: "movie",
-                category: "upcoming"
+                category: "upcoming",
             }
             : null,
         trendingTv
@@ -67,165 +60,36 @@ export async function HomeTopSection({ personalizedResults }: { personalizedResu
                 ...trendingTv,
                 title: trendingTv.name || trendingTv.title,
                 media_type: "tv",
-                category: "tv"
+                category: "tv",
             }
             : null,
         popularMovie
             ? {
                 ...popularMovie,
                 media_type: "movie",
-                category: "popular"
+                category: "popular",
             }
             : null,
-    ].filter((item): item is NonNullable<typeof item> => !!item && !!item.backdrop_path);
+    ].filter((item): item is HeroItem => Boolean(item && item.backdrop_path));
 
-    const personalizedItems = (personalizedResults || [])
+    const personalizedItems: HeroItem[] = (personalizedResults || [])
         .slice(0, 3)
-        .map(item => ({
+        .map((item) => ({
             ...item,
+            title: (item.title as string) || (item.name as string) || "",
+            overview: (item.overview as string) || "",
+            backdrop_path: (item.backdrop_path as string | null) || null,
+            vote_average: Number(item.vote_average || 0),
             media_type: item.mediaType || "movie",
             category: "personalized",
-            genreIds: item.genreIds || [],
         }))
-        .filter(item => !!item.backdrop_path);
+        .filter((item): item is HeroItem => Boolean(item.backdrop_path));
 
-    const followedItems = (followedHighlights || []).map(item => ({
-        id: item.tmdbId,
-        title: item.title,
-        overview: item.overview,
-        backdrop_path: item.backdropPath,
-        vote_average: item.voteAverage,
-        media_type: item.mediaType,
-        category: "followed" as const,
-        eventLabel: item.eventLabel,
-        genreIds: item.genreIds || [],
-        metaLabel: item.metaLabel,
-    }));
-
-    const platformItems = (platformHighlights || []).map(item => ({
-        id: item.tmdbId,
-        title: item.title,
-        overview: item.overview,
-        backdrop_path: item.backdropPath,
-        vote_average: item.voteAverage,
-        media_type: item.mediaType,
-        category: "followed" as const,
-        eventLabel: item.eventLabel,
-        genreIds: item.genreIds || [],
-        metaLabel: item.metaLabel,
-    }));
-
-    const todayItems = (todayHighlights || []).map(item => ({
-        id: item.tmdbId,
-        title: item.title,
-        overview: item.overview,
-        backdrop_path: item.backdropPath,
-        vote_average: item.voteAverage,
-        media_type: item.mediaType,
-        category: "followed" as const,
-        eventLabel: item.eventLabel,
-        genreIds: item.genreIds || [],
-        metaLabel: item.metaLabel,
-    }));
-
-    const continueItems = (continueHighlights || []).map(item => ({
-        id: item.tmdbId,
-        title: item.title,
-        overview: item.overview,
-        backdrop_path: item.backdropPath,
-        vote_average: item.voteAverage,
-        media_type: item.mediaType,
-        category: "followed" as const,
-        eventLabel: item.eventLabel,
-        genreIds: item.genreIds || [],
-        metaLabel: item.metaLabel,
-    }));
-
-    const friendsTrendingItems = (friendsTrendingHighlights || []).map(item => ({
-        id: item.tmdbId,
-        title: item.title,
-        overview: item.overview,
-        backdrop_path: item.backdropPath,
-        vote_average: item.voteAverage,
-        media_type: item.mediaType,
-        category: "followed" as const,
-        eventLabel: item.eventLabel,
-        genreIds: item.genreIds || [],
-        metaLabel: item.metaLabel,
-    }));
-
-    const mergedItems = [
-        ...followedItems,
-        ...platformItems,
-        ...todayItems,
-        ...continueItems,
-        ...friendsTrendingItems,
-        ...personalizedItems,
-        ...trendingItems,
-    ];
-
-    const priorityByEvent: Record<string, number> = {
-        "Yeni Bolum": 1,
-        "Bolum Yakinda": 2,
-        "Bugun Yayinda": 3,
-        "Vizyona Girdi": 4,
-        "Platformunda Yeni": 5,
-        "Platformda Yayinda": 6,
-        "Devam Et": 7,
-        "Arkadaslarinda Yukseldi": 8,
-    };
-
-    const priorityByCategory: Record<string, number> = {
-        followed: 1,
-        personalized: 2,
-        trending: 3,
-        upcoming: 4,
-        tv: 5,
-        popular: 6,
-    };
-
-    const preferredGenres = (userPreferences?.favoriteGenres || [])
-        .map((g: string) => Number(g))
-        .filter((g) => !Number.isNaN(g));
-    const preferredGenreSet = new Set(preferredGenres);
-
-    const deduped = Array.from(
-        new Map(mergedItems.map((item) => [`${item.media_type}-${item.id}`, item])).values()
-    );
-
-    const computeBehaviorScore = (item: any) => {
-        const genres = item.genreIds || [];
-        const matching = genres.filter((id: number) => preferredGenreSet.has(id)).length;
-        const genreScore = matching > 0 ? 30 + matching * 10 : 0;
-        const typeScore = item.media_type === "tv" ? 6 : 0;
-        return genreScore + typeScore;
-    };
-
-    const items = deduped
-        .sort((a, b) => {
-            const aEvent = a.eventLabel ? priorityByEvent[a.eventLabel] ?? 99 : 99;
-            const bEvent = b.eventLabel ? priorityByEvent[b.eventLabel] ?? 99 : 99;
-            if (aEvent !== bEvent) return aEvent - bEvent;
-
-            const aBehavior = computeBehaviorScore(a);
-            const bBehavior = computeBehaviorScore(b);
-            if (aBehavior !== bBehavior) return bBehavior - aBehavior;
-
-            const aCategory = priorityByCategory[a.category] ?? 99;
-            const bCategory = priorityByCategory[b.category] ?? 99;
-            if (aCategory !== bCategory) return aCategory - bCategory;
-
-
-            return (b.vote_average || 0) - (a.vote_average || 0);
-        })
-        .slice(0, 10);
-    const friendPopularIds = friendStats.map(item => item.tmdbId);
+    const items = [...personalizedItems, ...trendingItems].slice(0, 6);
 
     return (
         <section className="w-full grid grid-cols-1 lg:grid-cols-12 gap-4 items-stretch lg:h-[600px]">
-            {/* Left Column: CTA (Row 1) & Hero Slider (Row 2) */}
             <div className="lg:col-span-7 xl:col-span-8 flex flex-col gap-4">
-                {/* Top Section: Upcoming Episodes or Auth CTA */}
                 <div className="w-full">
                     {upcomingEpisodes.length > 0 ? (
                         <div className="relative z-20 backdrop-blur-sm bg-gradient-to-br from-[#0f1a2b]/80 via-[#0f1a2b]/60 to-[#0b1220]/70 rounded-[2.5rem] p-3 border border-white/10 shadow-lg">
@@ -233,7 +97,6 @@ export async function HomeTopSection({ personalizedResults }: { personalizedResu
                         </div>
                     ) : !session ? (
                         <div className="relative z-20 backdrop-blur-sm bg-gradient-to-br from-[#0f1a2b]/80 via-[#0f1a2b]/60 to-[#0b1220]/70 rounded-[2.5rem] p-4 border border-white/10 shadow-lg overflow-hidden group">
-                            {/* Decorative elements */}
                             <div className="absolute top-0 right-0 w-32 h-32 bg-amber-400/5 blur-3xl rounded-full -mr-16 -mt-16 group-hover:bg-amber-400/10 transition-colors" />
                             <div className="absolute bottom-0 left-0 w-24 h-24 bg-blue-400/5 blur-2xl rounded-full -ml-12 -mb-12 group-hover:bg-blue-400/10 transition-colors" />
 
@@ -267,17 +130,13 @@ export async function HomeTopSection({ personalizedResults }: { personalizedResu
                     ) : null}
                 </div>
 
-                {/* Hero Slider Section */}
                 <div className="w-full flex-1 min-h-[400px] lg:min-h-0">
-                    <HeroSlider items={items} friendPopularIds={friendPopularIds} />
+                    <HeroSlider items={items} friendPopularIds={[]} />
                 </div>
             </div>
 
-            {/* Right Column: Friends Activity (Hidden on mobile) */}
             <div className="hidden lg:flex lg:col-span-5 xl:col-span-4 flex-col overflow-hidden">
-                {/* Unified Panel - Matches total height of left column */}
-                <div className="bg-[#1A202C]/60 backdrop-blur-xl rounded-[2.5rem] border border-white/5 overflow-hidden flex flex-col h-full">
-                    {/* Header - Compact */}
+                <div className="bg-[#1A202C]/60 backdrop-blur-xl rounded-[2.5rem] border border-white/5 overflow-hidden flex flex-col h-full min-h-[520px]">
                     <div className="px-5 py-3 border-b border-white/5 bg-white/5 flex items-center justify-between shrink-0">
                         <Link href="/feed" className="flex items-center gap-2 group">
                             <div className="w-9 h-9 bg-primary/20 rounded-lg flex items-center justify-center border border-primary/20 group-hover:bg-primary group-hover:text-black transition-all">
@@ -298,14 +157,8 @@ export async function HomeTopSection({ personalizedResults }: { personalizedResu
                         </Link>
                     </div>
 
-                    {/* Integrated Vertical Friends Feed - Scrollable */}
-                    <div className="flex-1 overflow-y-auto custom-scrollbar relative">
-                        <div className="absolute inset-x-0 top-0 h-2 bg-gradient-to-b from-[#1A202C]/60 to-transparent z-10 pointer-events-none" />
-                        <div className="absolute inset-x-0 bottom-0 h-3 bg-gradient-to-t from-[#1A202C]/60 to-transparent z-10 pointer-events-none" />
-
-                        <div className="p-3 space-y-3">
-                            <FriendsActivity compact={true} />
-                        </div>
+                    <div className="flex-1 overflow-y-auto custom-scrollbar relative p-3">
+                        <FriendsActivity compact maxItems={6} />
                     </div>
                 </div>
             </div>

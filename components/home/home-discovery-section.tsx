@@ -29,9 +29,9 @@ type DiscoverItem = {
         flatrate?: { provider_id: number; provider_name: string; logo_path?: string | null }[];
     } | null;
     friend?: {
-        name?: string | null;
-        image?: string | null;
-        type?: string | null;
+        name: string | null;
+        image: string | null;
+        type: string;
     } | null;
     genre_ids?: number[];
     statusLabel?: string;

@@ -1,9 +1,7 @@
 "use client";
 
-import { useRef, useEffect, useState } from "react";
-import { ChevronRight as ArrowRight } from "lucide-react";
+import { useRef, useEffect } from "react";
 import { MediaCard } from "./media-card";
-import { cn } from "@/lib/utils";
 
 type MediaItem = {
     id: number;
@@ -21,20 +19,16 @@ type MediaItem = {
 type MediaRowClientProps = {
     children: React.ReactNode;
     autoScroll?: boolean; // Auto-scroll toggle
+    duplicateChildren?: boolean;
 };
 
-export function MediaRowClient({ children, autoScroll = true }: MediaRowClientProps) {
+export function MediaRowClient({ children, autoScroll = true, duplicateChildren = true }: MediaRowClientProps) {
     const scrollRef = useRef<HTMLDivElement>(null);
     const isPaused = useRef(false);
-    const [mounted, setMounted] = useState(false);
-
-    useEffect(() => {
-        setMounted(true);
-    }, []);
 
     useEffect(() => {
         const slider = scrollRef.current;
-        if (!slider || !mounted || !autoScroll) return;
+        if (!slider || !autoScroll) return;
 
         let animationFrameId: number;
         let lastTimestamp = 0;
@@ -72,15 +66,15 @@ export function MediaRowClient({ children, autoScroll = true }: MediaRowClientPr
         animationFrameId = requestAnimationFrame(animateScroll);
 
         return () => cancelAnimationFrame(animationFrameId);
-    }, [mounted, autoScroll]);
+    }, [autoScroll]);
 
     // Duplicate children for infinite loop effect
-    const duplicatedChildren = (
+    const renderedChildren = duplicateChildren ? (
         <>
             {children}
             {children}
         </>
-    );
+    ) : children;
 
     return (
         <div
@@ -95,10 +89,10 @@ export function MediaRowClient({ children, autoScroll = true }: MediaRowClientPr
         >
             <div
                 ref={scrollRef}
-                className="flex gap-3 sm:gap-4 lg:gap-6 overflow-x-auto pt-2 pb-4 md:pt-12 md:pb-14 -mx-1 px-1 sm:-mx-4 sm:px-4 md:-mx-4 md:px-4 hide-scrollbar snap-x snap-mandatory"
+                className="flex gap-3 sm:gap-4 lg:gap-6 overflow-x-auto pt-2 pb-4 md:pt-4 md:pb-6 -mx-1 px-1 sm:-mx-4 sm:px-4 md:-mx-4 md:px-4 hide-scrollbar snap-x snap-mandatory"
                 style={{ scrollBehavior: 'auto' }}
             >
-                {duplicatedChildren}
+                {renderedChildren}
             </div>
         </div>
     );

@@ -185,97 +185,62 @@ export async function getWatchedShowsNextEpisodes(): Promise<UpcomingEpisode[]> 
 
         const episodes: UpcomingEpisode[] = [];
 
+        const now = new Date();
+
         for (const item of uniqueShows) {
             if (item.media.type === "TV") {
                 try {
-                    const showData = await tmdb.getTVShow(item.media.tmdbId.toString());
-                    if (!showData || !showData.seasons) continue;
-
-                    // Get next air date or last air date from show data
-                    const nextEpisodeDate = showData.next_episode_to_air?.air_date ?? null;
-                    const nextEpisodeTitle = showData.next_episode_to_air?.name ?? null;
-                    const nextEpisodeSeason = showData.next_episode_to_air?.season_number ?? null;
-                    const nextEpisodeNumber = showData.next_episode_to_air?.episode_number ?? null;
-
-                    const lastEpisodeDate = showData.last_episode_to_air?.air_date ?? null;
-                    const lastEpisodeTitle = showData.last_episode_to_air?.name ?? null;
-                    const lastEpisodeSeason = showData.last_episode_to_air?.season_number ?? null;
-                    const lastEpisodeNumber = showData.last_episode_to_air?.episode_number ?? null;
-
-                    const networks = (showData.networks || []).map((n: any) => n.name);
-
-                    // Check if last episode was recent (last 7 days)
-                    let isRecent = false;
-                    if (lastEpisodeDate) {
-                        const airDate = new Date(lastEpisodeDate);
-                        const now = new Date();
-                        const diffDays = (now.getTime() - airDate.getTime()) / (1000 * 60 * 60 * 24);
-                        isRecent = diffDays >= 0 && diffDays <= 7;
-                    }
-
-                    const displayDate = nextEpisodeDate || (isRecent ? lastEpisodeDate : null);
-                    const displayTitle = nextEpisodeDate ? nextEpisodeTitle : (isRecent ? lastEpisodeTitle : null);
-                    const displaySeason = nextEpisodeDate ? nextEpisodeSeason : (isRecent ? lastEpisodeSeason : null);
-                    const displayNumber = nextEpisodeDate ? nextEpisodeNumber : (isRecent ? lastEpisodeNumber : null);
-
-                    // Get watch providers
-                    const providers = await tmdb.getWatchProviders("tv", item.media.tmdbId.toString());
-                    const platformEntries = (providers?.results?.TR?.flatrate || []).slice(0, 3);
-                    const platformNames = platformEntries.map((p: any) => p.provider_name);
-                    const platformLogos = platformEntries.map((p: any) => ({
-                        name: p.provider_name,
-                        logoPath: p.logo_path || null,
-                    }));
-
-                    if (displayDate || platformNames.length > 0 || item.statusType === "plan_to_watch") {
-                        episodes.push({
-                            showId: item.media.tmdbId,
-                            showTitle: item.media.title,
-                            nextEpisodeDate: displayDate,
-                            nextEpisodeTitle: displayTitle,
-                            nextEpisodeSeason: displaySeason,
-                            nextEpisodeNumber: displayNumber,
-                            platforms: platformNames.length > 0 ? platformNames : networks,
-                            platformLogos: platformLogos,
-                            posterPath: item.media.posterPath,
-                            voteAverage: item.media.voteAverage || 0,
-                            statusType: item.statusType,
-                            addedAt: item.addedAt,
-                            mediaType: "tv",
-                            showStatus: showData.status,
-                        });
-                    }
-                } catch (error) {
-                    console.error(`Error fetching episodes for show ${item.media.tmdbId}:`, error);
-                }
-            } else {
-                // It's a Movie
-                try {
-                    const movieData = await tmdb.getDetails("movie", item.media.tmdbId.toString());
-                    const providers = await tmdb.getWatchProviders("movie", item.media.tmdbId.toString());
-                    const platformEntries = (providers?.results?.TR?.flatrate || []).slice(0, 3);
-                    const platformNames = platformEntries.map((p: any) => p.provider_name);
-                    const platformLogos = platformEntries.map((p: any) => ({
-                        name: p.provider_name,
-                        logoPath: p.logo_path || null,
-                    }));
+                    const nextEpisode = await prisma.episode.findFirst({
+                        where: {
+                            mediaId: item.media.id,
+                            airDate: {
+                                gte: now,
+                            },
+                        },
+                        orderBy: {
+                            airDate: "asc",
+                        },
+                        select: {
+                            seasonNumber: true,
+                            episodeNumber: true,
+                            title: true,
+                            airDate: true,
+                        },
+                    });
 
                     episodes.push({
                         showId: item.media.tmdbId,
                         showTitle: item.media.title,
-                        nextEpisodeDate: movieData.release_date || null,
-                        platforms: platformNames,
-                        platformLogos: platformLogos,
+                        nextEpisodeDate: nextEpisode?.airDate ? nextEpisode.airDate.toISOString() : null,
+                        nextEpisodeTitle: nextEpisode?.title || null,
+                        nextEpisodeSeason: nextEpisode?.seasonNumber ?? null,
+                        nextEpisodeNumber: nextEpisode?.episodeNumber ?? null,
+                        platforms: [],
+                        platformLogos: [],
                         posterPath: item.media.posterPath,
                         voteAverage: item.media.voteAverage || 0,
                         statusType: item.statusType,
                         addedAt: item.addedAt,
-                        mediaType: "movie",
-                        showStatus: movieData.status,
+                        mediaType: "tv",
+                        showStatus: undefined,
                     });
                 } catch (error) {
-                    console.error(`Error fetching movie data for ${item.media.tmdbId}:`, error);
+                    console.error(`Error fetching local next episode for show ${item.media.tmdbId}:`, error);
                 }
+            } else {
+                episodes.push({
+                    showId: item.media.tmdbId,
+                    showTitle: item.media.title,
+                    nextEpisodeDate: item.media.releaseDate ? item.media.releaseDate.toISOString() : null,
+                    platforms: [],
+                    platformLogos: [],
+                    posterPath: item.media.posterPath,
+                    voteAverage: item.media.voteAverage || 0,
+                    statusType: item.statusType,
+                    addedAt: item.addedAt,
+                    mediaType: "movie",
+                    showStatus: undefined,
+                });
             }
         }
 

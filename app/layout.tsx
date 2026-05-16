@@ -1,5 +1,4 @@
 import type { Metadata, Viewport } from "next";
-import { Inter } from "next/font/google";
 import { auth } from "@/auth";
 import "./globals.css";
 // import { Sidebar } from "@/components/layout/sidebar";
@@ -8,8 +7,6 @@ import { MobileHeader } from "@/components/layout/mobile-header";
 import { MobileDock } from "@/components/layout/mobile-dock";
 import { cn } from "@/lib/utils";
 import { ErrorBoundary } from "@/components/ui/error-boundary";
-
-const inter = Inter({ subsets: ["latin"] });
 
 // Viewport configuration for mobile optimization
 export const viewport: Viewport = {
@@ -69,7 +66,7 @@ export default async function RootLayout({
 
   return (
     <html lang="tr" className="dark" suppressHydrationWarning>
-      <body className={cn(inter.className, "bg-background text-foreground overflow-x-hidden")} suppressHydrationWarning>
+      <body className={cn("font-sans bg-background text-foreground overflow-x-hidden")} suppressHydrationWarning>
         <div className="flex flex-col min-h-screen max-w-[1920px] mx-auto shadow-2xl shadow-black/50">
           <TopNav user={session?.user} />
           <MobileHeader />

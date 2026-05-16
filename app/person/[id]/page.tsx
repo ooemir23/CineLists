@@ -19,16 +19,18 @@ type Props = {
 export default async function PersonPage(props: Props) {
     const { id } = await props.params;
 
-    const [person, isFavorite, comments] = await Promise.all([
+    const [person, externalIds, combinedCredits, isFavorite, comments] = await Promise.all([
         tmdb.getPersonDetails(id).catch(() => null),
+        tmdb.getPersonExternalIds(id).catch(() => null),
+        tmdb.getPersonCombinedCredits(id).catch(() => null),
         getIsFavoritePerson(parseInt(id)),
         getPersonComments(parseInt(id)),
     ]);
 
     if (!person) notFound();
 
-    const socialLinks = person.external_ids || {};
-    const actingCredits = person.combined_credits?.cast
+    const socialLinks = externalIds || {};
+    const actingCredits = combinedCredits?.cast
         ?.sort((a: any, b: any) => {
             const dateA = a.release_date || a.first_air_date || "0000";
             const dateB = b.release_date || b.first_air_date || "0000";

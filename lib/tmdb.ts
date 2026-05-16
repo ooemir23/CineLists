@@ -29,7 +29,7 @@ type FetchOptions = {
 };
 
 export const tmdb = {
-    async fetch(endpoint: string, { params, cache }: FetchOptions = {}): Promise<any> {
+    async fetch(endpoint: string, { params, cache }: FetchOptions = {}) {
         if (!API_KEY || API_KEY.includes("buraya")) {
             console.error("TMDB_API_KEY is missing or placeholder value");
             if (isListEndpoint(endpoint)) {
@@ -113,9 +113,23 @@ export const tmdb = {
     },
 
     async getDetails(type: "movie" | "tv", id: string) {
-        return this.fetch(`/${type}/${id}`, {
-            params: { append_to_response: "credits,recommendations,similar,images,videos" }
-        });
+        return this.fetch(`/${type}/${id}`);
+    },
+
+    async getCredits(type: "movie" | "tv", id: string) {
+        return this.fetch(`/${type}/${id}/credits`);
+    },
+
+    async getVideos(type: "movie" | "tv", id: string) {
+        return this.fetch(`/${type}/${id}/videos`);
+    },
+
+    async getRecommendations(type: "movie" | "tv", id: string) {
+        return this.fetch(`/${type}/${id}/recommendations`);
+    },
+
+    async getImages(type: "movie" | "tv", id: string) {
+        return this.fetch(`/${type}/${id}/images`);
     },
 
     async getSeasonDetails(tvId: string, seasonNumber: number) {
@@ -123,9 +137,7 @@ export const tmdb = {
     },
 
     async getEpisodeDetails(tvId: string, seasonNumber: number, episodeNumber: number) {
-        return this.fetch(`/tv/${tvId}/season/${seasonNumber}/episode/${episodeNumber}`, {
-            params: { append_to_response: "credits,images,videos" }
-        });
+        return this.fetch(`/tv/${tvId}/season/${seasonNumber}/episode/${episodeNumber}`);
     },
 
     async getWatchProviders(type: "movie" | "tv", id: string) {
@@ -165,9 +177,7 @@ export const tmdb = {
     },
 
     async getPersonDetails(id: string) {
-        return this.fetch(`/person/${id}`, {
-            params: { append_to_response: "external_ids,combined_credits,images" }
-        });
+        return this.fetch(`/person/${id}`);
     },
 
     async getPersonExternalIds(id: string) {

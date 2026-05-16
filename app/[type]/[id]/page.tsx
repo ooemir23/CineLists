@@ -52,11 +52,13 @@ export default async function DetailsPage(props: Props) {
     if (type !== "movie" && type !== "tv") notFound();
 
     const [
-        data, inWatchlist, watchStatus, watchedEpisodes,
+        data, credits, videos, inWatchlist, watchStatus, watchedEpisodes,
         providersData, userRating, friendsRatings,
         activeRecommendation, dbMedia
     ] = await Promise.all([
         tmdb.getDetails(type as "movie" | "tv", id).catch(() => null),
+        tmdb.getCredits(type as "movie" | "tv", id).catch(() => null),
+        tmdb.getVideos(type as "movie" | "tv", id).catch(() => null),
         safe(getToWatchStatus(mediaId), false),
         safe(getWatchStatus(mediaId), null),
         type === "tv" ? safe(getWatchedEpisodes(mediaId), []) : Promise.resolve([]),
@@ -86,7 +88,7 @@ export default async function DetailsPage(props: Props) {
                 } 
             }
         }), null)
-    ]) as [any, boolean, any, any, any, number | null, any[], any, any];
+    ]) as [any, any, any, boolean, any, any, any, number | null, any[], any, any];
 
     if (!data) notFound();
 
@@ -125,7 +127,7 @@ export default async function DetailsPage(props: Props) {
     const voteCount = data.vote_count ? data.vote_count.toLocaleString("tr-TR") : null;
     const year = releaseDate ? new Date(releaseDate).getFullYear() : "";
     const backdrop = data.backdrop_path ? `https://image.tmdb.org/t/p/original${data.backdrop_path}` : null;
-    const directors = data.credits?.crew?.filter((c: any) => c.job === "Director").slice(0, 2) || [];
+    const directors = credits?.crew?.filter((c: any) => c.job === "Director").slice(0, 2) || [];
     const creators = (data.created_by || []).slice(0, 2);
 
     const statusMap: Record<string, { label: string; cls: string }> = {
@@ -212,7 +214,7 @@ export default async function DetailsPage(props: Props) {
                                 <p className="text-sm text-white/65 leading-relaxed line-clamp-3 border-l-2 border-amber-400/35 pl-3">{data.overview}</p>
                             )}
                             <div className="grid grid-cols-2 gap-2">
-                                <TrailerButton videos={data.videos?.results || []} title={title} className="w-full" />
+                                <TrailerButton videos={videos?.results || []} title={title} className="w-full" />
                                 <WatchProviders providers={trProviders} isGlobal={isGlobal} isGuest={isGuest} />
                             </div>
                             <div className="flex items-center gap-2">
@@ -251,7 +253,7 @@ export default async function DetailsPage(props: Props) {
                             </div>
                             {/* Trailer + Watch Providers — yan yana */}
                             <div className="mt-2 flex gap-2">
-                                <TrailerButton videos={data.videos?.results || []} title={title} className="flex-1" />
+                                <TrailerButton videos={videos?.results || []} title={title} className="flex-1" />
                                 <WatchProviders providers={trProviders} isGlobal={isGlobal} isGuest={isGuest} />
                             </div>
                         </div>
@@ -370,15 +372,14 @@ export default async function DetailsPage(props: Props) {
                 {/* ════ BOTTOM: FULL-WIDTH TABS ════════════════════════ */}
                 <div className="px-6 lg:px-10 pt-4 pb-10 bg-[#070c16]">
                     <DetailTabs
-                        cast={data.credits?.cast || []}
+                        cast={credits?.cast || []}
                         seasons={data.seasons}
                         tmdbId={data.id}
                         type={type as "movie" | "tv"}
-                        images={data.images?.backdrops || []}
                         title={title}
                         posterPath={data.poster_path}
                         initialComments={comments}
-                        recommendations={data.recommendations?.results || []}
+                        initialRecommendations={[]}
                         watchedEpisodes={watchedEpisodes}
                         currentUserId={session?.user?.id}
                         director={directors?.[0]?.name || creators?.[0]?.name}
@@ -389,5 +390,4 @@ export default async function DetailsPage(props: Props) {
         </div>
     );
 }
-
 

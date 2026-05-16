@@ -8,7 +8,7 @@ import { addComment, deleteComment, updateComment, voteActivity, voteComment } f
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 
-type ReplyComment = {
+export type ReplyComment = {
     id: string;
     content: string;
     createdAt: Date;
@@ -21,7 +21,7 @@ type ReplyComment = {
     };
 };
 
-type Comment = {
+export type Comment = {
     id: string;
     content: string;
     createdAt: Date;

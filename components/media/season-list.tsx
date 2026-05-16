@@ -9,13 +9,13 @@ import { markSeasonAsWatched } from "@/lib/tv-actions";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 
-type Season = {
-    air_date: string;
+export type Season = {
+    air_date?: string;
     episode_count: number;
     id: number;
     name: string;
-    overview: string;
-    poster_path: string;
+    overview?: string;
+    poster_path?: string | null;
     season_number: number;
 };
 

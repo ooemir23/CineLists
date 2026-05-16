@@ -1,17 +1,13 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useMemo, useState, useRef } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import {
     Heart,
     MessageSquare,
     Star,
-    Film,
-    Tv,
-    Clock,
     User,
-    Send,
     Loader2
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
@@ -68,27 +64,20 @@ type CompactActivityCardProps = {
 };
 
 export function CompactActivityCard({ activity }: CompactActivityCardProps) {
-    const [timeLabel, setTimeLabel] = useState("");
     const [isLiked, setIsLiked] = useState(false);
-    const [likesCount, setLikesCount] = useState(0);
+    const [likesCount, setLikesCount] = useState(activity.votes || 0);
     const [showComments, setShowComments] = useState(false);
-    const [comments, setComments] = useState<any[]>([]);
+    const [comments, setComments] = useState<{ id: string; user: { name: string | null }; content: string }[]>([]);
     const [loadingComments, setLoadingComments] = useState(false);
     const [commentInput, setCommentInput] = useState("");
     const [submitting, setSubmitting] = useState(false);
     const [showHeartAnim, setShowHeartAnim] = useState(false);
     const lastTap = useRef<number>(0);
 
-    useEffect(() => {
-        setTimeLabel(formatDistanceToNow(new Date(activity.createdAt), { addSuffix: true, locale: tr }));
-        setLikesCount(activity.votes || 0);
-    }, [activity.createdAt, activity.votes]);
-
-    useEffect(() => {
-        if (showComments) {
-            fetchComments();
-        }
-    }, [showComments]);
+    const timeLabel = useMemo(
+        () => formatDistanceToNow(new Date(activity.createdAt), { addSuffix: true, locale: tr }),
+        [activity.createdAt]
+    );
 
     const fetchComments = async () => {
         setLoadingComments(true);
@@ -246,7 +235,11 @@ export function CompactActivityCard({ activity }: CompactActivityCardProps) {
                                 onClick={(e) => {
                                     e.preventDefault();
                                     e.stopPropagation();
-                                    setShowComments(!showComments);
+                                    const next = !showComments;
+                                    setShowComments(next);
+                                    if (next && comments.length === 0) {
+                                        fetchComments();
+                                    }
                                 }}
                                 className={cn(
                                     "transition-all hover:scale-125 active:scale-90 flex items-center gap-1.5",
@@ -264,7 +257,7 @@ export function CompactActivityCard({ activity }: CompactActivityCardProps) {
                 {activity.review && (
                     <div className="px-1 mb-2 bg-white/5 p-2 rounded-xl border border-white/5">
                         <p className="text-[10px] text-neutral-300 leading-relaxed line-clamp-2 italic">
-                            "{activity.review}"
+                            &quot;{activity.review}&quot;
                         </p>
                     </div>
                 )}

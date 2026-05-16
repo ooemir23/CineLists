@@ -149,7 +149,7 @@ export function PersonalizedRecommendationsClient({
                                 id={item.id}
                                 title={item.title || item.name || "Tarih Bekleniyor"}
                                 originalTitle={item.original_title || item.original_name}
-                                posterPath={item.poster_path}
+                                posterPath={item.poster_path ?? null}
                                 voteAverage={item.vote_average || 0}
                                 userRating={userRatingsMap[item.id]}
                                 releaseDate={item.release_date || item.first_air_date}

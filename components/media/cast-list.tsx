@@ -6,11 +6,11 @@ import Image from "next/image";
 import { Users, ChevronRight, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-type CastMember = {
+export type CastMember = {
     id: number;
     name: string;
-    character: string;
-    profile_path: string | null;
+    character?: string | null;
+    profile_path?: string | null;
 };
 
 type CastListProps = {
