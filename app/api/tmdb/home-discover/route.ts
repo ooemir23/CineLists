@@ -76,7 +76,14 @@ export async function GET(request: NextRequest) {
                 original_title: item.media_type === "movie" ? item.original_title : item.original_name
             }));
 
-            return NextResponse.json({ results: finalResults });
+            return NextResponse.json(
+                { results: finalResults },
+                {
+                    headers: {
+                        "Cache-Control": "private, max-age=60, stale-while-revalidate=300",
+                    },
+                }
+            );
         }
 
         const now = new Date();
@@ -332,7 +339,14 @@ export async function GET(request: NextRequest) {
             results = await enrichResults(filtered);
         }
 
-        return NextResponse.json({ results });
+        return NextResponse.json(
+            { results },
+            {
+                headers: {
+                    "Cache-Control": "private, max-age=60, stale-while-revalidate=300",
+                },
+            }
+        );
     } catch (error) {
         console.error("Home discover API error:", error);
         return NextResponse.json({ results: [] });

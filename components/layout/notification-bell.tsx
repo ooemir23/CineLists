@@ -4,7 +4,6 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Bell } from "lucide-react";
 import { getUnreadNotificationCount } from "@/lib/notification-actions";
-import { cn } from "@/lib/utils";
 
 export function NotificationBell() {
     const [unreadCount, setUnreadCount] = useState(0);
@@ -15,11 +14,37 @@ export function NotificationBell() {
             setUnreadCount(count);
         };
 
+        let interval: ReturnType<typeof setInterval> | null = null;
+
         fetchCount();
 
-        // Refresh every minute for basic "real-time"
-        const interval = setInterval(fetchCount, 60000);
-        return () => clearInterval(interval);
+        const startPolling = () => {
+            if (interval) return;
+            interval = setInterval(fetchCount, 300000);
+        };
+
+        const stopPolling = () => {
+            if (!interval) return;
+            clearInterval(interval);
+            interval = null;
+        };
+
+        const handleVisibilityChange = () => {
+            if (document.visibilityState === "visible") {
+                fetchCount();
+                startPolling();
+            } else {
+                stopPolling();
+            }
+        };
+
+        document.addEventListener("visibilitychange", handleVisibilityChange);
+        startPolling();
+
+        return () => {
+            stopPolling();
+            document.removeEventListener("visibilitychange", handleVisibilityChange);
+        };
     }, []);
 
     return (

@@ -280,7 +280,6 @@ export function HomeDiscoverySection() {
 
                 const res = await fetch(url.toString(), {
                     signal: controller.signal,
-                    cache: "no-store",
                 });
                 const data = await res.json();
                 

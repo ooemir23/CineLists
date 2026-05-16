@@ -27,10 +27,17 @@ export async function GET() {
 
         const mappedPlatforms = (user?.platforms || []).map(p => legacyMap[p] || p);
 
-        return NextResponse.json({
-            ...user,
-            platforms: mappedPlatforms
-        });
+        return NextResponse.json(
+            {
+                ...user,
+                platforms: mappedPlatforms
+            },
+            {
+                headers: {
+                    "Cache-Control": "private, max-age=300, stale-while-revalidate=600",
+                },
+            }
+        );
     } catch (error) {
         console.error("Error fetching user preferences:", error);
         return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });

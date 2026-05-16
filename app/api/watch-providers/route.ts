@@ -4,6 +4,13 @@ import { env } from "@/lib/env";
 const TMDB_BASE_URL = "https://api.themoviedb.org/3";
 const API_KEY = env.TMDB_API_KEY;
 
+type WatchProvider = {
+  display_priorities?: Record<string, number>;
+  provider_id: number;
+  provider_name: string;
+  logo_path?: string | null;
+};
+
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
@@ -23,8 +30,15 @@ export async function GET(request: Request) {
       return NextResponse.json({ results: [] });
     }
 
-    const data = await res.json();
-    return NextResponse.json({ results: data.results || [] });
+    const data: { results?: WatchProvider[] } = await res.json();
+    return NextResponse.json(
+      { results: data.results || [] },
+      {
+        headers: {
+          "Cache-Control": "public, max-age=86400, stale-while-revalidate=604800",
+        },
+      }
+    );
   } catch (error) {
     console.error("Watch Providers API Error:", error);
     return NextResponse.json({ results: [] });
