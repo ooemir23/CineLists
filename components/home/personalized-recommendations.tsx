@@ -1,11 +1,22 @@
-import { MediaCard } from "@/components/media/media-card";
-import { MediaRowClient } from "@/components/media/media-row-client";
 import { getUserRatingsBulk } from "@/lib/rating-actions";
 import { Sparkles, ChevronRight } from "lucide-react";
 import Link from "next/link";
+import { PersonalizedRecommendationsClient } from "./personalized-recommendations-client";
 
 type PersonalizedRecommendationsProps = {
-    results: any[];
+    results: Array<{
+        id: number;
+        title?: string;
+        name?: string;
+        original_title?: string;
+        original_name?: string;
+        poster_path?: string | null;
+        vote_average?: number;
+        release_date?: string;
+        first_air_date?: string;
+        mediaType: "movie" | "tv";
+        runtime?: number;
+    }>;
     reasons: {
         favorites: { id: number; name: string }[];
         organic: { id: number; name: string }[];
@@ -22,18 +33,23 @@ export async function PersonalizedRecommendations({ results, reasons }: Personal
         import("@/lib/activity-actions").then(m => m.getMediaMetadataBulk(results.map(r => ({ id: r.id, type: r.mediaType }))))
     ]);
 
+    const normalizedResults = results.map((item) => ({
+        ...item,
+        mediaType: item.mediaType,
+    }));
+
     return (
-        <section className="relative mb-8 md:mb-12 group/section">
+        <section className="relative group/section">
             {/* Elegant Compact Background */}
             <div className="absolute inset-0 -mx-4 md:-mx-8">
                 <div className="absolute inset-0 bg-gradient-to-r from-amber-500/10 via-amber-500/5 to-transparent rounded-[2.5rem] border border-white/5 backdrop-blur-[2px]" />
                 <div className="absolute top-0 right-0 w-[300px] h-full bg-amber-500/5 blur-[80px] rounded-full mix-blend-screen pointer-events-none" />
             </div>
 
-            <div className="relative z-10 py-6 md:py-8">
-                <div className="px-6 md:px-10 mb-6">
-                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-                        <div className="space-y-2">
+            <div className="relative z-10 py-3 md:py-4">
+                <div className="px-4 md:px-8 mb-4 md:mb-5">
+                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 md:gap-6">
+                        <div className="space-y-1.5">
                             <div className="inline-flex items-center gap-2 px-2.5 py-1 bg-amber-400/10 border border-amber-400/20 rounded-lg text-amber-400 font-bold text-[9px] uppercase tracking-[0.2em]">
                                 <Sparkles className="w-3 h-3 fill-amber-400/20" />
                                 <span>Size Özel Analiz</span>
@@ -47,7 +63,7 @@ export async function PersonalizedRecommendations({ results, reasons }: Personal
                             </Link>
                         </div>
 
-                        <div className="flex flex-wrap gap-4 md:justify-end items-center">
+                        <div className="flex flex-wrap gap-2 md:gap-4 md:justify-end items-center">
                             {reasons.platforms.length > 0 && (
                                 <div className="flex items-center gap-2 px-3 py-1.5 bg-white/5 rounded-xl border border-white/10">
                                     <span className="text-[9px] font-black text-neutral-500 uppercase tracking-widest border-r border-white/10 pr-2 mr-1">Platform</span>
@@ -78,22 +94,11 @@ export async function PersonalizedRecommendations({ results, reasons }: Personal
                 </div>
 
                 <div className="relative group/row">
-                    <MediaRowClient>
-                        {results.map((item) => (
-                            <MediaCard
-                                key={`${item.mediaType}-${item.id}`}
-                                id={item.id}
-                                title={item.title || item.name || "Tarih Bekleniyor"}
-                                originalTitle={item.original_title || item.original_name}
-                                posterPath={item.poster_path}
-                                voteAverage={item.vote_average}
-                                userRating={userRatingsMap[item.id]}
-                                releaseDate={item.release_date || item.first_air_date}
-                                runtime={item.runtime || metadataMap[item.id]?.runtime || undefined}
-                                type={item.mediaType}
-                            />
-                        ))}
-                    </MediaRowClient>
+                    <PersonalizedRecommendationsClient
+                        results={normalizedResults}
+                        userRatingsMap={userRatingsMap}
+                        metadataMap={metadataMap}
+                    />
                 </div>
             </div>
         </section>

@@ -4,10 +4,10 @@ import { MediaRow } from "@/components/media/media-row";
 import { ChevronRight } from "lucide-react";
 import { PersonalizedRecommendations } from "@/components/home/personalized-recommendations";
 import { getPersonalizedRecommendations } from "@/lib/recommendations";
-import { FriendsActivity } from "@/components/home/friends-activity";
 import { HomeTopSection } from "@/components/home/home-top-section";
 import { SectionTabs } from "@/components/home/section-tabs";
 import { HomeDiscoverySection } from "@/components/home/home-discovery-section";
+import { HomeViewModeProvider } from "@/components/home/use-shared-view-mode";
 
 export const revalidate = 3600; // Revalidate every hour
 
@@ -128,8 +128,18 @@ export default async function Home({ searchParams }: HomeProps) {
     ]);
   }
 
+  const personalizedSectionResults = !isFiltering
+    ? (personalizedMovies?.results?.length ? personalizedMovies.results : trendingMovies?.results?.slice(0, 12) || [])
+    : [];
+  const personalizedSectionReasons = personalizedMovies?.reasons || {
+    favorites: [],
+    organic: [],
+    platforms: [],
+  };
+
   return (
-    <div className=" w-full overflow-x-hidden pb-24 md:pb-0 bg-[#101624]">
+    <HomeViewModeProvider>
+      <div className=" w-full overflow-x-hidden pb-24 md:pb-0 bg-[#101624]">
 
       {/* Primary Top Section: Hero Slider & Friends Activity */}
       <div className="max-w-[1600px] mx-auto px-3 sm:px-6 md:px-8 lg:px-12 pt-3 md:pt-16">
@@ -137,16 +147,6 @@ export default async function Home({ searchParams }: HomeProps) {
       </div>
 
       {!isFiltering && <HomeDiscoverySection />}
-
-      {/* Personalized Recommendations - Highlighted Placement */}
-      {!isFiltering && personalizedMovies?.results?.length > 0 && (
-        <div className="max-w-[1600px] mx-auto px-3 sm:px-6 md:px-8 lg:px-12 mt-3 md:mt-4">
-          <PersonalizedRecommendations
-            results={personalizedMovies.results}
-            reasons={personalizedMovies.reasons}
-          />
-        </div>
-      )}
 
 
       {/* Main Content Area */}
@@ -162,6 +162,16 @@ export default async function Home({ searchParams }: HomeProps) {
           </div>
         )}
       </div>
-    </div>
+
+        {!isFiltering && personalizedSectionResults.length > 0 && (
+          <div className="max-w-[1600px] mx-auto px-3 sm:px-6 md:px-8 lg:px-12 mt-4 md:mt-6">
+            <PersonalizedRecommendations
+              results={personalizedSectionResults}
+              reasons={personalizedSectionReasons}
+            />
+          </div>
+        )}
+      </div>
+    </HomeViewModeProvider>
   );
 }

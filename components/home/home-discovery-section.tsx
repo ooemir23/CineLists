@@ -1,12 +1,13 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation"; // Essential for navigation tracking
 import { motion, AnimatePresence } from "framer-motion";
-import { Film, Tv, TrendingUp, Star, Check, Calendar, Filter, PlayCircle, Shuffle, LayoutGrid, List as ListIcon, Clock, Frown, RefreshCcw, Users, Grid3X3, ArrowRight, ChevronRight, ChevronLeft, Sparkles, Search, X, ChevronDown } from "lucide-react";
+import { Film, Tv, TrendingUp, Star, Check, Calendar, Filter, PlayCircle, Shuffle, LayoutGrid, List as ListIcon, Clock, Frown, RefreshCcw, Users, Grid3X3, Sparkles, Search, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { MediaCard } from "@/components/media/media-card";
+import { SharedViewMode, useSharedViewMode } from "./use-shared-view-mode";
 
 type MenuType = "all" | "movie" | "tv";
 type MenuCategory = "trending" | "popular" | "now_playing" | "top_rated" | "upcoming" | "random" | "friends";
@@ -24,8 +25,14 @@ type DiscoverItem = {
     media_type?: string;
     overview?: string;
     runtime?: number;
-    watch_providers?: any;
-    friend?: any;
+    watch_providers?: {
+        flatrate?: { provider_id: number; provider_name: string; logo_path?: string | null }[];
+    } | null;
+    friend?: {
+        name?: string | null;
+        image?: string | null;
+        type?: string | null;
+    } | null;
     genre_ids?: number[];
     statusLabel?: string;
     statusType?: "watching" | "plan_to_watch";
@@ -42,16 +49,6 @@ const categoryOptions = [
     { id: "random", label: "Rastgele", icon: Shuffle },
     { id: "friends", label: "Arkadaşlar", icon: Users },
 ] as const;
-
-const HOME_CATEGORY_LABELS: Record<string, string> = {
-    trending: "Trend",
-    popular: "Popüler",
-    now_playing: "Vizyondaki",
-    top_rated: "En İyi",
-    upcoming: "Takvim",
-    random: "Rastgele",
-    friends: "Arkadaşların İzlediği",
-};
 
 const GENRE_OPTIONS = [
     { id: "", label: "Tür" },
@@ -131,13 +128,14 @@ export function HomeDiscoverySection() {
     const [providers, setProviders] = useState<string[]>([]);
     const [languages, setLanguages] = useState<string[]>([]);
     const [countries, setCountries] = useState<string[]>([]);
-    const [viewMode, setViewMode] = useState<"grid" | "list" | "compact">("grid");
+    const { viewMode, setViewMode } = useSharedViewMode();
     const [upcomingFilter, setUpcomingFilter] = useState<"today" | "week" | "all">("all");
 
     const [items, setItems] = useState<DiscoverItem[]>([]);
     const [page, setPage] = useState(1);
     const [isLoading, setIsLoading] = useState(false);
     const [isMoreLoading, setIsMoreLoading] = useState(false);
+    const [hasMore, setHasMore] = useState(true);
     const [activeFilterCategory, setActiveFilterCategory] = useState(0);
     const [userPreferences, setUserPreferences] = useState<{ genres: string[], platforms: string[] } | null>(null);
 
@@ -221,14 +219,14 @@ export function HomeDiscoverySection() {
         setIsFilterSheetOpen(false);
     };
 
-    const resetStaging = () => {
+    const resetStaging = useCallback(() => {
         setStagedGenres(genres);
         setStagedYears(years);
         setStagedRatings(ratings);
         setStagedProviders(providers);
         setStagedLanguages(languages);
         setStagedCountries(countries);
-    };
+    }, [genres, years, ratings, providers, languages, countries]);
 
     const clearAllStaged = () => {
         setStagedGenres([]);
@@ -243,9 +241,12 @@ export function HomeDiscoverySection() {
         userTriggeredRef.current = true;
     };
 
+    const discoveryPageSize = viewMode === "compact" ? 18 : 12;
+
     // Reset page when filters change
     useEffect(() => {
         setPage(1);
+        setHasMore(true);
         
         if (headerRef.current && userTriggeredRef.current) {
             const yOffset = -80; // Offset for TopNav
@@ -267,6 +268,7 @@ export function HomeDiscoverySection() {
                 url.searchParams.set("category", activeCategory);
                 url.searchParams.set("timeWindow", activeTimeWindow);
                 url.searchParams.set("page", page.toString());
+                url.searchParams.set("limit", discoveryPageSize.toString());
                 if (activeCategory === "upcoming") {
                     url.searchParams.set("upcomingFilter", upcomingFilter);
                 }
@@ -288,8 +290,9 @@ export function HomeDiscoverySection() {
                 } else {
                     setItems(prev => [...prev, ...(data?.results || [])]);
                 }
-            } catch (err: any) {
-                if (err.name === 'AbortError') return;
+                setHasMore(Boolean(data?.hasMore));
+            } catch (err: unknown) {
+                if (err instanceof DOMException && err.name === "AbortError") return;
                 console.error("Discovery fetch error:", err);
                 if (page === 1) setItems([]);
             } finally {
@@ -300,7 +303,7 @@ export function HomeDiscoverySection() {
 
         fetchData();
         return () => controller.abort();
-    }, [activeType, activeCategory, activeTimeWindow, genres, years, ratings, providers, languages, countries, page, upcomingFilter]);
+    }, [activeType, activeCategory, activeTimeWindow, genres, years, ratings, providers, languages, countries, page, upcomingFilter, discoveryPageSize]);
 
     const [isFilterSheetOpen, setIsFilterSheetOpen] = useState(false);
 
@@ -308,7 +311,7 @@ export function HomeDiscoverySection() {
         if (isFilterSheetOpen) {
             resetStaging();
         }
-    }, [isFilterSheetOpen]);
+    }, [isFilterSheetOpen, resetStaging]);
 
     // Close overlays on navigation or global close event
     useEffect(() => {
@@ -425,7 +428,7 @@ export function HomeDiscoverySection() {
                                         { value: stagedRatings, setter: setStagedRatings, options: RATING_OPTIONS },
                                         { value: stagedLanguages, setter: setStagedLanguages, options: languageOptions },
                                         { value: stagedCountries, setter: setStagedCountries, options: countryOptions },
-                                    ][activeFilterCategory]).options.map((opt: any) => {
+                                    ][activeFilterCategory]).options.map((opt: { id: string; label: string }) => {
                                         const cat = [
                                             { value: stagedGenres, setter: setStagedGenres },
                                             { value: stagedProviders, setter: setStagedProviders },
@@ -549,7 +552,7 @@ export function HomeDiscoverySection() {
                                     key={t}
                                     onClick={() => {
                                         markUserTriggered();
-                                        setActiveType(t as any);
+                                        setActiveType(t as MenuType);
                                     }}
                                     className={cn(
                                         "flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-full text-[10px] md:text-sm font-black transition-all uppercase tracking-tight",
@@ -599,7 +602,7 @@ export function HomeDiscoverySection() {
                                         key={f}
                                         onClick={() => {
                                             markUserTriggered();
-                                            setUpcomingFilter(f as any);
+                                            setUpcomingFilter(f as "all" | "today" | "week");
                                         }}
                                         className={cn(
                                             "px-3 py-1.5 rounded-full text-[8px] md:text-[9px] font-black uppercase tracking-wider transition-all",
@@ -636,9 +639,9 @@ export function HomeDiscoverySection() {
                                 { id: "compact", icon: Grid3X3, label: "Kompakt" },
                                 { id: "list", icon: ListIcon, label: "Liste" },
                             ].map((mode) => (
-                                <button
-                                    key={mode.id}
-                                    onClick={() => setViewMode(mode.id as any)}
+                                    <button
+                                        key={mode.id}
+                                        onClick={() => setViewMode(mode.id as SharedViewMode)}
                                     className={cn(
                                         "flex-1 flex items-center justify-center gap-2 py-2.5 rounded-full text-[10px] font-black uppercase tracking-tight transition-all",
                                         viewMode === mode.id 
@@ -663,7 +666,7 @@ export function HomeDiscoverySection() {
                             {["day", "week", "month"].map(tw => (
                                 <button key={tw} onClick={() => {
                                     markUserTriggered();
-                                    setActiveTimeWindow(tw as any);
+                                    setActiveTimeWindow(tw as "day" | "week" | "month");
                                 }} className={cn("flex-1 flex items-center justify-center px-3 py-2.5 rounded-full text-[10px] md:text-sm font-black transition-all uppercase tracking-tight whitespace-nowrap", activeTimeWindow === tw ? "bg-amber-400 text-black" : "text-neutral-400 hover:text-white")}>
                                     {tw === "day" ? "Günün" : tw === "week" ? "Haftanın" : "Ayın"}
                                 </button>
@@ -743,7 +746,7 @@ export function HomeDiscoverySection() {
                         ? "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-x-3 md:gap-x-4 gap-y-7 md:gap-y-8"
                         : "flex flex-col gap-4"
                 )}>
-                    {Array.from({ length: 12 }).map((_, idx) => (
+                    {Array.from({ length: discoveryPageSize }).map((_, idx) => (
                         <div key={idx} className={cn(
                             "rounded-2xl bg-white/5 animate-pulse",
                             viewMode === "grid" ? "aspect-[2/3]" : "h-24 md:h-32 w-full"
@@ -768,7 +771,7 @@ export function HomeDiscoverySection() {
                         Aradığınız İçerik <span className="text-amber-400">Bulunamadı</span>
                     </h3>
                     <p className="text-sm md:text-base text-neutral-400 font-bold max-w-md mx-auto leading-relaxed italic">
-                        "Seçtiğiniz kriterlere uygun hiçbir yapım sinema arşivlerimizde eşleşmedi. Farklı kombinasyonlar denemeye ne dersiniz?"
+                        &quot;Seçtiğiniz kriterlere uygun hiçbir yapım sinema arşivlerimizde eşleşmedi. Farklı kombinasyonlar denemeye ne dersiniz?&quot;
                     </p>
                     <button 
                         onClick={() => {
@@ -791,7 +794,7 @@ export function HomeDiscoverySection() {
                     <div className={cn(
                         "animate-in fade-in duration-700",
                         viewMode === "grid" && "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 sm:gap-6",
-                        viewMode === "compact" && "grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-7 xl:grid-cols-9 gap-3 md:gap-4",
+                        viewMode === "compact" && "grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-7 xl:grid-cols-9 gap-3 md:gap-4 justify-items-center",
                         viewMode === "list" && "flex flex-col gap-4"
                     )}>
                         {items.map((item, idx) => (
@@ -813,7 +816,7 @@ export function HomeDiscoverySection() {
                                         statusType={item.statusType}
                                         compact={viewMode === "compact"}
                                         genres={item.genre_ids?.map((id: number) => genreOptions.find(o => o.id === id.toString())?.label).filter((l): l is string => Boolean(l)).slice(0, 2)}
-                                        fullWidth
+                                        fullWidth={viewMode === "grid"}
                                     />
                                 </div>
                             ) : (
@@ -875,7 +878,7 @@ export function HomeDiscoverySection() {
                                             <div className="flex items-center gap-2 mt-auto">
                                                 <span className="text-[10px] font-black text-neutral-500 uppercase tracking-widest mr-1">Platformlar:</span>
                                                 <div className="flex flex-wrap gap-1.5">
-                                                    {item.watch_providers.flatrate.slice(0, 5).map((provider: any) => (
+                                                    {item.watch_providers.flatrate.slice(0, 5).map((provider) => (
                                                         <div key={provider.provider_id} className="w-6 h-6 rounded-md overflow-hidden border border-white/10 tooltip" title={provider.provider_name}>
                                                             <img 
                                                                 src={`https://image.tmdb.org/t/p/original${provider.logo_path}`} 
@@ -895,23 +898,29 @@ export function HomeDiscoverySection() {
 
                     {items.length > 0 && (
                         <div className="mt-12 mb-8 flex justify-center">
-                            <button
-                                onClick={() => setPage(prev => prev + 1)}
-                                disabled={isMoreLoading}
-                                className={cn(
-                                    "px-10 py-4 rounded-[2rem] bg-white/5 border border-white/10 text-white font-black uppercase tracking-widest hover:bg-white/10 transition-all flex items-center gap-3",
-                                    isMoreLoading && "opacity-50 cursor-not-allowed"
-                                )}
-                            >
-                                {isMoreLoading ? (
-                                    <>
-                                        <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                                        Yükleniyor...
-                                    </>
-                                ) : (
-                                    "Daha Fazla Göster"
-                                )}
-                            </button>
+                            {hasMore ? (
+                                <button
+                                    onClick={() => setPage(prev => prev + 1)}
+                                    disabled={isMoreLoading}
+                                    className={cn(
+                                        "px-10 py-4 rounded-[2rem] bg-white/5 border border-white/10 text-white font-black uppercase tracking-widest hover:bg-white/10 transition-all flex items-center gap-3",
+                                        isMoreLoading && "opacity-50 cursor-not-allowed"
+                                    )}
+                                >
+                                    {isMoreLoading ? (
+                                        <>
+                                            <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                            Yükleniyor...
+                                        </>
+                                    ) : (
+                                        "Daha Fazla Göster"
+                                    )}
+                                </button>
+                            ) : (
+                                <div className="text-[10px] font-black uppercase tracking-[0.3em] text-neutral-500">
+                                    Tüm içerikler yüklendi
+                                </div>
+                            )}
                         </div>
                     )}
                 </>

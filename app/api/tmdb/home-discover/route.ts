@@ -3,6 +3,67 @@ import { tmdb } from "@/lib/tmdb";
 import { getFriendsActivity } from "@/lib/feed-actions";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import { unstable_cache } from "next/cache";
+
+type DiscoverResult = {
+    id: number;
+    title?: string;
+    name?: string;
+    original_title?: string;
+    original_name?: string;
+    poster_path?: string | null;
+    backdrop_path?: string | null;
+    media_type?: "movie" | "tv";
+    vote_average?: number;
+    popularity?: number;
+    release_date?: string;
+    first_air_date?: string;
+    overview?: string;
+    genre_ids?: number[];
+    statusLabel?: string;
+    statusType?: "watching" | "plan_to_watch";
+    addedAt?: string | Date;
+    targetDate?: string | null;
+    friend?: {
+        name?: string | null;
+        image?: string | null;
+        type?: string | null;
+    };
+};
+
+function asDiscoverResult(item: Record<string, unknown>, mediaType: "movie" | "tv"): DiscoverResult {
+    return {
+        id: Number(item.id),
+        title: typeof item.title === "string" ? item.title : undefined,
+        name: typeof item.name === "string" ? item.name : undefined,
+        original_title: typeof item.original_title === "string" ? item.original_title : undefined,
+        original_name: typeof item.original_name === "string" ? item.original_name : undefined,
+        poster_path: typeof item.poster_path === "string" ? item.poster_path : null,
+        backdrop_path: typeof item.backdrop_path === "string" ? item.backdrop_path : null,
+        media_type: mediaType,
+        vote_average: typeof item.vote_average === "number" ? item.vote_average : 0,
+        popularity: typeof item.popularity === "number" ? item.popularity : 0,
+        release_date: typeof item.release_date === "string" ? item.release_date : undefined,
+        first_air_date: typeof item.first_air_date === "string" ? item.first_air_date : undefined,
+        overview: typeof item.overview === "string" ? item.overview : undefined,
+        genre_ids: Array.isArray(item.genre_ids) ? item.genre_ids.filter((id): id is number => typeof id === "number") : undefined,
+    };
+}
+
+async function getWatchedIdsForUser(userId: string): Promise<number[]> {
+    const watched = await prisma.watched.findMany({
+        where: { userId },
+        select: { media: { select: { tmdbId: true } } },
+    });
+
+    return watched.map((entry) => entry.media.tmdbId);
+}
+
+const cachedGetWatchedIdsForUser = unstable_cache(
+    getWatchedIdsForUser,
+    ["home-discover-watched-ids"],
+    { revalidate: 120 }
+);
 
 export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams;
@@ -19,65 +80,38 @@ export async function GET(request: NextRequest) {
     const country = searchParams.get("country");
     const sortBy = searchParams.get("sortBy") || "popularity.desc";
     const upcomingFilter = searchParams.get("upcomingFilter") || "all";
+    const limit = Math.max(1, Math.min(Number(searchParams.get("limit") || "12"), 20));
 
     try {
-        let results: any[] = [];
-
-        // If any discovery filters are present, force category to discover
-        const isDiscovering = genre || year || rating || provider || language || (sortBy !== "popularity.desc");
-        const currentCategory = isDiscovering ? "discover" : category;
-
         const session = await auth();
-        let watchedIds: Set<number> = new Set();
-        if (session?.user?.id) {
-            const watched = await prisma.watched.findMany({
-                where: { userId: session.user.id },
-                select: { media: { select: { tmdbId: true } } }
-            });
-            watchedIds = new Set(watched.map(w => w.media.tmdbId));
-        }
+        const watchedIds = session?.user?.id
+            ? await cachedGetWatchedIdsForUser(session.user.id)
+            : [];
+        const watchedIdSet = new Set(watchedIds);
+
+        const isDiscovering = Boolean(genre || year || rating || provider || language || sortBy !== "popularity.desc");
+        const currentCategory = isDiscovering ? "discover" : category;
 
         if (currentCategory === "friends") {
             const activities = await getFriendsActivity();
-            const results = activities.map(activity => ({
+            const results: DiscoverResult[] = activities.map((activity) => ({
                 id: activity.media.tmdbId,
                 title: activity.media.title,
-                original_title: activity.media.title, // Activities might not store original title, using title as fallback
+                original_title: activity.media.title,
                 poster_path: activity.media.posterPath,
-                media_type: activity.media.type.toLowerCase(),
+                backdrop_path: activity.media.backdropPath,
+                media_type: activity.media.type.toLowerCase() as "movie" | "tv",
                 vote_average: activity.rating || 0,
-                // Add friend info to result
+                overview: activity.content || "",
                 friend: {
                     name: activity.user.name,
                     image: activity.user.image,
-                    type: activity.type
-                }
-            }));
-
-            // Enrichment for friends too (runtime, providers)
-            const enrichedResults = await Promise.all(results.map(async (item) => {
-                try {
-                    const details = await tmdb.getDetails(item.media_type as "movie" | "tv", item.id.toString());
-                    const providers = await tmdb.getWatchProviders(item.media_type as "movie" | "tv", item.id.toString());
-                    return {
-                        ...item,
-                        original_title: item.media_type === "movie" ? details.original_title : details.original_name,
-                        runtime: item.media_type === "movie" ? details.runtime : (details.episode_run_time?.[0] || null),
-                        overview: details.overview,
-                        watch_providers: providers.results?.TR || null
-                    };
-                } catch {
-                    return item;
-                }
-            }));
-
-            const finalResults = enrichedResults.map((item: any) => ({
-                ...item,
-                original_title: item.media_type === "movie" ? item.original_title : item.original_name
+                    type: activity.type,
+                },
             }));
 
             return NextResponse.json(
-                { results: finalResults },
+                { results: results.slice(0, limit), hasMore: results.length > limit },
                 {
                     headers: {
                         "Cache-Control": "private, max-age=60, stale-while-revalidate=300",
@@ -95,7 +129,7 @@ export async function GET(request: NextRequest) {
             const date = window === "month" ? thirtyDaysAgo : window === "week" ? sevenDaysAgo : oneDayAgo;
             return {
                 "primary_release_date.gte": date,
-                "first_air_date.gte": date
+                "first_air_date.gte": date,
             };
         };
 
@@ -115,17 +149,17 @@ export async function GET(request: NextRequest) {
 
         const fetchTypeResults = async (mediaType: "movie" | "tv") => {
             const timeParams = timeWindow !== "day" ? getTimeRangeParams(timeWindow) : {};
-            
+
             if (currentCategory === "trending" && timeWindow !== "month") {
-                return tmdb.getTrending(mediaType, timeWindow as any, { page });
+                return tmdb.getTrending(mediaType, timeWindow === "week" ? "week" : "day", { page });
             }
 
             if (currentCategory === "random") {
                 const randomPage = Math.floor(Math.random() * 10) + 1;
-                const data = await tmdb.discover(mediaType, { 
-                    sort_by: "vote_average.desc", 
+                const data = await tmdb.discover(mediaType, {
+                    sort_by: "vote_average.desc",
                     "vote_count.gte": "100",
-                    page: randomPage.toString()
+                    page: randomPage.toString(),
                 });
                 return { ...data, results: (data.results || []).sort(() => Math.random() - 0.5) };
             }
@@ -135,136 +169,74 @@ export async function GET(request: NextRequest) {
             }
 
             if (currentCategory === "popular") {
-                return timeWindow === "day" ? tmdb.getPopular(mediaType, { page }) : tmdb.discover(mediaType, { sort_by: "popularity.desc", page, ...timeParams });
+                return timeWindow === "day"
+                    ? tmdb.getPopular(mediaType, { page })
+                    : tmdb.discover(mediaType, { sort_by: "popularity.desc", page, ...timeParams });
             }
 
             if (currentCategory === "top_rated") {
-                return timeWindow === "day" ? tmdb.getTopRated(mediaType, { page }) : tmdb.discover(mediaType, { sort_by: "vote_average.desc", "vote_count.gte": "100", page, ...timeParams });
+                return timeWindow === "day"
+                    ? tmdb.getTopRated(mediaType, { page })
+                    : tmdb.discover(mediaType, { sort_by: "vote_average.desc", "vote_count.gte": "100", page, ...timeParams });
             }
 
             if (currentCategory === "upcoming") {
                 const session = await auth();
-                let userItems: any[] = [];
-                
+                const userItems: DiscoverResult[] = [];
+
                 if (session?.user?.id) {
                     const [watching, toWatch] = await Promise.all([
                         prisma.toWatch.findMany({
-                            where: { 
-                                userId: session.user.id, 
+                            where: {
+                                userId: session.user.id,
                                 status: "WATCHING",
-                                media: { type: mediaType === "movie" ? "MOVIE" : "TV" }
+                                media: { type: mediaType === "movie" ? "MOVIE" : "TV" },
                             },
                             include: { media: true },
                         }),
                         prisma.toWatch.findMany({
-                            where: { 
-                                userId: session.user.id, 
+                            where: {
+                                userId: session.user.id,
                                 status: "PLAN_TO_WATCH",
-                                media: { type: mediaType === "movie" ? "MOVIE" : "TV" }
+                                media: { type: mediaType === "movie" ? "MOVIE" : "TV" },
                             },
                             include: { media: true },
                         }),
                     ]);
 
-                    userItems = [
-                        ...(await Promise.all(watching.map(async (item) => {
-                            let statusLabel = "Şu An İzleniyor";
-                            let targetDate = null;
-                            if (item.media.type === "TV") {
-                                try {
-                                    const details = await tmdb.getTVShow(item.media.tmdbId.toString());
-                                    const nextEp = details.next_episode_to_air;
-                                    const lastEp = details.last_episode_to_air;
-                                    
-                                    if (nextEp) {
-                                        targetDate = nextEp.air_date;
-                                        const airDate = new Date(nextEp.air_date);
-                                        const formattedDate = airDate.toLocaleDateString("tr-TR", { day: "2-digit", month: "2-digit" });
-                                        statusLabel = `Yeni Bölüm: ${formattedDate} (S${nextEp.season_number} B${nextEp.episode_number})`;
-                                    } else if (lastEp) {
-                                        targetDate = lastEp.air_date;
-                                        const airDate = new Date(lastEp.air_date);
-                                        const now = new Date();
-                                        const diffDays = (now.getTime() - airDate.getTime()) / (1000 * 60 * 60 * 24);
-                                        
-                                        if (diffDays >= 0 && diffDays <= 7) {
-                                            const formattedDate = airDate.toLocaleDateString("tr-TR", { day: "2-digit", month: "2-digit" });
-                                            statusLabel = `Yeni Bölüm Yayında: ${formattedDate} (S${lastEp.season_number} B${lastEp.episode_number})`;
-                                        } else {
-                                            // Fallback to show status if last episode was long ago
-                                            if (details.status === "Ended" || details.status === "Canceled") {
-                                                statusLabel = "Final Yaptı";
-                                            } else {
-                                                statusLabel = "Yeni Sezon Açıklanmadı";
-                                            }
-                                        }
-                                    } else {
-                                        // No next or last episode info
-                                        if (details.status === "Ended" || details.status === "Canceled") {
-                                            statusLabel = "Final Yaptı";
-                                        } else {
-                                            statusLabel = "Yeni Sezon Açıklanmadı";
-                                        }
-                                    }
-                                } catch (e) {
-                                    console.error("Error fetching next episode for", item.media.title, e);
-                                }
-                            } else if (item.media.type === "MOVIE") {
-                                statusLabel = "Vizyon Tarihi Belirsiz";
-                            }
-                            return {
-                                id: item.media.tmdbId,
-                                title: item.media.title,
-                                poster_path: item.media.posterPath,
-                                media_type: item.media.type.toLowerCase(),
-                                vote_average: item.media.voteAverage || 0,
-                                statusLabel,
-                                statusType: "watching",
-                                addedAt: item.addedAt,
-                                targetDate
-                            };
-                        }))),
-                        ...(await Promise.all(toWatch.map(async (item) => {
-                            const displayDate = null;
-                            let showStatus = "";
-                            if (!displayDate && mediaType === "tv") {
-                                try {
-                                    const details = await tmdb.getTVShow(item.media.tmdbId.toString());
-                                    showStatus = details.status;
-                                } catch (e) {}
-                            }
+                    for (const item of watching) {
+                        userItems.push({
+                            id: item.media.tmdbId,
+                            title: item.media.title,
+                            poster_path: item.media.posterPath,
+                            media_type: item.media.type.toLowerCase() as "movie" | "tv",
+                            vote_average: item.media.voteAverage || 0,
+                            statusLabel: item.media.type === "TV" ? "Şu An İzleniyor" : "Vizyon Tarihi Belirsiz",
+                            statusType: "watching",
+                            addedAt: item.addedAt,
+                            targetDate: null,
+                        });
+                    }
 
-                            let statusLabel = "Tarih Bekleniyor";
-                            if (displayDate) {
-                                statusLabel = new Date(displayDate).toLocaleDateString("tr-TR");
-                            } else if (mediaType === "tv") {
-                                if (showStatus === "Ended" || showStatus === "Canceled") {
-                                    statusLabel = "Final Yaptı";
-                                } else {
-                                    statusLabel = "Yeni Sezon Açıklanmadı";
-                                }
-                            } else if (mediaType === "movie") {
-                                statusLabel = "Vizyon Tarihi Belirsiz";
-                            }
-
-                            return {
-                                id: item.media.tmdbId,
-                                title: item.media.title,
-                                poster_path: item.media.posterPath,
-                                media_type: mediaType,
-                                vote_average: item.media.voteAverage || 0,
-                                statusLabel,
-                                statusType: "plan_to_watch",
-                                addedAt: item.addedAt,
-                                targetDate: displayDate
-                            };
-                        })))
-                    ].sort(() => Math.random() - 0.5);
+                    for (const item of toWatch) {
+                        userItems.push({
+                            id: item.media.tmdbId,
+                            title: item.media.title,
+                            poster_path: item.media.posterPath,
+                            media_type: mediaType,
+                            vote_average: item.media.voteAverage || 0,
+                            statusLabel: mediaType === "tv" ? "Yeni Sezon Açıklanmadı" : "Vizyon Tarihi Belirsiz",
+                            statusType: "plan_to_watch",
+                            addedAt: item.addedAt,
+                            targetDate: null,
+                        });
+                    }
                 }
 
                 const tmdbResults = mediaType === "movie" ? await tmdb.getUpcomingMovies({ page }) : await tmdb.getOnTheAirTV({ page });
-                
-                let filteredTmdbResults = (tmdbResults?.results || []).filter((item: any) => !watchedIds.has(item.id));
+                let filteredTmdbResults = (tmdbResults?.results || [])
+                .filter((item: Record<string, unknown>) => !watchedIdSet.has(Number(item.id)))
+                    .map((item: Record<string, unknown>) => asDiscoverResult(item, mediaType));
 
                 if (upcomingFilter !== "all") {
                     const now = new Date();
@@ -276,71 +248,43 @@ export async function GET(request: NextRequest) {
 
                     const filterFn = upcomingFilter === "today" ? isToday : isThisWeek;
 
-                    userItems = userItems.filter(item => {
-                        return (item as any).targetDate ? filterFn(new Date((item as any).targetDate)) : (upcomingFilter === "all");
-                    });
-
-                    filteredTmdbResults = filteredTmdbResults.filter((item: any) => {
+                    filteredTmdbResults = filteredTmdbResults.filter((item) => {
                         const date = item.release_date || item.first_air_date;
                         return date ? filterFn(new Date(date)) : false;
                     });
                 }
 
-                if (userItems.length > 0 && page === "1") {
-                    const combined = [...userItems, ...filteredTmdbResults];
-                    return { ...tmdbResults, results: combined };
-                }
-
-                return { ...tmdbResults, results: filteredTmdbResults };
+                const combined = page === "1" ? [...userItems, ...filteredTmdbResults] : filteredTmdbResults;
+                return { ...tmdbResults, results: combined };
             }
 
             return tmdb.discover(mediaType, { ...discoverParams, ...(mediaType === "tv" && year ? { first_air_date_year: year } : {}) });
         };
 
-        const enrichResults = async (items: any[]) => {
-            return Promise.all((items || []).map(async (item) => {
-                try {
-                    const mediaType = item.media_type || (type === "all" ? "movie" : type);
-                    const [details, providers] = await Promise.all([
-                        tmdb.getDetails(mediaType, item.id),
-                        tmdb.getWatchProviders(mediaType, item.id)
-                    ]);
-                    return {
-                        ...item,
-                        media_type: mediaType,
-                        original_title: details.original_title || details.original_name,
-                        runtime: details.runtime || (details.episode_run_time ? details.episode_run_time[0] : null),
-                        watch_providers: providers.results?.TR || null
-                    };
-                } catch {
-                    return item;
-                }
-            }));
-        };
+        let results: DiscoverResult[] = [];
 
         if (type === "all") {
-            const [movieData, tvData] = await Promise.all([
-                fetchTypeResults("movie"),
-                fetchTypeResults("tv")
-            ]);
-
+            const [movieData, tvData] = await Promise.all([fetchTypeResults("movie"), fetchTypeResults("tv")]);
             const combined = [
-                ...(movieData?.results || []).map((item: any) => ({ ...item, media_type: "movie" })),
-                ...(tvData?.results || []).map((item: any) => ({ ...item, media_type: "tv" })),
+                ...(movieData?.results || []).map((item: Record<string, unknown>) => asDiscoverResult(item, "movie")),
+                ...(tvData?.results || []).map((item: Record<string, unknown>) => asDiscoverResult(item, "tv")),
             ].sort((a, b) => (b.popularity || 0) - (a.popularity || 0));
 
-            const filtered = combined.filter((item: any) => !watchedIds.has(item.id));
-            results = await enrichResults(filtered);
+            results = combined.filter((item) => !watchedIdSet.has(item.id));
         } else {
             const data = await fetchTypeResults(type as "movie" | "tv");
-            const combined = (data?.results || []).map((item: any) => ({ ...item, media_type: type }));
-            
-            const filtered = combined.filter((item: any) => !watchedIds.has(item.id));
-            results = await enrichResults(filtered);
+            results = (data?.results || [])
+                .map((item: Record<string, unknown>) => asDiscoverResult(item, type as "movie" | "tv"))
+                .filter((item) => !watchedIdSet.has(item.id));
         }
 
+        const pagedResults = results.slice(0, limit);
+
         return NextResponse.json(
-            { results },
+            {
+                results: pagedResults,
+                hasMore: results.length > limit,
+            },
             {
                 headers: {
                     "Cache-Control": "private, max-age=60, stale-while-revalidate=300",
