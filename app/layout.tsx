@@ -67,10 +67,10 @@ export default async function RootLayout({
   return (
     <html lang="tr" className="dark" suppressHydrationWarning>
       <body className={cn("font-sans bg-background text-foreground overflow-x-hidden")} suppressHydrationWarning>
-        <div className="flex flex-col min-h-screen max-w-[1920px] mx-auto shadow-2xl shadow-black/50">
+        <div className="flex flex-col min-h-screen max-w-[1920px] mx-auto shadow-2xl shadow-black/50 mobile-app-shell">
           <TopNav user={session?.user} />
           <MobileHeader />
-          <main className="flex-1 pt-16 sm:pt-0 pb-20 md:pb-0 relative z-0">
+          <main className="flex-1 pt-14 sm:pt-0 pb-28 md:pb-0 relative z-0">
             <ErrorBoundary>
               {children}
             </ErrorBoundary>

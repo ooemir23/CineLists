@@ -1,21 +1,15 @@
 "use client";
+
 import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import {
-  Home,
-  User,
-  Search,
-  LogOut,
-  List,
-  Compass,
-} from "lucide-react";
+import { Compass, Home, List, LogOut, Search, User } from "lucide-react";
 import { handleSignOut } from "@/lib/auth-actions";
 import { cn } from "@/lib/utils";
 import {
+  guestNavItems,
   libraryNavItems,
   profileNavItems,
-  guestNavItems,
 } from "@/components/layout/nav-items";
 
 interface MobileDockProps {
@@ -30,7 +24,6 @@ export function MobileDock({ user }: MobileDockProps) {
   const [menuOpen, setMenuOpen] = React.useState(false);
   const [profileMenuOpen, setProfileMenuOpen] = React.useState(false);
 
-  // Determine active view by pathname
   const getActiveView = () => {
     if (pathname.startsWith("/messages")) return "messages";
     if (pathname.startsWith("/feed")) return "feed";
@@ -38,122 +31,148 @@ export function MobileDock({ user }: MobileDockProps) {
     if (pathname.startsWith("/profile")) return "profile";
     return "home";
   };
+
   const activeView = getActiveView();
+  const closeMenus = () => {
+    setMenuOpen(false);
+    setProfileMenuOpen(false);
+  };
 
   return (
     <>
-      {/* Backdrop for menus */}
       {(menuOpen || profileMenuOpen) && (
         <div
-          className="fixed inset-0 z-[199] sm:hidden bg-black/40 backdrop-blur-[2px] animate-in fade-in duration-300"
-          onClick={() => { setMenuOpen(false); setProfileMenuOpen(false); }}
+          className="fixed inset-0 z-[199] bg-slate-950/55 backdrop-blur-sm animate-in fade-in duration-300 sm:hidden"
+          onClick={closeMenus}
           aria-hidden="true"
         />
       )}
-      <nav
-        className={`fixed bottom-0 left-0 right-0 z-[200] bg-slate-900/95 backdrop-blur-2xl border-t border-white/10 flex items-center justify-center px-6 py-3 sm:hidden rounded-t-[2.5rem] shadow-[0_-8px_32px_rgba(0,0,0,0.5)] pb-[calc(0.5rem+env(safe-area-inset-bottom))]`}
-      >
-        <div className="w-full max-w-md flex items-center justify-between mx-auto relative">
-          {/* Ekranım menü tuşu */}
+
+      <nav className="fixed inset-x-3 bottom-3 z-[200] flex items-center justify-center rounded-[1.75rem] border border-white/10 bg-[#0b1220]/88 px-3 py-2 shadow-[0_18px_55px_rgba(0,0,0,0.7)] backdrop-blur-2xl ring-1 ring-white/5 sm:hidden pb-[calc(0.5rem+env(safe-area-inset-bottom))]">
+        <div className="relative mx-auto flex w-full max-w-[25rem] items-center justify-between">
           <button
-            className={`flex flex-col items-center justify-center gap-1 min-w-[56px] min-h-[56px] rounded-2xl transition-all ${menuOpen ? "bg-amber-400/20 text-amber-400" : "text-slate-400"}`}
-            onClick={() => { setMenuOpen((v) => !v); setProfileMenuOpen(false); }}
+            className={cn(
+              "flex min-h-[50px] min-w-[50px] flex-col items-center justify-center gap-0.5 rounded-2xl transition-all",
+              menuOpen ? "bg-amber-400/15 text-amber-300 shadow-inner" : "text-slate-400"
+            )}
+            onClick={() => {
+              setMenuOpen((value) => !value);
+              setProfileMenuOpen(false);
+            }}
             aria-label="Ekranım"
           >
-            <List size={22} strokeWidth={2.5} />
-            <span className="text-[9px] font-black uppercase tracking-tighter">Ekranım</span>
+            <List size={20} strokeWidth={2.5} />
+            <span className="text-[8px] font-black uppercase tracking-tighter">Ekranım</span>
           </button>
 
           {menuOpen && (
-            <div className="absolute bottom-20 left-0 w-56 bg-slate-900/95 backdrop-blur-2xl rounded-3xl shadow-2xl flex flex-col py-3 z-50 border border-white/10 overflow-hidden animate-in slide-in-from-bottom-4 zoom-in-95 duration-200">
+            <div className="absolute bottom-[4.6rem] left-0 z-50 flex w-60 flex-col overflow-hidden rounded-[1.75rem] border border-white/10 bg-[#0b1220]/95 py-3 shadow-2xl backdrop-blur-2xl animate-in slide-in-from-bottom-4 zoom-in-95 duration-200">
               <div className="px-4 py-2 mb-1">
-                <span className="text-[10px] font-black text-amber-400/50 uppercase tracking-widest">Kütüphanem</span>
+                <span className="text-[10px] font-black text-amber-400/55 uppercase tracking-widest">
+                  Kütüphanem
+                </span>
               </div>
               {libraryNavItems.map((item) => (
                 <Link
                   key={item.key}
                   href={item.href}
-                  className="flex items-center gap-3 px-4 py-3 text-sm text-white hover:bg-white/5 transition active:scale-95"
+                  className="flex items-center gap-3 px-4 py-3 text-sm text-white transition hover:bg-white/5 active:scale-95"
                   onClick={() => setMenuOpen(false)}
                 >
-                  <div className={cn("w-8 h-8 rounded-lg flex items-center justify-center", item.iconBgClass, item.iconTextClass)}>
+                  <div className={cn("flex h-8 w-8 items-center justify-center rounded-lg", item.iconBgClass, item.iconTextClass)}>
                     <item.icon size={18} strokeWidth={2.5} />
                   </div>
                   <span className="font-bold">{item.label}</span>
                 </Link>
               ))}
-              <div className="h-[1px] bg-white/5 my-2 mx-4" />
             </div>
           )}
 
-          {/* Home tuşu */}
           <Link
             href="/"
-            className={`flex flex-col items-center justify-center gap-1 min-w-[56px] min-h-[56px] rounded-2xl transition-all ${activeView === 'home' && !menuOpen && !profileMenuOpen ? "text-amber-400" : "text-slate-400"}`}
-            onClick={() => { setMenuOpen(false); setProfileMenuOpen(false); }}
+            className={cn(
+              "flex min-h-[50px] min-w-[50px] flex-col items-center justify-center gap-0.5 rounded-2xl transition-all",
+              activeView === "home" && !menuOpen && !profileMenuOpen ? "text-amber-300" : "text-slate-400"
+            )}
+            onClick={closeMenus}
           >
-            <Home size={22} strokeWidth={activeView === 'home' ? 2.5 : 2} />
-            <span className="text-[9px] font-black uppercase tracking-tighter">Home</span>
+            <Home size={20} strokeWidth={activeView === "home" ? 2.5 : 2} />
+            <span className="text-[8px] font-black uppercase tracking-tighter">Home</span>
           </Link>
 
-          {/* Ortadaki arama butonu - Floating Action Button Style */}
-          <div className="relative flex items-center justify-center h-12 w-12">
+          <div className="relative flex h-11 w-11 items-center justify-center">
             <Link
               href="/search"
-              className="absolute -top-6 flex items-center justify-center h-16 w-16 rounded-full bg-amber-400 text-slate-950 shadow-[0_8px_24px_rgba(251,191,36,0.4)] border-[6px] border-[#101624] transition-all hover:scale-110 active:scale-90 z-[210]"
-              onClick={() => { setMenuOpen(false); setProfileMenuOpen(false); }}
+              className="absolute -top-5 z-[210] flex h-14 w-14 items-center justify-center rounded-[1.35rem] border-[5px] border-[#101624] bg-amber-400 text-slate-950 shadow-[0_12px_32px_rgba(251,191,36,0.34)] transition-all hover:scale-105 active:scale-90"
+              onClick={closeMenus}
+              aria-label="Ara"
             >
-              <Search size={28} strokeWidth={3} />
+              <Search size={24} strokeWidth={3} />
             </Link>
           </div>
 
-          {/* Akış tuşu */}
           <Link
             href="/feed"
-            className={`flex flex-col items-center justify-center gap-1 min-w-[56px] min-h-[56px] rounded-2xl transition-all ${activeView === 'feed' ? "text-amber-400" : "text-slate-400"}`}
-            onClick={() => { setMenuOpen(false); setProfileMenuOpen(false); }}
+            className={cn(
+              "flex min-h-[50px] min-w-[50px] flex-col items-center justify-center gap-0.5 rounded-2xl transition-all",
+              activeView === "feed" ? "text-amber-300" : "text-slate-400"
+            )}
+            onClick={closeMenus}
           >
-            <Compass size={22} strokeWidth={activeView === 'feed' ? 2.5 : 2} />
-            <span className="text-[9px] font-black uppercase tracking-tighter text-center">Sosyal Akış</span>
+            <Compass size={20} strokeWidth={activeView === "feed" ? 2.5 : 2} />
+            <span className="text-center text-[8px] font-black uppercase tracking-tighter">Akış</span>
           </Link>
 
-          {/* Profilim menü tuşu */}
           <button
-            className={`flex flex-col items-center justify-center gap-1 min-w-[56px] min-h-[56px] rounded-2xl transition-all ${profileMenuOpen ? "bg-amber-400/20 text-amber-400" : "text-slate-400"}`}
-            onClick={() => { setProfileMenuOpen((v) => !v); setMenuOpen(false); }}
+            className={cn(
+              "flex min-h-[50px] min-w-[50px] flex-col items-center justify-center gap-0.5 rounded-2xl transition-all",
+              profileMenuOpen ? "bg-amber-400/15 text-amber-300 shadow-inner" : "text-slate-400"
+            )}
+            onClick={() => {
+              setProfileMenuOpen((value) => !value);
+              setMenuOpen(false);
+            }}
             aria-label="Profilim"
           >
             {user?.image ? (
-                <div className={cn("w-6 h-6 rounded-full overflow-hidden border-2 transition-colors", profileMenuOpen ? "border-amber-400" : "border-white/20")}>
-                    <img src={user.image} alt={user.name || "User"} className="w-full h-full object-cover" />
-                </div>
+              <div
+                className={cn(
+                  "h-6 w-6 overflow-hidden rounded-full border-2 transition-colors",
+                  profileMenuOpen ? "border-amber-400" : "border-white/20"
+                )}
+              >
+                <img src={user.image} alt={user.name || "User"} className="h-full w-full object-cover" />
+              </div>
             ) : (
-                <User size={22} strokeWidth={profileMenuOpen ? 2.5 : 2} />
+              <User size={20} strokeWidth={profileMenuOpen ? 2.5 : 2} />
             )}
-            <span className="text-[9px] font-black uppercase tracking-tighter">Profil</span>
+            <span className="text-[8px] font-black uppercase tracking-tighter">Profil</span>
           </button>
 
           {profileMenuOpen && (
-            <div className="absolute bottom-20 right-0 w-52 bg-slate-900/95 backdrop-blur-2xl rounded-3xl shadow-2xl flex flex-col py-3 z-50 border border-white/10 overflow-hidden animate-in slide-in-from-bottom-4 zoom-in-95 duration-200">
+            <div className="absolute bottom-[4.6rem] right-0 z-50 flex w-56 flex-col overflow-hidden rounded-[1.75rem] border border-white/10 bg-[#0b1220]/95 py-3 shadow-2xl backdrop-blur-2xl animate-in slide-in-from-bottom-4 zoom-in-95 duration-200">
               {user ? (
                 <>
                   {profileNavItems.map((item) => (
                     <Link
                       key={item.key}
                       href={item.href}
-                      className="flex items-center gap-3 px-4 py-3 text-sm text-white hover:bg-white/5 transition active:scale-95"
+                      className="flex items-center gap-3 px-4 py-3 text-sm text-white transition hover:bg-white/5 active:scale-95"
                       onClick={() => setProfileMenuOpen(false)}
                     >
-                      <div className={cn("w-8 h-8 rounded-lg flex items-center justify-center", item.iconBgClass, item.iconTextClass)}>
+                      <div className={cn("flex h-8 w-8 items-center justify-center rounded-lg", item.iconBgClass, item.iconTextClass)}>
                         <item.icon size={18} strokeWidth={2.5} />
                       </div>
                       <span className="font-bold">{item.label}</span>
                     </Link>
                   ))}
-                  <div className="h-[1px] bg-white/5 my-2 mx-4" />
+                  <div className="mx-4 my-2 h-px bg-white/5" />
                   <form action={handleSignOut}>
-                    <button type="submit" className="w-full flex items-center gap-3 px-4 py-3 text-sm text-rose-400 hover:bg-rose-500/10 transition active:scale-95">
-                      <div className="w-8 h-8 rounded-lg bg-rose-500/5 flex items-center justify-center">
+                    <button
+                      type="submit"
+                      className="flex w-full items-center gap-3 px-4 py-3 text-sm text-rose-400 transition hover:bg-rose-500/10 active:scale-95"
+                    >
+                      <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-rose-500/5">
                         <LogOut size={18} strokeWidth={2.5} />
                       </div>
                       <span className="font-black uppercase tracking-tighter">Çıkış Yap</span>
@@ -161,24 +180,24 @@ export function MobileDock({ user }: MobileDockProps) {
                   </form>
                 </>
               ) : (
-                <>
-                  {guestNavItems.map((item) => (
-                    <Link
-                      key={item.key}
-                      href={item.href}
-                      className={cn(
-                        "flex items-center gap-3 px-4 py-3 text-sm hover:bg-white/5 transition active:scale-95",
-                        item.key === "register" ? "text-amber-400" : "text-white"
-                      )}
-                      onClick={() => setProfileMenuOpen(false)}
-                    >
-                      <div className={cn("w-8 h-8 rounded-lg flex items-center justify-center", item.iconBgClass, item.iconTextClass)}>
-                        <item.icon size={18} strokeWidth={2.5} />
-                      </div>
-                      <span className={item.key === "register" ? "font-black uppercase tracking-tight" : "font-bold"}>{item.label}</span>
-                    </Link>
-                  ))}
-                </>
+                guestNavItems.map((item) => (
+                  <Link
+                    key={item.key}
+                    href={item.href}
+                    className={cn(
+                      "flex items-center gap-3 px-4 py-3 text-sm transition hover:bg-white/5 active:scale-95",
+                      item.key === "register" ? "text-amber-400" : "text-white"
+                    )}
+                    onClick={() => setProfileMenuOpen(false)}
+                  >
+                    <div className={cn("flex h-8 w-8 items-center justify-center rounded-lg", item.iconBgClass, item.iconTextClass)}>
+                      <item.icon size={18} strokeWidth={2.5} />
+                    </div>
+                    <span className={item.key === "register" ? "font-black uppercase tracking-tight" : "font-bold"}>
+                      {item.label}
+                    </span>
+                  </Link>
+                ))
               )}
             </div>
           )}

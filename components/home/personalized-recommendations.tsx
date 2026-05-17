@@ -42,12 +42,12 @@ export async function PersonalizedRecommendations({ results, reasons }: Personal
         <section className="relative group/section">
             {/* Elegant Compact Background */}
             <div className="absolute inset-0 -mx-4 md:-mx-8">
-                <div className="absolute inset-0 bg-gradient-to-r from-amber-500/10 via-amber-500/5 to-transparent rounded-[2.5rem] border border-white/5 backdrop-blur-[2px]" />
+                <div className="absolute inset-0 bg-gradient-to-r from-amber-500/10 via-amber-500/5 to-transparent rounded-[1.75rem] md:rounded-[2.5rem] border border-white/5 backdrop-blur-[2px]" />
                 <div className="absolute top-0 right-0 w-[300px] h-full bg-amber-500/5 blur-[80px] rounded-full mix-blend-screen pointer-events-none" />
             </div>
 
             <div className="relative z-10 py-3 md:py-4">
-                <div className="px-4 md:px-8 mb-4 md:mb-5">
+                <div className="px-3 md:px-8 mb-4 md:mb-5">
                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 md:gap-6">
                         <div className="space-y-1.5">
                             <div className="inline-flex items-center gap-2 px-2.5 py-1 bg-amber-400/10 border border-amber-400/20 rounded-lg text-amber-400 font-bold text-[9px] uppercase tracking-[0.2em]">
@@ -56,7 +56,7 @@ export async function PersonalizedRecommendations({ results, reasons }: Personal
                             </div>
 
                             <Link href="/recommendations" className="group/title flex items-center gap-4">
-                                <h2 className="text-2xl md:text-3xl font-black text-white tracking-tight group-hover/title:text-amber-400 transition-colors uppercase italic">
+                                <h2 className="text-xl min-[390px]:text-2xl md:text-3xl font-black text-white tracking-tight group-hover/title:text-amber-400 transition-colors uppercase italic">
                                     Sizin İçin <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-400 to-amber-200">Seçtiklerimiz</span>
                                 </h2>
                                 <ChevronRight className="w-5 h-5 text-amber-400 group-hover/title:translate-x-1 transition-transform" />

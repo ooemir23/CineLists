@@ -82,7 +82,7 @@ export function HeroSlider({ items, friendPopularIds = [] }: HeroSliderProps) {
 
     if (!hasItems) {
         return (
-            <div className="w-full h-full rounded-[3rem] overflow-hidden border border-white/5 bg-slate-950 flex items-center justify-center p-8 text-center">
+            <div className="w-full h-full rounded-[1.75rem] md:rounded-[3rem] overflow-hidden border border-white/5 bg-slate-950 flex items-center justify-center p-8 text-center">
                 <div className="space-y-4">
                     <div className="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center mx-auto">
                         <Info className="w-8 h-8 text-neutral-600" />
@@ -103,7 +103,7 @@ export function HeroSlider({ items, friendPopularIds = [] }: HeroSliderProps) {
         : "/placeholder-hero.jpg";
 
     return (
-        <div className="relative w-full h-full group overflow-hidden rounded-[2.5rem] border border-white/5 bg-slate-950 shadow-2xl">
+        <div className="relative w-full h-full group overflow-hidden rounded-[1.75rem] md:rounded-[2.5rem] border border-white/5 bg-slate-950 shadow-2xl">
             <AnimatePresence initial={false} custom={direction} mode="popLayout">
                 <motion.div
                     key={currentItem.id}
@@ -121,24 +121,24 @@ export function HeroSlider({ items, friendPopularIds = [] }: HeroSliderProps) {
                         style={{ backgroundImage: `url(${backdropUrl})` }}
                     />
 
-                    <div className="absolute inset-0 bg-gradient-to-t from-[#020617] via-[#020617]/40 to-transparent z-10" />
-                    <div className="absolute inset-0 bg-gradient-to-r from-[#020617]/80 via-[#020617]/20 to-transparent z-10" />
-                    <div className="absolute inset-0 bg-black/20 z-10" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-[#020617] via-[#020617]/55 to-transparent z-10 md:via-[#020617]/40" />
+                    <div className="absolute inset-0 bg-gradient-to-r from-[#020617]/55 via-[#020617]/15 to-transparent z-10 md:from-[#020617]/80 md:via-[#020617]/20" />
+                    <div className="absolute inset-0 bg-black/25 z-10 md:bg-black/20" />
 
-                    <div className="absolute inset-0 z-20 flex flex-col p-6 pt-4 md:pt-5 lg:pt-6 md:p-8 lg:p-10">
+                    <div className="absolute inset-0 z-20 flex flex-col p-4 pt-4 md:pt-5 lg:pt-6 md:p-8 lg:p-10">
                         {/* Top Metadata Tags */}
                         <motion.div
                             initial={{ y: -20, opacity: 0 }}
                             animate={{ y: 0, opacity: 1 }}
                             transition={{ delay: 0.2, duration: 0.6 }}
-                            className="flex flex-wrap items-center justify-between gap-3 w-full"
+                            className="flex w-full flex-wrap items-start justify-between gap-2 md:gap-3"
                         >
                             <div className="flex flex-wrap gap-2 items-center">
                                 {eventMeta && (
                                     <Link 
                                         href={`/${currentItem.media_type}/${currentItem.id}`}
                                         className={cn(
-                                            "px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border border-white/10 backdrop-blur-md transition-all hover:scale-105 active:scale-95 hover:brightness-125",
+                                            "px-3 py-1.5 md:px-4 rounded-full text-[9px] md:text-[10px] font-black uppercase tracking-widest border border-white/10 backdrop-blur-md transition-all hover:scale-105 active:scale-95 hover:brightness-125",
                                             eventMeta.bgColor, eventMeta.color
                                         )}
                                     >
@@ -147,14 +147,14 @@ export function HeroSlider({ items, friendPopularIds = [] }: HeroSliderProps) {
                                 )}
                                 <Link 
                                     href={currentItem.category === 'upcoming' ? '/calendar' : `/${currentItem.media_type}`}
-                                    className="px-4 py-1.5 rounded-full bg-white/10 text-white/90 text-[10px] font-black uppercase tracking-widest border border-white/10 backdrop-blur-md flex items-center gap-2 transition-all hover:scale-105 active:scale-95 hover:bg-white/20"
+                                    className="px-3 py-1.5 md:px-4 rounded-full bg-white/10 text-white/90 text-[9px] md:text-[10px] font-black uppercase tracking-widest border border-white/10 backdrop-blur-md flex items-center gap-2 transition-all hover:scale-105 active:scale-95 hover:bg-white/20"
                                 >
                                     <categoryConfig.icon className={cn("w-3 h-3", categoryConfig.color)} />
                                     {categoryConfig.label}
                                 </Link>
                                 <Link 
                                     href={`/${currentItem.media_type}/${currentItem.id}`}
-                                    className="px-4 py-1.5 rounded-full bg-amber-400/20 text-amber-400 text-[10px] font-black uppercase tracking-widest border border-amber-400/20 backdrop-blur-md flex items-center gap-1.5 transition-all hover:scale-105 active:scale-95 hover:bg-amber-400/30"
+                                    className="px-3 py-1.5 md:px-4 rounded-full bg-amber-400/20 text-amber-400 text-[9px] md:text-[10px] font-black uppercase tracking-widest border border-amber-400/20 backdrop-blur-md flex items-center gap-1.5 transition-all hover:scale-105 active:scale-95 hover:bg-amber-400/30"
                                 >
                                     <Star className="w-3 h-3 fill-current" />
                                     {currentItem.vote_average.toFixed(1)}
@@ -190,15 +190,15 @@ export function HeroSlider({ items, friendPopularIds = [] }: HeroSliderProps) {
                             </div>
                         </motion.div>
 
-                        <div className="flex-1 flex flex-col justify-end mb-4 lg:mb-6">
-                            <div className="flex flex-col items-start gap-6">
-                                <div className="max-w-3xl space-y-4">
+                        <div className="flex-1 flex flex-col justify-end mb-8 md:mb-4 lg:mb-6">
+                            <div className="flex flex-col items-start gap-4 md:gap-6">
+                                <div className="max-w-3xl space-y-3 md:space-y-4">
                                     <Link href={`/${currentItem.media_type}/${currentItem.id}`} className="space-y-2 block group/content">
                                         <motion.h2
                                             initial={{ y: 30, opacity: 0 }}
                                             animate={{ y: 0, opacity: 1 }}
                                             transition={{ delay: 0.3, duration: 0.6 }}
-                                            className="text-3xl md:text-4xl lg:text-5xl font-black text-white leading-tight tracking-tighter drop-shadow-2xl italic uppercase group-hover/content:text-amber-400 transition-colors"
+                                            className="text-[2rem] max-[380px]:text-[1.7rem] md:text-4xl lg:text-5xl font-black text-white leading-[0.96] tracking-tighter drop-shadow-2xl italic uppercase group-hover/content:text-amber-400 transition-colors"
                                         >
                                             {currentItem.title}
                                         </motion.h2>
@@ -206,7 +206,7 @@ export function HeroSlider({ items, friendPopularIds = [] }: HeroSliderProps) {
                                             initial={{ y: 30, opacity: 0 }}
                                             animate={{ y: 0, opacity: 1 }}
                                             transition={{ delay: 0.4, duration: 0.6 }}
-                                            className="text-sm md:text-base text-neutral-300 font-bold max-w-xl line-clamp-3 leading-relaxed drop-shadow-md border-l-4 border-amber-400 pl-5 group-hover/content:border-white transition-colors"
+                                            className="text-xs md:text-base text-neutral-300 font-bold max-w-xl line-clamp-3 leading-relaxed drop-shadow-md border-l-2 md:border-l-4 border-amber-400 pl-3 md:pl-5 group-hover/content:border-white transition-colors"
                                         >
                                             {currentItem.overview}
                                         </motion.p>
@@ -219,7 +219,7 @@ export function HeroSlider({ items, friendPopularIds = [] }: HeroSliderProps) {
             </AnimatePresence>
 
             {/* Premium Controls (Now on edges and visible on hover) */}
-            <div className="absolute inset-y-0 left-0 right-0 z-30 pointer-events-none flex items-center justify-between px-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+            <div className="absolute inset-y-0 left-0 right-0 z-30 pointer-events-none hidden items-center justify-between px-4 opacity-0 transition-opacity duration-300 group-hover:opacity-100 md:flex">
                 <button
                     onClick={(e) => { e.stopPropagation(); goPrev(); setIsManual(true); }}
                     className="w-12 h-12 rounded-full bg-black/40 hover:bg-amber-400 border border-white/10 hover:border-amber-400 backdrop-blur-2xl flex items-center justify-center text-white hover:text-slate-950 transition-all pointer-events-auto hover:scale-110 active:scale-95 group/btn shadow-2xl"
@@ -236,8 +236,8 @@ export function HeroSlider({ items, friendPopularIds = [] }: HeroSliderProps) {
                 </button>
             </div>
 
-            <div className="absolute bottom-8 right-12 z-30 flex items-center gap-4">
-                <div className="flex items-center gap-2 px-4 py-2 bg-black/40 backdrop-blur-2xl rounded-full border border-white/10 shadow-2xl">
+            <div className="absolute bottom-4 left-4 right-4 z-30 flex items-center justify-between gap-3 md:bottom-8 md:left-auto md:right-12 md:justify-end md:gap-4">
+                <div className="flex items-center gap-1.5 rounded-full border border-white/10 bg-black/40 px-3 py-2 shadow-2xl backdrop-blur-2xl md:gap-2 md:px-4">
                     {items.map((_, index) => (
                         <button
                             key={index}
@@ -245,14 +245,14 @@ export function HeroSlider({ items, friendPopularIds = [] }: HeroSliderProps) {
                             className={cn(
                                 "transition-all duration-500",
                                 index === currentIndex
-                                    ? "bg-amber-400 w-8 h-2 rounded-full"
+                                    ? "bg-amber-400 w-7 h-2 md:w-8 rounded-full"
                                     : "bg-white/20 w-2 h-2 rounded-full hover:bg-white/40"
                             )}
                             aria-label={`Slide ${index + 1}`}
                         />
                     ))}
                 </div>
-                <div className="text-[10px] font-black text-white/50 uppercase tracking-widest tabular-nums bg-black/40 px-4 py-2 rounded-full border border-white/10 backdrop-blur-md">
+                <div className="text-[9px] md:text-[10px] font-black text-white/50 uppercase tracking-widest tabular-nums bg-black/40 px-3 md:px-4 py-2 rounded-full border border-white/10 backdrop-blur-md">
                     <span className="text-amber-400">{String(currentIndex + 1).padStart(2, '0')}</span> / {String(items.length).padStart(2, '0')}
                 </div>
             </div>

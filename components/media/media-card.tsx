@@ -104,8 +104,7 @@ export function MediaCard({
     };
 
     const handleTouchStart = () => {
-        const timer = setTimeout(() => setShowPreview(true), 500);
-        setHoverTimer(timer);
+        // Mobile should navigate predictably; hover previews are reserved for pointer devices.
     };
 
     const handleTouchEnd = () => {
@@ -141,7 +140,7 @@ export function MediaCard({
                 onTouchEnd={handleTouchEnd}
                 className={cn(
                     "group relative flex flex-col gap-1.5 md:gap-2 transition-all duration-500 ease-out flex-none hover:z-40 md:hover:scale-110 snap-start",
-                    fullWidth ? "w-full" : compact ? "w-20 sm:w-28 md:w-32" : "w-[42vw] sm:w-36 md:w-44 lg:w-48"
+                    fullWidth ? "w-full" : compact ? "w-[28vw] sm:w-28 md:w-32" : "w-[43vw] sm:w-36 md:w-44 lg:w-48"
                 )}
             >
                 {/* External Top Badges (Platforms and Genres) */}
@@ -187,7 +186,7 @@ export function MediaCard({
                 )}
 
                 <div className={cn(
-                    "relative aspect-[2/3] rounded-xl md:rounded-2xl bg-slate-800 shadow-xl transition-all duration-500 group-hover:scale-[1.03] group-hover:shadow-2xl",
+                    "relative aspect-[2/3] rounded-[1.05rem] md:rounded-2xl bg-slate-800 shadow-xl transition-all duration-500 group-hover:scale-[1.03] group-hover:shadow-2xl",
                     statusType === "plan_to_watch" 
                         ? "ring-2 ring-rose-500/50 shadow-rose-500/20" 
                         : statusType === "watching" 
@@ -218,13 +217,13 @@ export function MediaCard({
 
 
                     {/* Visual Content Wrapper with overflow-hidden */}
-                    <div className="absolute inset-0 rounded-xl md:rounded-2xl overflow-hidden z-0">
+                    <div className="absolute inset-0 rounded-[1.05rem] md:rounded-2xl overflow-hidden z-0">
                         {posterPath ? (
                             <Image
                                 src={`${IMAGE_BASE_URL}${posterPath}`}
                                 alt={title}
                                 fill
-                                className="object-fill transition-all duration-500 group-hover:scale-110 group-hover:rotate-1"
+                                className="object-cover transition-all duration-500 group-hover:scale-110 group-hover:rotate-1"
                                 sizes="(max-width: 768px) 45vw, (max-width: 1200px) 33vw, 20vw"
                             />
                         ) : (
@@ -265,7 +264,7 @@ export function MediaCard({
                             <div className="flex items-center gap-1.5 shrink-0">
                                 <span className={cn(
                                     "font-black uppercase tracking-[0.1em]",
-                                    compact ? "text-[7px]" : "text-[8px] md:text-[9px]",
+                                        compact ? "text-[7px]" : "text-[7px] min-[390px]:text-[8px] md:text-[9px]",
                                     type === "movie" ? "text-amber-500" : "text-blue-500"
                                 )}>
                                     {type === "movie" ? "Film" : "Dizi"}
@@ -275,7 +274,7 @@ export function MediaCard({
                                         <span className="text-neutral-600 font-black text-[8px]">•</span>
                                         <span className={cn(
                                             "font-bold text-neutral-500 flex items-center gap-1 uppercase tracking-wider",
-                                            compact ? "text-[7px]" : "text-[8px] md:text-[9px]"
+                                            compact ? "text-[7px]" : "text-[7px] min-[390px]:text-[8px] md:text-[9px]"
                                         )}>
                                             {releaseDate && new Date(releaseDate).getFullYear()}
                                             {releaseDate && runtime && <span className="text-neutral-600 font-black text-[8px] mx-0.5">•</span>}
@@ -289,7 +288,7 @@ export function MediaCard({
                                 {/* TMDB Global Rating */}
                                 <div className="flex items-center gap-0.5 bg-white/5 px-1 py-0.5 rounded-md border border-white/5 shrink-0" title="Dünya Geneli Puanı (TMDB)">
                                     <Globe className="w-2 md:w-2.5 h-2 md:h-2.5 text-blue-400" />
-                                    <span className="text-[9px] md:text-[10px] font-black text-white">{voteAverage?.toFixed(1) || "0"}</span>
+                                    <span className="text-[8px] min-[390px]:text-[9px] md:text-[10px] font-black text-white">{voteAverage?.toFixed(1) || "0"}</span>
                                 </div>
 
                                 {/* User Rating + Friends Ratings */}
@@ -304,7 +303,7 @@ export function MediaCard({
                                     title="Senin puanın ve arkadaş puanları"
                                 >
                                     <Star className={cn("w-2 md:w-2.5 h-2 md:h-2.5", userRating !== null && userRating !== undefined ? "fill-current" : "text-neutral-500")} />
-                                    <span className="text-[9px] md:text-[10px] font-black">
+                                    <span className="text-[8px] min-[390px]:text-[9px] md:text-[10px] font-black">
                                         {userRating !== null && userRating !== undefined ? userRating.toFixed(1) : "-"}
                                     </span>
                                 </button>
@@ -314,7 +313,7 @@ export function MediaCard({
 
                     <div className={cn(
                         "font-black text-white transition-colors tracking-tight group-hover:text-primary leading-tight",
-                        type === "person" ? "text-[9px] md:text-xs" : compact ? "text-[10px] md:text-xs" : "text-xs md:text-base"
+                        type === "person" ? "text-[9px] md:text-xs" : compact ? "text-[10px] md:text-xs" : "text-[11px] min-[390px]:text-xs md:text-base"
                     )}>
                         <AutoScrollText text={title} />
                     </div>
@@ -359,7 +358,7 @@ export function MediaCard({
                         </div>
 
                         <p className="text-[11px] text-white font-medium leading-relaxed line-clamp-6 italic">
-                            "{overview}"
+                            &quot;{overview}&quot;
                         </p>
                     </div>
                 )}

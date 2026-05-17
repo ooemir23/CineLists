@@ -88,25 +88,25 @@ export async function HomeTopSection({ personalizedResults }: { personalizedResu
     const items = [...personalizedItems, ...trendingItems].slice(0, 6);
 
     return (
-        <section className="w-full grid grid-cols-1 lg:grid-cols-12 gap-4 items-stretch lg:h-[600px]">
-            <div className="lg:col-span-7 xl:col-span-8 flex flex-col gap-4">
+        <section className="w-full grid grid-cols-1 lg:grid-cols-12 gap-3 md:gap-4 items-stretch lg:h-[600px]">
+            <div className="lg:col-span-7 xl:col-span-8 flex flex-col gap-3 md:gap-4">
                 <div className="w-full">
                     {upcomingEpisodes.length > 0 ? (
-                        <div className="relative z-20 backdrop-blur-sm bg-gradient-to-br from-[#0f1a2b]/80 via-[#0f1a2b]/60 to-[#0b1220]/70 rounded-[2.5rem] p-3 border border-white/10 shadow-lg">
+                        <div className="relative z-20 backdrop-blur-sm bg-gradient-to-br from-[#0f1a2b]/88 via-[#0f1a2b]/70 to-[#0b1220]/78 rounded-[1.75rem] md:rounded-[2.5rem] p-2.5 md:p-3 border border-white/10 shadow-lg">
                             <UpcomingEpisodesCarousel episodes={upcomingEpisodes} />
                         </div>
                     ) : !session ? (
-                        <div className="relative z-20 backdrop-blur-sm bg-gradient-to-br from-[#0f1a2b]/80 via-[#0f1a2b]/60 to-[#0b1220]/70 rounded-[2.5rem] p-4 border border-white/10 shadow-lg overflow-hidden group">
+                        <div className="relative z-20 backdrop-blur-sm bg-gradient-to-br from-[#0f1a2b]/88 via-[#0f1a2b]/70 to-[#0b1220]/78 rounded-[1.75rem] md:rounded-[2.5rem] p-3.5 md:p-4 border border-white/10 shadow-lg overflow-hidden group">
                             <div className="absolute top-0 right-0 w-32 h-32 bg-amber-400/5 blur-3xl rounded-full -mr-16 -mt-16 group-hover:bg-amber-400/10 transition-colors" />
                             <div className="absolute bottom-0 left-0 w-24 h-24 bg-blue-400/5 blur-2xl rounded-full -ml-12 -mb-12 group-hover:bg-blue-400/10 transition-colors" />
 
-                            <div className="relative flex flex-col md:flex-row items-center justify-between gap-4">
+                            <div className="relative flex flex-col md:flex-row items-center justify-between gap-3 md:gap-4">
                                 <div className="flex flex-col gap-1 text-center md:text-left">
                                     <div className="flex items-center justify-center md:justify-start gap-2">
                                         <span className="flex h-2 w-2 rounded-full bg-amber-400 animate-pulse" />
                                         <h3 className="text-sm font-black text-white uppercase tracking-tight">Kişisel Deneyimini Başlat</h3>
                                     </div>
-                                    <p className="text-xs text-neutral-400 font-bold max-w-sm">
+                                    <p className="text-[11px] md:text-xs text-neutral-400 font-bold max-w-sm">
                                         İzlediğin dizileri takip etmek, sana özel öneriler almak ve arkadaşlarınla etkileşime geçmek için hemen katıl.
                                     </p>
                                 </div>
@@ -130,7 +130,7 @@ export async function HomeTopSection({ personalizedResults }: { personalizedResu
                     ) : null}
                 </div>
 
-                <div className="w-full flex-1 min-h-[400px] lg:min-h-0">
+                <div className="w-full flex-1 min-h-[350px] max-[380px]:min-h-[330px] sm:min-h-[410px] lg:min-h-0">
                     <HeroSlider items={items} friendPopularIds={[]} />
                 </div>
             </div>

@@ -116,13 +116,14 @@ export function UpcomingEpisodesCarousel({ episodes }: UpcomingEpisodesCarouselP
     };
 
     return (
-        <div className="flex flex-col md:flex-row md:items-center gap-4 md:gap-8 w-full min-w-0">
-            <div className="flex flex-row md:flex-col items-center md:items-start justify-between md:justify-center gap-3 md:gap-3 flex-shrink-0">
-                <Link href="/upcoming-episodes" className="flex items-center gap-2 group px-1 shrink-0 -mt-1">
-                    <Calendar size={18} className="text-blue-400 group-hover:text-blue-300 transition-colors" />
-                    <span className="text-base font-black text-white whitespace-nowrap group-hover:text-blue-200 transition-colors">Takvim</span>
-                </Link>
-                <div className="flex flex-row md:flex-col bg-white/5 md:bg-transparent p-1 md:p-0 rounded-full md:rounded-none border border-white/5 md:border-none gap-1 md:gap-1.5 shrink-0 shadow-inner md:shadow-none">
+        <div className="flex w-full min-w-0 flex-col gap-3 md:flex-row md:items-center md:gap-8">
+            <div className="flex flex-col gap-3 md:flex-shrink-0 md:justify-center">
+                <div className="flex items-center gap-2">
+                    <Link href="/upcoming-episodes" className="group flex shrink-0 items-center gap-2 px-1">
+                        <Calendar size={18} className="text-blue-400 group-hover:text-blue-300 transition-colors" />
+                        <span className="text-base font-black text-white whitespace-nowrap group-hover:text-blue-200 transition-colors">Takvim</span>
+                    </Link>
+                    <div className="grid min-w-0 flex-1 grid-cols-3 gap-1 rounded-full border border-white/5 bg-white/5 p-1 shadow-inner md:flex md:flex-col md:rounded-none md:border-none md:bg-transparent md:p-0 md:shadow-none">
                     {[
                         { id: "all", label: "Tümü", count: episodes.length },
                         { id: "today", label: "Bugün", count: todayCount },
@@ -132,7 +133,7 @@ export function UpcomingEpisodesCarousel({ episodes }: UpcomingEpisodesCarouselP
                             key={f.id}
                             onClick={() => setFilter(f.id as any)}
                             className={cn(
-                                "px-3 md:px-4 py-1.5 md:py-2 rounded-full md:rounded-xl text-[8px] md:text-[10px] font-black uppercase tracking-widest transition-all flex items-center justify-between gap-3 md:w-full",
+                                "min-w-0 px-2 md:px-4 py-2 md:py-2 rounded-full md:rounded-xl text-[7px] min-[390px]:text-[8px] md:text-[10px] font-black uppercase tracking-widest transition-all flex items-center justify-center md:justify-between gap-1 md:gap-3 md:w-full",
                                 filter === f.id
                                     ? "bg-blue-500 text-white shadow-lg shadow-blue-500/20"
                                     : "bg-transparent md:bg-white/5 text-neutral-500 hover:text-white border border-transparent md:border-white/5"
@@ -141,7 +142,7 @@ export function UpcomingEpisodesCarousel({ episodes }: UpcomingEpisodesCarouselP
                             <span>{f.label}</span>
                             {f.count > 0 && (
                                 <span className={cn(
-                                    "px-1.5 py-0.5 rounded-md text-[7px] md:text-[8px] font-bold",
+                                    "min-w-5 px-1.5 py-0.5 rounded-md text-[7px] md:text-[8px] font-bold text-center",
                                     filter === f.id ? "bg-white/20 text-white" : "bg-white/10 text-neutral-600"
                                 )}>
                                     {f.count}
@@ -149,6 +150,7 @@ export function UpcomingEpisodesCarousel({ episodes }: UpcomingEpisodesCarouselP
                             )}
                         </button>
                     ))}
+                    </div>
                 </div>
             </div>
 
@@ -157,32 +159,18 @@ export function UpcomingEpisodesCarousel({ episodes }: UpcomingEpisodesCarouselP
                 {/* Scroll Buttons */}
                 <button
                     onClick={() => scroll("left")}
-                    className="absolute left-0 top-1/2 -translate-y-1/2 z-30 w-8 h-8 rounded-full bg-black/60 backdrop-blur-md border border-white/10 flex items-center justify-center text-white opacity-0 group-hover/carousel:opacity-100 transition-opacity md:flex hidden"
+                    className="absolute left-1 top-1/2 z-30 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full border border-white/10 bg-black/60 text-white opacity-100 shadow-xl backdrop-blur-md transition-opacity md:left-0 md:opacity-0 md:group-hover/carousel:opacity-100"
+                    aria-label="Takvimde geri git"
                 >
                     <ChevronLeft size={18} />
                 </button>
                 <button
                     onClick={() => scroll("right")}
-                    className="absolute right-0 top-1/2 -translate-y-1/2 z-30 w-8 h-8 rounded-full bg-black/60 backdrop-blur-md border border-white/10 flex items-center justify-center text-white opacity-0 group-hover/carousel:opacity-100 transition-opacity md:flex hidden"
+                    className="absolute right-1 top-1/2 z-30 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full border border-white/10 bg-black/60 text-white opacity-100 shadow-xl backdrop-blur-md transition-opacity md:right-0 md:opacity-0 md:group-hover/carousel:opacity-100"
+                    aria-label="Takvimde ileri git"
                 >
                     <ChevronRight size={18} />
                 </button>
-
-                {/* Mobile scroll indicator or buttons */}
-                <div className="md:hidden absolute -top-10 right-0 flex gap-2">
-                    <button
-                        onClick={() => scroll("left")}
-                        className="w-8 h-8 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-white active:scale-95 transition-transform"
-                    >
-                        <ChevronLeft size={16} />
-                    </button>
-                    <button
-                        onClick={() => scroll("right")}
-                        className="w-8 h-8 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-white active:scale-95 transition-transform"
-                    >
-                        <ChevronRight size={16} />
-                    </button>
-                </div>
 
                 <div 
                     ref={scrollContainerRef}

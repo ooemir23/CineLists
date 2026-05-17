@@ -139,10 +139,10 @@ export default async function Home({ searchParams }: HomeProps) {
 
   return (
     <HomeViewModeProvider>
-      <div className=" w-full overflow-x-hidden pb-24 md:pb-0 bg-[#101624]">
+      <div className="relative w-full overflow-x-hidden bg-[#101624] pb-24 md:pb-0">
 
       {/* Primary Top Section: Hero Slider & Friends Activity */}
-      <div className="max-w-[1600px] mx-auto px-3 sm:px-6 md:px-8 lg:px-12 pt-3 md:pt-16">
+      <div className="max-w-[1600px] mx-auto px-4 sm:px-6 md:px-8 lg:px-12 pt-3 md:pt-16">
         {!isFiltering && <HomeTopSection personalizedResults={personalizedMovies?.results} />}
       </div>
 
@@ -150,7 +150,7 @@ export default async function Home({ searchParams }: HomeProps) {
 
 
       {/* Main Content Area */}
-      <div className="max-w-[1600px] mx-auto px-3 sm:px-6 md:px-8 lg:px-12 mt-3 md:mt-4 space-y-2 md:space-y-3">
+      <div className="max-w-[1600px] mx-auto px-4 sm:px-6 md:px-8 lg:px-12 mt-3 md:mt-4 space-y-2 md:space-y-3">
 
         {isFiltering && (
           <div id="search-results" className="bg-white/5 rounded-2xl p-4 md:p-5 border border-white/10 scroll-mt-24">
@@ -164,7 +164,7 @@ export default async function Home({ searchParams }: HomeProps) {
       </div>
 
         {!isFiltering && personalizedSectionResults.length > 0 && (
-          <div className="max-w-[1600px] mx-auto px-3 sm:px-6 md:px-8 lg:px-12 mt-4 md:mt-6">
+          <div className="max-w-[1600px] mx-auto px-4 sm:px-6 md:px-8 lg:px-12 mt-4 md:mt-6">
             <PersonalizedRecommendations
               results={personalizedSectionResults}
               reasons={personalizedSectionReasons}

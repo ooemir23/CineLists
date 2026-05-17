@@ -359,7 +359,7 @@ export function HomeDiscoverySection() {
     };
 
     return (
-        <section id="home-discover" ref={headerRef} className="max-w-[1600px] mx-auto px-3 sm:px-6 md:px-8 lg:px-12 mt-4 md:mt-5">
+        <section id="home-discover" ref={headerRef} className="max-w-[1600px] mx-auto px-4 sm:px-6 md:px-8 lg:px-12 mt-4 md:mt-5">
             {/* Refined Pro Mobile Filter Overlay */}
             <AnimatePresence>
                 {isFilterSheetOpen && (
@@ -367,24 +367,27 @@ export function HomeDiscoverySection() {
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        className="fixed inset-0 z-[2000] lg:hidden bg-slate-950/98 backdrop-blur-3xl flex flex-col"
+                        className="fixed inset-0 z-[2000] flex flex-col bg-[#050916] pt-14 lg:hidden"
                     >
                         {/* Compact Header */}
-                        <div className="flex items-center justify-between px-6 py-4 border-b border-white/10">
-                            <h3 className="text-sm font-black text-white uppercase tracking-widest flex items-center gap-2">
-                                <div className="w-1.5 h-4 bg-amber-400 rounded-full" />
-                                Filtrele
-                            </h3>
+                        <div className="mx-4 mt-4 rounded-[1.75rem] border border-white/10 bg-[#0b1220] p-3 shadow-2xl shadow-black/30">
+                            <div className="mb-3 flex items-center justify-between gap-3">
+                            <div>
+                                <p className="text-[9px] font-black uppercase tracking-[0.24em] text-amber-400">Keşfi daralt</p>
+                                <h3 className="text-lg font-black tracking-tight text-white">Filtreler</h3>
+                            </div>
                             <button 
                                 onClick={() => setIsFilterSheetOpen(false)}
-                                className="p-2 -mr-2 text-neutral-500 hover:text-white transition-colors"
+                                className="flex h-10 w-10 items-center justify-center rounded-2xl border border-white/10 bg-white/5 text-neutral-400 transition hover:text-white active:scale-95"
+                                aria-label="Filtreleri kapat"
                             >
-                                <X size={20} />
+                                <X size={18} />
                             </button>
+                            </div>
                         </div>
 
                         {/* Category Navigation - Horizontal Scroll */}
-                        <div className="flex bg-slate-900/30 border-b border-white/5 overflow-x-auto no-scrollbar py-3 px-4 gap-2">
+                        <div className="mx-4 -mt-3 grid grid-cols-3 gap-2 rounded-b-[1.75rem] border-x border-b border-white/10 bg-[#0b1220] p-3 pt-0 shadow-2xl shadow-black/20">
                             {[
                                 { label: "Tür", value: stagedGenres },
                                 { label: "Platform", value: stagedProviders },
@@ -397,21 +400,24 @@ export function HomeDiscoverySection() {
                                     key={idx}
                                     onClick={() => setActiveFilterCategory(idx)}
                                     className={cn(
-                                        "flex-none px-5 py-2.5 rounded-full text-[10px] font-black uppercase tracking-widest transition-all border",
+                                        "relative flex min-h-[48px] flex-col items-start justify-center rounded-2xl border px-3 text-left transition-all active:scale-[0.98]",
                                         activeFilterCategory === idx
                                             ? "bg-amber-400 text-slate-950 border-amber-400 shadow-lg shadow-amber-400/20"
                                             : cat.value.length > 0 
-                                                ? "bg-amber-400/10 border-amber-400/30 text-amber-400"
-                                                : "bg-white/5 border-white/5 text-neutral-500 hover:text-white"
+                                                ? "bg-amber-400/10 border-amber-400/30 text-amber-300"
+                                                : "bg-[#121a2b] border-white/8 text-neutral-400 hover:text-white"
                                     )}
                                 >
-                                    {cat.label} {cat.value.length > 0 && `(${cat.value.length})`}
+                                    <span className="text-[9px] font-black uppercase tracking-wider">{cat.label}</span>
+                                    <span className={cn("mt-0.5 text-[8px] font-bold uppercase tracking-tight", activeFilterCategory === idx ? "text-slate-700" : "text-neutral-600")}>
+                                        {cat.value.length > 0 ? `${cat.value.length} seçili` : "Tümü"}
+                                    </span>
                                 </button>
                             ))}
                         </div>
 
                         {/* Options Content Area */}
-                        <div className="flex-1 overflow-y-auto p-6 no-scrollbar">
+                        <div className="flex-1 overflow-y-auto px-4 py-4 no-scrollbar">
                             <AnimatePresence mode="wait">
                                 <motion.div
                                     key={activeFilterCategory}
@@ -419,7 +425,7 @@ export function HomeDiscoverySection() {
                                     animate={{ opacity: 1, x: 0 }}
                                     exit={{ opacity: 0, x: -10 }}
                                     transition={{ duration: 0.2 }}
-                                    className="flex flex-wrap gap-2 justify-center"
+                                    className="grid grid-cols-2 gap-2.5"
                                 >
                                     {([
                                         { value: stagedGenres, setter: setStagedGenres, options: genreOptions },
@@ -445,13 +451,13 @@ export function HomeDiscoverySection() {
                                                 key={opt.id}
                                                 onClick={() => toggleFilter(cat.value, cat.setter, opt.id)}
                                                 className={cn(
-                                                    "px-5 py-3 rounded-2xl text-[11px] font-bold transition-all border",
+                                                    "min-h-[50px] rounded-2xl border px-3 py-3 text-left text-[11px] font-black leading-tight transition-all active:scale-[0.98]",
                                                     isSelected
                                                         ? "bg-amber-400 text-slate-950 border-amber-400 shadow-xl shadow-amber-400/20"
-                                                        : "bg-white/5 border-white/10 text-neutral-400 hover:text-white"
+                                                        : "bg-[#101827] border-white/8 text-neutral-300 hover:border-white/15 hover:bg-[#141f33]"
                                                 )}
                                             >
-                                                {opt.label}
+                                                <span className="line-clamp-2">{opt.label}</span>
                                             </button>
                                         );
                                     })}
@@ -460,15 +466,15 @@ export function HomeDiscoverySection() {
                         </div>
 
                         {/* Selection Summary / Sana Özel Strip */}
-                        <div className="px-6 py-5 bg-amber-400/5 border-t border-white/10 flex items-center justify-between backdrop-blur-xl">
-                             <div className="flex flex-col flex-1 min-w-0 pr-4">
+                        <div className="border-t border-white/10 bg-[#090f1c]/95 px-4 py-3 backdrop-blur-2xl">
+                             <div className="min-h-[42px] rounded-2xl border border-white/8 bg-white/[0.03] px-3 py-2">
                                 {stagedGenres.length + stagedProviders.length + stagedYears.length + stagedRatings.length + stagedLanguages.length + stagedCountries.length > 0 ? (
                                     <>
                                         <div className="flex items-center gap-2 mb-1">
                                             <span className="text-[10px] font-black uppercase tracking-[0.2em] text-amber-400">Seçili Filtreler</span>
                                             <button 
                                                 onClick={clearAllStaged}
-                                                className="p-1 text-rose-500 active:scale-90 transition-transform"
+                                                className="text-[9px] font-black uppercase tracking-widest text-rose-400 transition active:scale-95"
                                             >
                                                 <X size={14} />
                                             </button>
@@ -485,7 +491,7 @@ export function HomeDiscoverySection() {
                                                 <button 
                                                     key={i}
                                                     onClick={() => opt.setter(opt.current.filter(v => v !== opt.id))}
-                                                    className="flex items-center gap-1.5 text-[9px] font-black text-neutral-400 hover:text-white active:text-rose-500 transition-colors uppercase tracking-wider"
+                                                    className="flex flex-none items-center gap-1.5 rounded-full bg-amber-400/10 px-2.5 py-1 text-[9px] font-black uppercase tracking-wider text-amber-300 transition active:scale-95"
                                                 >
                                                     {opt.label}
                                                     {i < arr.length - 1 && <span className="text-neutral-700/50">•</span>}
@@ -514,23 +520,23 @@ export function HomeDiscoverySection() {
                              </div>
                              <button 
                                 onClick={commitFilters}
-                                className="flex-none px-6 py-2.5 rounded-xl bg-amber-400 text-slate-950 text-[10px] font-black uppercase tracking-widest active:scale-95 transition-all shadow-lg shadow-amber-400/10"
+                                className="hidden"
                              >
                                 Uygula
                              </button>
                         </div>
 
                         {/* Sticky Footer */}
-                        <div className="p-6 pt-4 border-t border-white/10 grid grid-cols-2 gap-4 bg-slate-950">
+                        <div className="grid grid-cols-[0.85fr_1.15fr] gap-3 bg-[#090f1c] px-4 pb-[calc(6rem+env(safe-area-inset-bottom))]">
                             <button 
                                 onClick={clearAllStaged}
-                                className="py-4.5 rounded-2xl bg-white/5 border border-white/5 text-neutral-400 font-black text-[10px] uppercase tracking-[0.2em] active:scale-95 transition-all"
+                                className="rounded-2xl border border-white/10 bg-white/5 py-3.5 text-[10px] font-black uppercase tracking-[0.18em] text-neutral-400 transition active:scale-95"
                             >
                                 Sıfırla
                             </button>
                             <button 
                                 onClick={commitFilters}
-                                className="py-4.5 rounded-2xl bg-gradient-to-r from-amber-400 to-orange-500 text-slate-950 font-black text-[10px] uppercase tracking-[0.2em] active:scale-95 transition-all shadow-xl shadow-amber-500/20"
+                                className="rounded-2xl bg-gradient-to-r from-amber-400 to-orange-500 py-3.5 text-[10px] font-black uppercase tracking-[0.18em] text-slate-950 shadow-xl shadow-amber-500/20 transition active:scale-95"
                             >
                                 Uygula
                             </button>
@@ -540,13 +546,13 @@ export function HomeDiscoverySection() {
             </AnimatePresence>
 
             {/* Sticky Header Container */}
-            <div className="sticky top-[72px] z-40 pb-2 md:pb-4 -mx-3 px-3 sm:-mx-6 sm:px-6 md:-mx-8 md:px-8 lg:-mx-12 lg:px-12">
+            <div className="sticky top-[3.8rem] z-40 -mx-4 mb-2 px-4 pb-2 pt-1 backdrop-blur-xl [background:linear-gradient(180deg,rgba(16,22,36,0.98)_0%,rgba(16,22,36,0.88)_72%,rgba(16,22,36,0)_100%)] sm:-mx-6 sm:px-6 md:top-[72px] md:-mx-8 md:px-8 md:pb-4 lg:-mx-12 lg:px-12">
                 
                 {/* Primary Discovery Bar */}
-                <div className="flex flex-col lg:flex-row gap-2 lg:items-center mb-2 md:mb-3 relative z-10">
+                <div className="flex flex-col gap-2 lg:flex-row lg:items-center mb-2 md:mb-3 relative z-10">
                     {/* Left: Type Switcher */}
                     <div className="lg:w-[320px] shrink-0">
-                        <div className="flex bg-[#1b2334]/90 p-1.5 rounded-full border border-white/10 backdrop-blur-xl w-full">
+                        <div className="flex w-full rounded-[1.35rem] border border-white/10 bg-[#121b2d]/92 p-1 backdrop-blur-xl md:p-1.5 md:rounded-full">
                             {["all", "movie", "tv"].map((t) => (
                                 <button
                                     key={t}
@@ -555,7 +561,7 @@ export function HomeDiscoverySection() {
                                         setActiveType(t as MenuType);
                                     }}
                                     className={cn(
-                                        "flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-full text-[10px] md:text-sm font-black transition-all uppercase tracking-tight",
+                                        "flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-[1rem] md:rounded-full text-[10px] md:text-sm font-black transition-all uppercase tracking-tight",
                                         activeType === t ? "bg-amber-400 text-black shadow-lg" : "text-neutral-400 hover:text-white"
                                     )}
                                 >
@@ -567,8 +573,8 @@ export function HomeDiscoverySection() {
                     </div>
 
                     {/* Middle: Category Options */}
-                    <div className="flex items-center gap-4 md:gap-6 flex-1 min-w-0 overflow-hidden">
-                        <div className="flex-1 flex bg-[#1b2334]/90 p-1.5 rounded-full border border-white/10 backdrop-blur-xl gap-1 overflow-x-auto hide-scrollbar">
+                    <div className="flex items-center gap-2 md:gap-6 flex-1 min-w-0 overflow-hidden">
+                        <div className="flex flex-1 gap-1 overflow-x-auto rounded-[1.35rem] border border-white/10 bg-[#121b2d]/92 p-1 backdrop-blur-xl hide-scrollbar md:rounded-full md:p-1.5">
                             {categoryOptions.map((opt) => (
                                 <button
                                     key={opt.id}
@@ -577,7 +583,7 @@ export function HomeDiscoverySection() {
                                         setActiveCategory(opt.id as MenuCategory);
                                     }}
                                     className={cn(
-                                        "flex-none flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-full text-[9px] md:text-xs font-black transition-all uppercase tracking-widest whitespace-nowrap",
+                                        "flex-none flex items-center justify-center gap-1.5 px-3.5 md:px-4 py-2.5 rounded-[1rem] md:rounded-full text-[9px] md:text-xs font-black transition-all uppercase tracking-widest whitespace-nowrap",
                                         activeCategory === opt.id
                                             ? "bg-white/10 text-white border border-white/15"
                                             : "text-neutral-500 hover:text-white"
@@ -620,7 +626,7 @@ export function HomeDiscoverySection() {
                         {/* Mobile Filter Trigger */}
                         <button
                             onClick={() => setIsFilterSheetOpen(true)}
-                            className="lg:hidden relative flex items-center justify-center w-12 h-12 rounded-2xl bg-amber-400 text-black shadow-lg shadow-amber-400/20 active:scale-90 transition-all shrink-0"
+                            className="lg:hidden relative flex h-11 w-11 shrink-0 items-center justify-center rounded-[1.1rem] bg-amber-400 text-black shadow-lg shadow-amber-400/20 transition-all active:scale-90"
                         >
                             <Filter size={20} strokeWidth={2.5} />
                             {hasFilters && (
@@ -742,8 +748,8 @@ export function HomeDiscoverySection() {
 
             {isLoading ? (
                 <div className={cn(
-                    viewMode === "grid" 
-                        ? "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-x-3 md:gap-x-4 gap-y-7 md:gap-y-8"
+                        viewMode === "grid" 
+                        ? "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-x-3 md:gap-x-4 gap-y-5 md:gap-y-8"
                         : "flex flex-col gap-4"
                 )}>
                     {Array.from({ length: discoveryPageSize }).map((_, idx) => (
@@ -793,9 +799,9 @@ export function HomeDiscoverySection() {
                 <>
                     <div className={cn(
                         "animate-in fade-in duration-700",
-                        viewMode === "grid" && "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 sm:gap-6",
-                        viewMode === "compact" && "grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-7 xl:grid-cols-9 gap-3 md:gap-4 justify-items-center",
-                        viewMode === "list" && "flex flex-col gap-4"
+                        viewMode === "grid" && "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-x-3 gap-y-5 sm:gap-6",
+                        viewMode === "compact" && "grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-7 xl:grid-cols-9 gap-x-2 gap-y-4 md:gap-4 justify-items-center",
+                        viewMode === "list" && "flex flex-col gap-3 md:gap-4"
                     )}>
                         {items.map((item, idx) => (
                             viewMode === "grid" || viewMode === "compact" ? (
