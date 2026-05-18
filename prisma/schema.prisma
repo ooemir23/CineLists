@@ -93,6 +93,7 @@ model Follow {
   following   User   @relation("followedBy", fields: [followingId], references: [id], onDelete: Cascade)
 
   @@id([followerId, followingId])
+  @@index([followingId])
 }
 
 model VerificationToken {
@@ -138,6 +139,8 @@ model Watched {
   user              User      @relation("UserWatched", fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, mediaId])
+  @@index([userId])
+  @@index([mediaId])
 }
 
 model ToWatch {
@@ -150,6 +153,8 @@ model ToWatch {
   user    User        @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, mediaId])
+  @@index([userId])
+  @@index([mediaId])
 }
 
 enum WatchStatus {
@@ -180,6 +185,10 @@ model Activity {
   comments          Comment[]
 
   @@unique([userId, mediaId, type, episodeId], name: "userId_mediaId_type_episode")
+  @@index([userId])
+  @@index([mediaId])
+  @@index([createdAt(sort: Desc)])
+  @@index([userId, createdAt(sort: Desc)])
 }
 
 model Comment {
@@ -198,6 +207,10 @@ model Comment {
   user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   parent     Comment?  @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
   replies    Comment[] @relation("CommentReplies")
+
+  @@index([userId])
+  @@index([activityId])
+  @@index([createdAt(sort: Desc)])
 }
 
 model Recommendation {
@@ -211,6 +224,10 @@ model Recommendation {
   media      MediaItem @relation(fields: [mediaId], references: [id])
   receiver   User      @relation("receivedRecommendations", fields: [receiverId], references: [id], onDelete: Cascade)
   sender     User      @relation("sentRecommendations", fields: [senderId], references: [id], onDelete: Cascade)
+
+  @@index([receiverId])
+  @@index([senderId])
+  @@index([createdAt(sort: Desc)])
 }
 
 model Message {
@@ -222,6 +239,10 @@ model Message {
   isRead     Boolean  @default(false)
   receiver   User     @relation("receivedMessages", fields: [receiverId], references: [id], onDelete: Cascade)
   sender     User     @relation("sentMessages", fields: [senderId], references: [id], onDelete: Cascade)
+
+  @@index([receiverId])
+  @@index([senderId])
+  @@index([createdAt(sort: Desc)])
 }
 
 model Indicates {
@@ -251,6 +272,7 @@ model Episode {
   watchedBy     WatchedEpisode[]
 
   @@unique([mediaId, seasonNumber, episodeNumber])
+  @@index([mediaId])
 }
 
 model WatchedEpisode {

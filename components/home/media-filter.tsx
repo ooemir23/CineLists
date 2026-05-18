@@ -3,9 +3,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { X, Sparkles, Check, Search, Film, Tv, Star, Camera, Loader2, Scissors } from "lucide-react";
-import ReactCrop, { type Crop } from 'react-image-crop';
-import 'react-image-crop/dist/ReactCrop.css';
-import Tesseract from "tesseract.js";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
 import Image from "next/image";
@@ -47,15 +44,6 @@ export function MediaFilter() {
     const pathname = usePathname();
     const searchInputRef = useRef<HTMLInputElement>(null);
     const suggestionsRef = useRef<HTMLDivElement>(null);
-    const fileInputRef = useRef<HTMLInputElement>(null);
-
-    const [isOcrLoading, setIsOcrLoading] = useState(false);
-    
-    // Crop states
-    const [cropImageSrc, setCropImageSrc] = useState<string | null>(null);
-    const [crop, setCrop] = useState<Crop>();
-    const [completedCrop, setCompletedCrop] = useState<any>(null);
-    const imageRef = useRef<HTMLImageElement>(null);
 
     const [type, setType] = useState(searchParams.get("type") || "");
     const [year, setYear] = useState(searchParams.get("year") || "");
@@ -81,96 +69,7 @@ export function MediaFilter() {
     const [providers, setProviders] = useState<{ id: string; name: string; logo: string }[]>([]);
     const [loading, setLoading] = useState(true);
 
-    const handleImageCapture = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (!file) return;
 
-        const reader = new FileReader();
-        reader.onload = () => {
-            setCropImageSrc(reader.result as string);
-        };
-        reader.readAsDataURL(file);
-        
-        if (fileInputRef.current) {
-            fileInputRef.current.value = "";
-        }
-    };
-
-    const onImageLoad = (e: React.SyntheticEvent<HTMLImageElement>) => {
-        const { width, height } = e.currentTarget;
-        const cropWidth = width * 0.8;
-        const cropHeight = height * 0.2;
-        setCrop({
-            unit: 'px',
-            x: (width - cropWidth) / 2,
-            y: (height - cropHeight) / 2,
-            width: cropWidth,
-            height: cropHeight
-        });
-    };
-
-    const handleCropAndScan = async () => {
-        if (!completedCrop || !imageRef.current || completedCrop.width === 0 || completedCrop.height === 0) {
-            alert("Lütfen taranacak yazıyı seçin.");
-            return;
-        }
-
-        try {
-            setIsOcrLoading(true);
-
-            const canvas = document.createElement('canvas');
-            const scaleX = imageRef.current.naturalWidth / imageRef.current.width;
-            const scaleY = imageRef.current.naturalHeight / imageRef.current.height;
-            canvas.width = completedCrop.width * scaleX;
-            canvas.height = completedCrop.height * scaleY;
-            const ctx = canvas.getContext('2d');
-
-            if (!ctx) throw new Error("Canvas context is null");
-
-            ctx.drawImage(
-                imageRef.current,
-                completedCrop.x * scaleX,
-                completedCrop.y * scaleY,
-                completedCrop.width * scaleX,
-                completedCrop.height * scaleY,
-                0,
-                0,
-                completedCrop.width * scaleX,
-                completedCrop.height * scaleY
-            );
-
-            const croppedImageUrl = canvas.toDataURL('image/jpeg', 1.0);
-            setCropImageSrc(null); // Hide modal while scanning
-
-            const result = await Tesseract.recognize(croppedImageUrl, 'tur+eng', {
-                logger: m => console.log(m)
-            });
-
-            const rawText = result.data.text;
-            if (rawText) {
-                const cleanedText = rawText.replace(/[^a-zA-Z0-9çğıöşüÇĞİÖŞÜ \n]/g, ' ');
-                const lines = cleanedText.split('\n')
-                    .map(l => l.trim().replace(/\s+/g, ' '))
-                    .filter(l => l.length > 2)
-                    .filter(l => !/^[0-9\s]+$/.test(l));
-                
-                if (lines.length > 0) {
-                    const searchQuery = lines.slice(0, 2).join(" ");
-                    setQuery(searchQuery);
-                } else {
-                    alert("Seçtiğiniz alanda okunabilir bir film/dizi ismi bulunamadı.");
-                }
-            } else {
-                alert("Seçtiğiniz alanda metin bulunamadı.");
-            }
-        } catch (error) {
-            console.error("OCR Error:", error);
-            alert("Görsel taranırken bir hata oluştu.");
-            setCropImageSrc(null);
-        } finally {
-            setIsOcrLoading(false);
-        }
-    };
 
 
 
@@ -609,28 +508,7 @@ export function MediaFilter() {
                                     placeholder="Film, dizi veya kişi ara..."
                                     className="flex-1 bg-transparent outline-none text-white placeholder:text-neutral-500 text-sm md:text-base font-bold"
                                 />
-                                {isOcrLoading ? (
-                                    <div className="p-1.5 rounded-full relative" title="Yazı Okunuyor...">
-                                        <Loader2 className="w-5 h-5 text-amber-400 animate-spin" />
-                                    </div>
-                                ) : (
-                                    <button
-                                        type="button"
-                                        onClick={() => fileInputRef.current?.click()}
-                                        className="p-1.5 rounded-full hover:bg-white/10 transition-colors group/ocr"
-                                        title="Kameradan Yazı Tara"
-                                    >
-                                        <Camera className="w-5 h-5 text-neutral-400 group-hover/ocr:text-amber-400 transition-colors" />
-                                    </button>
-                                )}
-                                <input 
-                                    type="file" 
-                                    accept="image/*" 
-                                    capture="environment" 
-                                    ref={fileInputRef} 
-                                    className="hidden" 
-                                    onChange={handleImageCapture}
-                                />
+
                                 {query && (
                                     <button
                                         type="button"
