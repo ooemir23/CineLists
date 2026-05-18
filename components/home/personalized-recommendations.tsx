@@ -30,12 +30,12 @@ export async function PersonalizedRecommendations({ results, reasons }: Personal
     const tmdbIds = results.map(i => i.id);
     const [userRatingsMap, metadataMap] = await Promise.all([
         getUserRatingsBulk(tmdbIds),
-        import("@/lib/activity-actions").then(m => m.getMediaMetadataBulk(results.map(r => ({ id: r.id, type: r.mediaType }))))
+        import("@/lib/activity-actions").then(m => m.getMediaMetadataBulk(results.map(r => ({ id: r.id, type: r.mediaType || (r as any).media_type || "movie" }))))
     ]);
 
     const normalizedResults = results.map((item) => ({
         ...item,
-        mediaType: item.mediaType,
+        mediaType: item.mediaType || (item as any).media_type || "movie",
     }));
 
     return (
