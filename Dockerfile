@@ -44,10 +44,10 @@ COPY --from=builder /app/prisma ./prisma
 COPY --from=builder /app/start.sh ./
 
 # Create necessary directories with correct permissions.
-# The Railway Volume is mounted at /app/.next/cache/fetch-cache (not the
-# parent), so /app/.next/cache itself stays nextjs-owned from this image
-# and Next.js can write fetch-cache entries without hitting EACCES.
-RUN mkdir -p /app/.prisma /app/.next/cache/fetch-cache && \
+# Image optimization is disabled (unoptimized: true), so no image files are
+# written to cache — only small JSON fetch-cache entries. Ephemeral storage
+# is sufficient; no Railway Volume is needed.
+RUN mkdir -p /app/.prisma /app/.next/cache && \
     chown -R nextjs:nodejs /app && \
     chmod +x /app/start.sh
 
