@@ -3,13 +3,14 @@
 import { useState, useEffect, useRef } from "react";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { X, Sparkles, Check, Search, Film, Tv, Star, Camera, Loader2, Scissors } from "lucide-react";
-import ReactCrop, { type Crop } from 'react-image-crop';
-import 'react-image-crop/dist/ReactCrop.css';
-import Tesseract from "tesseract.js";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
 import Image from "next/image";
 import { MediaCard } from "@/components/media/media-card";
+
+// react-image-crop and tesseract.js are loaded dynamically on demand
+// to avoid including ~520KB+ in the initial bundle.
+// They are only needed when the user activates the OCR camera feature.
 
 import { createPortal } from "react-dom";
 
@@ -51,9 +52,9 @@ export function MediaFilter() {
 
     const [isOcrLoading, setIsOcrLoading] = useState(false);
     
-    // Crop states
+    // Crop states — types kept loose since react-image-crop is loaded dynamically
     const [cropImageSrc, setCropImageSrc] = useState<string | null>(null);
-    const [crop, setCrop] = useState<Crop>();
+    const [crop, setCrop] = useState<any>();
     const [completedCrop, setCompletedCrop] = useState<any>(null);
     const imageRef = useRef<HTMLImageElement>(null);
 
@@ -142,6 +143,8 @@ export function MediaFilter() {
             const croppedImageUrl = canvas.toDataURL('image/jpeg', 1.0);
             setCropImageSrc(null); // Hide modal while scanning
 
+            // Dynamically import tesseract.js (~500KB) only when OCR is actually triggered
+            const { default: Tesseract } = await import("tesseract.js");
             const result = await Tesseract.recognize(croppedImageUrl, 'tur+eng', {
                 logger: m => console.log(m)
             });
@@ -724,6 +727,109 @@ export function MediaFilter() {
                             </button>
                         </div>
                     )}
+                </div>
+            </div>
+
+            {/* OCR Crop Modal — react-image-crop loaded dynamically only when needed */}
+            {cropImageSrc && (
+                <Portal>
+                    <DynamicCropModal
+                        src={cropImageSrc}
+                        crop={crop}
+                        onCropChange={setCrop}
+                        onCropComplete={setCompletedCrop}
+                        imageRef={imageRef}
+                        onImageLoad={onImageLoad}
+                        onScan={handleCropAndScan}
+                        onClose={() => setCropImageSrc(null)}
+                        isLoading={isOcrLoading}
+                    />
+                </Portal>
+            )}
+        </div>
+    );
+}
+
+// Lazily loaded crop modal — keeps react-image-crop out of the initial bundle
+function DynamicCropModal({
+    src,
+    crop,
+    onCropChange,
+    onCropComplete,
+    imageRef,
+    onImageLoad,
+    onScan,
+    onClose,
+    isLoading,
+}: {
+    src: string;
+    crop: any;
+    onCropChange: (c: any) => void;
+    onCropComplete: (c: any) => void;
+    imageRef: React.RefObject<HTMLImageElement | null>;
+    onImageLoad: (e: React.SyntheticEvent<HTMLImageElement>) => void;
+    onScan: () => void;
+    onClose: () => void;
+    isLoading: boolean;
+}) {
+    const [ReactCropComponent, setReactCropComponent] = useState<any>(null);
+
+    useEffect(() => {
+        // Dynamically import react-image-crop (~20KB) only when the crop modal opens
+        import("react-image-crop").then((mod) => {
+            setReactCropComponent(() => mod.default);
+        });
+        import("react-image-crop/dist/ReactCrop.css" as any);
+    }, []);
+
+    if (!ReactCropComponent) {
+        return (
+            <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/80 backdrop-blur-sm">
+                <Loader2 className="w-8 h-8 text-amber-400 animate-spin" />
+            </div>
+        );
+    }
+
+    return (
+        <div className="fixed inset-0 z-[99999] flex flex-col items-center justify-center bg-black/90 backdrop-blur-md p-4">
+            <div className="w-full max-w-2xl bg-[#1A202C] border border-white/10 rounded-2xl overflow-hidden shadow-2xl">
+                <div className="flex items-center justify-between p-4 border-b border-white/10">
+                    <h3 className="text-white font-bold">Taranacak Alanı Seçin</h3>
+                    <button onClick={onClose} className="p-2 hover:bg-white/10 rounded-full transition-colors">
+                        <X className="w-5 h-5 text-neutral-400 hover:text-white" />
+                    </button>
+                </div>
+                <div className="p-4 overflow-auto max-h-[60vh]">
+                    <ReactCropComponent
+                        crop={crop}
+                        onChange={onCropChange}
+                        onComplete={onCropComplete}
+                    >
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                            ref={imageRef}
+                            src={src}
+                            alt="OCR kaynak"
+                            onLoad={onImageLoad}
+                            className="max-w-full"
+                        />
+                    </ReactCropComponent>
+                </div>
+                <div className="p-4 border-t border-white/10 flex gap-3 justify-end">
+                    <button
+                        onClick={onClose}
+                        className="px-4 py-2 rounded-xl border border-white/10 text-neutral-400 hover:text-white text-sm font-bold transition-colors"
+                    >
+                        İptal
+                    </button>
+                    <button
+                        onClick={onScan}
+                        disabled={isLoading}
+                        className="flex items-center gap-2 px-6 py-2 rounded-xl bg-amber-400 text-black font-black text-sm transition-all hover:bg-amber-300 disabled:opacity-50"
+                    >
+                        {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Scissors className="w-4 h-4" />}
+                        Tara
+                    </button>
                 </div>
             </div>
         </div>

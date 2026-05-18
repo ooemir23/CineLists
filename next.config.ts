@@ -1,5 +1,20 @@
 import type { NextConfig } from "next";
 
+// Bundle analyzer — enabled when ANALYZE=true (e.g. `npm run analyze`)
+// Wrapped in a try/catch so the build never fails if the package is absent.
+let withBundleAnalyzer = (config: NextConfig) => config;
+try {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const analyzer = require("@next/bundle-analyzer");
+  withBundleAnalyzer = analyzer({
+    enabled: process.env.ANALYZE === "true",
+    openAnalyzer: false,
+  });
+} catch {
+  // @next/bundle-analyzer not installed — fall back to webpack-bundle-analyzer
+  // via the existing `analyze` script which sets ANALYZE=true
+}
+
 const nextConfig: NextConfig = {
   // Standalone output for Docker deployment
   output: 'standalone',
@@ -61,4 +76,4 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+export default withBundleAnalyzer(nextConfig);

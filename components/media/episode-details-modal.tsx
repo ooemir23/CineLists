@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import { X, Calendar, Clock, ThumbsUp, ThumbsDown, Send, User, Check, Eye, Play, ArrowLeft, EyeOff, AlertTriangle, Loader2, MessageSquare, Star } from "lucide-react";
 import Image from "next/image";
-import { motion, AnimatePresence } from "framer-motion";
+// framer-motion removed — modal animations replaced with CSS animate-in utilities
 import { ExpandableImage } from "@/components/ui/expandable-image";
 import { cn } from "@/lib/utils";
 
@@ -86,24 +86,18 @@ export function EpisodeDetailsModal({
     };
 
     return createPortal(
-        <AnimatePresence>
+        <>
             {isOpen && (
                 <div className="fixed inset-0 z-[9999] flex items-center justify-center p-0 md:p-4">
                     {/* Backdrop */}
-                    <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
+                    <div
                         onClick={onClose}
-                        className="absolute inset-0 bg-[#070c16]/95 backdrop-blur-md"
+                        className="absolute inset-0 bg-[#070c16]/95 backdrop-blur-md animate-in fade-in duration-200"
                     />
 
                     {/* Modal Container */}
-                    <motion.div
-                        initial={{ opacity: 0, scale: 0.95, y: 20 }}
-                        animate={{ opacity: 1, scale: 1, y: 0 }}
-                        exit={{ opacity: 0, scale: 0.95, y: 20 }}
-                        className="relative w-full h-full md:h-[90vh] md:max-w-6xl bg-[#0f172a] md:rounded-[2.5rem] overflow-hidden flex flex-col md:flex-row shadow-[0_0_100px_rgba(0,0,0,0.8)] border border-white/10"
+                    <div
+                        className="relative w-full h-full md:h-[90vh] md:max-w-6xl bg-[#0f172a] md:rounded-[2.5rem] overflow-hidden flex flex-col md:flex-row shadow-[0_0_100px_rgba(0,0,0,0.8)] border border-white/10 animate-in fade-in zoom-in-95 slide-in-from-bottom-4 duration-300"
                     >
                         {/* Close Button - Floating */}
                         <button
@@ -134,12 +128,7 @@ export function EpisodeDetailsModal({
                                 
                                 {/* Episode Info Overlay */}
                                 <div className="absolute bottom-8 left-8 right-8">
-                                    <motion.div 
-                                        initial={{ opacity: 0, x: -20 }}
-                                        animate={{ opacity: 1, x: 0 }}
-                                        transition={{ delay: 0.2 }}
-                                        className="flex items-center gap-3 mb-4"
-                                    >
+                                    <div className="flex items-center gap-3 mb-4 animate-in fade-in slide-in-from-left-4 duration-500">
                                         <span className="px-4 py-1.5 bg-amber-400 text-black font-black text-xs uppercase tracking-widest rounded-xl italic shadow-[0_8px_20px_rgba(251,191,36,0.3)]">
                                             Bölüm {episode.episode_number}
                                         </span>
@@ -153,15 +142,10 @@ export function EpisodeDetailsModal({
                                                 <Star size={12} fill="currentColor" /> {episode.vote_average.toFixed(1)}
                                             </span>
                                         )}
-                                    </motion.div>
-                                    <motion.h2 
-                                        initial={{ opacity: 0, y: 20 }}
-                                        animate={{ opacity: 1, y: 0 }}
-                                        transition={{ delay: 0.3 }}
-                                        className="text-3xl md:text-6xl font-black text-white tracking-tighter leading-[0.9] italic"
-                                    >
+                                    </div>
+                                    <h2 className="text-3xl md:text-6xl font-black text-white tracking-tighter leading-[0.9] italic animate-in fade-in slide-in-from-bottom-4 duration-500">
                                         {episode.name}
-                                    </motion.h2>
+                                    </h2>
                                 </div>
                             </div>
 
@@ -301,10 +285,10 @@ export function EpisodeDetailsModal({
                                 </form>
                             </div>
                         </div>
-                    </motion.div>
+                    </div>
                 </div>
             )}
-        </AnimatePresence>,
+        </>,
         document.body
     );
 }

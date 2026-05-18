@@ -1,0 +1,12 @@
+{
+  "analyzerMode": "static",
+  "reportFilename": ".next/bundle-report.html",
+  "openAnalyzer": false,
+  "generateStatsFile": true,
+  "statsFilename": ".next/bundle-stats.json",
+  "logLevel": "info",
+  "defaultSizes": "gzip",
+  "excludeAssets": [
+    "\\.map$"
+  ]
+}

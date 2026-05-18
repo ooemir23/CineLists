@@ -20,7 +20,7 @@ import { formatDistanceToNow } from "date-fns";
 import { tr } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import { markNotificationAsRead, markAllNotificationsAsRead } from "@/lib/notification-actions";
-import { motion, AnimatePresence } from "framer-motion";
+// framer-motion removed — list animations replaced with CSS animate-in utilities
 
 type Notification = {
     id: string;
@@ -131,13 +131,9 @@ export function NotificationsList({ initialNotifications }: NotificationsListPro
 
             {/* List */}
             <div className="space-y-3">
-                <AnimatePresence mode="popLayout">
+                <>
                     {filteredNotifications.length === 0 ? (
-                        <motion.div
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            className="flex flex-col items-center justify-center py-24 text-center bg-white/5 rounded-[2.5rem] border border-white/5 border-dashed"
-                        >
+                        <div className="flex flex-col items-center justify-center py-24 text-center bg-white/5 rounded-[2.5rem] border border-white/5 border-dashed animate-in fade-in slide-in-from-bottom-4 duration-500">
                             <div className="p-6 bg-neutral-800/50 rounded-full mb-4">
                                 <Ghost className="w-12 h-12 text-neutral-600" />
                             </div>
@@ -147,7 +143,7 @@ export function NotificationsList({ initialNotifications }: NotificationsListPro
                                     ? "Tüm bildirimlerini okumuşsun, harika!"
                                     : "Henüz bir bildirim almadın. Arkadaşlarını takip ederek başla."}
                             </p>
-                        </motion.div>
+                        </div>
                     ) : (
                         filteredNotifications.map((notification, index) => {
                             const content = (
@@ -216,18 +212,15 @@ export function NotificationsList({ initialNotifications }: NotificationsListPro
                             );
 
                             return (
-                                <motion.div
+                                <div
                                     key={notification.id}
-                                    layout
-                                    initial={{ opacity: 0, x: -20 }}
-                                    animate={{ opacity: 1, x: 0 }}
-                                    transition={{ delay: index * 0.05 }}
                                     className={cn(
-                                        "group rounded-3xl border transition-all relative overflow-hidden",
+                                        "group rounded-3xl border transition-all relative overflow-hidden animate-in fade-in slide-in-from-left-4 duration-300",
                                         notification.isRead
                                             ? "bg-slate-900/40 border-white/5 opacity-70 grayscale-[0.5]"
                                             : "bg-white/10 border-white/10 shadow-2xl shadow-black/20 hover:border-primary/30"
                                     )}
+                                    style={{ animationDelay: `${index * 50}ms` }}
                                 >
                                     <Link
                                         href={notification.link || "#"}
@@ -242,11 +235,11 @@ export function NotificationsList({ initialNotifications }: NotificationsListPro
                                         )}
                                         {content}
                                     </Link>
-                                </motion.div>
+                                </div>
                             );
                         })
                     )}
-                </AnimatePresence>
+                </>
             </div>
         </div>
     );

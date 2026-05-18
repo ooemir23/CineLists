@@ -1,25 +1,17 @@
 "use client";
 
-import { motion } from "framer-motion";
-import { usePathname } from "next/navigation";
+// Replaced framer-motion with a CSS animation to eliminate the ~40KB
+// framer-motion chunk from the page-transition critical path.
+// The fade-in is handled by the `animate-in` / `fade-in` Tailwind utilities.
 
 export default function PageTransition({
     children,
 }: {
     children: React.ReactNode;
 }) {
-    const pathname = usePathname();
-
     return (
-        <motion.div
-            key={pathname}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.3, ease: "easeOut" }}
-            className="w-full flex-1"
-        >
+        <div className="w-full flex-1 animate-in fade-in duration-300">
             {children}
-        </motion.div>
+        </div>
     );
 }
