@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+// framer-motion removed — pill indicator and content transitions use CSS animations
 import { cn } from "@/lib/utils";
 import { Calendar, Clock, Star, Play, Tv } from "lucide-react";
 
@@ -65,10 +65,8 @@ export function DiscoveryEngine({
                                     )}
                                 >
                                     {isActive && (
-                                        <motion.div
-                                            layoutId="period-pill"
-                                            className={cn("absolute inset-0 bg-gradient-to-r shadow-lg", p.color)}
-                                            transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+                                        <div
+                                            className={cn("absolute inset-0 bg-gradient-to-r shadow-lg rounded-xl", p.color)}
                                         />
                                     )}
                                     <Icon className={cn("w-3.5 h-3.5 relative z-10 transition-transform group-hover:scale-110", isActive && "text-white")} />
@@ -93,10 +91,8 @@ export function DiscoveryEngine({
                                     )}
                                 >
                                     {isActive && (
-                                        <motion.div
-                                            layoutId="type-pill"
-                                            className="absolute inset-0 bg-white/10 border border-white/10 shadow-xl"
-                                            transition={{ type: "spring", bounce: 0.1, duration: 0.6 }}
+                                        <div
+                                            className="absolute inset-0 bg-white/10 border border-white/10 shadow-xl rounded-xl"
                                         />
                                     )}
                                     <Icon className={cn("w-3.5 h-3.5 relative z-10 transition-colors", isActive ? "text-primary" : "text-neutral-600 group-hover:text-neutral-400")} />
@@ -110,17 +106,12 @@ export function DiscoveryEngine({
 
             {/* Content Area with Animation */}
             <div className="relative min-h-[300px]">
-                <AnimatePresence mode="wait">
-                    <motion.div
-                        key={period + type}
-                        initial={{ opacity: 0, y: 20, scale: 0.98 }}
-                        animate={{ opacity: 1, y: 0, scale: 1 }}
-                        exit={{ opacity: 0, y: -20, scale: 0.98 }}
-                        transition={{ duration: 0.4, ease: [0.23, 1, 0.32, 1] }}
-                    >
-                        {activeContent}
-                    </motion.div>
-                </AnimatePresence>
+                <div
+                    key={period + type}
+                    className="animate-in fade-in slide-in-from-bottom-2 duration-400"
+                >
+                    {activeContent}
+                </div>
             </div>
         </div>
     );

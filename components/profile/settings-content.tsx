@@ -23,7 +23,7 @@ import {
     Monitor,
     Search
 } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+// framer-motion removed — tab transitions replaced with CSS animate-in utilities
 import { cn } from "@/lib/utils";
 import { updateProfile, updatePrivacySettings, deleteAccount, suspendAccount, checkUsernameAvailability, updateUserPreferences } from "@/lib/profile-actions";
 import Image from "next/image";
@@ -184,14 +184,10 @@ export function SettingsContent({ user, activeTab }: SettingsContentProps) {
         <div className="w-full">
             <div className="flex flex-col relative">
                 <div className="flex-1 custom-scrollbar">
-                    <AnimatePresence mode="wait">
+                    <>
                         {activeTab === "general" && (
-                                <motion.div
-                                    key="general"
-                                    initial={{ opacity: 0, x: 10 }}
-                                    animate={{ opacity: 1, x: 0 }}
-                                    exit={{ opacity: 0, x: -10 }}
-                                    className="space-y-8"
+                                <div
+                                    className="space-y-8 animate-in fade-in slide-in-from-right-2 duration-300"
                                 >
                                     <div>
                                         <h3 className="text-lg font-black text-white mb-1">Profil Bilgileri</h3>
@@ -271,16 +267,12 @@ export function SettingsContent({ user, activeTab }: SettingsContentProps) {
                                             Değişiklikleri Kaydet
                                         </button>
                                     </div>
-                                </motion.div>
+                                </div>
                             )}
 
                             {activeTab === "privacy" && (
-                                <motion.div
-                                    key="privacy"
-                                    initial={{ opacity: 0, x: 10 }}
-                                    animate={{ opacity: 1, x: 0 }}
-                                    exit={{ opacity: 0, x: -10 }}
-                                    className="space-y-8"
+                                <div
+                                    className="space-y-8 animate-in fade-in slide-in-from-right-2 duration-300"
                                 >
                                     <div>
                                         <h3 className="text-lg font-black text-white mb-1">Gizlilik ve Görünürlük</h3>
@@ -390,16 +382,12 @@ export function SettingsContent({ user, activeTab }: SettingsContentProps) {
                                             Gizlilik Ayarlarını Kaydet
                                         </button>
                                     </div>
-                                </motion.div>
+                                </div>
                             )}
 
                             {activeTab === "preferences" && (
-                                <motion.div
-                                    key="preferences"
-                                    initial={{ opacity: 0, x: 10 }}
-                                    animate={{ opacity: 1, x: 0 }}
-                                    exit={{ opacity: 0, x: -10 }}
-                                    className="space-y-8 pb-10"
+                                <div
+                                    className="space-y-8 pb-10 animate-in fade-in slide-in-from-right-2 duration-300"
                                 >
                                     <div>
                                         <h3 className="text-lg font-black text-white mb-1">İzleme Tercihleri</h3>
@@ -528,16 +516,12 @@ export function SettingsContent({ user, activeTab }: SettingsContentProps) {
                                             Tercihlerimi Kaydet
                                         </button>
                                     </div>
-                                </motion.div>
+                                </div>
                             )}
 
                             {activeTab === "account" && (
-                                <motion.div
-                                    key="account"
-                                    initial={{ opacity: 0, x: 10 }}
-                                    animate={{ opacity: 1, x: 0 }}
-                                    exit={{ opacity: 0, x: -10 }}
-                                    className="space-y-8"
+                                <div
+                                    className="space-y-8 animate-in fade-in slide-in-from-right-2 duration-300"
                                 >
                                     <div>
                                         <h3 className="text-lg font-black text-white mb-1">Hesap Yönetimi</h3>
@@ -575,24 +559,19 @@ export function SettingsContent({ user, activeTab }: SettingsContentProps) {
                                             </p>
                                         </div>
                                     </div>
-                                </motion.div>
+                                </div>
                             )}
-                        </AnimatePresence>
+                    </>
                 </div>
             </div>
             {/* Sub-modals for Confirmation */}
-            <AnimatePresence>
+            <>
                 {(showDeleteConfirm || showSuspendConfirm) && (
-                    <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        className="fixed inset-0 z-[2100] bg-slate-950/95 backdrop-blur-md flex items-center justify-center p-8 text-center"
+                    <div
+                        className="fixed inset-0 z-[2100] bg-slate-950/95 backdrop-blur-md flex items-center justify-center p-8 text-center animate-in fade-in duration-200"
                     >
-                        <motion.div
-                            initial={{ scale: 0.9, y: 20 }}
-                            animate={{ scale: 1, y: 0 }}
-                            className="max-w-sm space-y-6"
+                        <div
+                            className="max-w-sm space-y-6 animate-in zoom-in-95 slide-in-from-bottom-4 duration-300"
                         >
                             <div className={cn(
                                 "w-20 h-20 rounded-[2rem] mx-auto flex items-center justify-center mb-6",
@@ -625,10 +604,10 @@ export function SettingsContent({ user, activeTab }: SettingsContentProps) {
                                     Vazgeç
                                 </button>
                             </div>
-                        </motion.div>
-                    </motion.div>
+                        </div>
+                    </div>
                 )}
-            </AnimatePresence>
+            </>
         </div>
     );
 }

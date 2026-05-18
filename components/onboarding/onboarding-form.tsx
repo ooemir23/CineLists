@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+// framer-motion removed — step transitions and progress bar use CSS animations
 import { 
     Check, 
     ChevronRight, 
@@ -110,23 +110,17 @@ export function OnboardingForm({ genres, platforms, defaultUsername = "" }: Onbo
                     </span>
                 </div>
                 <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
-                    <motion.div 
-                        className="h-full bg-amber-400 shadow-[0_0_15px_rgba(251,191,36,0.5)]"
-                        initial={{ width: "25%" }}
-                        animate={{ width: `${(step / totalSteps) * 100}%` }}
-                        transition={{ type: "spring", stiffness: 100, damping: 20 }}
+                    <div
+                        className="h-full bg-amber-400 shadow-[0_0_15px_rgba(251,191,36,0.5)] transition-all duration-500 ease-out"
+                        style={{ width: `${(step / totalSteps) * 100}%` }}
                     />
                 </div>
             </div>
 
-            <AnimatePresence mode="wait">
-                <motion.div
+            <>
+                <div
                     key={step}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -20 }}
-                    transition={{ duration: 0.4 }}
-                    className="min-h-[400px]"
+                    className="min-h-[400px] animate-in fade-in slide-in-from-bottom-4 duration-400"
                 >
                     {/* STEP 1: USERNAME */}
                     {step === 1 && (
@@ -362,8 +356,8 @@ export function OnboardingForm({ genres, platforms, defaultUsername = "" }: Onbo
                             </div>
                         </div>
                     )}
-                </motion.div>
-            </AnimatePresence>
+                </div>
+            </>
 
             {/* Navigation Buttons */}
             <div className="mt-12 flex items-center justify-between border-t border-white/5 pt-6">

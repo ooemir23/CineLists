@@ -3,7 +3,7 @@
 import { useEffect, useState, useRef, useCallback } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation"; // Essential for navigation tracking
-import { motion, AnimatePresence } from "framer-motion";
+// framer-motion removed — filter sheet and tab transitions use CSS animations
 import { Film, Tv, TrendingUp, Star, Check, Calendar, Filter, PlayCircle, Shuffle, LayoutGrid, List as ListIcon, Clock, Frown, RefreshCcw, Users, Grid3X3, Sparkles, Search, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { MediaCard } from "@/components/media/media-card";
@@ -361,13 +361,10 @@ export function HomeDiscoverySection() {
     return (
         <section id="home-discover" ref={headerRef} className="max-w-[1600px] mx-auto px-4 sm:px-6 md:px-8 lg:px-12 mt-4 md:mt-5">
             {/* Refined Pro Mobile Filter Overlay */}
-            <AnimatePresence>
+            <>
                 {isFilterSheetOpen && (
-                    <motion.div 
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        className="fixed inset-0 z-[2000] flex flex-col bg-[#050916] pt-14 lg:hidden"
+                    <div
+                        className="fixed inset-0 z-[2000] flex flex-col bg-[#050916] pt-14 lg:hidden animate-in fade-in duration-200"
                     >
                         {/* Compact Header */}
                         <div className="mx-4 mt-4 rounded-[1.75rem] border border-white/10 bg-[#0b1220] p-3 shadow-2xl shadow-black/30">
@@ -418,14 +415,10 @@ export function HomeDiscoverySection() {
 
                         {/* Options Content Area */}
                         <div className="flex-1 overflow-y-auto px-4 py-4 no-scrollbar">
-                            <AnimatePresence mode="wait">
-                                <motion.div
+                            <>
+                                <div
                                     key={activeFilterCategory}
-                                    initial={{ opacity: 0, x: 10 }}
-                                    animate={{ opacity: 1, x: 0 }}
-                                    exit={{ opacity: 0, x: -10 }}
-                                    transition={{ duration: 0.2 }}
-                                    className="grid grid-cols-2 gap-2.5"
+                                    className="grid grid-cols-2 gap-2.5 animate-in fade-in slide-in-from-right-2 duration-200"
                                 >
                                     {([
                                         { value: stagedGenres, setter: setStagedGenres, options: genreOptions },
@@ -461,8 +454,8 @@ export function HomeDiscoverySection() {
                                             </button>
                                         );
                                     })}
-                                </motion.div>
-                            </AnimatePresence>
+                                </div>
+                            </>
                         </div>
 
                         {/* Selection Summary / Sana Özel Strip */}
@@ -541,9 +534,9 @@ export function HomeDiscoverySection() {
                                 Uygula
                             </button>
                         </div>
-                    </motion.div>
+                    </div>
                 )}
-            </AnimatePresence>
+            </>
 
             {/* Sticky Header Container */}
             <div className="sticky top-[3.8rem] z-40 -mx-4 mb-2 px-4 pb-2 pt-1 backdrop-blur-xl [background:linear-gradient(180deg,rgba(16,22,36,0.98)_0%,rgba(16,22,36,0.88)_72%,rgba(16,22,36,0)_100%)] sm:-mx-6 sm:px-6 md:top-[72px] md:-mx-8 md:px-8 md:pb-4 lg:-mx-12 lg:px-12">

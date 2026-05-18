@@ -4,7 +4,7 @@ import Image from "next/image";
 import { Trophy, Medal, Film, Tv } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
-import { motion } from "framer-motion";
+// framer-motion removed — list item animations replaced with CSS animate-in utilities
 
 type LeaderboardProps = {
     data: {
@@ -26,15 +26,13 @@ export default function Leaderboard({ data, currentUserId }: LeaderboardProps) {
 
             <div className="space-y-4">
                 {data.map((item, index) => (
-                    <motion.div
-                        initial={{ opacity: 0, x: -20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: index * 0.1 }}
+                    <div
                         key={item.user.id}
                         className={cn(
-                            "flex items-center gap-4 p-3 rounded-xl transition-all",
+                            "flex items-center gap-4 p-3 rounded-xl transition-all animate-in fade-in slide-in-from-left-4 duration-300",
                             item.user.id === currentUserId ? "bg-primary/20 ring-1 ring-primary/50" : "hover:bg-white/5"
                         )}
+                        style={{ animationDelay: `${index * 80}ms` }}
                     >
                         <div className="w-8 flex justify-center font-bold text-lg text-neutral-500">
                             {index === 0 ? <span className="text-2xl">🥇</span> :
@@ -65,7 +63,7 @@ export default function Leaderboard({ data, currentUserId }: LeaderboardProps) {
                                 <span className="flex items-center gap-1"><Tv className="w-3 h-3" /> {item.episodes} Bölüm</span>
                             </div>
                         </div>
-                    </motion.div>
+                    </div>
                 ))}
             </div>
             <p className="text-xs text-center text-neutral-600 mt-4">* 1 Film = 3 Puan, 1 Bölüm = 1 Puan</p>
