@@ -28,7 +28,7 @@ RUN npm run build
 
 # Production stage
 FROM base AS runner
-RUN apt-get update && apt-get install -y openssl && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y openssl && npm install -g prisma@5.22.0 && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
 
 ENV NODE_ENV=production
