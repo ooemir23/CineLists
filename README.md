@@ -49,6 +49,7 @@ cinelists, kullanıcıların film ve dizileri takip edebileceği, arkadaşlarıy
    `.env.local` dosyasını düzenleyin:
    ```env
    DATABASE_URL="postgresql://username:password@localhost:5432/cinelists"
+   AUTH_SECRET="your-secret-key"
    NEXTAUTH_SECRET="your-secret-key"
    NEXTAUTH_URL="http://localhost:3000"
    TMDB_API_KEY="your-tmdb-api-key"
@@ -152,6 +153,18 @@ npm run analyze
 npm run build
 npm run start
 ```
+
+### Dokploy
+
+1. Application type olarak `Dockerfile` seçin.
+2. Dockerfile path olarak repo kökündeki `Dockerfile` dosyasını kullanın.
+3. Container portunu `3000` olarak ayarlayın.
+4. Dokploy ortam değişkenlerine en az şunları girin:
+   - `DATABASE_URL`
+   - `TMDB_API_KEY`
+   - `AUTH_SECRET` veya `NEXTAUTH_SECRET`
+   - `NEXTAUTH_URL`
+5. Eğer build aşamasında env gerekiyorsa Dokploy’un `build args` veya `build secrets` alanlarını kullanın.
 
 ## 🤝 Katkıda Bulunma
 
