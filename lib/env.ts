@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-// Dynamic env access to avoid build-time secret detection by Railpack/Nixpacks
+// Dynamic env access helps when secrets are injected at runtime by the deploy platform.
 function getEnvVar(key: string): string | undefined {
     return (typeof process !== "undefined" && process.env) ? process.env[key] : undefined;
 }

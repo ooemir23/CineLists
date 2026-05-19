@@ -1,6 +1,6 @@
 # CineLists AI Coding Rules & Performance Guidelines
 
-This project is highly optimized for low-cost cloud deployment (Railway/Render) with strict RAM, CPU, and network egress limits. All AI assistants MUST adhere to these rules strictly to prevent performance regression or deployment crashes.
+This project is highly optimized for low-cost cloud deployment (Dokploy or similar Docker-based platforms) with strict RAM, CPU, and network egress limits. All AI assistants MUST adhere to these rules strictly to prevent performance regression or deployment crashes.
 
 ---
 

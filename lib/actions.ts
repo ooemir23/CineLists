@@ -6,13 +6,24 @@ import { tmdb } from "@/lib/tmdb";
 import { revalidatePath } from "next/cache";
 import { GENRE_MAP } from "./genres";
 
+type GuestAwareUser = {
+    id: string;
+    isGuest?: boolean;
+};
+
+type TmdbMediaDetails = {
+    genres?: Array<{ id: number; name: string }>;
+    vote_average?: number;
+    runtime?: number | null;
+};
+
 export async function toggleToWatch(mediaId: number, type: "movie" | "tv" | "person", title: string, posterPath: string | null) {
     const session = await auth();
     if (!session?.user?.id) {
         return { error: "Giriş yapmalısınız" };
     }
 
-    if ((session.user as any).isGuest) {
+    if ((session.user as GuestAwareUser).isGuest) {
         return { success: true, inWatchlist: true };
     }
 
@@ -32,11 +43,11 @@ export async function toggleToWatch(mediaId: number, type: "movie" | "tv" | "per
 
     if (!media) {
         let genres: string[] = [];
-        let details: any = null;
+        let details: TmdbMediaDetails | null = null;
         if (type !== "person") {
             // Fetch genres from TMDB
-            details = await tmdb.getDetails(type, mediaId.toString());
-            genres = details.genres?.map((g: any) => GENRE_MAP[g.id] || g.name) || [];
+            details = await tmdb.getDetails(type, mediaId.toString()) as TmdbMediaDetails;
+            genres = details.genres?.map((genre) => GENRE_MAP[genre.id] || genre.name) || [];
         }
 
         media = await prisma.mediaItem.create({
@@ -69,8 +80,9 @@ export async function toggleToWatch(mediaId: number, type: "movie" | "tv" | "per
 
         revalidatePath("/watchlist");
         revalidatePath("/feed");
-        revalidatePath(`/movie/${mediaId}`);
-        revalidatePath(`/tv/${mediaId}`);
+        if (type !== "person") {
+            revalidatePath(`/${type}/${mediaId}`);
+        }
         return { added: false };
     } else {
         // Remove from watched if it exists there (exclusive)
@@ -106,8 +118,9 @@ export async function toggleToWatch(mediaId: number, type: "movie" | "tv" | "per
             },
         });
         revalidatePath("/watchlist");
-        revalidatePath(`/movie/${mediaId}`);
-        revalidatePath(`/tv/${mediaId}`);
+        if (type !== "person") {
+            revalidatePath(`/${type}/${mediaId}`);
+        }
         return { added: true };
     }
 }

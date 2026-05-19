@@ -4,6 +4,14 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { tmdb } from "@/lib/tmdb";
 import { revalidatePath } from "next/cache";
+import { Prisma } from "@prisma/client";
+
+function isPrismaConnectionError(error: unknown) {
+    if (error instanceof Prisma.PrismaClientInitializationError) return true;
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P1001") return true;
+    if (error instanceof Error && error.message.includes("Can't reach database server")) return true;
+    return false;
+}
 
 export async function toggleWatchedStatus(mediaId: number, type: "movie" | "tv", title: string, posterPath: string | null) {
     const session = await auth();
@@ -476,8 +484,6 @@ export async function getMediaMetadataBulk(items: { id: number; type: "movie" | 
     if (items.length === 0) return {};
 
     const tmdbIds = items.map(i => i.id);
-    const dbUrl = process.env.DATABASE_URL || "";
-    const isRailwayInternalDb = dbUrl.includes("railway.internal");
 
     const getRuntimeFromDetails = (details: any, type: "movie" | "tv") => {
         if (type === "movie") {
@@ -491,13 +497,11 @@ export async function getMediaMetadataBulk(items: { id: number; type: "movie" | 
         return (typeof runtime === "number" && runtime > 0) ? runtime : null;
     };
 
-    // Local development cannot reach Railway internal hosts.
-    // In that case, skip DB reads/writes and build metadata directly from TMDB.
-    if (isRailwayInternalDb) {
+    const buildMetadataFromTmdb = async (targetItems: { id: number; type: "movie" | "tv" }[]) => {
         const metadataMap: Record<number, { runtime?: number | null }> = {};
 
         const fetched = await Promise.all(
-            items.map(async (item) => {
+            targetItems.map(async (item) => {
                 try {
                     const details = await tmdb.getDetails(item.type, item.id.toString());
                     return { id: item.id, runtime: getRuntimeFromDetails(details, item.type) };
@@ -512,20 +516,29 @@ export async function getMediaMetadataBulk(items: { id: number; type: "movie" | 
         });
 
         return metadataMap;
-    }
+    };
 
     try {
         // 1. Get existing data from DB
-        const mediaItems = await prisma.mediaItem.findMany({
-            where: {
-                tmdbId: { in: tmdbIds },
-                runtime: { not: null }
-            },
-            select: {
-                tmdbId: true,
-                runtime: true
+        let mediaItems: Array<{ tmdbId: number; runtime: number | null }> = [];
+
+        try {
+            mediaItems = await prisma.mediaItem.findMany({
+                where: {
+                    tmdbId: { in: tmdbIds },
+                    runtime: { not: null }
+                },
+                select: {
+                    tmdbId: true,
+                    runtime: true
+                }
+            });
+        } catch (error) {
+            if (isPrismaConnectionError(error)) {
+                return buildMetadataFromTmdb(items);
             }
-        }).catch(() => []);
+            throw error;
+        }
 
         const metadataMap: Record<number, { runtime?: number | null }> = {};
         mediaItems.forEach(item => {
@@ -544,19 +557,25 @@ export async function getMediaMetadataBulk(items: { id: number; type: "movie" | 
 
                         const validRuntime = getRuntimeFromDetails(details, item.type);
 
-                        // Save/Update in DB for future requests
-                        await prisma.mediaItem.upsert({
-                            where: { tmdbId: item.id },
-                            update: { runtime: validRuntime },
-                            create: {
-                                tmdbId: item.id,
-                                type: item.type === "movie" ? "MOVIE" : "TV",
-                                title: details.title || details.name || "Tarih Bekleniyor",
-                                posterPath: details.poster_path,
-                                genres: details.genres?.map((g: any) => g.name) || [],
-                                runtime: validRuntime
+                        try {
+                            // Save/Update in DB for future requests when DB is reachable.
+                            await prisma.mediaItem.upsert({
+                                where: { tmdbId: item.id },
+                                update: { runtime: validRuntime },
+                                create: {
+                                    tmdbId: item.id,
+                                    type: item.type === "movie" ? "MOVIE" : "TV",
+                                    title: details.title || details.name || "Tarih Bekleniyor",
+                                    posterPath: details.poster_path,
+                                    genres: details.genres?.map((g: any) => g.name) || [],
+                                    runtime: validRuntime
+                                }
+                            });
+                        } catch (error) {
+                            if (!isPrismaConnectionError(error)) {
+                                throw error;
                             }
-                        });
+                        }
 
                         return { id: item.id, runtime: validRuntime };
                     } catch (e) {

@@ -84,8 +84,9 @@ export async function GET(request: NextRequest) {
 
     try {
         const session = await auth();
-        const watchedIds = session?.user?.id
-            ? await cachedGetWatchedIdsForUser(session.user.id)
+        const userId = session?.user?.id;
+        const watchedIds = userId
+            ? await cachedGetWatchedIdsForUser(userId)
             : [];
         const watchedIdSet = new Set(watchedIds);
 
@@ -181,14 +182,13 @@ export async function GET(request: NextRequest) {
             }
 
             if (currentCategory === "upcoming") {
-                const session = await auth();
                 const userItems: DiscoverResult[] = [];
 
-                if (session?.user?.id) {
+                if (userId) {
                     const [watching, toWatch] = await Promise.all([
                         prisma.toWatch.findMany({
                             where: {
-                                userId: session.user.id,
+                                userId,
                                 status: "WATCHING",
                                 media: { type: mediaType === "movie" ? "MOVIE" : "TV" },
                             },
@@ -196,7 +196,7 @@ export async function GET(request: NextRequest) {
                         }),
                         prisma.toWatch.findMany({
                             where: {
-                                userId: session.user.id,
+                                userId,
                                 status: "PLAN_TO_WATCH",
                                 media: { type: mediaType === "movie" ? "MOVIE" : "TV" },
                             },

@@ -289,6 +289,84 @@ a,
 .animate-scale-in {
   animation: scale-in 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
+
+@keyframes hero-fade-scale {
+  from {
+    opacity: 0;
+    transform: scale(1.04);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.animate-hero-fade-scale {
+  animation: hero-fade-scale 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes hero-ken-burns {
+  0% {
+    transform: scale(1);
+  }
+
+  100% {
+    transform: scale(1.12);
+  }
+}
+
+.animate-hero-ken-burns {
+  animation: hero-ken-burns 15s linear infinite alternate;
+}
+
+@keyframes hero-slide-down {
+  from {
+    opacity: 0;
+    transform: translateY(-16px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-hero-slide-down {
+  opacity: 0;
+  animation: hero-slide-down 0.6s ease-out forwards;
+}
+
+@keyframes hero-slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-hero-slide-up {
+  opacity: 0;
+  animation: hero-slide-up 0.6s ease-out forwards;
+}
+
+@keyframes hero-progress {
+  from {
+    transform: scaleX(0);
+  }
+
+  to {
+    transform: scaleX(1);
+  }
+}
+
+.animate-hero-progress {
+  animation: hero-progress 12s linear forwards;
+}
 @keyframes marquee {
   0% { transform: translateX(0); }
   100% { transform: translateX(-100%); }

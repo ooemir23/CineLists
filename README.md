@@ -18,7 +18,7 @@ cinelists, kullanıcıların film ve dizileri takip edebileceği, arkadaşlarıy
 - **Database**: PostgreSQL, Prisma ORM
 - **Authentication**: NextAuth.js 5
 - **API**: TMDB API
-- **Deployment**: Vercel
+- **Deployment**: Docker / Dokploy
 
 ## 📦 Kurulum
 
@@ -140,14 +140,7 @@ npm run analyze
 
 ## 🚀 Deployment
 
-### Vercel
-
-1. [Vercel](https://vercel.com)'a bağlanın
-2. Repository'yi import edin
-3. Environment değişkenlerini ayarlayın
-4. Deploy edin
-
-### Diğer Platformlar
+### Diğer Docker Ortamları
 
 ```bash
 npm run build

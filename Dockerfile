@@ -47,7 +47,7 @@ COPY --from=builder /app/start.sh ./
 # Create necessary directories with correct permissions.
 # Image optimization is disabled (unoptimized: true), so no image files are
 # written to cache — only small JSON fetch-cache entries. Ephemeral storage
-# is sufficient; no Railway Volume is needed.
+# is sufficient; a persistent volume is not required for normal operation.
 RUN mkdir -p /app/.prisma /app/.next/cache && \
     chown -R nextjs:nodejs /app && \
     chmod +x /app/start.sh
