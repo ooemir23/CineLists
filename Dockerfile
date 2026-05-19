@@ -28,10 +28,12 @@ RUN npm run build
 
 # Production stage
 FROM base AS runner
-RUN apt-get update && apt-get install -y openssl && npm install -g prisma@5.22.0 && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y openssl && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
 
 ENV NODE_ENV=production
+ENV NEXT_TELEMETRY_DISABLED=1
+ENV NODE_OPTIONS="--max-old-space-size=512"
 
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
@@ -40,9 +42,7 @@ RUN adduser --system --uid 1001 nextjs
 COPY --from=builder /app/public ./public
 COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./.next/static
-COPY --from=builder /app/prisma ./prisma
 COPY --from=builder /app/start.sh ./
-COPY --from=builder /app/.env* ./
 
 # Create necessary directories with correct permissions.
 # Image optimization is disabled (unoptimized: true), so no image files are

@@ -11,3 +11,5 @@ dist
 build
 out
 .husky
+.env
+.env.*
