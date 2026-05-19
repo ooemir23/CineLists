@@ -11,12 +11,32 @@ type LoginPageProps = {
 
 export default async function LoginPage({ searchParams }: LoginPageProps) {
     const params = await searchParams;
-    const errorMessage =
-        params.error === "invalid"
-            ? "E-posta veya şifre hatalı."
-            : params.error === "missing"
-                ? "E-posta ve şifre zorunludur."
-                : null;
+    let errorMessage = null;
+    if (params.error) {
+        switch (params.error) {
+            case "invalid":
+                errorMessage = "E-posta veya şifre hatalı.";
+                break;
+            case "missing":
+                errorMessage = "E-posta ve şifre zorunludur.";
+                break;
+            case "OAuthAccountNotLinked":
+                errorMessage = "Bu e-posta adresiyle zaten bir hesap var (Şifre ile kayıt olmuş olabilirsiniz). Lütfen e-posta ve şifrenizle giriş yapın ve ardından profil ayarlarından Google hesabınızı bağlayın.";
+                break;
+            case "AccessDenied":
+                errorMessage = "Giriş izni reddedildi. Google hesabınızın e-postası doğrulanmamış olabilir.";
+                break;
+            case "CallbackRouteError":
+                errorMessage = "Giriş işlemi sırasında sunucu hatası oluştu. Lütfen tekrar deneyin.";
+                break;
+            case "OAuthCallbackError":
+            case "OAuthCallback":
+                errorMessage = "Google servisinden kullanıcı bilgileri alınırken hata oluştu.";
+                break;
+            default:
+                errorMessage = "Giriş yapılırken bir hata oluştu. Lütfen daha sonra tekrar deneyin.";
+        }
+    }
 
     const successMessage = params.reset === "success"
         ? "Şifreniz başarıyla güncellendi. Yeni şifrenizle giriş yapabilirsiniz."

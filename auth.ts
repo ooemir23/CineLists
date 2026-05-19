@@ -14,6 +14,8 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
     session: { strategy: "jwt" },
     providers: [
         Google({
+            clientId: process.env.AUTH_GOOGLE_ID || process.env.GOOGLE_CLIENT_ID,
+            clientSecret: process.env.AUTH_GOOGLE_SECRET || process.env.GOOGLE_CLIENT_SECRET,
             allowDangerousEmailAccountLinking: true,
         }),
         Credentials({
@@ -104,5 +106,18 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
         async jwt({ token }) {
             return token;
         },
+    },
+    logger: {
+        error(code, ...message) {
+            console.error("Auth.js Error:", code, ...message);
+        },
+        warn(code) {
+            console.warn("Auth.js Warning:", code);
+        },
+        debug(code, ...message) {
+            if (process.env.NODE_ENV === "development" || process.env.NEXT_PUBLIC_DEBUG === "true") {
+                console.log("Auth.js Debug:", code, ...message);
+            }
+        }
     },
 });
