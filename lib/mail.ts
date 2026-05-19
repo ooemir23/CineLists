@@ -7,13 +7,13 @@ const FROM_EMAIL = process.env.MAIL_FROM || "CineLists <info@cinelists.com>";
 export const sendPasswordResetEmail = async (email: string, token: string) => {
     if (!resend) {
         console.error("RESEND_API_KEY eksik! Lütfen .env dosyanızı kontrol edin.");
-        return;
+        throw new Error("E-posta servisi yapilandirilmamis.");
     }
     const domain = process.env.NEXT_PUBLIC_APP_URL || process.env.AUTH_URL || process.env.NEXTAUTH_URL || "http://localhost:3000";
     const resetLink = `${domain}/reset-password?token=${token}`;
 
     try {
-        const data = await resend.emails.send({
+        const result = await resend.emails.send({
             from: FROM_EMAIL,
             to: email,
             subject: "Şifrenizi Sıfırlayın",
@@ -58,6 +58,10 @@ export const sendPasswordResetEmail = async (email: string, token: string) => {
                 </div>
             `,
         });
+        if (result.error) {
+            console.error("Password reset email provider error:", result.error);
+            throw new Error("E-posta gonderilemedi.");
+        }
     } catch (error) {
         console.error("Email sending error:", error);
         throw new Error("E-posta gönderilemedi.");
