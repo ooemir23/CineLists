@@ -20,8 +20,14 @@ import { Metadata } from "next";
 
 import { ActionNotification } from "@/components/media/action-notification";
 
+function isValidMediaRoute(type: string, id: string) {
+    return (type === "movie" || type === "tv") && /^\d+$/.test(id);
+}
+
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const { type, id } = await params;
+    if (!isValidMediaRoute(type, id)) return {};
+
     const data = await tmdb.getDetails(type as "movie" | "tv", id).catch(() => null);
     if (!data) return { title: "İçerik Bulunamadı" };
     const title = data.title || data.name;
@@ -40,6 +46,8 @@ type Props = { params: Promise<{ type: string; id: string }> };
 export default async function DetailsPage(props: Props) {
     const params = await props.params;
     const { type, id } = params;
+    if (!isValidMediaRoute(type, id)) notFound();
+
     const mediaId = parseInt(id);
     const session = await auth();
     const isAuthenticated = !!session?.user?.id;
@@ -48,8 +56,6 @@ export default async function DetailsPage(props: Props) {
     const safe = async <T,>(p: Promise<T>, fb: T): Promise<T> => {
         try { return await p; } catch { return fb; }
     };
-
-    if (type !== "movie" && type !== "tv") notFound();
 
     const [
         data, credits, videos, inWatchlist, watchStatus, watchedEpisodes,
@@ -390,4 +396,3 @@ export default async function DetailsPage(props: Props) {
         </div>
     );
 }
-
