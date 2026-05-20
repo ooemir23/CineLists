@@ -1,10 +1,17 @@
 "use client";
 
 import { signIn } from "next-auth/react";
-import { useEffect, useRef, useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 
 type GoogleCredentialResponse = {
     credential?: string;
+};
+
+type GooglePromptNotification = {
+    isNotDisplayed: () => boolean;
+    isSkippedMoment: () => boolean;
+    getNotDisplayedReason: () => string;
+    getSkippedReason: () => string;
 };
 
 type GoogleAccounts = {
@@ -16,17 +23,7 @@ type GoogleAccounts = {
             cancel_on_tap_outside?: boolean;
             use_fedcm_for_prompt?: boolean;
         }) => void;
-        renderButton: (
-            element: HTMLElement,
-            options: {
-                theme?: "outline" | "filled_blue" | "filled_black";
-                size?: "large" | "medium" | "small";
-                text?: "signin_with" | "signup_with" | "continue_with" | "signin";
-                shape?: "rectangular" | "pill" | "circle" | "square";
-                logo_alignment?: "left" | "center";
-                width?: number;
-            }
-        ) => void;
+        prompt: (momentListener?: (notification: GooglePromptNotification) => void) => void;
     };
 };
 
@@ -65,10 +62,10 @@ function loadGoogleScript() {
 }
 
 export function SocialAuth() {
-    const googleButtonRef = useRef<HTMLDivElement>(null);
     const [isPending, startTransition] = useTransition();
     const [googleReady, setGoogleReady] = useState(false);
     const [googleError, setGoogleError] = useState<string | null>(null);
+    const [googlePrompting, setGooglePrompting] = useState(false);
 
     useEffect(() => {
         let cancelled = false;
@@ -82,7 +79,7 @@ export function SocialAuth() {
                 if (!clientId) throw new Error("Google client id is missing.");
 
                 await loadGoogleScript();
-                if (cancelled || !window.google?.accounts?.id || !googleButtonRef.current) return;
+                if (cancelled || !window.google?.accounts?.id) return;
 
                 window.google.accounts.id.initialize({
                     client_id: clientId,
@@ -91,6 +88,7 @@ export function SocialAuth() {
                     use_fedcm_for_prompt: true,
                     callback: (response) => {
                         if (!response.credential) {
+                            setGooglePrompting(false);
                             setGoogleError("Google girişi tamamlanamadı.");
                             return;
                         }
@@ -102,6 +100,8 @@ export function SocialAuth() {
                                 redirect: false,
                             });
 
+                            setGooglePrompting(false);
+
                             if (result?.error) {
                                 setGoogleError("Google hesabı doğrulanamadı. Lütfen tekrar deneyin.");
                                 return;
@@ -112,15 +112,6 @@ export function SocialAuth() {
                     },
                 });
 
-                googleButtonRef.current.innerHTML = "";
-                window.google.accounts.id.renderButton(googleButtonRef.current, {
-                    theme: "outline",
-                    size: "large",
-                    text: "continue_with",
-                    shape: "rectangular",
-                    logo_alignment: "left",
-                    width: 180,
-                });
                 setGoogleReady(true);
             } catch (error) {
                 console.error("Google Identity Services setup failed:", error);
@@ -133,7 +124,32 @@ export function SocialAuth() {
         return () => {
             cancelled = true;
         };
-    }, []);
+    }, [startTransition]);
+
+    const handleGoogleClick = () => {
+        if (isPending || googlePrompting) return;
+
+        const googleAccounts = window.google?.accounts?.id;
+        if (!googleAccounts || !googleReady) {
+            setGoogleError("Google girişi şu anda hazırlanamadı.");
+            return;
+        }
+
+        setGoogleError(null);
+        setGooglePrompting(true);
+
+        try {
+            googleAccounts.prompt((notification) => {
+                if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
+                    setGooglePrompting(false);
+                }
+            });
+        } catch (error) {
+            console.error("Google prompt failed:", error);
+            setGooglePrompting(false);
+            setGoogleError("Google girişi şu anda hazırlanamadı.");
+        }
+    };
 
     const handleMailClick = () => {
         const emailInput = document.getElementById("email");
@@ -146,29 +162,41 @@ export function SocialAuth() {
     return (
         <div className="space-y-3">
             <div className="grid grid-cols-2 gap-3">
-                <div className="w-full min-h-[68px] flex items-center justify-center bg-white/5 rounded-xl border border-white/10 overflow-hidden">
-                    {!googleReady && (
-                        <span className="text-[10px] font-semibold uppercase text-white/50">
-                            Google yükleniyor
+                <button
+                    type="button"
+                    onClick={handleGoogleClick}
+                    disabled={isPending || googlePrompting || !googleReady}
+                    className="group w-full min-h-[96px] rounded-2xl border border-white/10 bg-[#1b2030] px-4 py-3 text-white shadow-[0_14px_35px_rgba(0,0,0,0.28)] transition-all hover:-translate-y-0.5 hover:border-white/20 hover:bg-[#21283a] disabled:opacity-60 disabled:hover:translate-y-0"
+                >
+                    <div className="flex h-full flex-col items-center justify-center gap-2">
+                        <img
+                            src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg"
+                            alt=""
+                            aria-hidden="true"
+                            className="h-8 w-8 select-none object-contain"
+                            draggable={false}
+                        />
+                        <span className="text-[11px] font-bold uppercase tracking-[0.16em] text-white/72">
+                            Google
                         </span>
-                    )}
-                    <div
-                        ref={googleButtonRef}
-                        className={isPending ? "pointer-events-none opacity-60" : ""}
-                    />
-                </div>
+                    </div>
+                </button>
 
                 <button
                     type="button"
                     onClick={handleMailClick}
                     disabled={isPending}
-                    className="w-full flex flex-col items-center justify-center gap-1 bg-white/5 text-white py-3 rounded-xl hover:bg-white/10 transition-colors border border-white/10 disabled:opacity-50"
+                    className="group w-full min-h-[92px] rounded-2xl border border-white/10 bg-[#1a1f2d] px-4 py-3 text-white shadow-[0_14px_35px_rgba(0,0,0,0.28)] transition-all hover:-translate-y-0.5 hover:border-white/20 hover:bg-[#202637] disabled:opacity-60 disabled:hover:translate-y-0"
                 >
-                    <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <rect width="20" height="16" x="2" y="4" rx="2" />
-                        <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
-                    </svg>
-                    <span className="text-[10px] font-semibold uppercase opacity-60">Mail</span>
+                    <div className="flex h-full flex-col items-center justify-center gap-1">
+                        <svg className="h-7 w-7 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                            <rect width="20" height="16" x="2" y="4" rx="2" />
+                            <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
+                        </svg>
+                        <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-white/70">
+                            Mail
+                        </span>
+                    </div>
                 </button>
             </div>
 
