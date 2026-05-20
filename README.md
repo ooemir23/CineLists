@@ -75,11 +75,26 @@ cinelists, kullanıcıların film ve dizileri takip edebileceği, arkadaşlarıy
 
 ## Dokploy Deploy
 
-GitHub'a `main` branch'i pushlandığında Dokploy deploy'unun otomatik tetiklenmesi için repository secret ekleyin:
+GitHub'a `main` branch'i pushlandığında Dokploy deploy'unun otomatik tetiklenmesi ve Docker Swarm service'in yenilenmesi için repository secrets ekleyin:
 
 ```text
 DOKPLOY_DEPLOY_WEBHOOK=https://.../api/deploy/...
+DOKPLOY_SSH_HOST=46.225.94.54
+DOKPLOY_SSH_USER=root
+DOKPLOY_SSH_PASSWORD=...
 ```
+
+SSH password yerine key kullanmak isterseniz `DOKPLOY_SSH_PASSWORD` yerine `DOKPLOY_SSH_PRIVATE_KEY` ekleyin.
+
+Varsayılan service ve image isimleri:
+
+```text
+DOKPLOY_SERVICE_NAME=cinelistscom-cinelists-xenqhn
+DOKPLOY_IMAGE_NAME=cinelistscom-cinelists-xenqhn:latest
+PRODUCTION_VERSION_URL=https://cinelists.com/api/version
+```
+
+Bunlar farklıysa GitHub repository variables olarak güncelleyin.
 
 Canlıda hangi container'ın servis verdiğini kontrol etmek için:
 

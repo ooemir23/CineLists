@@ -4,18 +4,65 @@ on:
   push:
     branches:
       - main
+  workflow_dispatch:
+
+concurrency:
+  group: dokploy-production
+  cancel-in-progress: true
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    env:
+      DOKPLOY_SERVICE_NAME: ${{ vars.DOKPLOY_SERVICE_NAME || 'cinelistscom-cinelists-xenqhn' }}
+      DOKPLOY_IMAGE_NAME: ${{ vars.DOKPLOY_IMAGE_NAME || 'cinelistscom-cinelists-xenqhn:latest' }}
+      PRODUCTION_VERSION_URL: ${{ vars.PRODUCTION_VERSION_URL || 'https://cinelists.com/api/version' }}
+
     steps:
-      - name: Trigger Dokploy deployment
+      - name: Trigger Dokploy build
         env:
           DOKPLOY_DEPLOY_WEBHOOK: ${{ secrets.DOKPLOY_DEPLOY_WEBHOOK }}
         run: |
           if [ -z "$DOKPLOY_DEPLOY_WEBHOOK" ]; then
-            echo "::notice::DOKPLOY_DEPLOY_WEBHOOK repository secret is not configured. Skipping Dokploy deployment."
-            exit 0
+            echo "::error::Missing DOKPLOY_DEPLOY_WEBHOOK repository secret."
+            exit 1
           fi
 
           curl --fail --silent --show-error --request POST "$DOKPLOY_DEPLOY_WEBHOOK"
+
+      - name: Wait for Dokploy image build
+        run: sleep 180
+
+      - name: Force Docker service refresh over SSH
+        env:
+          DOKPLOY_SSH_HOST: ${{ secrets.DOKPLOY_SSH_HOST }}
+          DOKPLOY_SSH_USER: ${{ secrets.DOKPLOY_SSH_USER }}
+          DOKPLOY_SSH_PRIVATE_KEY: ${{ secrets.DOKPLOY_SSH_PRIVATE_KEY }}
+          DOKPLOY_SSH_PASSWORD: ${{ secrets.DOKPLOY_SSH_PASSWORD }}
+        run: |
+          if [ -z "$DOKPLOY_SSH_HOST" ] || [ -z "$DOKPLOY_SSH_USER" ]; then
+            echo "::error::Missing DOKPLOY_SSH_HOST or DOKPLOY_SSH_USER repository secret."
+            exit 1
+          fi
+
+          if [ -n "$DOKPLOY_SSH_PRIVATE_KEY" ]; then
+            mkdir -p ~/.ssh
+            printf '%s\n' "$DOKPLOY_SSH_PRIVATE_KEY" > ~/.ssh/dokploy_key
+            chmod 600 ~/.ssh/dokploy_key
+
+            ssh -o StrictHostKeyChecking=no -i ~/.ssh/dokploy_key "$DOKPLOY_SSH_USER@$DOKPLOY_SSH_HOST" \
+              "docker service update --image '$DOKPLOY_IMAGE_NAME' --force '$DOKPLOY_SERVICE_NAME' && docker service ps '$DOKPLOY_SERVICE_NAME' --no-trunc"
+          elif [ -n "$DOKPLOY_SSH_PASSWORD" ]; then
+            sudo apt-get update
+            sudo apt-get install -y sshpass
+
+            sshpass -p "$DOKPLOY_SSH_PASSWORD" ssh -o StrictHostKeyChecking=no "$DOKPLOY_SSH_USER@$DOKPLOY_SSH_HOST" \
+              "docker service update --image '$DOKPLOY_IMAGE_NAME' --force '$DOKPLOY_SERVICE_NAME' && docker service ps '$DOKPLOY_SERVICE_NAME' --no-trunc"
+          else
+            echo "::error::Missing DOKPLOY_SSH_PRIVATE_KEY or DOKPLOY_SSH_PASSWORD repository secret."
+            exit 1
+          fi
+
+      - name: Verify production version endpoint
+        run: |
+          curl --fail --silent --show-error --retry 12 --retry-delay 10 "$PRODUCTION_VERSION_URL"
