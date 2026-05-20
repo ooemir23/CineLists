@@ -5,6 +5,10 @@ import { SocialAuth } from "@/components/auth/social-auth";
 import { PosterBackground } from "@/components/auth/poster-background";
 import { BrandLogo } from "@/components/layout/brand-logo";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+export const fetchCache = "force-no-store";
+
 type LoginPageProps = {
     searchParams: Promise<{ error?: string; reset?: string }>;
 };
