@@ -9,6 +9,7 @@ import {
   User,
   Users,
   Eye,
+  Heart,
 } from "lucide-react";
 
 export type NavItem = {
@@ -55,6 +56,14 @@ export const profileNavItems: NavItem[] = [
     icon: User,
     iconBgClass: "bg-amber-400/10",
     iconTextClass: "text-amber-400",
+  },
+  {
+    key: "taste-match",
+    href: "/taste-match",
+    label: "Zevk İkizleri",
+    icon: Heart,
+    iconBgClass: "bg-pink-400/10",
+    iconTextClass: "text-pink-400",
   },
   {
     key: "messages",
