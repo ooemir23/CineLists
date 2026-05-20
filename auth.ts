@@ -54,7 +54,7 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
     session: { strategy: "jwt" },
     providers: [
         Credentials({
-            id: "google",
+            id: "google-identity",
             name: "Google",
             credentials: {
                 credential: { label: "Credential", type: "text" },

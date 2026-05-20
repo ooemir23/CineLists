@@ -21,7 +21,7 @@ export async function GET() {
         googleSecretSource: process.env.AUTH_GOOGLE_SECRET ? "AUTH_GOOGLE_SECRET" : process.env.GOOGLE_CLIENT_SECRET ? "GOOGLE_CLIENT_SECRET" : process.env.GOOGLE_SECRET ? "GOOGLE_SECRET" : "MISSING",
         authUrl: process.env.AUTH_URL || "NOT SET",
         nextAuthUrl: process.env.NEXTAUTH_URL || "NOT SET",
-        expectedGoogleRedirectUri: authUrl === "NOT SET" ? "NOT SET" : `${authUrl.replace(/\/$/, "")}/api/auth/callback/google`,
+        expectedGoogleJavaScriptOrigin: authUrl === "NOT SET" ? "NOT SET" : authUrl.replace(/\/$/, ""),
         trustHost: process.env.AUTH_TRUST_HOST || "NOT SET",
         hasDatabaseUrl: !!process.env.DATABASE_URL,
         timestamp: new Date().toISOString(),

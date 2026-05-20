@@ -32,6 +32,9 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
             case "Configuration":
                 errorMessage = "Google giriş yapılandırmasında sunucu taraflı bir sorun var. Lütfen tekrar deneyin veya e-posta ile giriş yapın.";
                 break;
+            case "google-legacy-oauth":
+                errorMessage = "Eski Google giriş oturumu temizlendi. Lütfen Google butonuyla tekrar deneyin.";
+                break;
             case "OAuthCallbackError":
             case "OAuthCallback":
                 errorMessage = "Google servisinden kullanıcı bilgileri alınırken hata oluştu.";

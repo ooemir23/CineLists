@@ -95,7 +95,7 @@ export function SocialAuth() {
 
                         setGoogleError(null);
                         startTransition(async () => {
-                            const result = await signIn("google", {
+                            const result = await signIn("google-identity", {
                                 credential: response.credential,
                                 redirect: false,
                             });
