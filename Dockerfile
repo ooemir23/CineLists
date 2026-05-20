@@ -23,6 +23,14 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
+# Dummy env vars for next build - NextAuth requires these at build time
+# Real values are injected by Dokploy at runtime and override these
+ENV AUTH_SECRET="build-time-placeholder-secret-do-not-use"
+ENV AUTH_GOOGLE_ID="build-time-placeholder"
+ENV AUTH_GOOGLE_SECRET="build-time-placeholder"
+ENV AUTH_URL="http://localhost:3000"
+ENV AUTH_TRUST_HOST="true"
+
 # Build only (no migration - that runs at startup)
 RUN npm run build
 
@@ -50,9 +58,6 @@ COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
 COPY --from=builder /app/node_modules/prisma ./node_modules/prisma
 
 # Create necessary directories with correct permissions.
-# Image optimization is disabled (unoptimized: true), so no image files are
-# written to cache — only small JSON fetch-cache entries. Ephemeral storage
-# is sufficient; a persistent volume is not required for normal operation.
 RUN mkdir -p /app/.prisma /app/.next/cache && \
     chown -R nextjs:nodejs /app && \
     chmod +x /app/start.sh

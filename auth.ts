@@ -6,25 +6,10 @@ import { prisma } from "@/lib/prisma";
 import { authConfig } from "./auth.config";
 import bcrypt from "bcryptjs";
 
-// Ensure AUTH_SECRET is available at startup
+// Read env vars at module load time
 const authSecret = process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET;
-if (!authSecret && process.env.NODE_ENV === "production") {
-    console.error("[Auth] FATAL: AUTH_SECRET is not set in production!");
-}
-
 const googleClientId = process.env.AUTH_GOOGLE_ID || process.env.GOOGLE_CLIENT_ID;
 const googleClientSecret = process.env.AUTH_GOOGLE_SECRET || process.env.GOOGLE_CLIENT_SECRET;
-
-if (process.env.NODE_ENV === "production") {
-    console.log("[Auth] Config check:", {
-        hasSecret: !!authSecret,
-        hasGoogleId: !!googleClientId,
-        hasGoogleSecret: !!googleClientSecret,
-        googleIdPrefix: googleClientId?.substring(0, 10) + "...",
-        authUrl: process.env.AUTH_URL || process.env.NEXTAUTH_URL,
-        trustHost: true,
-    });
-}
 
 export const { auth, handlers, signIn, signOut } = NextAuth({
     ...authConfig,
