@@ -1,6 +1,6 @@
 "use client";
 
-import { signInWithGoogle } from "@/lib/auth-actions";
+import { signIn } from "next-auth/react";
 import { useTransition } from "react";
 
 export function SocialAuth() {
@@ -16,7 +16,7 @@ export function SocialAuth() {
 
     const handleGoogleLogin = () => {
         startTransition(() => {
-            signInWithGoogle().catch((error) => {
+            signIn("google", { redirectTo: "/onboarding" }).catch((error) => {
                 console.error("Google login failed:", error);
             });
         });
