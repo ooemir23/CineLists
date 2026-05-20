@@ -33,21 +33,6 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
             clientId: googleClientId,
             clientSecret: googleClientSecret,
             allowDangerousEmailAccountLinking: true,
-            authorization: {
-                params: {
-                    prompt: "consent",
-                    access_type: "offline",
-                    response_type: "code",
-                },
-            },
-            profile(profile) {
-                return {
-                    id: profile.sub,
-                    name: profile.name,
-                    email: profile.email,
-                    image: profile.picture,
-                };
-            },
         }),
         Credentials({
             id: "email",
