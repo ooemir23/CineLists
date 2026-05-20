@@ -5,10 +5,6 @@ import { SocialAuth } from "@/components/auth/social-auth";
 import { PosterBackground } from "@/components/auth/poster-background";
 import { BrandLogo } from "@/components/layout/brand-logo";
 
-export const dynamic = "force-dynamic";
-export const revalidate = 0;
-export const fetchCache = "force-no-store";
-
 type LoginPageProps = {
     searchParams: Promise<{ error?: string; reset?: string }>;
 };
@@ -32,12 +28,6 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
                 break;
             case "CallbackRouteError":
                 errorMessage = "Giriş işlemi sırasında sunucu hatası oluştu. Lütfen tekrar deneyin.";
-                break;
-            case "Configuration":
-                errorMessage = "Google giriş yapılandırmasında sunucu taraflı bir sorun var. Lütfen tekrar deneyin veya e-posta ile giriş yapın.";
-                break;
-            case "google-legacy-oauth":
-                errorMessage = "Eski Google giriş oturumu temizlendi. Lütfen Google butonuyla tekrar deneyin.";
                 break;
             case "OAuthCallbackError":
             case "OAuthCallback":

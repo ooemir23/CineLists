@@ -1,5 +1,7 @@
 import NextAuth from "next-auth";
+import Google from "next-auth/providers/google";
 import Credentials from "next-auth/providers/credentials";
+import { PrismaAdapter } from "@auth/prisma-adapter";
 import { prisma } from "@/lib/prisma";
 import { authConfig } from "./auth.config";
 import bcrypt from "bcryptjs";
@@ -14,74 +16,37 @@ function firstEnv(...keys: string[]) {
 
 const authSecret = firstEnv("AUTH_SECRET", "NEXTAUTH_SECRET");
 const googleClientId = firstEnv("AUTH_GOOGLE_ID", "GOOGLE_CLIENT_ID", "GOOGLE_ID");
+const googleClientSecret = firstEnv("AUTH_GOOGLE_SECRET", "GOOGLE_CLIENT_SECRET", "GOOGLE_SECRET");
 
-if (!googleClientId) {
-    console.warn("[Auth] Google Identity Services env is incomplete. Expected AUTH_GOOGLE_ID.");
-}
-
-type GoogleTokenInfo = {
-    aud?: string;
-    sub?: string;
-    email?: string;
-    email_verified?: boolean | string;
-    name?: string;
-    picture?: string;
-};
-
-async function verifyGoogleCredential(credential: string) {
-    if (!googleClientId) return null;
-
-    const response = await fetch(`https://oauth2.googleapis.com/tokeninfo?id_token=${encodeURIComponent(credential)}`, {
-        cache: "no-store",
-    });
-
-    if (!response.ok) return null;
-
-    const profile = (await response.json()) as GoogleTokenInfo;
-    const isVerified = profile.email_verified === true || profile.email_verified === "true";
-
-    if (profile.aud !== googleClientId || !profile.sub || !profile.email || !isVerified) {
-        return null;
-    }
-
-    return profile;
+if (!googleClientId || !googleClientSecret) {
+    console.warn("[Auth] Google provider env is incomplete. Expected AUTH_GOOGLE_ID/AUTH_GOOGLE_SECRET.");
 }
 
 export const { auth, handlers, signIn, signOut } = NextAuth({
     ...authConfig,
+    adapter: PrismaAdapter(prisma),
     secret: authSecret,
     trustHost: true,
     session: { strategy: "jwt" },
     providers: [
-        Credentials({
-            id: "google-identity",
-            name: "Google",
-            credentials: {
-                credential: { label: "Credential", type: "text" },
+        Google({
+            clientId: googleClientId,
+            clientSecret: googleClientSecret,
+            allowDangerousEmailAccountLinking: true,
+            authorization: {
+                params: {
+                    prompt: "consent",
+                    access_type: "offline",
+                    response_type: "code",
+                },
             },
-            async authorize(credentials) {
-                const credential = credentials?.credential as string | undefined;
-                if (!credential) return null;
-
-                const profile = await verifyGoogleCredential(credential);
-                if (!profile) return null;
-                const email = profile.email;
-                if (!email) return null;
-
-                const user = await prisma.user.upsert({
-                    where: { email },
-                    update: {
-                        name: profile.name || undefined,
-                        image: profile.picture || undefined,
-                    },
-                    create: {
-                        email,
-                        name: profile.name || email.split("@")[0],
-                        image: profile.picture || undefined,
-                    },
-                });
-
-                return user;
+            profile(profile) {
+                return {
+                    id: profile.sub,
+                    name: profile.name,
+                    email: profile.email,
+                    image: profile.picture,
+                };
             },
         }),
         Credentials({
@@ -117,7 +82,7 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
             console.log("[Auth] signIn callback:", {
                 provider: account?.provider,
                 email: user?.email,
-                hasSub: !!(profile as any)?.sub || !!user?.id,
+                hasSub: !!(profile as any)?.sub,
             });
 
             return true;
@@ -151,15 +116,27 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
             }
             return session;
         },
-        async jwt({ token, user }) {
-            if (user?.id) {
-                token.sub = user.id;
-                token.name = user.name;
-                token.email = user.email;
-                token.picture = user.image;
-            }
-
+        async jwt({ token }) {
             return token;
+        },
+    },
+    events: {
+        async signIn({ user, account, profile }) {
+            if (account?.provider !== "google" || !user.id) return;
+
+            try {
+                const googleProfile = profile as { name?: string; picture?: string } | undefined;
+
+                await prisma.user.update({
+                    where: { id: user.id },
+                    data: {
+                        name: user.name || googleProfile?.name || undefined,
+                        image: user.image || googleProfile?.picture || undefined,
+                    },
+                });
+            } catch (error) {
+                console.error("[Auth] Google profile sync error:", error);
+            }
         },
     },
     logger: {

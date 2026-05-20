@@ -116,6 +116,10 @@ export async function handleSignOut() {
     await signOut({ redirectTo: "/" });
 }
 
+export async function signInWithGoogle() {
+    await signIn("google", { redirectTo: "/onboarding" });
+}
+
 export async function requestPasswordReset(formData: FormData) {
     const email = String(formData.get("email") || "").trim();
 
