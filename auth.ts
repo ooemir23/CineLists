@@ -13,10 +13,18 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
     secret: process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET,
     session: { strategy: "jwt" },
     providers: [
-        Google({
+Google({
             clientId: process.env.AUTH_GOOGLE_ID || process.env.GOOGLE_CLIENT_ID,
             clientSecret: process.env.AUTH_GOOGLE_SECRET || process.env.GOOGLE_CLIENT_SECRET,
             allowDangerousEmailAccountLinking: true,
+            profile(profile) {
+                return {
+                    id: profile.sub,
+                    name: profile.name,
+                    email: profile.email,
+                    image: profile.picture,
+                };
+            },
         }),
         Credentials({
             id: "email",
@@ -48,15 +56,19 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
     callbacks: {
         ...authConfig.callbacks,
         async signIn({ user, account, profile }) {
-            // Google ile giriş yapılırken profil verilerini senkronize et
             if (account?.provider === "google" && profile?.sub) {
                 try {
-                    // Use email as the unique identifier — it is always present for
-                    // Google OAuth users and is set on the record created by
-                    // PrismaAdapter, making it reliable for both new and existing users.
                     if (user.email) {
                         const googleImage = (profile as any).picture || user.image;
                         const googleName = user.name || (profile as any).name;
+
+                        console.log("[Google Auth] Profile sync:", { 
+                            email: user.email, 
+                            name: googleName, 
+                            image: googleImage,
+                            hasProfilePicture: !!(profile as any).picture,
+                            hasUserImage: !!user.image
+                        });
 
                         await prisma.user.upsert({
                             where: { email: user.email },
@@ -73,7 +85,6 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
                     }
                 } catch (error) {
                     console.error("Google profil senkronizasyon hatası:", error);
-                    // Hata olsa bile giriş işlemine devam et (return true)
                 }
             }
             return true;
