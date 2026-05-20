@@ -51,6 +51,7 @@ cinelists, kullanıcıların film ve dizileri takip edebileceği, arkadaşlarıy
    DATABASE_URL="postgresql://username:password@localhost:5432/cinelists"
    AUTH_SECRET="your-secret-key"
    NEXTAUTH_SECRET="your-secret-key"
+   AUTH_URL="http://localhost:3000"
    NEXTAUTH_URL="http://localhost:3000"
    TMDB_API_KEY="your-tmdb-api-key"
    AUTH_GOOGLE_ID="your-google-client-id"
@@ -156,8 +157,11 @@ npm run start
    - `DATABASE_URL`
    - `TMDB_API_KEY`
    - `AUTH_SECRET` veya `NEXTAUTH_SECRET`
-   - `NEXTAUTH_URL`
-5. Eğer build aşamasında env gerekiyorsa Dokploy’un `build args` veya `build secrets` alanlarını kullanın.
+   - `AUTH_URL` ve `NEXTAUTH_URL` (`https://cinelists.com` gibi public domain)
+   - `AUTH_GOOGLE_ID` ve `AUTH_GOOGLE_SECRET`
+5. Google Cloud Console > OAuth Client > Authorized redirect URIs alanında prod callback adresini ekleyin:
+   `https://cinelists.com/api/auth/callback/google`
+6. Eğer build aşamasında env gerekiyorsa Dokploy’un `build args` veya `build secrets` alanlarını kullanın.
 
 ## 🤝 Katkıda Bulunma
 

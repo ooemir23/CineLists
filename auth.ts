@@ -6,9 +6,21 @@ import { prisma } from "@/lib/prisma";
 import { authConfig } from "./auth.config";
 import bcrypt from "bcryptjs";
 
-const authSecret = process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET;
-const googleClientId = process.env.AUTH_GOOGLE_ID || process.env.GOOGLE_CLIENT_ID;
-const googleClientSecret = process.env.AUTH_GOOGLE_SECRET || process.env.GOOGLE_CLIENT_SECRET;
+function firstEnv(...keys: string[]) {
+    for (const key of keys) {
+        const value = process.env[key]?.trim();
+        if (value) return value;
+    }
+    return undefined;
+}
+
+const authSecret = firstEnv("AUTH_SECRET", "NEXTAUTH_SECRET");
+const googleClientId = firstEnv("AUTH_GOOGLE_ID", "GOOGLE_CLIENT_ID", "GOOGLE_ID");
+const googleClientSecret = firstEnv("AUTH_GOOGLE_SECRET", "GOOGLE_CLIENT_SECRET", "GOOGLE_SECRET");
+
+if (!googleClientId || !googleClientSecret) {
+    console.warn("[Auth] Google provider env is incomplete. Expected AUTH_GOOGLE_ID/AUTH_GOOGLE_SECRET.");
+}
 
 export const { auth, handlers, signIn, signOut } = NextAuth({
     ...authConfig,
@@ -16,36 +28,6 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
     secret: authSecret,
     trustHost: true,
     session: { strategy: "jwt" },
-    cookies: {
-        pkceCodeVerifier: {
-            name: "next-auth.pkce.code_verifier",
-            options: {
-                httpOnly: true,
-                sameSite: "lax",
-                path: "/",
-                secure: process.env.NODE_ENV === "production",
-                maxAge: 900
-            }
-        },
-        state: {
-            name: "next-auth.state",
-            options: {
-                httpOnly: true,
-                sameSite: "lax",
-                path: "/",
-                secure: process.env.NODE_ENV === "production",
-                maxAge: 900
-            }
-        },
-        callbackUrl: {
-            name: "next-auth.callback-url",
-            options: {
-                sameSite: "lax",
-                path: "/",
-                secure: process.env.NODE_ENV === "production",
-            }
-        }
-    },
     providers: [
         Google({
             clientId: googleClientId,
@@ -103,30 +85,6 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
                 hasSub: !!(profile as any)?.sub,
             });
 
-            if (account?.provider === "google" && profile?.sub) {
-                try {
-                    if (user.email) {
-                        const googleImage = (profile as any).picture || user.image;
-                        const googleName = user.name || (profile as any).name;
-
-                        await prisma.user.upsert({
-                            where: { email: user.email },
-                            update: {
-                                name: googleName || undefined,
-                                image: googleImage || undefined,
-                            },
-                            create: {
-                                email: user.email,
-                                name: googleName || undefined,
-                                image: googleImage || undefined,
-                            },
-                        });
-                    }
-                } catch (error) {
-                    console.error("[Auth] Google profile sync error:", error);
-                    // Don't block sign in on sync failure
-                }
-            }
             return true;
         },
 
@@ -160,6 +118,25 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
         },
         async jwt({ token }) {
             return token;
+        },
+    },
+    events: {
+        async signIn({ user, account, profile }) {
+            if (account?.provider !== "google" || !user.id) return;
+
+            try {
+                const googleProfile = profile as { name?: string; picture?: string } | undefined;
+
+                await prisma.user.update({
+                    where: { id: user.id },
+                    data: {
+                        name: user.name || googleProfile?.name || undefined,
+                        image: user.image || googleProfile?.picture || undefined,
+                    },
+                });
+            } catch (error) {
+                console.error("[Auth] Google profile sync error:", error);
+            }
         },
     },
     logger: {
