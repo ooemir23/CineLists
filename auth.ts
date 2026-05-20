@@ -1,7 +1,6 @@
 import NextAuth from "next-auth";
 import Google from "next-auth/providers/google";
 import Credentials from "next-auth/providers/credentials";
-import { PrismaAdapter } from "@auth/prisma-adapter";
 import { prisma } from "@/lib/prisma";
 import { authConfig } from "./auth.config";
 import bcrypt from "bcryptjs";
@@ -24,7 +23,6 @@ if (!googleClientId || !googleClientSecret) {
 
 export const { auth, handlers, signIn, signOut } = NextAuth({
     ...authConfig,
-    adapter: PrismaAdapter(prisma),
     secret: authSecret,
     trustHost: true,
     session: { strategy: "jwt" },
@@ -101,27 +99,30 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
             }
             return session;
         },
-        async jwt({ token }) {
-            return token;
-        },
-    },
-    events: {
-        async signIn({ user, account, profile }) {
-            if (account?.provider !== "google" || !user.id) return;
-
-            try {
+        async jwt({ token, user, account, profile }) {
+            if (account?.provider === "google" && user?.email) {
                 const googleProfile = profile as { name?: string; picture?: string } | undefined;
 
-                await prisma.user.update({
-                    where: { id: user.id },
-                    data: {
+                const dbUser = await prisma.user.upsert({
+                    where: { email: user.email },
+                    update: {
                         name: user.name || googleProfile?.name || undefined,
                         image: user.image || googleProfile?.picture || undefined,
                     },
+                    create: {
+                        email: user.email,
+                        name: user.name || googleProfile?.name || user.email.split("@")[0],
+                        image: user.image || googleProfile?.picture || undefined,
+                    },
                 });
-            } catch (error) {
-                console.error("[Auth] Google profile sync error:", error);
+
+                token.sub = dbUser.id;
+                token.name = dbUser.name;
+                token.email = dbUser.email;
+                token.picture = dbUser.image;
             }
+
+            return token;
         },
     },
     logger: {

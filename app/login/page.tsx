@@ -29,6 +29,9 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
             case "CallbackRouteError":
                 errorMessage = "Giriş işlemi sırasında sunucu hatası oluştu. Lütfen tekrar deneyin.";
                 break;
+            case "Configuration":
+                errorMessage = "Google giriş yapılandırmasında sunucu taraflı bir sorun var. Lütfen tekrar deneyin veya e-posta ile giriş yapın.";
+                break;
             case "OAuthCallbackError":
             case "OAuthCallback":
                 errorMessage = "Google servisinden kullanıcı bilgileri alınırken hata oluştu.";
