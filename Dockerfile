@@ -47,9 +47,8 @@ COPY --from=builder /app/.next/static ./.next/static
 COPY --from=builder /app/start.sh ./
 # Copy prisma schema and migrations so we can run migrate deploy at startup
 COPY --from=builder /app/prisma ./prisma
-COPY --from=builder /app/node_modules/.bin/prisma ./node_modules/.bin/prisma
-COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
-COPY --from=builder /app/node_modules/prisma ./node_modules/prisma
+# Prisma CLI needs adjacent WASM assets from node_modules/.bin during startup migrations.
+COPY --from=builder /app/node_modules ./node_modules
 
 # Create necessary directories with correct permissions.
 RUN mkdir -p /app/.prisma /app/.next/cache && \
