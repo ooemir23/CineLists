@@ -21,45 +21,28 @@ if (!googleClientId) {
 
 type GoogleTokenInfo = {
     aud?: string;
-    audience?: string;
-    issued_to?: string;
     sub?: string;
-    user_id?: string;
     email?: string;
     email_verified?: boolean | string;
     name?: string;
     picture?: string;
 };
 
-async function verifyGoogleAccessToken(accessToken: string) {
+async function verifyGoogleCredential(credential: string) {
     if (!googleClientId) return null;
 
-    const tokenInfoResponse = await fetch(`https://oauth2.googleapis.com/tokeninfo?access_token=${encodeURIComponent(accessToken)}`, {
+    const response = await fetch(`https://oauth2.googleapis.com/tokeninfo?id_token=${encodeURIComponent(credential)}`, {
         cache: "no-store",
     });
 
-    if (!tokenInfoResponse.ok) return null;
+    if (!response.ok) return null;
 
-    const tokenInfo = (await tokenInfoResponse.json()) as GoogleTokenInfo;
-    const tokenAudience = tokenInfo.aud || tokenInfo.audience || tokenInfo.issued_to;
-
-    if (tokenAudience !== googleClientId) {
-        return null;
-    }
-
-    const profileResponse = await fetch("https://www.googleapis.com/oauth2/v3/userinfo", {
-        cache: "no-store",
-        headers: {
-            Authorization: `Bearer ${accessToken}`,
-        },
-    });
-
-    if (!profileResponse.ok) return null;
-
-    const profile = (await profileResponse.json()) as GoogleTokenInfo;
+    const profile = (await response.json()) as GoogleTokenInfo;
     const isVerified = profile.email_verified === true || profile.email_verified === "true";
 
-    if (!profile.sub || !profile.email || !isVerified) return null;
+    if (profile.aud !== googleClientId || !profile.sub || !profile.email || !isVerified) {
+        return null;
+    }
 
     return profile;
 }
@@ -74,13 +57,13 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
             id: "google-identity",
             name: "Google",
             credentials: {
-                accessToken: { label: "Access Token", type: "text" },
+                credential: { label: "Credential", type: "text" },
             },
             async authorize(credentials) {
-                const accessToken = credentials?.accessToken as string | undefined;
-                if (!accessToken) return null;
+                const credential = credentials?.credential as string | undefined;
+                if (!credential) return null;
 
-                const profile = await verifyGoogleAccessToken(accessToken);
+                const profile = await verifyGoogleCredential(credential);
                 if (!profile) return null;
                 const email = profile.email;
                 if (!email) return null;
