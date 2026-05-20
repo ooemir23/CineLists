@@ -169,13 +169,29 @@ export function SocialAuth() {
                     className="group w-full min-h-[96px] rounded-2xl border border-white/10 bg-[#1b2030] px-4 py-3 text-white shadow-[0_14px_35px_rgba(0,0,0,0.28)] transition-all hover:-translate-y-0.5 hover:border-white/20 hover:bg-[#21283a] disabled:opacity-60 disabled:hover:translate-y-0"
                 >
                     <div className="flex h-full flex-col items-center justify-center gap-2">
-                        <img
-                            src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg"
-                            alt=""
+                        <svg
+                            className="h-9 w-9 select-none"
+                            viewBox="0 0 48 48"
                             aria-hidden="true"
-                            className="h-8 w-8 select-none object-contain"
-                            draggable={false}
-                        />
+                            focusable="false"
+                        >
+                            <path
+                                fill="#FFC107"
+                                d="M43.611 20.083H42V20H24v8h11.303C33.655 32.659 29.353 36 24 36c-6.627 0-12-5.373-12-12s5.373-12 12-12c3.055 0 5.827 1.152 7.927 3.036l5.657-5.657C34.873 6.053 29.708 4 24 4 12.955 4 4 12.955 4 24s8.955 20 20 20 20-8.955 20-20c0-1.341-.138-2.65-.389-3.917z"
+                            />
+                            <path
+                                fill="#FF3D00"
+                                d="M6.306 14.691l6.571 4.819C14.655 15.108 18.961 12 24 12c3.055 0 5.827 1.152 7.927 3.036l5.657-5.657C34.873 6.053 29.708 4 24 4c-7.682 0-14.373 4.337-17.694 10.691z"
+                            />
+                            <path
+                                fill="#4CAF50"
+                                d="M24 44c5.562 0 10.618-2.122 14.425-5.575l-6.658-5.476C29.905 34.808 27.115 36 24 36c-5.331 0-9.821-3.387-11.427-8.074l-6.53 5.024C9.337 39.556 16.096 44 24 44z"
+                            />
+                            <path
+                                fill="#1976D2"
+                                d="M43.611 20.083H42V20H24v8h11.303c-1.287 3.771-4.037 6.774-7.536 8.449l.006-.004 6.658 5.476C33.94 41.523 44 34 44 24c0-1.341-.138-2.65-.389-3.917z"
+                            />
+                        </svg>
                         <span className="text-[11px] font-bold uppercase tracking-[0.16em] text-white/72">
                             Google
                         </span>
