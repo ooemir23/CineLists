@@ -17,6 +17,7 @@ function firstEnv(...keys: string[]) {
 const authSecret = firstEnv("AUTH_SECRET", "NEXTAUTH_SECRET");
 const googleClientId = firstEnv("AUTH_GOOGLE_ID", "GOOGLE_CLIENT_ID", "GOOGLE_ID");
 const googleClientSecret = firstEnv("AUTH_GOOGLE_SECRET", "GOOGLE_CLIENT_SECRET", "GOOGLE_SECRET");
+const isProduction = process.env.NODE_ENV === "production";
 
 if (!googleClientId || !googleClientSecret) {
     console.warn("[Auth] Google provider env is incomplete. Expected AUTH_GOOGLE_ID/AUTH_GOOGLE_SECRET.");
@@ -141,12 +142,24 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
     },
     logger: {
         error(code, ...message) {
-            console.error("[Auth.js Error]", code, JSON.stringify(message, null, 2));
+            console.error("[Auth.js Error]", code, message.map((rawItem) => {
+                const item = rawItem as unknown;
+                if (item instanceof Error) {
+                    return {
+                        name: item.name,
+                        message: item.message,
+                        stack: item.stack,
+                    };
+                }
+
+                return typeof item === "string" ? item : "[details hidden]";
+            }));
         },
         warn(code) {
             console.warn("[Auth.js Warning]", code);
         },
         debug(code, ...message) {
+            if (isProduction) return;
             console.log("[Auth.js Debug]", code, ...message);
         }
     },
