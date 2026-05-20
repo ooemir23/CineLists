@@ -3,6 +3,14 @@ set -e
 
 echo "=== CineLists Starting ==="
 
+if [ -z "$NEXT_SERVER_ACTIONS_ENCRYPTION_KEY" ]; then
+  if [ -n "$AUTH_SECRET" ]; then
+    export NEXT_SERVER_ACTIONS_ENCRYPTION_KEY="$AUTH_SECRET"
+  elif [ -n "$NEXTAUTH_SECRET" ]; then
+    export NEXT_SERVER_ACTIONS_ENCRYPTION_KEY="$NEXTAUTH_SECRET"
+  fi
+fi
+
 echo "--- Runtime Environment Check ---"
 echo "NODE_ENV=$NODE_ENV"
 echo "AUTH_URL=$AUTH_URL"
