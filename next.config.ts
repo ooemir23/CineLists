@@ -1,5 +1,23 @@
 import type { NextConfig } from "next";
 
+function firstEnv(...keys: string[]) {
+  for (const key of keys) {
+    const value = process.env[key]?.trim();
+    if (value) return value;
+  }
+
+  return undefined;
+}
+
+const deploymentId = firstEnv(
+  "APP_DEPLOYMENT_ID",
+  "APP_COMMIT_SHA",
+  "SOURCE_COMMIT",
+  "GITHUB_SHA",
+  "COMMIT_SHA",
+  "GIT_HASH"
+);
+
 // Bundle analyzer — enabled when ANALYZE=true (e.g. `npm run analyze`)
 // Wrapped in a try/catch so the build never fails if the package is absent.
 let withBundleAnalyzer = (config: NextConfig) => config;
@@ -18,6 +36,10 @@ try {
 const nextConfig: NextConfig = {
   // Standalone output for Docker deployment
   output: 'standalone',
+
+  deploymentId,
+
+  generateBuildId: async () => deploymentId ?? null,
 
   // Image optimization
   images: {

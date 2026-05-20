@@ -83,6 +83,27 @@ Canlıda hangi container'ın servis verdiğini kontrol etmek için:
 https://cinelists.com/api/version
 ```
 
+### Dokploy container refresh settings
+
+For Dockerfile deployments, pass these build args in Dokploy so each deploy gets a
+stable build identity and Server Actions do not drift between rolling containers:
+
+```text
+APP_COMMIT_SHA=<git commit sha>
+APP_BUILD_DATE=<build timestamp>
+APP_DEPLOYMENT_ID=<git commit sha>
+NEXT_SERVER_ACTIONS_ENCRYPTION_KEY=<stable base64 32-byte key>
+```
+
+`NEXT_SERVER_ACTIONS_ENCRYPTION_KEY` must be the same value at build time for
+every deploy. Generate it once, save it as a Dokploy secret/build arg, and do not
+change it unless you intentionally want all open clients to reload.
+
+After a deploy, verify that `https://cinelists.com/api/version` returns the new
+`commit`, `deploymentId`, `nextBuildId`, and `container` values. If Dokploy still
+shows the old container, use a Dockerfile deployment instead of native deployment
+and trigger a clean redeploy.
+
 ## 📜 Scripts
 
 - `npm run dev` - Development server
