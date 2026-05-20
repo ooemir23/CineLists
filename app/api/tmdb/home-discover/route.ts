@@ -29,6 +29,13 @@ type DiscoverResult = {
         image?: string | null;
         type?: string | null;
     };
+    watch_providers?: {
+        flatrate?: {
+            provider_id: number;
+            provider_name: string;
+            logo_path?: string | null;
+        }[];
+    } | null;
 };
 
 function asDiscoverResult(item: Record<string, unknown>, mediaType: "movie" | "tv"): DiscoverResult {
@@ -284,9 +291,34 @@ export async function GET(request: NextRequest) {
 
         const pagedResults = results.slice(0, limit);
 
+        const resultsWithProviders = await Promise.all(
+            pagedResults.map(async (item) => {
+                if (!item.media_type || (item.media_type !== "movie" && item.media_type !== "tv")) {
+                    return item;
+                }
+
+                try {
+                    const providerData = await tmdb.getWatchProviders(item.media_type, item.id.toString());
+                    const trProviders = providerData?.results?.TR?.flatrate;
+
+                    return {
+                        ...item,
+                        watch_providers: trProviders?.length
+                            ? { flatrate: trProviders.slice(0, 5) }
+                            : null,
+                    };
+                } catch {
+                    return {
+                        ...item,
+                        watch_providers: null,
+                    };
+                }
+            })
+        );
+
         return NextResponse.json(
             {
-                results: pagedResults,
+                results: resultsWithProviders,
                 hasMore: results.length > limit,
             },
             {

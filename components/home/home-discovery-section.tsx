@@ -792,13 +792,13 @@ export function HomeDiscoverySection() {
                 <>
                     <div className={cn(
                         "animate-in fade-in duration-700",
-                        viewMode === "grid" && "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-x-3 gap-y-5 sm:gap-6",
-                        viewMode === "compact" && "grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-7 xl:grid-cols-9 gap-x-2 gap-y-4 md:gap-4 justify-items-center",
+                        viewMode === "grid" && "relative overflow-visible grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-x-3 gap-y-5 sm:gap-6",
+                        viewMode === "compact" && "relative overflow-visible grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-7 xl:grid-cols-9 gap-x-2 gap-y-4 md:gap-4 justify-items-center",
                         viewMode === "list" && "flex flex-col gap-3 md:gap-4"
                     )}>
                         {items.map((item, idx) => (
                             viewMode === "grid" || viewMode === "compact" ? (
-                                <div key={`${item.id}-${idx}`} className="transition-all duration-300">
+                                <div key={`${item.id}-${idx}`} className="relative overflow-visible transition-all duration-300">
                                     <MediaCard
                                         id={item.id}
                                         title={item.title || item.name || "Tarih Bekleniyor"}
