@@ -159,9 +159,11 @@ npm run start
    - `AUTH_SECRET` veya `NEXTAUTH_SECRET`
    - `AUTH_URL` ve `NEXTAUTH_URL` (`https://cinelists.com` gibi public domain)
    - `AUTH_GOOGLE_ID`
-5. Google Cloud Console > OAuth Client > Authorized JavaScript origins alanında prod domainlerini ekleyin:
+5. Uygulama container'ını başlatmadan önce migration'ları ayrı bir adım olarak çalıştırın:
+   `npm run db:migrate:deploy`
+6. Google Cloud Console > OAuth Client > Authorized JavaScript origins alanında prod domainlerini ekleyin:
    `https://cinelists.com` ve `https://www.cinelists.com`
-6. Eğer build aşamasında env gerekiyorsa Dokploy’un `build args` veya `build secrets` alanlarını kullanın.
+7. Eğer build aşamasında env gerekiyorsa Dokploy’un `build args` veya `build secrets` alanlarını kullanın.
 
 ## 🤝 Katkıda Bulunma
 

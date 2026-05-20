@@ -25,7 +25,7 @@ COPY . .
 
 # Environment variables are provided by Dokploy at runtime
 
-# Build only (no migration - that runs at startup)
+# Build only; database migrations are run separately from the web container
 RUN npm run build
 
 # Production stage
@@ -45,10 +45,6 @@ COPY --from=builder /app/public ./public
 COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./.next/static
 COPY --from=builder /app/start.sh ./
-# Copy prisma schema and migrations so we can run migrate deploy at startup
-COPY --from=builder /app/prisma ./prisma
-# Prisma CLI needs adjacent WASM assets from node_modules/.bin during startup migrations.
-COPY --from=builder /app/node_modules ./node_modules
 
 # Create necessary directories with correct permissions.
 RUN mkdir -p /app/.prisma /app/.next/cache && \
