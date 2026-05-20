@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 
-// Debug endpoint to verify auth configuration at runtime
-// DELETE THIS FILE after debugging is complete
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 export async function GET() {
     const config = {
         NODE_ENV: process.env.NODE_ENV,

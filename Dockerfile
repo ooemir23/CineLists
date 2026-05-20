@@ -23,13 +23,7 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
-# Dummy env vars for next build - NextAuth requires these at build time
-# Real values are injected by Dokploy at runtime and override these
-ENV AUTH_SECRET="build-time-placeholder-secret-do-not-use"
-ENV AUTH_GOOGLE_ID="build-time-placeholder"
-ENV AUTH_GOOGLE_SECRET="build-time-placeholder"
-ENV AUTH_URL="http://localhost:3000"
-ENV AUTH_TRUST_HOST="true"
+# Environment variables are provided by Dokploy at runtime
 
 # Build only (no migration - that runs at startup)
 RUN npm run build

@@ -6,10 +6,15 @@ import { prisma } from "@/lib/prisma";
 import { authConfig } from "./auth.config";
 import bcrypt from "bcryptjs";
 
-// Read env vars at module load time
-const authSecret = process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET;
-const googleClientId = process.env.AUTH_GOOGLE_ID || process.env.GOOGLE_CLIENT_ID;
-const googleClientSecret = process.env.AUTH_GOOGLE_SECRET || process.env.GOOGLE_CLIENT_SECRET;
+// Read env vars dynamically to prevent Next.js from inlining them during build
+function getEnv(key: string) {
+    if (typeof process === 'undefined') return undefined;
+    return process.env[key];
+}
+
+const authSecret = getEnv("AUTH_SECRET") || getEnv("NEXTAUTH_SECRET") || "fallback_secret_for_build_only";
+const googleClientId = getEnv("AUTH_GOOGLE_ID") || getEnv("GOOGLE_CLIENT_ID") || "fallback_id";
+const googleClientSecret = getEnv("AUTH_GOOGLE_SECRET") || getEnv("GOOGLE_CLIENT_SECRET") || "fallback_secret";
 
 export const { auth, handlers, signIn, signOut } = NextAuth({
     ...authConfig,
