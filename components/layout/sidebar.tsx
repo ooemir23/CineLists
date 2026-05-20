@@ -154,6 +154,18 @@ export function Sidebar({ user }: SidebarProps) {
                     Rozetler
                 </Link>
                 <Link
+                    href="/taste-match"
+                    className={cn(
+                        "flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 group text-sm font-medium",
+                        pathname === "/taste-match"
+                            ? "bg-primary/20 text-primary shadow-[0_0_20px_-5px_var(--primary)]"
+                            : "text-neutral-400 hover:text-white hover:bg-white/5"
+                    )}
+                >
+                    <Heart className={cn("w-5 h-5", pathname === "/taste-match" ? "text-primary" : "text-neutral-500 group-hover:text-white")} />
+                    Zevk İkizleri
+                </Link>
+                <Link
                     href="/profile"
                     className={cn(
                         "flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 group text-sm font-medium",

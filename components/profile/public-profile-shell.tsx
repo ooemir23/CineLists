@@ -9,6 +9,7 @@ import { GenreTags } from "./genre-tags";
 import { RecentMedia } from "./recent-media";
 import { AchievementsBadges } from "./achievements-badges";
 import { ActivityHeatmap } from "./activity-heatmap";
+import { TasteMatchCard } from "./taste-match-card";
 
 import { WatchCountries } from "./watch-countries";
 import { PeriodStats } from "./period-stats";
@@ -136,6 +137,16 @@ export function PublicProfileShell({
           watchedCount={user._count.watched}
           averageRating={averageRating}
         />
+
+        {/* Taste Match - Only show for other users */}
+        {currentUserId && currentUserId !== user.id && (
+          <TasteMatchCard
+            currentUserId={currentUserId}
+            profileUserId={user.id}
+            profileUserName={user.name || "Kullanıcı"}
+            profileUserImage={user.image}
+          />
+        )}
 
         {/* Period Stats */}
         {user.showStats && (

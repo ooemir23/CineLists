@@ -3,256 +3,301 @@
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 
-// ============================================
-// TASTE MATCH / ZEVK UYUMU
-// ============================================
+interface GenreMatch {
+    genre: string;
+    user1Count: number;
+    user2Count: number;
+    common: number;
+    similarity: number;
+}
 
 interface TasteMatchResult {
-  overallScore: number; // 0-100
-  movieScore: number;
-  tvScore: number;
-  genreOverlap: { genre: string; myCount: number; theirCount: number }[];
-  commonWatched: {
-    mediaId: string;
-    title: string;
-    posterPath: string | null;
-    myRating: number | null;
-    theirRating: number | null;
-  }[];
-  ratingCorrelation: number; // -1 to 1
-  totalCommon: number;
-  myTotalWatched: number;
-  theirTotalWatched: number;
+    score: number;
+    commonWatched: number;
+    commonRated: number;
+    genreMatches: GenreMatch[];
+    commonMedia: Array<{
+        tmdbId: number;
+        title: string;
+        posterPath: string | null;
+        user1Rating: number | null;
+        user2Rating: number | null;
+    }>;
+    recommendations: Array<{
+        tmdbId: number;
+        title: string;
+        posterPath: string | null;
+        type: "movie" | "tv";
+    }>;
 }
 
-export async function calculateTasteMatch(
-  userId1: string,
-  userId2: string
-): Promise<TasteMatchResult | null> {
-  // Her iki kullanıcının izlediklerini al
-  const [user1Watched, user2Watched] = await Promise.all([
-    prisma.watched.findMany({
-      where: { userId: userId1 },
-      include: { media: true },
-    }),
-    prisma.watched.findMany({
-      where: { userId: userId2 },
-      include: { media: true },
-    }),
-  ]);
-
-  if (user1Watched.length === 0 || user2Watched.length === 0) {
-    return null;
-  }
-
-  // Ortak izlenenleri bul
-  const user2MediaIds = new Set(user2Watched.map((w) => w.mediaId));
-  const commonWatched = user1Watched.filter((w) => user2MediaIds.has(w.mediaId));
-
-  // Ortak izlenen detayları
-  const commonDetails = commonWatched.map((w1) => {
-    const w2 = user2Watched.find((w) => w.mediaId === w1.mediaId)!;
-    return {
-      mediaId: w1.mediaId,
-      title: w1.media.title,
-      posterPath: w1.media.posterPath,
-      myRating: w1.rating,
-      theirRating: w2.rating,
-    };
-  });
-
-  // Puan korelasyonu hesapla (sadece ikisinin de puanladığı filmler)
-  const bothRated = commonDetails.filter(
-    (c) => c.myRating !== null && c.theirRating !== null
-  );
-
-  let ratingCorrelation = 0;
-  if (bothRated.length >= 3) {
-    const myRatings = bothRated.map((c) => c.myRating!);
-    const theirRatings = bothRated.map((c) => c.theirRating!);
-    ratingCorrelation = pearsonCorrelation(myRatings, theirRatings);
-  }
-
-  // Tür örtüşmesi hesapla
-  const user1Genres = getGenreCounts(user1Watched);
-  const user2Genres = getGenreCounts(user2Watched);
-  const allGenres = new Set([...Object.keys(user1Genres), ...Object.keys(user2Genres)]);
-
-  const genreOverlap = Array.from(allGenres)
-    .filter((genre) => user1Genres[genre] && user2Genres[genre])
-    .map((genre) => ({
-      genre,
-      myCount: user1Genres[genre] || 0,
-      theirCount: user2Genres[genre] || 0,
-    }))
-    .sort((a, b) => Math.min(b.myCount, b.theirCount) - Math.min(a.myCount, a.theirCount));
-
-  // Film ve dizi skorları
-  const user1Movies = user1Watched.filter((w) => w.media.type === "MOVIE");
-  const user2Movies = user2Watched.filter((w) => w.media.type === "MOVIE");
-  const user1TV = user1Watched.filter((w) => w.media.type === "TV");
-  const user2TV = user2Watched.filter((w) => w.media.type === "TV");
-
-  const movieScore = calculateCategoryScore(user1Movies, user2Movies);
-  const tvScore = calculateCategoryScore(user1TV, user2TV);
-
-  // Genel skor hesapla
-  // Ağırlıklar: %30 ortak izlenen, %30 puan korelasyonu, %20 tür örtüşmesi, %20 kategori skorları
-  const overlapScore = Math.min(
-    (commonWatched.length / Math.min(user1Watched.length, user2Watched.length)) * 100,
-    100
-  );
-  const correlationScore = Math.max(0, (ratingCorrelation + 1) / 2) * 100;
-  const genreScore =
-    allGenres.size > 0
-      ? (genreOverlap.length / allGenres.size) * 100
-      : 0;
-  const categoryScore = (movieScore + tvScore) / 2;
-
-  const overallScore = Math.round(
-    overlapScore * 0.3 +
-    correlationScore * 0.3 +
-    genreScore * 0.2 +
-    categoryScore * 0.2
-  );
-
-  return {
-    overallScore: Math.min(100, Math.max(0, overallScore)),
-    movieScore,
-    tvScore,
-    genreOverlap: genreOverlap.slice(0, 10),
-    commonWatched: commonDetails,
-    ratingCorrelation,
-    totalCommon: commonWatched.length,
-    myTotalWatched: user1Watched.length,
-    theirTotalWatched: user2Watched.length,
-  };
+async function getUserWatchedMedia(userId: string) {
+    return prisma.watched.findMany({
+        where: { userId },
+        include: {
+            media: {
+                select: {
+                    tmdbId: true,
+                    title: true,
+                    posterPath: true,
+                    genres: true,
+                    type: true,
+                },
+            },
+        },
+    });
 }
 
-// Pearson korelasyon katsayısı
-function pearsonCorrelation(x: number[], y: number[]): number {
-  const n = x.length;
-  if (n === 0) return 0;
-
-  const sumX = x.reduce((a, b) => a + b, 0);
-  const sumY = y.reduce((a, b) => a + b, 0);
-  const sumXY = x.reduce((acc, xi, i) => acc + xi * y[i], 0);
-  const sumX2 = x.reduce((acc, xi) => acc + xi * xi, 0);
-  const sumY2 = y.reduce((acc, yi) => acc + yi * yi, 0);
-
-  const numerator = n * sumXY - sumX * sumY;
-  const denominator = Math.sqrt((n * sumX2 - sumX * sumX) * (n * sumY2 - sumY * sumY));
-
-  if (denominator === 0) return 0;
-  return numerator / denominator;
+async function getUserRatings(userId: string) {
+    return prisma.watched.findMany({
+        where: { userId, rating: { not: null } },
+        include: {
+            media: {
+                select: {
+                    tmdbId: true,
+                    title: true,
+                    posterPath: true,
+                    genres: true,
+                    type: true,
+                },
+            },
+        },
+    });
 }
 
-// Tür sayımlarını hesapla
-function getGenreCounts(
-  watched: { media: { genres: string[] } }[]
-): Record<string, number> {
-  const counts: Record<string, number> = {};
-  for (const w of watched) {
-    for (const genre of w.media.genres) {
-      counts[genre] = (counts[genre] || 0) + 1;
+function calculateGenreSimilarity(user1Genres: Record<string, number>, user2Genres: Record<string, number>) {
+    const allGenres = new Set([...Object.keys(user1Genres), ...Object.keys(user2Genres)]);
+    const genreMatches: GenreMatch[] = [];
+
+    for (const genre of allGenres) {
+        const u1Count = user1Genres[genre] || 0;
+        const u2Count = user2Genres[genre] || 0;
+        const common = Math.min(u1Count, u2Count);
+
+        genreMatches.push({
+            genre,
+            user1Count: u1Count,
+            user2Count: u2Count,
+            common,
+            similarity: common > 0 ? (common / Math.max(u1Count, u2Count)) * 100 : 0,
+        });
     }
-  }
-  return counts;
+
+    return genreMatches.sort((a, b) => b.similarity - a.similarity);
 }
 
-// Kategori skoru hesapla
-function calculateCategoryScore(
-  user1Items: { mediaId: string }[],
-  user2Items: { mediaId: string }[]
+function calculateRatingCorrelation(
+    user1Ratings: Map<string, number>,
+    user2Ratings: Map<string, number>
 ): number {
-  if (user1Items.length === 0 || user2Items.length === 0) return 0;
+    const commonIds = [...user1Ratings.keys()].filter((id) => user2Ratings.has(id));
 
-  const user2Ids = new Set(user2Items.map((i) => i.mediaId));
-  const common = user1Items.filter((i) => user2Ids.has(i.mediaId)).length;
+    if (commonIds.length < 3) return 0;
 
-  return Math.min(
-    100,
-    Math.round((common / Math.min(user1Items.length, user2Items.length)) * 100)
-  );
+    let sumDiff1 = 0;
+    let sumDiff2 = 0;
+
+    for (const id of commonIds) {
+        const r1 = user1Ratings.get(id)!;
+        const r2 = user2Ratings.get(id)!;
+        sumDiff1 += r1 - r2;
+        sumDiff2 += Math.abs(r1 - r2);
+    }
+
+    const avgDiff = sumDiff1 / commonIds.length;
+    const avgAbsDiff = sumDiff2 / commonIds.length;
+
+    return Math.max(0, 100 - (avgAbsDiff * 10));
 }
 
-// ============================================
-// ZEVK UYUMUNA GÖRE ÖNERİLER
-// ============================================
+export async function calculateTasteMatch(userId1: string, userId2: string): Promise<TasteMatchResult | null> {
+    if (userId1 === userId2) return null;
 
-export async function getTasteBasedRecommendations(userId: string) {
-  // En çok takip edilen kullanıcıların izlediklerini al
-  const following = await prisma.follow.findMany({
-    where: { followerId: userId },
-    select: { followingId: true },
-  });
+    const [watched1, watched2, ratings1, ratings2] = await Promise.all([
+        getUserWatchedMedia(userId1),
+        getUserWatchedMedia(userId2),
+        getUserRatings(userId1),
+        getUserRatings(userId2),
+    ]);
 
-  if (following.length === 0) return [];
+    const watched1Set = new Set(watched1.map((w) => w.mediaId));
+    const watched2Set = new Set(watched2.map((w) => w.mediaId));
 
-  // Kullanıcının izledikleri
-  const myWatched = await prisma.watched.findMany({
-    where: { userId },
-    select: { mediaId: true },
-  });
-  const myWatchedIds = new Set(myWatched.map((w) => w.mediaId));
+    const commonWatchedIds = [...watched1Set].filter((id) => watched2Set.has(id));
 
-  // Takip edilenlerin izlediklerini al (kullanıcının izlemedikleri)
-  const friendWatched = await prisma.watched.findMany({
-    where: {
-      userId: { in: following.map((f) => f.followingId) },
-      mediaId: { notIn: Array.from(myWatchedIds) },
-      rating: { gte: 7 }, // Sadece yüksek puanlı olanlar
-    },
-    include: {
-      media: true,
-      user: {
-        select: { name: true, image: true },
-      },
-    },
-    orderBy: { rating: "desc" },
-    take: 50,
-  });
+    const commonMedia = commonWatchedIds
+        .map((mediaId) => {
+            const w1 = watched1.find((w) => w.mediaId === mediaId);
+            const w2 = watched2.find((w) => w.mediaId === mediaId);
+            return {
+                tmdbId: w1!.media.tmdbId,
+                title: w1!.media.title,
+                posterPath: w1!.media.posterPath,
+                user1Rating: w1?.rating || null,
+                user2Rating: w2?.rating || null,
+            };
+        })
+        .slice(0, 20);
 
-  // Benzersiz medyaları grupla
-  const mediaMap = new Map<string, {
-    media: typeof friendWatched[0]["media"];
-    recommendedBy: { name: string | null; image: string | null; rating: number | null }[];
-    avgRating: number;
-  }>();
+    const commonRated = commonMedia.filter((m) => m.user1Rating !== null && m.user2Rating !== null).length;
 
-  for (const w of friendWatched) {
-    const existing = mediaMap.get(w.mediaId);
-    if (existing) {
-      existing.recommendedBy.push({
-        name: w.user.name,
-        image: w.user.image,
-        rating: w.rating,
-      });
-      // Ortalama puanı güncelle
-      const allRatings = existing.recommendedBy
-        .map((r) => r.rating)
-        .filter((r): r is number => r !== null);
-      if (allRatings.length > 0) {
-        existing.avgRating =
-          allRatings.reduce((a, b) => a + b, 0) / allRatings.length;
-      }
-    } else {
-      mediaMap.set(w.mediaId, {
-        media: w.media,
-        recommendedBy: [
-          { name: w.user.name, image: w.user.image, rating: w.rating },
-        ],
-        avgRating: w.rating || 0,
-      });
+    const genreCounts1: Record<string, number> = {};
+    const genreCounts2: Record<string, number> = {};
+
+    watched1.forEach((w) => {
+        w.media.genres.forEach((g) => {
+            genreCounts1[g] = (genreCounts1[g] || 0) + 1;
+        });
+    });
+
+    watched2.forEach((w) => {
+        w.media.genres.forEach((g) => {
+            genreCounts2[g] = (genreCounts2[g] || 0) + 1;
+        });
+    });
+
+    const genreMatches = calculateGenreSimilarity(genreCounts1, genreCounts2);
+
+    const ratingsMap1 = new Map<string, number>(ratings1.map((r) => [r.mediaId, r.rating!]));
+    const ratingsMap2 = new Map<string, number>(ratings2.map((r) => [r.mediaId, r.rating!]));
+    const ratingCorrelation = calculateRatingCorrelation(ratingsMap1, ratingsMap2);
+
+    const commonCount = commonWatchedIds.length;
+    const totalCount = Math.max(1, watched1.length + watched2.length - commonCount);
+    const watchedOverlap = (commonCount / totalCount) * 100;
+
+    const genreScore =
+        genreMatches.length > 0
+            ? genreMatches
+                  .filter((g) => g.common > 0)
+                  .slice(0, 5)
+                  .reduce((sum, g) => sum + g.similarity, 0) / Math.min(5, genreMatches.filter((g) => g.common > 0).length || 1)
+            : 0;
+
+    let finalScore = (watchedOverlap * 0.3) + (genreScore * 0.3) + (ratingCorrelation * 0.4);
+
+    if (commonWatchedIds.length < 3) {
+        finalScore = finalScore * (commonWatchedIds.length / 3);
     }
-  }
 
-  // Skora göre sırala (arkadaş sayısı * ortalama puan)
-  return Array.from(mediaMap.values())
-    .sort(
-      (a, b) =>
-        b.recommendedBy.length * b.avgRating -
-        a.recommendedBy.length * a.avgRating
-    )
-    .slice(0, 20);
+    finalScore = Math.min(100, Math.max(0, Math.round(finalScore)));
+
+    const recommendations = await getRecommendationsFromSimilarUsers(userId1, userId2, commonWatchedIds);
+
+    return {
+        score: finalScore,
+        commonWatched: commonWatchedIds.length,
+        commonRated,
+        genreMatches: genreMatches.filter((g) => g.common > 0).slice(0, 6),
+        commonMedia: commonMedia.slice(0, 10),
+        recommendations,
+    };
+}
+
+async function getRecommendationsFromSimilarUsers(
+    userId1: string,
+    userId2: string,
+    excludeIds: string[]
+) {
+    const user2Watched = await prisma.watched.findMany({
+        where: { userId: userId2, rating: { gte: 7 } },
+        include: { media: { select: { tmdbId: true, title: true, posterPath: true, type: true } } },
+        take: 20,
+    });
+
+    return user2Watched
+        .filter((w) => !excludeIds.includes(w.mediaId))
+        .map((w) => ({
+            tmdbId: w.media.tmdbId,
+            title: w.media.title,
+            posterPath: w.media.posterPath,
+            type: w.media.type === "MOVIE" ? "movie" as const : "tv" as const,
+        }));
+}
+
+export async function getTopTasteMatches(userId: string, limit: number = 10) {
+    const userWatched = await prisma.watched.findMany({
+        where: { userId },
+        select: { mediaId: true },
+    });
+
+    const watchedMediaIds = userWatched.map((w) => w.mediaId);
+
+    const similarUsers = await prisma.watched.groupBy({
+        by: ["userId"],
+        where: {
+            mediaId: { in: watchedMediaIds },
+            userId: { not: userId },
+        },
+        _count: { mediaId: true },
+        orderBy: { _count: { mediaId: "desc" } },
+        take: limit * 2,
+    });
+
+    const results: Array<{ userId: string; name: string | null; image: string | null; score: number }> = [];
+
+    for (const similar of similarUsers) {
+        if (results.length >= limit) break;
+
+        const match = await calculateTasteMatch(userId, similar.userId);
+        if (match && match.score > 20) {
+            const user = await prisma.user.findUnique({
+                where: { id: similar.userId },
+                select: { name: true, image: true },
+            });
+
+            results.push({
+                userId: similar.userId,
+                name: user?.name || null,
+                image: user?.image || null,
+                score: match.score,
+            });
+        }
+    }
+
+    return results.sort((a, b) => b.score - a.score).slice(0, limit);
+}
+
+export async function getMyTasteProfile() {
+    const session = await auth();
+    if (!session?.user?.id) return null;
+
+    const [watched, ratings, genres] = await Promise.all([
+        prisma.watched.findMany({
+            where: { userId: session.user.id },
+            include: { media: { select: { genres: true, type: true } } },
+        }),
+        prisma.watched.findMany({
+            where: { userId: session.user.id, rating: { not: null } },
+            select: { rating: true },
+        }),
+        prisma.watched.findMany({
+            where: { userId: session.user.id },
+            include: { media: { select: { genres: true } } },
+        }),
+    ]);
+
+    const genreCounts: Record<string, number> = {};
+    genres.forEach((g) => {
+        g.media.genres.forEach((genre) => {
+            genreCounts[genre] = (genreCounts[genre] || 0) + 1;
+        });
+    });
+
+    const avgRating =
+        ratings.length > 0
+            ? ratings.reduce((sum, r) => sum + (r.rating || 0), 0) / ratings.length
+            : 0;
+
+    return {
+        totalWatched: watched.length,
+        totalRated: ratings.length,
+        averageRating: Math.round(avgRating * 10) / 10,
+        favoriteGenres: Object.entries(genreCounts)
+            .sort(([, a], [, b]) => b - a)
+            .slice(0, 5)
+            .map(([genre, count]) => ({ genre, count })),
+        movieCount: watched.filter((w) => w.media.type === "MOVIE").length,
+        tvCount: watched.filter((w) => w.media.type === "TV").length,
+    };
 }
