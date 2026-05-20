@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 
 // Debug endpoint to verify auth configuration at runtime
-// Remove this in production after debugging
+// DELETE THIS FILE after debugging is complete
 export async function GET() {
     const config = {
         NODE_ENV: process.env.NODE_ENV,
