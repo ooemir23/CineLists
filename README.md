@@ -73,6 +73,20 @@ cinelists, kullanıcıların film ve dizileri takip edebileceği, arkadaşlarıy
 
    [http://localhost:3000](http://localhost:3000) adresinden uygulamaya erişebilirsiniz.
 
+## Dokploy Deploy
+
+GitHub'a `main` branch'i pushlandığında Dokploy deploy'unun otomatik tetiklenmesi için repository secret ekleyin:
+
+```text
+DOKPLOY_DEPLOY_WEBHOOK=https://.../api/deploy/...
+```
+
+Canlıda hangi container'ın servis verdiğini kontrol etmek için:
+
+```text
+https://cinelists.com/api/version
+```
+
 ## 📜 Scripts
 
 - `npm run dev` - Development server

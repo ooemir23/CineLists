@@ -1,0 +1,21 @@
+name: Deploy to Dokploy
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Dokploy deployment
+        env:
+          DOKPLOY_DEPLOY_WEBHOOK: ${{ secrets.DOKPLOY_DEPLOY_WEBHOOK }}
+        run: |
+          if [ -z "$DOKPLOY_DEPLOY_WEBHOOK" ]; then
+            echo "::error::Missing DOKPLOY_DEPLOY_WEBHOOK repository secret."
+            exit 1
+          fi
+
+          curl --fail --silent --show-error --request POST "$DOKPLOY_DEPLOY_WEBHOOK"

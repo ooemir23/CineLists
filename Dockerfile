@@ -33,9 +33,14 @@ FROM base AS runner
 RUN apt-get update && apt-get install -y openssl && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
 
+ARG APP_COMMIT_SHA=unknown
+ARG APP_BUILD_DATE=unknown
+
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV NODE_OPTIONS="--max-old-space-size=512"
+ENV APP_COMMIT_SHA=$APP_COMMIT_SHA
+ENV APP_BUILD_DATE=$APP_BUILD_DATE
 
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
