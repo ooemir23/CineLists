@@ -6,50 +6,44 @@ import { prisma } from "@/lib/prisma";
 import { authConfig } from "./auth.config";
 import bcrypt from "bcryptjs";
 
+// Ensure AUTH_SECRET is available at startup
+const authSecret = process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET;
+if (!authSecret && process.env.NODE_ENV === "production") {
+    console.error("[Auth] FATAL: AUTH_SECRET is not set in production!");
+}
+
+const googleClientId = process.env.AUTH_GOOGLE_ID || process.env.GOOGLE_CLIENT_ID;
+const googleClientSecret = process.env.AUTH_GOOGLE_SECRET || process.env.GOOGLE_CLIENT_SECRET;
+
+if (process.env.NODE_ENV === "production") {
+    console.log("[Auth] Config check:", {
+        hasSecret: !!authSecret,
+        hasGoogleId: !!googleClientId,
+        hasGoogleSecret: !!googleClientSecret,
+        googleIdPrefix: googleClientId?.substring(0, 10) + "...",
+        authUrl: process.env.AUTH_URL || process.env.NEXTAUTH_URL,
+        trustHost: true,
+    });
+}
+
 export const { auth, handlers, signIn, signOut } = NextAuth({
     ...authConfig,
     adapter: PrismaAdapter(prisma),
+    secret: authSecret,
     trustHost: true,
     session: { strategy: "jwt" },
-    cookies: {
-        sessionToken: {
-            name: process.env.NODE_ENV === "production"
-                ? "__Secure-next-auth.session-token"
-                : "next-auth.session-token",
-            options: {
-                httpOnly: true,
-                sameSite: "lax",
-                path: "/",
-                secure: process.env.NODE_ENV === "production",
-            },
-        },
-        callbackUrl: {
-            name: process.env.NODE_ENV === "production"
-                ? "__Secure-next-auth.callback-url"
-                : "next-auth.callback-url",
-            options: {
-                sameSite: "lax",
-                path: "/",
-                secure: process.env.NODE_ENV === "production",
-            },
-        },
-        csrfToken: {
-            name: process.env.NODE_ENV === "production"
-                ? "__Host-next-auth.csrf-token"
-                : "next-auth.csrf-token",
-            options: {
-                httpOnly: true,
-                sameSite: "lax",
-                path: "/",
-                secure: process.env.NODE_ENV === "production",
-            },
-        },
-    },
     providers: [
-Google({
-            clientId: process.env.AUTH_GOOGLE_ID || process.env.GOOGLE_CLIENT_ID,
-            clientSecret: process.env.AUTH_GOOGLE_SECRET || process.env.GOOGLE_CLIENT_SECRET,
+        Google({
+            clientId: googleClientId,
+            clientSecret: googleClientSecret,
             allowDangerousEmailAccountLinking: true,
+            authorization: {
+                params: {
+                    prompt: "consent",
+                    access_type: "offline",
+                    response_type: "code",
+                },
+            },
             profile(profile) {
                 return {
                     id: profile.sub,
@@ -89,19 +83,17 @@ Google({
     callbacks: {
         ...authConfig.callbacks,
         async signIn({ user, account, profile }) {
+            console.log("[Auth] signIn callback:", {
+                provider: account?.provider,
+                email: user?.email,
+                hasSub: !!(profile as any)?.sub,
+            });
+
             if (account?.provider === "google" && profile?.sub) {
                 try {
                     if (user.email) {
                         const googleImage = (profile as any).picture || user.image;
                         const googleName = user.name || (profile as any).name;
-
-                        console.log("[Google Auth] Profile sync:", { 
-                            email: user.email, 
-                            name: googleName, 
-                            image: googleImage,
-                            hasProfilePicture: !!(profile as any).picture,
-                            hasUserImage: !!user.image
-                        });
 
                         await prisma.user.upsert({
                             where: { email: user.email },
@@ -117,7 +109,8 @@ Google({
                         });
                     }
                 } catch (error) {
-                    console.error("Google profil senkronizasyon hatası:", error);
+                    console.error("[Auth] Google profile sync error:", error);
+                    // Don't block sign in on sync failure
                 }
             }
             return true;
@@ -127,22 +120,26 @@ Google({
             if (token.sub && session.user) {
                 session.user.id = token.sub;
 
-                const dbUser = await prisma.user.findUnique({
-                    where: { id: token.sub },
-                    select: {
-                        hasCompletedOnboarding: true,
-                        isSuspended: true,
-                        name: true,
-                        image: true,
-                    }
-                });
+                try {
+                    const dbUser = await prisma.user.findUnique({
+                        where: { id: token.sub },
+                        select: {
+                            hasCompletedOnboarding: true,
+                            isSuspended: true,
+                            name: true,
+                            image: true,
+                        }
+                    });
 
-                if (dbUser) {
-                    (session.user as any).hasCompletedOnboarding = dbUser.hasCompletedOnboarding;
-                    (session.user as any).isSuspended = dbUser.isSuspended;
-                    // Session'da güncel profil verilerini tut
-                    session.user.name = dbUser.name;
-                    session.user.image = dbUser.image;
+                    if (dbUser) {
+                        (session.user as any).hasCompletedOnboarding = dbUser.hasCompletedOnboarding;
+                        (session.user as any).isSuspended = dbUser.isSuspended;
+                        // Session'da güncel profil verilerini tut
+                        session.user.name = dbUser.name;
+                        session.user.image = dbUser.image;
+                    }
+                } catch (error) {
+                    console.error("[Auth] Session DB lookup error:", error);
                 }
             }
             return session;
@@ -153,15 +150,13 @@ Google({
     },
     logger: {
         error(code, ...message) {
-            console.error("Auth.js Error:", code, ...message);
+            console.error("[Auth.js Error]", code, JSON.stringify(message, null, 2));
         },
         warn(code) {
-            console.warn("Auth.js Warning:", code);
+            console.warn("[Auth.js Warning]", code);
         },
         debug(code, ...message) {
-            if (process.env.NODE_ENV === "development" || process.env.NEXT_PUBLIC_DEBUG === "true") {
-                console.log("Auth.js Debug:", code, ...message);
-            }
+            console.log("[Auth.js Debug]", code, ...message);
         }
     },
 });
