@@ -14,8 +14,8 @@ jobs:
           DOKPLOY_DEPLOY_WEBHOOK: ${{ secrets.DOKPLOY_DEPLOY_WEBHOOK }}
         run: |
           if [ -z "$DOKPLOY_DEPLOY_WEBHOOK" ]; then
-            echo "::error::Missing DOKPLOY_DEPLOY_WEBHOOK repository secret."
-            exit 1
+            echo "::notice::DOKPLOY_DEPLOY_WEBHOOK repository secret is not configured. Skipping Dokploy deployment."
+            exit 0
           fi
 
           curl --fail --silent --show-error --request POST "$DOKPLOY_DEPLOY_WEBHOOK"
