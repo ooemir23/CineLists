@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { tmdb } from "./tmdb";
 import { GENRE_MAP } from "./genres";
+import { checkAndUnlockAchievements } from "@/lib/achievement-actions";
 
 export async function markEpisodeAsWatched(
     tmdbId: number,
@@ -297,6 +298,8 @@ export async function markSeasonAsWatched(tmdbId: number, seasonNumber: number) 
                     data: watchedEpisodesToCreate,
                     skipDuplicates: true
                 });
+
+                checkAndUnlockAchievements(userId).catch(console.error);
             }
 
             // Update existing ones

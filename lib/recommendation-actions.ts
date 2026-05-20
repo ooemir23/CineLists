@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { tmdb } from "@/lib/tmdb";
 import { revalidatePath } from "next/cache";
 import { sendRecommendationEmail } from "@/lib/mail";
+import { checkAndUnlockAchievements } from "@/lib/achievement-actions";
 
 export async function recommendMedia(params: {
     receiverId: string; // This can now be a userId or an email
@@ -80,6 +81,8 @@ export async function recommendMedia(params: {
                 link: `/${mediaType}/${mediaId}`,
             },
         });
+
+        checkAndUnlockAchievements(session.user.id).catch(console.error);
     }
 
     // Fetch extra details for the email

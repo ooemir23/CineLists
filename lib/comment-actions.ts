@@ -3,6 +3,7 @@
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
+import { checkAndUnlockAchievements } from "@/lib/achievement-actions";
 
 export async function addPersonComment(personId: number, content: string) {
     const session = await auth();
@@ -26,7 +27,9 @@ export async function addPersonComment(personId: number, content: string) {
                 content: content.trim(),
                 isSpoiler: false, // Default for now
             },
-        });
+});
+
+        checkAndUnlockAchievements(session.user.id).catch(console.error);
 
         revalidatePath(`/person/${personId}`);
         return { success: true };
@@ -117,6 +120,8 @@ export async function addActivityComment(activityId: string, content: string) {
             });
         }
 
+        checkAndUnlockAchievements(session.user.id).catch(console.error);
+
         revalidatePath("/feed");
         return { success: true };
     } catch (error) {
@@ -168,6 +173,8 @@ export async function addEpisodeComment(episodeId: string, content: string, path
                 isSpoiler,
             },
         });
+
+        checkAndUnlockAchievements(session.user.id).catch(console.error);
 
         revalidatePath(path);
         return { success: true };

@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { tmdb } from "@/lib/tmdb";
 import { revalidatePath } from "next/cache";
 import { Prisma } from "@prisma/client";
+import { checkAndUnlockAchievements } from "@/lib/achievement-actions";
 
 function isPrismaConnectionError(error: unknown) {
     if (error instanceof Prisma.PrismaClientInitializationError) return true;
@@ -146,6 +147,7 @@ export async function toggleWatchedStatus(mediaId: number, type: "movie" | "tv",
             });
         }
 
+        checkAndUnlockAchievements(session.user.id).catch(console.error);
 
         revalidatePath("/watchlist");
         revalidatePath("/profile");

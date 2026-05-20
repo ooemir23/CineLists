@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { tmdb } from "@/lib/tmdb";
 import { Prisma } from "@prisma/client";
+import { checkAndUnlockAchievements } from "@/lib/achievement-actions";
 
 function isPrismaConnectionError(error: unknown) {
     if (error instanceof Prisma.PrismaClientInitializationError) return true;
@@ -120,6 +121,8 @@ export async function rateMedia(tmdbId: number, type: "movie" | "tv", rating: nu
                 }
             });
         }
+
+        checkAndUnlockAchievements(session.user.id).catch(console.error);
 
         revalidatePath(`/${type}/${tmdbId}`);
         revalidatePath("/profile");

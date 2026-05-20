@@ -3,6 +3,7 @@
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
+import { checkAndUnlockAchievements } from "@/lib/achievement-actions";
 
 export async function toggleFollow(targetUserId: string) {
     const session = await auth();
@@ -51,6 +52,8 @@ export async function toggleFollow(targetUserId: string) {
                 followingId: targetUserId,
             },
         });
+
+        checkAndUnlockAchievements(currentUserId).catch(console.error);
 
         // Create notification
         await prisma.indicates.create({
