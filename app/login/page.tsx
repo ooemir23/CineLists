@@ -43,15 +43,16 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
         : null;
 
     return (
-        <div className="relative min-h-[calc(100svh-72px)] flex items-center justify-center px-4 py-4 sm:py-10 overflow-hidden bg-[#020617]">
+        <div className="relative flex items-center justify-center px-4 overflow-hidden bg-[#020617]"
+            style={{ minHeight: 'calc(100svh - 56px - 80px)' }}>
             <PosterBackground />
 
             <div className="w-full max-w-md relative z-20 animate-in fade-in zoom-in-95 duration-500">
                 {/* Logo & Header */}
-                <div className="text-center mb-4 sm:mb-8">
-                    <BrandLogo href="/" size="lg" className="mb-3 sm:mb-6 justify-center" />
-                    <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight uppercase mb-1">Tekrar Hoş Geldin</h1>
-                    <p className="text-neutral-400 font-medium text-sm">Sinema dünyasına kaldığın yerden devam et.</p>
+                <div className="text-center mb-3 sm:mb-8">
+                    <BrandLogo href="/" size="lg" className="hidden sm:flex mb-6 justify-center" />
+                    <h1 className="text-xl sm:text-3xl font-black text-white tracking-tight uppercase mb-1">Tekrar Hoş Geldin</h1>
+                    <p className="text-neutral-400 font-medium text-xs sm:text-sm">Sinema dünyasına kaldığın yerden devam et.</p>
                 </div>
 
                 {/* Main Card */}
