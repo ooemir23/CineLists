@@ -44,12 +44,13 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
 
     return (
         <div
-            className="relative flex items-center justify-center px-4 overflow-hidden bg-[#020617]"
-            style={{ minHeight: 'calc(100svh - 56px - 80px)' }}
+            className="fixed inset-0 z-50 flex items-center justify-center px-4 overflow-hidden overscroll-none"
+            style={{ minHeight: '100svh', maxHeight: '100svh' }}
         >
+            <div className="absolute inset-0 bg-[#020617]" />
             <PosterBackground />
 
-            <div className="w-full max-w-md relative z-20 animate-in fade-in zoom-in-95 duration-500 py-4 sm:py-8">
+            <div className="w-full max-w-md relative z-20 animate-in fade-in zoom-in-95 duration-500">
                 {/* Logo & Header — mobilde gizli, masaüstünde görünür */}
                 <div className="text-center mb-3 sm:mb-8">
                     <div className="hidden sm:flex justify-center mb-6">
