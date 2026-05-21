@@ -62,6 +62,9 @@ Thumbs.db
 # Logs
 logs/
 *.log
+build_log*.txt
+lint_output.txt
+
 
 # Runtime data
 pids/

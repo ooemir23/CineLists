@@ -24,6 +24,7 @@ model Account {
   user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([provider, providerAccountId])
+  @@index([userId])
 }
 
 model Session {
@@ -32,6 +33,8 @@ model Session {
   userId       String
   expires      DateTime
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }
 
 model User {
@@ -210,6 +213,8 @@ model Comment {
 
   @@index([userId])
   @@index([activityId])
+  @@index([episodeId])
+  @@index([parentId])
   @@index([createdAt(sort: Desc)])
 }
 
@@ -255,6 +260,10 @@ model Indicates {
   isRead    Boolean          @default(false)
   createdAt DateTime         @default(now())
   user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([userId, isRead])
+  @@index([userId, createdAt(sort: Desc)])
 }
 
 model Episode {
@@ -284,6 +293,7 @@ model WatchedEpisode {
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, episodeId])
+  @@index([episodeId])
 }
 
 enum MediaType {
