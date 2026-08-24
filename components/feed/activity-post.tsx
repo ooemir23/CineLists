@@ -25,7 +25,9 @@ import {
     Loader2,
     Sparkles,
     Quote,
-    MapPin
+    MapPin,
+    ChevronRight,
+    Bookmark
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { tr } from "date-fns/locale";
@@ -60,6 +62,7 @@ type ActivityPostProps = {
             backdropPath: string | null;
             type: "MOVIE" | "TV" | "PERSON";
             runtime?: number | null;
+            releaseDate?: Date | string | null;
         };
         episode?: {
             id: string;
@@ -165,181 +168,174 @@ export function ActivityPost({ activity }: ActivityPostProps) {
         return h > 0 ? (m > 0 ? `${h}s ${m}dk` : `${h}s`) : `${m}dk`;
     };
 
-    return (
-        <div className="bg-[#131b2c]/70 backdrop-blur-xl border border-white/5 rounded-2xl overflow-hidden shadow-xl transition-all hover:border-primary/20 group animate-fade-in">
-            <div className="flex flex-row min-h-[120px]">
+    const getAvatarGradient = (name: string) => {
+        const gradients = [
+            "linear-gradient(135deg,#f472b6,#be185d)",
+            "linear-gradient(135deg,#38bdf8,#1d4ed8)",
+            "linear-gradient(135deg,#34d399,#047857)",
+            "linear-gradient(135deg,#fbbf24,#b45309)",
+            "linear-gradient(135deg,#a78bfa,#6d28d9)",
+            "linear-gradient(135deg,#f4c14e,#b45309)",
+        ];
+        let sum = 0;
+        const displayName = name || "User";
+        for (let i = 0; i < displayName.length; i++) sum += displayName.charCodeAt(i);
+        return gradients[sum % gradients.length];
+    };
 
-                {/* Left Side: Media Image (Poster) */}
-                <div className="relative w-[90px] sm:w-[120px] aspect-[2/3] shrink-0 bg-neutral-900 group/poster overflow-hidden border-r border-white/5">
+    const avatarGradient = getAvatarGradient(activity.user.name || "");
+    const initial = (activity.user.name || "U").substring(0, 1).toUpperCase();
+    const actionLabel = activity.type === "REVIEWED" ? "inceledi" : activity.rating ? "izledi ve puanladı" : "izledi";
+    const yearMeta = activity.media.releaseDate ? new Date(activity.media.releaseDate).getFullYear() : "";
+    const typeMeta = activity.media.type === "MOVIE" ? "Film" : "Dizi";
+    const runtimeMeta = activity.media.runtime ? formatRuntime(activity.media.runtime) : "";
+    const fullMeta = [typeMeta, yearMeta, runtimeMeta].filter(Boolean).join(" · ");
+
+    return (
+        <div className="bg-[#0b1120] border border-white/5 rounded-2xl p-4 shadow-lg transition-all hover:border-white/10 group animate-fade-in relative font-hanken">
+            <div className="flex gap-3.5 items-start">
+                
+                {/* User Avatar */}
+                <Link href={`/profile/${activity.user.id}`} className="shrink-0">
+                    {activity.user.image ? (
+                        <div className="w-10 h-10 rounded-full overflow-hidden border border-white/10 relative">
+                            <Image src={activity.user.image} alt={activity.user.name || "User"} fill className="object-cover" />
+                        </div>
+                    ) : (
+                        <div 
+                            className="w-10 h-10 rounded-full flex items-center justify-center font-bricolage font-bold text-base text-white shadow-inner"
+                            style={{ background: avatarGradient }}
+                        >
+                            {initial}
+                        </div>
+                    )}
+                </Link>
+
+                {/* User Action Header */}
+                <div className="flex-1 min-w-0">
+                    <div className="text-sm leading-relaxed text-slate-300">
+                        <Link href={`/profile/${activity.user.id}`} className="font-extrabold text-white hover:text-primary transition-colors mr-1">
+                            {activity.user.name}
+                        </Link>
+                        {actionLabel} <span className="font-semibold text-primary">{activity.media.title}</span>
+                    </div>
+                    <div className="font-mono text-[10px] text-slate-500 mt-0.5 tracking-wide">
+                        {timeLabel}
+                    </div>
+                </div>
+
+                {/* Rating Badge */}
+                {activity.rating && (
+                    <div className="flex items-center gap-0.5 bg-primary/10 border border-primary/20 px-2.5 py-1 rounded-lg shrink-0">
+                        <Star className="w-3.5 h-3.5 text-primary fill-primary" />
+                        <span className="font-mono text-xs font-bold text-primary font-mono">{activity.rating.toFixed(1)}</span>
+                    </div>
+                )}
+            </div>
+
+            {/* User Review Note */}
+            {activity.review && (
+                <div 
+                    onClick={() => setIsExpanded(!isExpanded)}
+                    className={cn(
+                        "text-[13.5px] leading-relaxed text-slate-300 mt-3 p-3 bg-white/[0.02] border-l-2 border-primary/50 rounded-r-xl cursor-pointer hover:bg-white/[0.04] transition-all",
+                        !isExpanded && "line-clamp-3"
+                    )}
+                >
+                    {activity.review}
+                </div>
+            )}
+
+            {/* Media Item Detail Row */}
+            <Link 
+                href={`/${activity.media.type === "MOVIE" ? "movie" : "tv"}/${activity.media.tmdbId}`}
+                className="flex gap-3 items-center mt-4 bg-white/[0.02] hover:bg-white/[0.04] border border-white/5 rounded-xl p-2.5 transition-colors group/media"
+            >
+                <div className="relative w-11 aspect-[2/3] rounded-lg overflow-hidden bg-neutral-900 shrink-0">
                     {activity.media.posterPath ? (
                         <Image
-                            src={`https://image.tmdb.org/t/p/w500${activity.media.posterPath}`}
+                            src={`https://image.tmdb.org/t/p/w185${activity.media.posterPath}`}
                             alt={activity.media.title}
                             fill
-                            className="object-cover transition-transform duration-700 group-hover/poster:scale-105"
+                            className="object-cover"
                         />
                     ) : (
-                        <div className="w-full h-full flex items-center justify-center text-4xl">🎬</div>
-                    )}
-
-                    {/* Media Type Badge */}
-                    <div className="absolute top-2 left-2 flex items-center gap-1 px-1.5 py-1 bg-black/60 backdrop-blur-md rounded-lg border border-white/10 shadow-lg">
-                        {activity.media.type === "MOVIE" ? <Film className="w-2.5 h-2.5 text-primary" /> : <Tv className="w-2.5 h-2.5 text-primary" />}
-                        <span className="text-[8px] font-black text-white uppercase tracking-widest">{activity.media.type === "MOVIE" ? "Film" : "Dizi"}</span>
-                    </div>
-
-                    {/* Rating Overlay on Poster */}
-                    {activity.rating && (
-                        <div className="absolute bottom-2 left-2 flex items-center gap-2">
-                            <div className="bg-primary px-2 py-1 rounded-lg shadow-2xl border border-white/20 flex items-center gap-1">
-                                <Star className="w-3 h-3 fill-background text-background" />
-                                <span className="text-xs font-black text-background">{activity.rating}</span>
-                            </div>
-                        </div>
+                        <div className="w-full h-full flex items-center justify-center text-lg">🎬</div>
                     )}
                 </div>
-
-                {/* Right Side: Content Area */}
-                <div className="flex-1 flex flex-col p-3 sm:p-4 bg-gradient-to-br from-white/[0.02] to-transparent relative">
-
-                    {/* User Header */}
-                    <div className="flex items-start justify-between mb-2">
-                        <div className="min-w-0">
-                            <div className="flex items-center gap-1.5 flex-wrap">
-                                <span className="text-[10px] font-bold text-neutral-500 bg-white/5 px-1.5 py-0.5 rounded-md border border-white/5 uppercase tracking-wider whitespace-nowrap">
-                                    {actionText}
-                                </span>
-                            </div>
-                            <div className="flex items-center gap-2 mt-1">
-                                <p className="text-[9px] text-neutral-500 flex items-center gap-1 font-bold uppercase tracking-wider whitespace-nowrap">
-                                    <Clock className="w-3 h-3" />
-                                    {timeLabel}
-                                </p>
-                            </div>
-                        </div>
-                        <Link
-                            href={`/profile/${activity.user.id}`}
-                            className="flex items-center gap-2"
-                        >
-                            <span className="text-sm font-black text-white hover:text-primary transition-colors tracking-tight truncate max-w-[140px]">
-                                {activity.user.name}
-                            </span>
-                            <span className="relative w-7 h-7 rounded-lg overflow-hidden ring-1 ring-white/5 group-hover:ring-primary/40 transition-all shadow-xl">
-                                {activity.user.image ? (
-                                    <Image src={activity.user.image} alt={activity.user.name || "User"} fill className="object-cover" />
-                                ) : (
-                                    <span className="w-full h-full bg-neutral-800 flex items-center justify-center text-neutral-500">
-                                        <User className="w-4 h-4" />
-                                    </span>
-                                )}
-                            </span>
-                        </Link>
+                
+                <div className="flex-1 min-w-0">
+                    <div className="text-sm font-bold text-white group-hover/media:text-primary transition-colors tracking-tight line-clamp-1">
+                        {activity.media.title}
                     </div>
+                    
+                    <div className="flex items-center gap-1.5 mt-0.5">
+                        <span className="font-mono text-[10px] text-slate-500 tracking-wide">
+                            {fullMeta}
+                        </span>
+                        
+                        {activity.episodeRange && (
+                            <span className="font-mono text-[9px] text-blue-400 bg-blue-500/10 px-1.5 py-0.5 rounded font-bold uppercase">
+                                S{activity.episodeRange.seasonNumber} E{activity.episodeRange.fromEpisode}-{activity.episodeRange.toEpisode}
+                            </span>
+                        )}
 
-                    {/* Media Details Section */}
-                    <div className="mb-2 space-y-1">
-                        <div className="flex flex-col gap-1">
-                            <Link
-                                href={`/${activity.media.type === "MOVIE" ? "movie" : "tv"}/${activity.media.tmdbId}`}
-                                className="text-base sm:text-lg font-black text-white hover:text-primary transition-all tracking-tight leading-tight line-clamp-1"
-                            >
-                                {activity.media.title}
-                            </Link>
-                            {activity.media.runtime && (
-                                <span className="inline-flex items-center gap-1 text-neutral-500 font-bold text-[9px] uppercase tracking-widest">
-                                    <Clock className="w-3 h-3" />
-                                    {formatRuntime(activity.media.runtime)}
-                                </span>
-                            )}
-                        </div>
-
-                        <div className="flex flex-wrap gap-1.5">
-                            {activity.episodeRange && (
-                                <div className="inline-flex items-center gap-1.5 px-2 py-1 bg-blue-500/10 border border-blue-500/20 rounded-lg shadow-inner">
-                                    <Tv className="w-3 h-3 text-blue-400" />
-                                    <span className="text-[10px] font-black text-blue-400">
-                                        S{activity.episodeRange.seasonNumber} E{activity.episodeRange.fromEpisode}-{activity.episodeRange.toEpisode}
-                                    </span>
-                                </div>
-                            )}
-
-                            {activity.episode && !activity.episodeRange && (
-                                <div className="inline-flex items-center gap-1.5 px-2 py-1 bg-emerald-500/10 border border-emerald-500/20 rounded-lg shadow-inner">
-                                    <Tv className="w-3 h-3 text-emerald-400" />
-                                    <span className="text-[10px] font-black text-emerald-400">
-                                        S{activity.episode.seasonNumber} E{activity.episode.episodeNumber}
-                                    </span>
-                                </div>
-                            )}
-                        </div>
-                    </div>
-
-                    {/* Review content with better styling */}
-                    <div className="flex-1 mb-2">
-                        {activity.review ? (
-                            <div 
-                                onClick={() => setIsExpanded(!isExpanded)}
-                                className={cn(
-                                    "relative p-3 bg-white/[0.03] border-l-2 border-primary rounded-r-xl shadow-inner group/review overflow-hidden cursor-pointer transition-all duration-300",
-                                    isExpanded ? "bg-white/[0.06]" : "hover:bg-white/[0.05]"
-                                )}
-                            >
-                                <p className={cn(
-                                    "relative z-10 text-xs text-neutral-300 leading-relaxed font-medium transition-all duration-300",
-                                    !isExpanded && "line-clamp-2"
-                                )}>
-                                    {activity.review}
-                                </p>
-                                {!isExpanded && activity.review.length > 100 && (
-                                    <div className="absolute bottom-1 right-2 text-[8px] font-black text-primary/50 uppercase tracking-widest animate-pulse">Devamını Gör</div>
-                                )}
-                            </div>
-                        ) : (
-                            <div className="h-px w-full bg-gradient-to-r from-white/5 to-transparent my-2" />
+                        {activity.episode && !activity.episodeRange && (
+                            <span className="font-mono text-[9px] text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded font-bold uppercase">
+                                S{activity.episode.seasonNumber} E{activity.episode.episodeNumber}
+                            </span>
                         )}
                     </div>
-
-                    {/* Bottom: Interactions */}
-                    <div className="mt-auto px-0 pt-2 border-t border-white/5 flex items-center justify-between">
-                        <div className="flex items-center gap-4">
-                            <button
-                                onClick={handleLike}
-                                className={cn(
-                                    "flex items-center gap-1.5 transition-all hover:scale-105",
-                                    isLiked ? "text-pink-500" : "text-neutral-400 hover:text-pink-500"
-                                )}
-                            >
-                                <Heart className={cn("w-4 h-4", isLiked && "fill-current")} />
-                                <span className="text-xs font-black">{likesCount}</span>
-                            </button>
-                            <button
-                                onClick={(e) => {
-                                    e.preventDefault();
-                                    e.stopPropagation();
-                                    setShowComments(!showComments);
-                                }}
-                                className={cn(
-                                    "flex items-center gap-1.5 transition-all hover:scale-105",
-                                    showComments ? "text-primary" : "text-neutral-400 hover:text-primary"
-                                )}
-                            >
-                                <MessageSquare className="w-4 h-4" />
-                                <span className="text-xs font-black">{activity._count?.comments || comments.length || 0}</span>
-                            </button>
-                        </div>
-
-                        <button
-                            onClick={(e) => {
-                                e.preventDefault();
-                                e.stopPropagation();
-                                setShowShare(!showShare);
-                            }}
-                            className="p-1.5 text-neutral-400 hover:text-white bg-white/5 hover:bg-white/10 rounded-lg transition-all border border-transparent hover:border-white/10"
-                        >
-                            <Share2 className="w-4 h-4" />
-                        </button>
-                    </div>
                 </div>
+                
+                <ChevronRight size={18} className="text-slate-600 group-hover/media:text-slate-400 transition-colors" />
+            </Link>
+
+            {/* Action Buttons Bar */}
+            <div className="flex gap-5 items-center mt-3.5 pt-3.5 border-t border-white/5">
+                <button
+                    onClick={handleLike}
+                    className={cn(
+                        "flex items-center gap-1.5 transition-all text-slate-500 hover:scale-105 hover:text-pink-500",
+                        isLiked && "text-pink-500"
+                    )}
+                >
+                    <Heart className={cn("w-[18px] h-[18px]", isLiked && "fill-current")} />
+                    <span className="font-mono text-xs font-bold text-slate-400">{likesCount}</span>
+                </button>
+                
+                <button
+                    onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setShowComments(!showComments);
+                    }}
+                    className={cn(
+                        "flex items-center gap-1.5 transition-all text-slate-500 hover:scale-105 hover:text-primary",
+                        showComments && "text-primary"
+                    )}
+                >
+                    <MessageSquare className="w-[18px] h-[18px]" />
+                    <span className="font-mono text-xs font-bold text-slate-400">{activity._count?.comments || comments.length || 0}</span>
+                </button>
+
+                <button
+                    onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setShowShare(!showShare);
+                    }}
+                    className="ml-auto text-slate-500 hover:text-slate-300 transition-colors"
+                >
+                    <Share2 className="w-[18px] h-[18px]" />
+                </button>
+
+                <button
+                    className="text-slate-500 hover:text-primary transition-colors"
+                    aria-label="Kaydet"
+                >
+                    <Bookmark className="w-[18px] h-[18px]" />
+                </button>
             </div>
 
             {/* Comments Section */}

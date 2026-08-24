@@ -1,4 +1,7 @@
+@import url('https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=Hanken+Grotesk:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0..1,0&display=swap');
 @import "tailwindcss";
+
 @config "../tailwind.config.ts";
 
 @theme {
@@ -21,28 +24,32 @@
   --color-border: hsl(var(--border));
   --color-input: hsl(var(--input));
   --color-ring: hsl(var(--ring));
+
+  --font-bricolage: "Bricolage Grotesque", sans-serif;
+  --font-hanken: "Hanken Grotesk", sans-serif;
+  --font-mono: "JetBrains Mono", monospace;
 }
 
 :root {
-  /* WatchMeOn Color Palette */
+  /* Redesign Color Palette */
 
-  /* Main Background: #101624 (dark blue/gray) */
-  --background: 222 36% 10%;
+  /* Main Background: #020617 (slate-950) */
+  --background: 222 47% 4%;
   --foreground: 210 40% 98%;
 
-  /* Cards / Sidebar: #18213a */
-  --card: 222 36% 14%;
+  /* Cards / Sidebar: #0b1120 */
+  --card: 222 47% 8%;
   --card-foreground: 210 40% 98%;
 
   /* Popovers */
-  --popover: 222 36% 14%;
+  --popover: 222 47% 8%;
   --popover-foreground: 210 40% 98%;
 
-  /* Primary Accent: Amber/Yellow #FFD600 */
-  --primary: 48 100% 50%;
-  --primary-foreground: 222 36% 10%;
+  /* Primary Accent: Amber/Yellow #f4c14e */
+  --primary: 41 89% 61%;
+  --primary-foreground: 222 47% 4%;
 
-  /* Secondary: Blue #2563eb */
+  /* Secondary: Blue */
   --secondary: 221 83% 53%;
   --secondary-foreground: 210 40% 98%;
 
@@ -50,7 +57,7 @@
   --muted: 215 28% 17%;
   --muted-foreground: 215 20% 65%;
 
-  /* Accent: Pink #ec4899 */
+  /* Accent: Pink */
   --accent: 327 72% 58%;
   --accent-foreground: 210 40% 98%;
 
@@ -59,9 +66,9 @@
   --destructive-foreground: 210 40% 98%;
 
   /* Border / Input / Ring */
-  --border: 222 36% 18%;
-  --input: 222 36% 18%;
-  --ring: 48 100% 50%;
+  --border: 222 47% 12%;
+  --input: 222 47% 12%;
+  --ring: 41 89% 61%;
 
   --radius: 0.75rem;
 }

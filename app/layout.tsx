@@ -66,7 +66,7 @@ export default async function RootLayout({
 
   return (
     <html lang="tr" className="dark" suppressHydrationWarning>
-      <body className={cn("font-sans bg-background text-foreground overflow-x-hidden")} suppressHydrationWarning>
+      <body className={cn("font-hanken bg-background text-foreground overflow-x-hidden")} suppressHydrationWarning>
         <div className="flex flex-col min-h-screen max-w-[1920px] mx-auto shadow-2xl shadow-black/50 mobile-app-shell">
           <TopNav user={session?.user} />
           <MobileHeader />

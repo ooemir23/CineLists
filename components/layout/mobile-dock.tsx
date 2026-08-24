@@ -53,7 +53,7 @@ export function MobileDock({ user }: MobileDockProps) {
           <button
             className={cn(
               "flex min-h-[50px] min-w-[50px] flex-col items-center justify-center gap-0.5 rounded-2xl transition-all",
-              menuOpen ? "bg-amber-400/15 text-amber-300 shadow-inner" : "text-slate-400"
+              menuOpen ? "bg-primary/10 text-primary shadow-inner" : "text-slate-400"
             )}
             onClick={() => {
               setMenuOpen((value) => !value);
@@ -62,13 +62,13 @@ export function MobileDock({ user }: MobileDockProps) {
             aria-label="Ekranım"
           >
             <List size={20} strokeWidth={2.5} />
-            <span className="text-[8px] font-black uppercase tracking-tighter">Ekranım</span>
+            <span className="font-hanken text-[9px] font-bold uppercase tracking-wide">Ekranım</span>
           </button>
 
           {menuOpen && (
             <div className="absolute bottom-[4.6rem] left-0 z-50 flex w-60 flex-col overflow-hidden rounded-[1.75rem] border border-white/10 bg-[#0b1220]/95 py-3 shadow-2xl backdrop-blur-2xl animate-in slide-in-from-bottom-4 zoom-in-95 duration-200">
               <div className="px-4 py-2 mb-1">
-                <span className="text-[10px] font-black text-amber-400/55 uppercase tracking-widest">
+                <span className="font-hanken text-[10px] font-bold text-primary/70 uppercase tracking-widest">
                   Kütüphanem
                 </span>
               </div>
@@ -92,18 +92,18 @@ export function MobileDock({ user }: MobileDockProps) {
             href="/"
             className={cn(
               "flex min-h-[50px] min-w-[50px] flex-col items-center justify-center gap-0.5 rounded-2xl transition-all",
-              activeView === "home" && !menuOpen && !profileMenuOpen ? "text-amber-300" : "text-slate-400"
+              activeView === "home" && !menuOpen && !profileMenuOpen ? "text-primary" : "text-slate-400"
             )}
             onClick={closeMenus}
           >
             <Home size={20} strokeWidth={activeView === "home" ? 2.5 : 2} />
-            <span className="text-[8px] font-black uppercase tracking-tighter">Home</span>
+            <span className="font-hanken text-[9px] font-bold uppercase tracking-wide">Keşfet</span>
           </Link>
 
           <div className="relative flex h-11 w-11 items-center justify-center">
             <Link
               href="/search"
-              className="absolute -top-5 z-[210] flex h-14 w-14 items-center justify-center rounded-[1.35rem] border-[5px] border-[#101624] bg-amber-400 text-slate-950 shadow-[0_12px_32px_rgba(251,191,36,0.34)] transition-all hover:scale-105 active:scale-90"
+              className="absolute -top-5 z-[210] flex h-14 w-14 items-center justify-center rounded-[1.35rem] border-[5px] border-[#020617] bg-primary text-slate-950 shadow-[0_12px_32px_rgba(244,193,78,0.34)] transition-all hover:scale-105 active:scale-90"
               onClick={closeMenus}
               aria-label="Ara"
             >
@@ -115,18 +115,18 @@ export function MobileDock({ user }: MobileDockProps) {
             href="/feed"
             className={cn(
               "flex min-h-[50px] min-w-[50px] flex-col items-center justify-center gap-0.5 rounded-2xl transition-all",
-              activeView === "feed" ? "text-amber-300" : "text-slate-400"
+              activeView === "feed" ? "text-primary" : "text-slate-400"
             )}
             onClick={closeMenus}
           >
             <Compass size={20} strokeWidth={activeView === "feed" ? 2.5 : 2} />
-            <span className="text-center text-[8px] font-black uppercase tracking-tighter">Akış</span>
+            <span className="font-hanken text-center text-[9px] font-bold uppercase tracking-wide">Akış</span>
           </Link>
 
           <button
             className={cn(
               "flex min-h-[50px] min-w-[50px] flex-col items-center justify-center gap-0.5 rounded-2xl transition-all",
-              profileMenuOpen ? "bg-amber-400/15 text-amber-300 shadow-inner" : "text-slate-400"
+              profileMenuOpen ? "bg-primary/10 text-primary shadow-inner" : "text-slate-400"
             )}
             onClick={() => {
               setProfileMenuOpen((value) => !value);
@@ -138,7 +138,7 @@ export function MobileDock({ user }: MobileDockProps) {
               <div
                 className={cn(
                   "h-6 w-6 overflow-hidden rounded-full border-2 transition-colors",
-                  profileMenuOpen ? "border-amber-400" : "border-white/20"
+                  profileMenuOpen ? "border-primary" : "border-white/20"
                 )}
               >
                 <img src={user.image} alt={user.name || "User"} className="h-full w-full object-cover" />
@@ -146,7 +146,7 @@ export function MobileDock({ user }: MobileDockProps) {
             ) : (
               <User size={20} strokeWidth={profileMenuOpen ? 2.5 : 2} />
             )}
-            <span className="text-[8px] font-black uppercase tracking-tighter">Profil</span>
+            <span className="font-hanken text-[9px] font-bold uppercase tracking-wide">Profil</span>
           </button>
 
           {profileMenuOpen && (
@@ -175,7 +175,7 @@ export function MobileDock({ user }: MobileDockProps) {
                       <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-rose-500/5">
                         <LogOut size={18} strokeWidth={2.5} />
                       </div>
-                      <span className="font-black uppercase tracking-tighter">Çıkış Yap</span>
+                      <span className="font-bold uppercase tracking-wide">Çıkış Yap</span>
                     </button>
                   </form>
                 </>
@@ -186,14 +186,14 @@ export function MobileDock({ user }: MobileDockProps) {
                     href={item.href}
                     className={cn(
                       "flex items-center gap-3 px-4 py-3 text-sm transition hover:bg-white/5 active:scale-95",
-                      item.key === "register" ? "text-amber-400" : "text-white"
+                      item.key === "register" ? "text-primary" : "text-white"
                     )}
                     onClick={() => setProfileMenuOpen(false)}
                   >
                     <div className={cn("flex h-8 w-8 items-center justify-center rounded-lg", item.iconBgClass, item.iconTextClass)}>
                       <item.icon size={18} strokeWidth={2.5} />
                     </div>
-                    <span className={item.key === "register" ? "font-black uppercase tracking-tight" : "font-bold"}>
+                    <span className={item.key === "register" ? "font-bold uppercase tracking-wide" : "font-bold"}>
                       {item.label}
                     </span>
                   </Link>
