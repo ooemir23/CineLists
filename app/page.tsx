@@ -8,7 +8,6 @@ import { HomeTopSection } from "@/components/home/home-top-section";
 import { SectionTabs } from "@/components/home/section-tabs";
 import { HomeDiscoverySection } from "@/components/home/home-discovery-section";
 import { HomeViewModeProvider } from "@/components/home/use-shared-view-mode";
-import { HomeClient } from "@/components/home/home-client";
 
 export const revalidate = 3600; // Revalidate every hour
 
@@ -138,11 +137,20 @@ export default async function Home({ searchParams }: HomeProps) {
     platforms: [],
   };
 
-  if (isFiltering) {
-    return (
-      <HomeViewModeProvider>
-        <div className="relative w-full overflow-x-hidden bg-[#020617] pb-24 md:pb-0">
-          <div className="max-w-[1600px] mx-auto px-4 sm:px-6 md:px-8 lg:px-12 mt-3 md:mt-4 space-y-2 md:space-y-3">
+  return (
+    <HomeViewModeProvider>
+      <div className="w-full overflow-x-hidden pb-24 md:pb-0 bg-[#101624]">
+
+        {/* Primary Top Section: Hero Slider & Friends Activity */}
+        <div className="max-w-[1600px] mx-auto px-3 sm:px-6 md:px-8 lg:px-12 pt-3 md:pt-16">
+          {!isFiltering && <HomeTopSection personalizedResults={personalizedMovies?.results} />}
+        </div>
+
+        {!isFiltering && <HomeDiscoverySection />}
+
+        {/* Main Content Area */}
+        <div className="max-w-[1600px] mx-auto px-3 sm:px-6 md:px-8 lg:px-12 mt-3 md:mt-4 space-y-2 md:space-y-3">
+          {isFiltering && (
             <div id="search-results" className="bg-white/5 rounded-2xl p-4 md:p-5 border border-white/10 scroll-mt-24">
               <MediaRow
                 title={q ? `"${q}" için Arama Sonuçları` : "Arama Sonuçları"}
@@ -150,24 +158,18 @@ export default async function Home({ searchParams }: HomeProps) {
                 type={(type || "movie") as "movie" | "tv"}
               />
             </div>
-          </div>
+          )}
         </div>
-      </HomeViewModeProvider>
-    );
-  }
 
-  const { auth } = await import("@/auth");
-  const session = await auth();
-
-  return (
-    <HomeClient
-      session={session}
-      trendingMovies={trendingMovies || { results: [] }}
-      trendingTV={trendingTV || { results: [] }}
-      popularMovies={popularMovies || { results: [] }}
-      upcomingMovies={upcomingMovies || { results: [] }}
-      popularTV={popularTV || { results: [] }}
-      personalizedMovies={personalizedMovies}
-    />
+        {!isFiltering && personalizedSectionResults.length > 0 && (
+          <div className="max-w-[1600px] mx-auto px-3 sm:px-6 md:px-8 lg:px-12 mt-4 md:mt-6">
+            <PersonalizedRecommendations
+              results={personalizedSectionResults}
+              reasons={personalizedSectionReasons}
+            />
+          </div>
+        )}
+      </div>
+    </HomeViewModeProvider>
   );
 }
