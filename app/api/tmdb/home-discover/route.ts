@@ -211,33 +211,79 @@ export async function GET(request: NextRequest) {
                         }),
                     ]);
 
-                    for (const item of watching) {
-                        userItems.push({
-                            id: item.media.tmdbId,
-                            title: item.media.title,
-                            poster_path: item.media.posterPath,
-                            media_type: item.media.type.toLowerCase() as "movie" | "tv",
-                            vote_average: item.media.voteAverage || 0,
-                            statusLabel: item.media.type === "TV" ? "Şu An İzleniyor" : "Vizyon Tarihi Belirsiz",
-                            statusType: "watching",
-                            addedAt: item.addedAt,
-                            targetDate: null,
-                        });
-                    }
+                    const allUserWatchItems = [
+                        ...watching.map(item => ({ ...item, statusType: "watching" as const })),
+                        ...toWatch.map(item => ({ ...item, statusType: "plan_to_watch" as const })),
+                    ];
 
-                    for (const item of toWatch) {
-                        userItems.push({
-                            id: item.media.tmdbId,
-                            title: item.media.title,
-                            poster_path: item.media.posterPath,
-                            media_type: mediaType,
-                            vote_average: item.media.voteAverage || 0,
-                            statusLabel: mediaType === "tv" ? "Yeni Sezon Açıklanmadı" : "Vizyon Tarihi Belirsiz",
-                            statusType: "plan_to_watch",
-                            addedAt: item.addedAt,
-                            targetDate: null,
-                        });
-                    }
+                    const now = new Date();
+                    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+                    await Promise.all(allUserWatchItems.map(async (item) => {
+                        if (item.media.type === "TV") {
+                            const details = await tmdb.getTVShow(item.media.tmdbId.toString()).catch(() => null);
+                            const nextEpisode = details?.next_episode_to_air;
+                            const showStatus = details?.status;
+
+                            // Skip ended / canceled shows without upcoming episodes
+                            if ((showStatus === "Ended" || showStatus === "Canceled") && !nextEpisode) {
+                                return;
+                            }
+
+                            if (nextEpisode?.air_date) {
+                                const airDate = new Date(nextEpisode.air_date);
+                                const startOfAirDate = new Date(airDate.getFullYear(), airDate.getMonth(), airDate.getDate());
+                                if (startOfAirDate.getTime() < startOfToday.getTime()) {
+                                    return;
+                                }
+
+                                userItems.push({
+                                    id: item.media.tmdbId,
+                                    title: item.media.title || details?.name || "Dizi",
+                                    poster_path: item.media.posterPath || details?.poster_path || null,
+                                    media_type: "tv",
+                                    vote_average: item.media.voteAverage || details?.vote_average || 0,
+                                    statusLabel: `${nextEpisode.season_number}. Sezon ${nextEpisode.episode_number}. Bölüm`,
+                                    statusType: item.statusType,
+                                    addedAt: item.addedAt,
+                                    targetDate: nextEpisode.air_date,
+                                });
+                            }
+                        } else {
+                            let releaseDateStr = item.media.releaseDate ? item.media.releaseDate.toISOString().split("T")[0] : null;
+                            let poster = item.media.posterPath;
+                            let title = item.media.title;
+                            let voteAverage = item.media.voteAverage || 0;
+
+                            if (!releaseDateStr) {
+                                const movieDetails = await tmdb.getDetails("movie", item.media.tmdbId.toString()).catch(() => null);
+                                releaseDateStr = movieDetails?.release_date || null;
+                                poster = poster || movieDetails?.poster_path || null;
+                                title = title || movieDetails?.title || movieDetails?.name;
+                                voteAverage = voteAverage || movieDetails?.vote_average || 0;
+                            }
+
+                            if (releaseDateStr) {
+                                const relDate = new Date(releaseDateStr);
+                                const startOfRelDate = new Date(relDate.getFullYear(), relDate.getMonth(), relDate.getDate());
+                                if (startOfRelDate.getTime() < startOfToday.getTime()) {
+                                    return;
+                                }
+
+                                userItems.push({
+                                    id: item.media.tmdbId,
+                                    title: title,
+                                    poster_path: poster,
+                                    media_type: "movie",
+                                    vote_average: voteAverage,
+                                    statusLabel: "Yakında Vizyonda",
+                                    statusType: item.statusType,
+                                    addedAt: item.addedAt,
+                                    targetDate: releaseDateStr,
+                                });
+                            }
+                        }
+                    }));
                 }
 
                 const tmdbResults = mediaType === "movie" ? await tmdb.getUpcomingMovies({ page }) : await tmdb.getOnTheAirTV({ page });
