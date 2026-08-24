@@ -28,7 +28,7 @@ export async function recommendMedia(params: {
     const isEmail = receiverIdOrEmail.includes("@");
     
     // Try to find receiver by ID or Email
-    let receiver = await prisma.user.findFirst({
+    const receiver = await prisma.user.findFirst({
         where: isEmail 
             ? { email: receiverIdOrEmail } 
             : { id: receiverIdOrEmail },

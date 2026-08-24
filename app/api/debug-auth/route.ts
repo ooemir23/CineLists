@@ -8,6 +8,10 @@ function hasAnyEnv(...keys: string[]) {
 }
 
 export async function GET() {
+    if (process.env.NODE_ENV === "production") {
+        return new NextResponse("Not Found", { status: 404 });
+    }
+
     const authUrl = process.env.AUTH_URL || process.env.NEXTAUTH_URL || "NOT SET";
 
     const config = {

@@ -135,7 +135,7 @@ export async function rateMedia(tmdbId: number, type: "movie" | "tv", rating: nu
     }
 }
 
-export async function getUserRating(tmdbId: number, type: "movie" | "tv") {
+export async function getUserRating(tmdbId: number, _type?: "movie" | "tv") {
     const session = await auth();
     if (!session?.user?.id) {
         return null;
@@ -159,7 +159,7 @@ export async function getUserRating(tmdbId: number, type: "movie" | "tv") {
     }
 }
 
-export async function getFriendsRatings(tmdbId: number, type: "movie" | "tv") {
+export async function getFriendsRatings(tmdbId: number, _type?: "movie" | "tv") {
     const session = await auth();
     if (!session?.user?.id) {
         return [];

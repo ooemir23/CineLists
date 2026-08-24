@@ -7,9 +7,9 @@ export async function GET(request: Request) {
     // Security check: Only allow if a secret key matches or if it's a known cron service
     const { searchParams } = new URL(request.url);
     const key = searchParams.get("key");
-    const cronSecret = process.env.CRON_SECRET || "fallback_secret_123";
+    const cronSecret = process.env.CRON_SECRET;
 
-    if (key !== cronSecret) {
+    if (!cronSecret || key !== cronSecret) {
         return new Response("Unauthorized", { status: 401 });
     }
 

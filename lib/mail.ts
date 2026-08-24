@@ -166,6 +166,8 @@ export const sendRecommendationEmail = async (params: {
                                             
                                             <div style="margin-bottom: 15px; display: flex; align-items: center; gap: 12px;">
                                                 <span style="color: #94a3b8; font-size: 13px; font-weight: 800;">⭐ TMDB: ${globalRating?.toFixed(1) || '0.0'}</span>
+                                                ${senderRating ? `<span style="color: #fbbf24; font-size: 13px; font-weight: 800;">🎬 Puanı: ${senderRating}/10</span>` : ''}
+                                                ${formattedRuntime ? `<span style="color: #94a3b8; font-size: 13px; font-weight: 600;">⏱️ ${formattedRuntime}</span>` : ''}
                                             </div>
 
                                             <p style="color: #94a3b8; font-size: 13px; line-height: 1.6; margin: 0; font-weight: 500;">

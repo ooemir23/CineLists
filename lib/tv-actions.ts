@@ -429,7 +429,7 @@ export async function getWatchedEpisodes(tmdbId: number) {
         });
 
         return watched.map(w => ({ s: w.episode.seasonNumber, e: w.episode.episodeNumber }));
-    } catch (error) {
+    } catch (_error) {
         return [];
     }
 }

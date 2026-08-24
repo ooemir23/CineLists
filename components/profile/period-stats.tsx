@@ -18,7 +18,7 @@ export function PeriodStats({ activities = [], watchedItems = [], userId }: Peri
 
   const getPeriodData = (p: Period) => {
     const now = new Date();
-    let startDate = new Date();
+    const startDate = new Date();
 
     if (p === "week") {
       startDate.setDate(now.getDate() - 7);

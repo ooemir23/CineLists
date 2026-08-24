@@ -94,18 +94,15 @@ function calculateRatingCorrelation(
 
     if (commonIds.length < 3) return 0;
 
-    let sumDiff1 = 0;
-    let sumDiff2 = 0;
+    let sumDiff = 0;
 
     for (const id of commonIds) {
         const r1 = user1Ratings.get(id)!;
         const r2 = user2Ratings.get(id)!;
-        sumDiff1 += r1 - r2;
-        sumDiff2 += Math.abs(r1 - r2);
+        sumDiff += Math.abs(r1 - r2);
     }
 
-    const avgDiff = sumDiff1 / commonIds.length;
-    const avgAbsDiff = sumDiff2 / commonIds.length;
+    const avgAbsDiff = sumDiff / commonIds.length;
 
     return Math.max(0, 100 - (avgAbsDiff * 10));
 }

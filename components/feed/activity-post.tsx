@@ -104,18 +104,18 @@ export function ActivityPost({ activity }: ActivityPostProps) {
         setTimeLabel(formatDistanceToNow(new Date(activity.createdAt), { addSuffix: true, locale: tr }));
     }, [activity.createdAt]);
 
-    useEffect(() => {
-        if (showComments) {
-            fetchComments();
-        }
-    }, [showComments]);
-
     const fetchComments = async () => {
         setLoadingComments(true);
         const data = await getActivityComments(activity.id);
         setComments(data);
         setLoadingComments(false);
     };
+
+    useEffect(() => {
+        if (showComments) {
+            fetchComments();
+        }
+    }, [showComments]);
 
     const handleLike = async (e: React.MouseEvent) => {
         e.preventDefault();

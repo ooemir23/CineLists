@@ -34,7 +34,7 @@ export async function completeOnboarding(formData: FormData) {
         // For onboarding, we'll try-catch or just use it.
         try {
             updateData.username = username.trim().toLowerCase().replace(/[^a-z0-9_]/g, "");
-        } catch (e) {
+        } catch (_e) {
             // Fallback to default if there's an error
         }
     }

@@ -29,7 +29,7 @@ export async function markNotificationAsRead(id: string) {
 
         revalidatePath("/notifications");
         return { success: true };
-    } catch (error) {
+    } catch (_error) {
         return { success: false };
     }
 }

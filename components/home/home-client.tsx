@@ -54,7 +54,8 @@ export function HomeClient({
       const item = list[0];
       const title = item.title || item.name || "Bir Koyun Polisiyesi";
       const rating = item.vote_average ? item.vote_average.toFixed(1) : "7.8";
-      const year = new Date(item.release_date || item.first_air_date || Date.now()).getFullYear();
+      const dateStr = item.release_date || item.first_air_date;
+      const year = dateStr ? new Date(dateStr).getFullYear() : 2026;
       const type = item.media_type === "tv" ? "Dizi" : "Film";
       const overview = item.overview || "Film ve dizileri takip et, arkadaşlarınla paylaş, puanla ve keşfet.";
       return {
@@ -91,7 +92,8 @@ export function HomeClient({
     return rawList.map((item) => {
       const title = item.title || item.name || "Saplantı";
       const rating = item.vote_average ? item.vote_average.toFixed(1) : "7.9";
-      const year = new Date(item.release_date || item.first_air_date || Date.now()).getFullYear();
+      const dateStr = item.release_date || item.first_air_date;
+      const year = dateStr ? new Date(dateStr).getFullYear() : 2026;
       const type = item.media_type === "tv" || !item.release_date ? "Dizi" : "Film";
       return {
         id: item.id,
@@ -135,7 +137,8 @@ export function HomeClient({
     return list.slice(0, 16).map((item) => {
       const title = item.title || item.name || "Severance";
       const rating = item.vote_average ? item.vote_average.toFixed(1) : "8.5";
-      const year = new Date(item.release_date || item.first_air_date || Date.now()).getFullYear();
+      const dateStr = item.release_date || item.first_air_date;
+      const year = dateStr ? new Date(dateStr).getFullYear() : 2026;
       const type = item.media_type === "tv" ? "Dizi" : "Film";
       return {
         id: item.id,

@@ -5,6 +5,8 @@ import { revalidatePath } from "next/cache";
 import { tmdb } from "@/lib/tmdb";
 import { GENRE_MAP } from "@/lib/genres";
 
+import { checkRateLimit } from "@/lib/ratelimit";
+
 export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const tmdbId = parseInt(searchParams.get("tmdbId") || "");
@@ -20,8 +22,14 @@ export async function GET(request: Request) {
         return redirect(`/login?callbackUrl=${callbackUrl}`);
     }
 
-    if (!tmdbId || !type || !action) {
-        return new Response("Missing parameters", { status: 400 });
+    // Rate limit actions per user: max 30 requests per minute
+    const rateLimit = checkRateLimit(`media-action:${session.user.id}`, 30, 60 * 1000);
+    if (!rateLimit.allowed) {
+        return new Response("Too many requests", { status: 429 });
+    }
+
+    if (!tmdbId || !type || !action || !["MOVIE", "TV"].includes(type) || !["WATCHED", "WATCHING", "PLAN_TO_WATCH"].includes(action)) {
+        return new Response("Missing or invalid parameters", { status: 400 });
     }
 
     let targetUrl = "/";
