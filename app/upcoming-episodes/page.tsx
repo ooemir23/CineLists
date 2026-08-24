@@ -23,16 +23,15 @@ const formatDaysLeft = (dateStr: string | null) => {
     const startOfTarget = new Date(target.getFullYear(), target.getMonth(), target.getDate());
     const diffMs = startOfTarget.getTime() - startOfToday.getTime();
     const days = Math.round(diffMs / (1000 * 60 * 60 * 24));
-    if (days < 0) return "Bugun";
-    if (days === 0) return "Bugun";
-    if (days === 1) return "1 gun sonra";
-    return `${days} gun sonra`;
+    if (days <= 0) return "Bugün";
+    if (days === 1) return "Yarın";
+    return `${days} gün sonra`;
 };
 
 const formatEpisodeInfo = (season?: number | null, episode?: number | null) => {
-    if (season && episode) return `${season}. Sezon ${episode}. Bolum`;
+    if (season && episode) return `${season}. Sezon ${episode}. Bölüm`;
     if (season) return `${season}. Sezon`;
-    return "Sonraki bolum";
+    return "Yeni Bölüm";
 };
 
 export default async function UpcomingEpisodesPage() {

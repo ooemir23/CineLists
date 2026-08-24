@@ -31,43 +31,40 @@ export function UpcomingEpisodesCarousel({ episodes }: UpcomingEpisodesCarouselP
     };
 
     const filteredEpisodes = episodes.filter(ep => {
-        if (filter === "all") return true;
-        
-        // When filtered by today or week, only show "Watching" content as requested
-        if (ep.statusType !== "watching") return false;
-
         if (!ep.nextEpisodeDate) return false;
         const date = new Date(ep.nextEpisodeDate);
         const now = new Date();
         const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
         const startOfTarget = new Date(date.getFullYear(), date.getMonth(), date.getDate());
-        const diffDays = (startOfTarget.getTime() - startOfToday.getTime()) / (1000 * 60 * 60 * 24);
+        const diffDays = Math.round((startOfTarget.getTime() - startOfToday.getTime()) / (1000 * 60 * 60 * 24));
         
-        if (filter === "today") return diffDays <= 0;
+        // Hide past episodes
+        if (diffDays < 0) return false;
+
+        if (filter === "all") return true;
+        if (filter === "today") return diffDays === 0;
         if (filter === "week") return diffDays <= 7;
         return true;
     });
 
     const todayCount = episodes.filter(ep => {
-        if (ep.statusType !== "watching") return false;
         if (!ep.nextEpisodeDate) return false;
         const date = new Date(ep.nextEpisodeDate);
         const now = new Date();
         const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
         const startOfTarget = new Date(date.getFullYear(), date.getMonth(), date.getDate());
-        const diffDays = (startOfTarget.getTime() - startOfToday.getTime()) / (1000 * 60 * 60 * 24);
-        return diffDays <= 0;
+        const diffDays = Math.round((startOfTarget.getTime() - startOfToday.getTime()) / (1000 * 60 * 60 * 24));
+        return diffDays === 0;
     }).length;
 
     const weekCount = episodes.filter(ep => {
-        if (ep.statusType !== "watching") return false;
         if (!ep.nextEpisodeDate) return false;
         const date = new Date(ep.nextEpisodeDate);
         const now = new Date();
         const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
         const startOfTarget = new Date(date.getFullYear(), date.getMonth(), date.getDate());
-        const diffDays = (startOfTarget.getTime() - startOfToday.getTime()) / (1000 * 60 * 60 * 24);
-        return diffDays <= 7;
+        const diffDays = Math.round((startOfTarget.getTime() - startOfToday.getTime()) / (1000 * 60 * 60 * 24));
+        return diffDays >= 0 && diffDays <= 7;
     }).length;
 
     const formatFullDate = (episode: UpcomingEpisode) => {
@@ -79,14 +76,6 @@ export function UpcomingEpisodesCarousel({ episodes }: UpcomingEpisodesCarouselP
                 weekday: "long",
             });
         }
-
-        if (episode.mediaType === "tv") {
-            if (episode.showStatus === "Ended" || episode.showStatus === "Canceled") {
-                return "Final Yaptı";
-            }
-            return "Yeni Sezon Açıklanmadı";
-        }
-
         return "Tarih Bekleniyor";
     };
 
@@ -98,21 +87,20 @@ export function UpcomingEpisodesCarousel({ episodes }: UpcomingEpisodesCarouselP
         const startOfTarget = new Date(target.getFullYear(), target.getMonth(), target.getDate());
         const diffMs = startOfTarget.getTime() - startOfToday.getTime();
         const days = Math.round(diffMs / (1000 * 60 * 60 * 24));
-        if (days < 0) return "Bugun";
-        if (days === 0) return "Bugun";
-        if (days === 1) return "1 gun sonra";
-        return `${days} gun sonra`;
+        if (days <= 0) return "Bugün";
+        if (days === 1) return "Yarın";
+        return `${days} gün sonra`;
     };
 
     const formatEpisodeInfo = (episode: UpcomingEpisode) => {
-        if (episode.mediaType === "movie") return "Film";
+        if (episode.mediaType === "movie") return "Film · Vizyon";
         if (episode.nextEpisodeSeason && episode.nextEpisodeNumber) {
-            return `${episode.nextEpisodeSeason}. Sezon ${episode.nextEpisodeNumber}. Bolum`;
+            return `${episode.nextEpisodeSeason}. Sezon ${episode.nextEpisodeNumber}. Bölüm`;
         }
         if (episode.nextEpisodeSeason) {
             return `${episode.nextEpisodeSeason}. Sezon`;
         }
-        return "BÖLÜM DURUMU";
+        return "Yeni Bölüm";
     };
 
     return (
@@ -244,9 +232,7 @@ export function UpcomingEpisodesCarousel({ episodes }: UpcomingEpisodesCarouselP
                                                 <div className="flex items-center gap-1 text-xs text-neutral-200">
                                                     <Clock3 className="w-3 h-3 text-blue-300" />
                                                     <span className="font-bold text-blue-200">
-                                                        {isMounted && episode.statusType === "plan_to_watch" && episode.addedAt
-                                                            ? `${new Date(episode.addedAt).toLocaleDateString("tr-TR", { day: "numeric", month: "short" })} tarihinde eklendi`
-                                                            : (isMounted ? (formatDaysLeft(episode.nextEpisodeDate) || "Tarih yok") : "")}
+                                                        {isMounted ? (formatDaysLeft(episode.nextEpisodeDate) || "Yakında") : ""}
                                                     </span>
                                                 </div>
                                             </div>
