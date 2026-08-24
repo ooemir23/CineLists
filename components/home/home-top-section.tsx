@@ -87,13 +87,22 @@ export async function HomeTopSection({ personalizedResults }: { personalizedResu
 
     const items = [...personalizedItems, ...trendingItems].slice(0, 6);
 
+    const validUpcomingEpisodes = upcomingEpisodes.filter(ep => {
+        if (!ep.nextEpisodeDate) return false;
+        const date = new Date(ep.nextEpisodeDate);
+        const now = new Date();
+        const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        const startOfTarget = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+        return Math.round((startOfTarget.getTime() - startOfToday.getTime()) / (1000 * 60 * 60 * 24)) >= 0;
+    });
+
     return (
         <section className="w-full grid grid-cols-1 lg:grid-cols-12 gap-3 md:gap-4 items-stretch lg:h-[600px]">
             <div className="lg:col-span-7 xl:col-span-8 flex flex-col gap-3 md:gap-4">
                 <div className="w-full">
-                    {upcomingEpisodes.length > 0 ? (
+                    {validUpcomingEpisodes.length > 0 ? (
                         <div className="relative z-20 backdrop-blur-sm bg-gradient-to-br from-[#0f1a2b]/88 via-[#0f1a2b]/70 to-[#0b1220]/78 rounded-[1.75rem] md:rounded-[2.5rem] p-2.5 md:p-3 border border-white/10 shadow-lg">
-                            <UpcomingEpisodesCarousel episodes={upcomingEpisodes} />
+                            <UpcomingEpisodesCarousel episodes={validUpcomingEpisodes} />
                         </div>
                     ) : !session ? (
                         <div className="relative z-20 backdrop-blur-sm bg-gradient-to-br from-[#0f1a2b]/88 via-[#0f1a2b]/70 to-[#0b1220]/78 rounded-[1.75rem] md:rounded-[2.5rem] p-3.5 md:p-4 border border-white/10 shadow-lg overflow-hidden group">

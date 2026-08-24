@@ -30,26 +30,31 @@ export function UpcomingEpisodesCarousel({ episodes }: UpcomingEpisodesCarouselP
         }
     };
 
-    const filteredEpisodes = episodes.filter(ep => {
+    // Filter out any episode without a valid future/today release date
+    const validUpcoming = episodes.filter(ep => {
         if (!ep.nextEpisodeDate) return false;
         const date = new Date(ep.nextEpisodeDate);
         const now = new Date();
         const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
         const startOfTarget = new Date(date.getFullYear(), date.getMonth(), date.getDate());
         const diffDays = Math.round((startOfTarget.getTime() - startOfToday.getTime()) / (1000 * 60 * 60 * 24));
-        
-        // Hide past episodes
-        if (diffDays < 0) return false;
+        return diffDays >= 0;
+    });
 
-        if (filter === "all") return true;
+    const filteredEpisodes = validUpcoming.filter(ep => {
+        const date = new Date(ep.nextEpisodeDate!);
+        const now = new Date();
+        const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        const startOfTarget = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+        const diffDays = Math.round((startOfTarget.getTime() - startOfToday.getTime()) / (1000 * 60 * 60 * 24));
+
         if (filter === "today") return diffDays === 0;
         if (filter === "week") return diffDays <= 7;
         return true;
     });
 
-    const todayCount = episodes.filter(ep => {
-        if (!ep.nextEpisodeDate) return false;
-        const date = new Date(ep.nextEpisodeDate);
+    const todayCount = validUpcoming.filter(ep => {
+        const date = new Date(ep.nextEpisodeDate!);
         const now = new Date();
         const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
         const startOfTarget = new Date(date.getFullYear(), date.getMonth(), date.getDate());
@@ -57,9 +62,8 @@ export function UpcomingEpisodesCarousel({ episodes }: UpcomingEpisodesCarouselP
         return diffDays === 0;
     }).length;
 
-    const weekCount = episodes.filter(ep => {
-        if (!ep.nextEpisodeDate) return false;
-        const date = new Date(ep.nextEpisodeDate);
+    const weekCount = validUpcoming.filter(ep => {
+        const date = new Date(ep.nextEpisodeDate!);
         const now = new Date();
         const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
         const startOfTarget = new Date(date.getFullYear(), date.getMonth(), date.getDate());
@@ -113,7 +117,7 @@ export function UpcomingEpisodesCarousel({ episodes }: UpcomingEpisodesCarouselP
                     </Link>
                     <div className="grid min-w-0 flex-1 grid-cols-3 gap-1 rounded-full border border-white/5 bg-white/5 p-1 shadow-inner md:flex md:flex-col md:rounded-none md:border-none md:bg-transparent md:p-0 md:shadow-none">
                     {[
-                        { id: "all", label: "Tümü", count: episodes.length },
+                        { id: "all", label: "Tümü", count: validUpcoming.length },
                         { id: "today", label: "Bugün", count: todayCount },
                         { id: "week", label: "Hafta", count: weekCount },
                     ].map((f) => (
