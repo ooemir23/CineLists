@@ -24,14 +24,26 @@ type HeroItem = {
     category: "trending" | "upcoming" | "tv" | "popular" | "personalized";
 };
 
-export async function HomeTopSection({ personalizedResults }: { personalizedResults?: PersonalizedResult[] }) {
+export async function HomeTopSection({
+    personalizedResults,
+    initialTrendingMovies,
+    initialUpcomingMovies,
+    initialTrendingTV,
+    initialPopularMovies,
+}: {
+    personalizedResults?: PersonalizedResult[];
+    initialTrendingMovies?: any;
+    initialUpcomingMovies?: any;
+    initialTrendingTV?: any;
+    initialPopularMovies?: any;
+}) {
     const session = await auth();
 
     const [trendingMovies, upcomingMovies, trendingTV, popularMovies, upcomingEpisodes] = await Promise.all([
-        tmdb.getTrendingMovies(),
-        tmdb.getUpcomingMovies(),
-        tmdb.getTrendingTV(),
-        tmdb.getPopular("movie"),
+        initialTrendingMovies ? Promise.resolve(initialTrendingMovies) : tmdb.getTrendingMovies(),
+        initialUpcomingMovies ? Promise.resolve(initialUpcomingMovies) : tmdb.getUpcomingMovies(),
+        initialTrendingTV ? Promise.resolve(initialTrendingTV) : tmdb.getTrendingTV(),
+        initialPopularMovies ? Promise.resolve(initialPopularMovies) : tmdb.getPopular("movie"),
         getWatchedShowsNextEpisodes(),
     ]);
 

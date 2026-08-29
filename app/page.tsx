@@ -143,7 +143,15 @@ export default async function Home({ searchParams }: HomeProps) {
 
         {/* Primary Top Section: Hero Slider & Friends Activity */}
         <div className="max-w-[1600px] mx-auto px-3 sm:px-6 md:px-8 lg:px-12 pt-3 md:pt-16">
-          {!isFiltering && <HomeTopSection personalizedResults={personalizedMovies?.results} />}
+          {!isFiltering && (
+            <HomeTopSection
+              personalizedResults={personalizedMovies?.results}
+              initialTrendingMovies={trendingMovies}
+              initialUpcomingMovies={upcomingMovies}
+              initialTrendingTV={trendingTV}
+              initialPopularMovies={popularMovies}
+            />
+          )}
         </div>
 
         {!isFiltering && <HomeDiscoverySection />}
