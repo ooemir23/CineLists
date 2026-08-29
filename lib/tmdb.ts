@@ -50,7 +50,9 @@ export const tmdb = {
         }
 
         try {
-            const fetchOptions: RequestInit & { next?: { revalidate: number } } = {};
+            const fetchOptions: RequestInit & { next?: { revalidate: number } } = {
+                signal: AbortSignal.timeout(6000),
+            };
 
             if (cache === "no-store") {
                 fetchOptions.next = { revalidate: 0 };

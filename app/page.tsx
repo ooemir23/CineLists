@@ -9,7 +9,6 @@ import { SectionTabs } from "@/components/home/section-tabs";
 import { HomeDiscoverySection } from "@/components/home/home-discovery-section";
 import { HomeViewModeProvider } from "@/components/home/use-shared-view-mode";
 
-export const dynamic = "force-dynamic";
 export const revalidate = 60;
 
 type HomeProps = {
