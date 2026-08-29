@@ -181,8 +181,8 @@ export async function getWatchedShowsNextEpisodes(): Promise<UpcomingEpisode[]> 
             ...watchedShows.map(w => ({ media: w.media, statusType: undefined, addedAt: w.watchedAt })),
         ];
 
-        // Dedup by media ID
-        const uniqueShows = Array.from(new Map(combinedShows.map(s => [s.media.id, s])).values());
+        // Dedup by media ID and take top 10 most recent shows to keep response fast
+        const uniqueShows = Array.from(new Map(combinedShows.map(s => [s.media.id, s])).values()).slice(0, 10);
         if (uniqueShows.length === 0) return [];
 
         const episodes: UpcomingEpisode[] = [];
