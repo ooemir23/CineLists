@@ -138,6 +138,7 @@ export function HomeDiscoverySection() {
     const [hasMore, setHasMore] = useState(true);
     const [activeFilterCategory, setActiveFilterCategory] = useState(0);
     const [userPreferences, setUserPreferences] = useState<{ genres: string[], platforms: string[] } | null>(null);
+    const discoveryCacheRef = useRef<Map<string, { results: DiscoverItem[]; hasMore: boolean }>>(new Map());
 
     // Staging states for filters (only applied when 'Uygula' is clicked)
     const [stagedGenres, setStagedGenres] = useState<string[]>([]);
@@ -258,10 +259,20 @@ export function HomeDiscoverySection() {
     useEffect(() => {
         const controller = new AbortController();
 
+        const cacheKey = `${activeType}-${activeCategory}-${activeTimeWindow}-${upcomingFilter}-${genres.join(",")}-${years.join(",")}-${ratings.join(",")}-${providers.join(",")}-${languages.join(",")}-${countries.join(",")}-${page}-${discoveryPageSize}`;
+
+        if (page === 1 && discoveryCacheRef.current.has(cacheKey)) {
+            const cached = discoveryCacheRef.current.get(cacheKey)!;
+            setItems(cached.results);
+            setHasMore(cached.hasMore);
+            setIsLoading(false);
+        } else if (page === 1) {
+            setIsLoading(true);
+        } else {
+            setIsMoreLoading(true);
+        }
+
         const fetchData = async () => {
-            if (page === 1) setIsLoading(true);
-            else setIsMoreLoading(true);
-            
             try {
                 const url = new URL("/api/tmdb/home-discover", window.location.origin);
                 url.searchParams.set("type", activeType);
@@ -273,10 +284,10 @@ export function HomeDiscoverySection() {
                     url.searchParams.set("upcomingFilter", upcomingFilter);
                 }
                 
-                if (genres.length > 0) url.searchParams.set("genre", genres.join("|")); // TMDB uses | for OR for genres too
+                if (genres.length > 0) url.searchParams.set("genre", genres.join("|"));
                 if (years.length > 0) url.searchParams.set("year", years.join(","));
-                if (ratings.length > 0) url.searchParams.set("rating", Math.min(...ratings.map(Number)).toString()); // Take lowest rating for gte
-                if (providers.length > 0) url.searchParams.set("provider", providers.join("|")); // TMDB uses | for OR
+                if (ratings.length > 0) url.searchParams.set("rating", Math.min(...ratings.map(Number)).toString());
+                if (providers.length > 0) url.searchParams.set("provider", providers.join("|"));
                 if (languages.length > 0) url.searchParams.set("language", languages.join(","));
                 if (countries.length > 0) url.searchParams.set("country", countries.join(","));
 
@@ -285,16 +296,20 @@ export function HomeDiscoverySection() {
                 });
                 const data = await res.json();
                 
+                const results = data?.results || [];
+                const more = Boolean(data?.hasMore);
+
                 if (page === 1) {
-                    setItems(data?.results || []);
+                    discoveryCacheRef.current.set(cacheKey, { results, hasMore: more });
+                    setItems(results);
                 } else {
-                    setItems(prev => [...prev, ...(data?.results || [])]);
+                    setItems(prev => [...prev, ...results]);
                 }
-                setHasMore(Boolean(data?.hasMore));
+                setHasMore(more);
             } catch (err: unknown) {
                 if (err instanceof DOMException && err.name === "AbortError") return;
                 console.error("Discovery fetch error:", err);
-                if (page === 1) setItems([]);
+                if (page === 1 && !discoveryCacheRef.current.has(cacheKey)) setItems([]);
             } finally {
                 setIsLoading(false);
                 setIsMoreLoading(false);

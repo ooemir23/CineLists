@@ -76,6 +76,14 @@ const cachedGetWatchedIdsForUser = unstable_cache(
     { revalidate: 120 }
 );
 
+const cachedGetWatchProviders = unstable_cache(
+    async (type: "movie" | "tv", id: string) => {
+        return tmdb.getWatchProviders(type, id);
+    },
+    ["tmdb-watch-providers-v2"],
+    { revalidate: 86400 }
+);
+
 export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams;
     const typeParam = searchParams.get("type");
@@ -348,7 +356,7 @@ export async function GET(request: NextRequest) {
                 }
 
                 try {
-                    const providerData = await tmdb.getWatchProviders(item.media_type, item.id.toString());
+                    const providerData = await cachedGetWatchProviders(item.media_type, item.id.toString());
                     const trProviders = providerData?.results?.TR?.flatrate;
 
                     return {
