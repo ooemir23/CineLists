@@ -25,6 +25,7 @@ if (!googleClientId || !googleClientSecret) {
 
 export const { auth, handlers, signIn, signOut } = NextAuth({
     ...authConfig,
+    adapter: PrismaAdapter(prisma),
     secret: authSecret,
     trustHost: true,
     session: { strategy: "jwt" },
