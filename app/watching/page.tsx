@@ -26,14 +26,19 @@ export default async function WatchingPage() {
         );
     }
 
-    const watchingList = await prisma.toWatch.findMany({
-        where: { 
-            userId: session.user.id,
-            status: "WATCHING"
-        },
-        include: { media: true },
-        orderBy: { addedAt: "desc" },
-    });
+    let watchingList: any[] = [];
+    try {
+        watchingList = await prisma.toWatch.findMany({
+            where: { 
+                userId: session.user.id,
+                status: "WATCHING"
+            },
+            include: { media: true },
+            orderBy: { addedAt: "desc" },
+        });
+    } catch (error) {
+        console.warn("[Watching] Database unavailable:", error);
+    }
 
     return (
         <div className="max-w-7xl mx-auto px-6 md:px-10 lg:px-16 py-10 ">

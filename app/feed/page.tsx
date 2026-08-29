@@ -122,22 +122,33 @@ export default async function FeedPage() {
         redirect("/login");
     }
 
-    // Get IDs of users I follow
-    const following = await prisma.follow.findMany({
-        where: { followerId: session.user.id },
-        select: { followingId: true },
-    });
+    try {
+        // Get IDs of users I follow
+        const following = await prisma.follow.findMany({
+            where: { followerId: session.user.id },
+            select: { followingId: true },
+        });
 
-    const followingIds = following.map(f => f.followingId);
+        const followingIds = following.map(f => f.followingId);
 
-    // Get grouped activities (includes user's own + friends')
-    const allActivities = await getGroupedFeedActivities(session.user.id, followingIds);
+        // Get grouped activities (includes user's own + friends')
+        const allActivities = await getGroupedFeedActivities(session.user.id, followingIds);
 
-    return (
-        <FeedClient 
-            initialActivities={allActivities} 
-            sessionUserId={session.user.id} 
-            followingCount={followingIds.length} 
-        />
-    );
+        return (
+            <FeedClient 
+                initialActivities={allActivities} 
+                sessionUserId={session.user.id} 
+                followingCount={followingIds.length} 
+            />
+        );
+    } catch (error) {
+        console.warn("[Feed] Database unavailable:", error);
+        return (
+            <FeedClient 
+                initialActivities={[]} 
+                sessionUserId={session.user.id} 
+                followingCount={0} 
+            />
+        );
+    }
 }
