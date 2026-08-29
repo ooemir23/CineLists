@@ -36,10 +36,10 @@ export default function FilteredWatchlist({ watchlist }: { watchlist: WatchlistI
         onFilterClick={() => setFilterOpen(!filterOpen)}
       />
       {/* Filtre menüsü açılırsa buraya eklenebilir */}
-      <div className={viewMode === "grid" ? "grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-8 mt-8" : "flex flex-col gap-4 mt-8"}>
+      <div className={viewMode === "grid" ? "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3.5 sm:gap-6 mt-6" : "flex flex-col gap-3 mt-6"}>
         {filtered.length === 0 ? (
-          <div className="text-center text-neutral-500 mt-20 w-full">
-            <p className="text-xl font-bold">Sonuç bulunamadı.</p>
+          <div className="text-center text-neutral-500 py-16 w-full col-span-full">
+            <p className="text-lg font-bold">Sonuç bulunamadı.</p>
           </div>
         ) : (
           filtered.map((item) => (

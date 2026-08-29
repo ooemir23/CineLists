@@ -190,15 +190,15 @@ export function CommentsSection({
                                     <span className="text-[8px] font-black text-rose-500 bg-rose-500/10 px-1.5 py-0.5 rounded border border-rose-500/20 uppercase tracking-widest">Spoiler</span>
                                 )}
                             </div>
-                            <div className="flex items-center gap-1 opacity-0 group-hover/item:opacity-100 transition-all">
+                            <div className="flex items-center gap-1 opacity-100 md:opacity-0 md:group-hover/item:opacity-100 transition-all">
                                 {isOwn && !isEditing && (
                                     <>
-                                        <button onClick={() => { setEditingComment(item); setEditContent(item.content); setEditIsSpoiler(!!item.isSpoiler); }} className="p-2 text-neutral-600 hover:text-sky-400 transition-colors"><Edit3 size={14} /></button>
-                                        <button onClick={() => handleDelete(item.id)} className="p-2 text-neutral-600 hover:text-rose-500 transition-colors"><Trash2 size={14} /></button>
+                                        <button onClick={() => { setEditingComment(item); setEditContent(item.content); setEditIsSpoiler(!!item.isSpoiler); }} className="p-2 text-neutral-500 hover:text-sky-400 active:scale-95 transition-colors" title="Düzenle"><Edit3 size={14} /></button>
+                                        <button onClick={() => handleDelete(item.id)} className="p-2 text-neutral-500 hover:text-rose-500 active:scale-95 transition-colors" title="Sil"><Trash2 size={14} /></button>
                                     </>
                                 )}
                                 {!isEditing && (
-                                    <button onClick={() => setShareComment(item)} className="p-2 text-neutral-600 hover:text-amber-400 transition-colors"><Share2 size={14} /></button>
+                                    <button onClick={() => setShareComment(item)} className="p-2 text-neutral-500 hover:text-amber-400 active:scale-95 transition-colors" title="Paylaş"><Share2 size={14} /></button>
                                 )}
                             </div>
                         </div>

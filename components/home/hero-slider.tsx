@@ -75,6 +75,35 @@ export function HeroSlider({ items }: HeroSliderProps) {
         setCurrentIndex(index);
     };
 
+    const [touchStartX, setTouchStartX] = useState<number | null>(null);
+    const [touchEndX, setTouchEndX] = useState<number | null>(null);
+
+    const handleTouchStart = (e: React.TouchEvent) => {
+        setTouchStartX(e.targetTouches[0].clientX);
+        setTouchEndX(null);
+    };
+
+    const handleTouchMove = (e: React.TouchEvent) => {
+        setTouchEndX(e.targetTouches[0].clientX);
+    };
+
+    const handleTouchEnd = () => {
+        if (!touchStartX || !touchEndX) return;
+        const distance = touchStartX - touchEndX;
+        const minSwipeDistance = 45;
+        if (distance > minSwipeDistance) {
+            // Swiped left -> next slide
+            setIsManual(true);
+            goNext();
+        } else if (distance < -minSwipeDistance) {
+            // Swiped right -> prev slide
+            setIsManual(true);
+            goPrev();
+        }
+        setTouchStartX(null);
+        setTouchEndX(null);
+    };
+
     if (!hasItems) {
         return (
             <div className="w-full h-full rounded-[1.75rem] md:rounded-[3rem] overflow-hidden border border-white/5 bg-slate-950 flex items-center justify-center p-8 text-center">
@@ -96,7 +125,12 @@ export function HeroSlider({ items }: HeroSliderProps) {
         : "/placeholder-hero.jpg";
 
     return (
-        <div className="relative w-full h-full group overflow-hidden rounded-[1.75rem] md:rounded-[2.5rem] border border-white/5 bg-slate-950 shadow-2xl">
+        <div 
+            onTouchStart={handleTouchStart}
+            onTouchMove={handleTouchMove}
+            onTouchEnd={handleTouchEnd}
+            className="relative w-full h-full group overflow-hidden rounded-[1.75rem] md:rounded-[2.5rem] border border-white/5 bg-slate-950 shadow-2xl touch-pan-y"
+        >
             <div key={currentItem.id} className="absolute inset-0 animate-hero-fade-scale">
                 <div
                     className="absolute inset-0 bg-cover bg-center bg-no-repeat animate-hero-ken-burns"

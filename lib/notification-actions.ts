@@ -35,31 +35,39 @@ export async function markNotificationAsRead(id: string) {
 }
 
 export async function getUnreadNotificationCount() {
-    const session = await auth();
-    if (!session?.user?.id) return 0;
+    try {
+        const session = await auth();
+        if (!session?.user?.id) return 0;
 
-    const count = await prisma.indicates.count({
-        where: {
-            userId: session.user.id,
-            isRead: false
-        },
-    });
+        const count = await prisma.indicates.count({
+            where: {
+                userId: session.user.id,
+                isRead: false
+            },
+        });
 
-    return count;
+        return count;
+    } catch {
+        return 0;
+    }
 }
 
 export async function markAllNotificationsAsRead() {
-    const session = await auth();
-    if (!session?.user?.id) return;
+    try {
+        const session = await auth();
+        if (!session?.user?.id) return;
 
-    await prisma.indicates.updateMany({
-        where: {
-            userId: session.user.id,
-            isRead: false
-        },
-        data: { isRead: true },
-    });
+        await prisma.indicates.updateMany({
+            where: {
+                userId: session.user.id,
+                isRead: false
+            },
+            data: { isRead: true },
+        });
 
-    revalidatePath("/notifications");
-    revalidatePath("/", "layout"); // Update sidebar count if possible
+        revalidatePath("/notifications");
+        revalidatePath("/", "layout");
+    } catch {
+        // Fallback gracefully
+    }
 }

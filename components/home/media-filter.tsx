@@ -344,9 +344,9 @@ export function MediaFilter() {
                         <div className="relative">
                             <button
                                 onClick={() => setShowCountryDropdown(!showCountryDropdown)}
-                                className="w-full h-full min-h-[28px] flex items-center justify-center bg-white/5 border border-white/10 rounded-lg hover:bg-white/10 transition-all"
+                                className="w-full h-full min-h-[38px] flex items-center justify-center bg-white/5 border border-white/10 rounded-xl hover:bg-white/10 active:scale-95 transition-all"
                             >
-                                <span className="text-base">{selectedCountry.flag}</span>
+                                <span className="text-lg">{selectedCountry.flag}</span>
                             </button>
 
                             {showCountryDropdown && (
@@ -389,7 +389,7 @@ export function MediaFilter() {
                             <button
                                 onClick={() => setShowProviderDropdown(!showProviderDropdown)}
                                 disabled={loading}
-                                className="w-full h-full min-h-[28px] flex items-center justify-center bg-white/5 border border-white/10 rounded-lg hover:bg-white/10 transition-all disabled:opacity-50 text-[10px] font-black text-neutral-500 hover:text-white uppercase"
+                                className="w-full h-full min-h-[38px] flex items-center justify-center bg-white/5 border border-white/10 rounded-xl hover:bg-white/10 active:scale-95 transition-all disabled:opacity-50 text-[11px] font-black text-neutral-400 hover:text-white uppercase"
                             >
                                 <span className="truncate px-1 flex items-center gap-1">
                                     {selectedProviders.length > 0 ? (
@@ -491,7 +491,7 @@ export function MediaFilter() {
                             <button
                                 onClick={() => setShowGenreDropdown(!showGenreDropdown)}
                                 disabled={loading}
-                                className="w-full h-full min-h-[28px] flex items-center justify-center bg-white/5 border border-white/10 rounded-lg hover:bg-white/10 transition-all disabled:opacity-50 text-[10px] font-black text-neutral-500 hover:text-white uppercase"
+                                className="w-full h-full min-h-[38px] flex items-center justify-center bg-white/5 border border-white/10 rounded-xl hover:bg-white/10 active:scale-95 transition-all disabled:opacity-50 text-[11px] font-black text-neutral-400 hover:text-white uppercase"
                             >
                                 <span className="truncate px-1 flex items-center gap-1">
                                     {selectedGenres.length > 0 ? (
@@ -576,7 +576,7 @@ export function MediaFilter() {
                             <select
                                 value={year}
                                 onChange={(e) => setYear(e.target.value)}
-                                className="w-full h-full min-h-[28px] bg-white/5 border border-white/10 rounded-lg py-1 px-1 text-[10px] font-black text-neutral-500 hover:text-white appearance-none focus:outline-none transition-all cursor-pointer hover:bg-white/10 text-center uppercase"
+                                className="w-full h-full min-h-[38px] bg-white/5 border border-white/10 rounded-xl py-1 px-1 text-[11px] font-black text-neutral-400 hover:text-white appearance-none focus:outline-none transition-all cursor-pointer hover:bg-white/10 text-center uppercase"
                             >
                                 <option value="" className="bg-neutral-900">Yıl</option>
                                 {YEARS.map(y => (
@@ -590,7 +590,7 @@ export function MediaFilter() {
                             <select
                                 value={minRating}
                                 onChange={(e) => setMinRating(e.target.value)}
-                                className="w-full h-full min-h-[28px] bg-white/5 border border-white/10 rounded-lg py-1 px-1 text-[10px] font-black text-white appearance-none focus:outline-none transition-all cursor-pointer hover:bg-white/10 text-center"
+                                className="w-full h-full min-h-[38px] bg-white/5 border border-white/10 rounded-xl py-1 px-1 text-[11px] font-black text-white appearance-none focus:outline-none transition-all cursor-pointer hover:bg-white/10 text-center"
                             >
                                 <option value="" className="bg-neutral-900">Puan</option>
                                 {[9, 8, 7, 6, 5, 4, 3, 2, 1].map(r => (

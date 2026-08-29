@@ -22,10 +22,11 @@ export default async function ForgotPasswordPage({ searchParams }: ForgotPasswor
         : null;
 
     return (
-        <div className="relative min-h-[calc(100svh-72px)] flex items-center justify-center px-4 py-12 overflow-hidden bg-[#020617]">
+        <div className="fixed inset-0 z-50 flex items-center justify-center px-4 overflow-y-auto py-6">
+            <div className="absolute inset-0 bg-[#020617] pointer-events-none" />
             <PosterBackground />
 
-            <div className="w-full max-w-md relative z-20 animate-in fade-in zoom-in-95 duration-500">
+            <div className="w-full max-w-md relative z-20 animate-in fade-in zoom-in-95 duration-500 py-4 sm:py-8">
                 {/* Logo & Header */}
                 <div className="text-center mb-8">
                     <BrandLogo href="/" size="lg" className="mb-6 justify-center" />

@@ -22,9 +22,9 @@ export default async function CommunityPage(props: { searchParams: Promise<{ q?:
     }
 
     return (
-        <div className="container mx-auto px-6 py-12 max-w-5xl min-h-[70vh] flex flex-col">
+        <div className="container mx-auto px-3.5 sm:px-6 py-4 sm:py-12 max-w-5xl min-h-[70vh] flex flex-col">
             {/* Minimal Header Section */}
-            <div className={`flex flex-col items-center transition-all duration-700 ease-in-out ${!query ? "mt-4 mb-14" : "mb-10"}`}>
+            <div className={`flex flex-col items-center transition-all duration-700 ease-in-out ${!query ? "mt-1 sm:mt-4 mb-8 sm:mb-14" : "mb-6 sm:mb-10"}`}>
                 <div className="relative group mb-4">
                     <div className="absolute inset-0 bg-amber-400/20 blur-2xl rounded-full opacity-50 group-hover:opacity-100 transition-opacity" />
                     <div className="relative w-12 h-12 bg-slate-900 border border-white/10 rounded-2xl flex items-center justify-center shadow-2xl">

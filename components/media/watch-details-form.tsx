@@ -138,23 +138,28 @@ export function WatchDetailsForm({
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5 pr-1">
                 {/* Rating */}
-                <div className="space-y-3">
-                    <label className="text-[10px] font-bold text-neutral-500 uppercase tracking-widest flex items-center gap-1.5">
-                        <Star className="w-3 h-3 text-amber-500" /> Puanın
-                    </label>
-                    <div className="flex gap-1 bg-white/5 p-2 rounded-xl border border-white/5 w-fit">
+                <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                        <label className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest flex items-center gap-1.5">
+                            <Star className="w-3.5 h-3.5 text-amber-400 fill-amber-400" /> Puanın
+                        </label>
+                        <span className="text-xs font-black text-amber-400">{rating > 0 ? `${rating} / 10` : "Puan Seç"}</span>
+                    </div>
+                    <div className="flex items-center justify-between bg-white/5 p-2 rounded-2xl border border-white/5 w-full overflow-x-auto no-scrollbar">
                         {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((star) => (
                             <button
                                 key={star}
+                                type="button"
                                 onClick={() => setRating(star)}
                                 className={cn(
-                                    "transition-all hover:scale-110",
-                                    star <= rating ? "text-amber-500" : "text-neutral-700"
+                                    "p-1.5 rounded-lg transition-all active:scale-90 flex items-center justify-center",
+                                    star <= rating ? "text-amber-400" : "text-neutral-700 hover:text-neutral-500"
                                 )}
+                                aria-label={`${star} puan`}
                             >
                                 <Star
                                     className={cn(
-                                        "w-4 h-4",
+                                        "w-5 h-5 sm:w-5 sm:h-5",
                                         star <= rating ? "fill-current" : ""
                                     )}
                                 />

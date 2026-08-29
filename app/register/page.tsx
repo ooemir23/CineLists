@@ -25,10 +25,8 @@ export default async function RegisterPage({ searchParams }: RegisterPageProps) 
                         : null;
 
     return (
-        <div
-            className="relative flex items-center justify-center px-4 overflow-hidden bg-[#020617]"
-            style={{ minHeight: 'calc(100svh - 56px - 80px)' }}
-        >
+        <div className="fixed inset-0 z-50 flex items-center justify-center px-4 overflow-y-auto py-6">
+            <div className="absolute inset-0 bg-[#020617] pointer-events-none" />
             <PosterBackground />
 
             <div className="w-full max-w-md relative z-20 animate-in fade-in zoom-in-95 duration-500 py-4 sm:py-8">

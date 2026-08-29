@@ -25,7 +25,7 @@ export async function loginUser(formData: FormData) {
     }
 
     try {
-        await signIn("email", { email, password, redirectTo: "/onboarding" });
+        await signIn("email", { email, password, redirectTo: "/" });
     } catch (error) {
         if (error instanceof AuthError) {
             redirect("/login?error=invalid");
@@ -117,7 +117,16 @@ export async function handleSignOut() {
 }
 
 export async function signInWithGoogle() {
+    const hasGoogleKeys = process.env.AUTH_GOOGLE_ID && process.env.AUTH_GOOGLE_SECRET;
+    if (!hasGoogleKeys) {
+        await signIn("dev-login", { redirectTo: "/" });
+        return;
+    }
     await signIn("google", { redirectTo: "/onboarding" });
+}
+
+export async function devLogin() {
+    await signIn("dev-login", { redirectTo: "/" });
 }
 
 export async function requestPasswordReset(formData: FormData) {

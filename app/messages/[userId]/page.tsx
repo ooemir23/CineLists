@@ -19,9 +19,9 @@ export default async function ChatPage({ params }: { params: Promise<{ userId: s
     const messages = await getMessages(partnerId);
 
     return (
-        <div className="container mx-auto px-6 py-4 h-[calc(100vh-2rem)] flex flex-col">
+        <div className="max-w-4xl mx-auto px-3.5 sm:px-6 py-2 sm:py-4 h-[calc(100dvh-3.5rem-7rem)] sm:h-[calc(100dvh-5rem)] flex flex-col">
             {/* Header */}
-            <div className="flex items-center gap-4 pb-4 border-b border-white/10 mb-4 bg-background sticky top-0 z-10 w-full">
+            <div className="flex items-center gap-3 pb-3 border-b border-white/10 mb-3 bg-background/80 backdrop-blur-md sticky top-0 z-10 w-full rounded-2xl px-2 py-1">
                 <Link href="/messages" className="p-2 hover:bg-white/10 rounded-full transition-colors">
                     <ArrowLeft className="w-5 h-5 text-neutral-400" />
                 </Link>

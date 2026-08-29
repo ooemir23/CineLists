@@ -17,12 +17,12 @@ export default async function TasteMatchPage() {
   if (!profile) return null;
 
   return (
-    <div className="max-w-4xl mx-auto px-6 py-8">
-      <div className="flex items-center gap-3 mb-8">
+    <div className="max-w-4xl mx-auto px-3.5 sm:px-6 py-4 sm:py-8">
+      <div className="flex items-center gap-2.5 mb-6 sm:mb-8">
         <Heart className="w-8 h-8 text-pink-400" />
         <div>
-          <h1 className="text-2xl font-black text-white">Zevk İkizleri</h1>
-          <p className="text-sm text-neutral-400">Sana benzer zevklere sahip kullanıcılar</p>
+          <h1 className="text-xl sm:text-2xl font-black text-white">Zevk İkizleri</h1>
+          <p className="text-xs sm:text-sm text-neutral-400">Sana benzer zevklere sahip kullanıcılar</p>
         </div>
       </div>
 

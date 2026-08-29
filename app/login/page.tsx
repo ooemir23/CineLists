@@ -43,11 +43,8 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
         : null;
 
     return (
-        <div
-            className="fixed inset-0 z-50 flex items-center justify-center px-4 overflow-hidden overscroll-none"
-            style={{ minHeight: '100svh', maxHeight: '100svh' }}
-        >
-            <div className="absolute inset-0 bg-[#020617]" />
+        <div className="fixed inset-0 z-50 flex items-center justify-center px-4 overflow-y-auto py-6">
+            <div className="absolute inset-0 bg-[#020617] pointer-events-none" />
             <PosterBackground />
 
             <div className="w-full max-w-md relative z-20 animate-in fade-in zoom-in-95 duration-500">

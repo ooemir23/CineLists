@@ -27,24 +27,23 @@ export default async function StatsPage() {
     const { viewingTime, contentAnalysis, socialStats, genreBreakdown, temporalStats, personalInsights } = detailedStats;
 
     return (
-        <div className="max-w-7xl mx-auto px-6 md:px-10 lg:px-16 py-10 ">
+        <div className="max-w-7xl mx-auto px-3.5 sm:px-6 md:px-10 lg:px-16 py-4 sm:py-10">
             {/* Header */}
-            {/* Header */}
-            <div className="flex flex-col md:flex-row md:items-end gap-2 md:gap-4 mb-6 md:mb-10">
-                <div className="flex items-center gap-3">
+            <div className="flex flex-col md:flex-row md:items-end gap-2 md:gap-4 mb-6 sm:mb-10">
+                <div className="flex items-center gap-2.5">
                     <BarChart3 className="w-8 h-8 md:w-10 md:h-10 text-primary" />
-                    <h1 className="text-2xl md:text-4xl font-black text-white tracking-tight">İstatistikler</h1>
+                    <h1 className="text-2xl sm:text-3xl md:text-4xl font-black text-white tracking-tight">İstatistikler</h1>
                 </div>
-                <p className="text-neutral-500 text-xs md:text-sm font-medium pb-1 md:pb-1.5">
+                <p className="text-neutral-500 text-xs md:text-sm font-medium pb-1">
                     İzleme alışkanlıklarını ve detaylı analizlerini incele.
                 </p>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-10">
                 {/* Main Stats Column */}
-                <div className="lg:col-span-2 space-y-10">
+                <div className="lg:col-span-2 space-y-6 sm:space-y-10">
                     {/* Hero - Viewing Time */}
-                    <div className="bg-gradient-to-br from-violet-600/20 via-purple-600/20 to-fuchsia-600/20 border border-violet-500/30 p-8 rounded-3xl backdrop-blur-sm shadow-2xl shadow-violet-500/10">
+                    <div className="bg-gradient-to-br from-violet-600/20 via-purple-600/20 to-fuchsia-600/20 border border-violet-500/30 p-5 sm:p-8 rounded-3xl backdrop-blur-sm shadow-2xl shadow-violet-500/10">
                         <div className="flex items-center gap-3 mb-6">
                             <Clock className="w-8 h-8 text-violet-400" />
                             <h2 className="text-2xl font-black text-white">Toplam İzleme Süresi</h2>

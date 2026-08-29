@@ -8,11 +8,11 @@ export default async function SettingsLayout({ children }: { children: React.Rea
     if (!session?.user?.id) redirect("/login");
 
     return (
-        <div className="min-h-screen bg-[#020617] pt-20 pb-12 px-4 sm:px-6">
+        <div className="min-h-screen bg-[#020617] pt-2 sm:pt-8 pb-24 md:pb-12 px-3.5 sm:px-6">
             <div className="max-w-6xl mx-auto">
-                <div className="flex flex-col md:flex-row md:gap-12 min-h-[600px]">
+                <div className="flex flex-col md:flex-row md:gap-10 min-h-[500px]">
                     <SettingsSidebar />
-                    <div className="flex-1 py-4 md:py-8 overflow-y-auto">
+                    <div className="flex-1 py-2 md:py-8">
                         {children}
                     </div>
                 </div>

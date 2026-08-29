@@ -63,7 +63,7 @@ export default async function EpisodePage(props: Props) {
            MOBILE (default): TopNav hidden, MobileHeader (64px) + MobileDock (80px) = 144px offset.
            DESKTOP (sm+): TopNav (72px) visible, MobileHeader/Dock hidden = 72px offset.
         */
-        <div className="flex flex-col h-[calc(100vh-144px)] sm:h-[calc(100vh-72px)] bg-[#070c16] text-slate-200 overflow-hidden relative">
+        <div className="flex flex-col h-[calc(100dvh-3.5rem-7rem)] sm:h-[calc(100dvh-72px)] bg-[#070c16] text-slate-200 overflow-hidden relative">
             {/* MINIMAL TOP HEADER */}
             <header className="shrink-0 bg-[#070c16] border-b border-white/5 px-4 h-14 flex items-center gap-4 z-50">
                 <Link href={`/tv/${id}`} className="p-2 hover:bg-white/5 rounded-full transition-colors">

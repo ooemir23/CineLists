@@ -34,16 +34,16 @@ export default async function CalendarPage() {
   ].sort((a: any, b: any) => (b.popularity || 0) - (a.popularity || 0));
 
   return (
-    <div className="max-w-7xl mx-auto px-6 md:px-10 lg:px-16 py-10 ">
+    <div className="max-w-7xl mx-auto px-3.5 sm:px-6 md:px-10 lg:px-16 py-4 sm:py-10">
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-end gap-2 md:gap-4 mb-6 md:mb-10">
-        <div className="flex items-center gap-3">
+      <div className="flex flex-col md:flex-row md:items-end gap-2 md:gap-4 mb-6 sm:mb-10">
+        <div className="flex items-center gap-2.5">
           <Calendar className="w-8 h-8 md:w-10 md:h-10 text-primary" />
-          <h1 className="text-2xl md:text-4xl font-black text-white tracking-tight">
+          <h1 className="text-2xl sm:text-3xl md:text-4xl font-black text-white tracking-tight">
             Yakında & Yeni Çıkanlar
           </h1>
         </div>
-        <p className="text-neutral-500 text-xs md:text-sm font-medium pb-1 md:pb-1.5">
+        <p className="text-neutral-500 text-xs md:text-sm font-medium pb-1">
           Yakında çıkacak ve vizyondaki içerikleri keşfet.
         </p>
       </div>

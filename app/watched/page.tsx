@@ -61,16 +61,16 @@ export default async function WatchedPage() {
     }
 
     return (
-        <div className="max-w-7xl mx-auto px-6 md:px-10 lg:px-16 py-10">
-            <div className="flex flex-col md:flex-row md:items-center gap-3 mb-12">
-                <div className="flex items-center gap-3">
-                    <Check className="w-10 h-10 text-primary" />
-                    <h1 className="text-3xl md:text-5xl font-black text-white tracking-tight">İzlenenler</h1>
+        <div className="max-w-7xl mx-auto px-3.5 sm:px-6 md:px-10 lg:px-16 py-4 sm:py-10">
+            <div className="flex flex-col md:flex-row md:items-center gap-3 mb-6 sm:mb-10">
+                <div className="flex items-center gap-2.5">
+                    <Check className="w-8 h-8 md:w-10 md:h-10 text-primary" />
+                    <h1 className="text-2xl sm:text-3xl md:text-5xl font-black text-white tracking-tight">İzlenenler</h1>
                 </div>
-                <div className="flex flex-wrap gap-4 text-sm md:ml-8 mt-2 md:mt-0">
-                    <span className="bg-slate-800 text-white rounded-lg px-3 py-1">Toplam Film: <b>{totalMovieCount}</b> ({totalMovieHours} saat)</span>
-                    <span className="bg-slate-800 text-white rounded-lg px-3 py-1">Toplam Dizi: <b>{totalTvCount}</b> ({totalTvEpisodes} bölüm, {Math.round(totalTvHours)} saat)</span>
-                    <span className="bg-slate-800 text-white rounded-lg px-3 py-1">Favori Tür: <b>{favoriteGenre}</b></span>
+                <div className="flex flex-wrap gap-2 sm:gap-3 text-xs sm:text-sm md:ml-6 mt-1 md:mt-0">
+                    <span className="bg-slate-800/80 border border-white/5 text-white rounded-xl px-3 py-1.5 font-medium">Toplam Film: <b className="text-primary">{totalMovieCount}</b> ({totalMovieHours}s)</span>
+                    <span className="bg-slate-800/80 border border-white/5 text-white rounded-xl px-3 py-1.5 font-medium">Toplam Dizi: <b className="text-primary">{totalTvCount}</b> ({totalTvEpisodes} bl, {Math.round(totalTvHours)}s)</span>
+                    <span className="bg-slate-800/80 border border-white/5 text-white rounded-xl px-3 py-1.5 font-medium">Favori Tür: <b className="text-primary">{favoriteGenre}</b></span>
                 </div>
             </div>
 

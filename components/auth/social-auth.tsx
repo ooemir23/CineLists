@@ -17,7 +17,8 @@ export function SocialAuth() {
     const handleGoogleLogin = () => {
         startTransition(() => {
             signInWithGoogle().catch((error) => {
-                console.error("Google login failed:", error);
+                if (error?.message?.includes("NEXT_REDIRECT")) return;
+                console.error("Google login error:", error);
             });
         });
     };

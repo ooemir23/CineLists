@@ -16,7 +16,7 @@ export function SettingsSidebar() {
     const pathname = usePathname();
 
     return (
-        <div className="w-full md:w-64 border-b md:border-b-0 md:border-r border-white/5 md:pr-8 py-4 md:py-8 flex flex-col gap-2">
+        <div className="w-full md:w-64 border-b md:border-b-0 md:border-r border-white/10 md:pr-8 py-2 md:py-8 flex flex-row md:flex-col gap-1.5 md:gap-2 overflow-x-auto no-scrollbar shrink-0">
             {tabs.map((tab) => {
                 const Icon = tab.icon;
                 const isActive = pathname === tab.href || pathname.startsWith(tab.href);
@@ -25,13 +25,13 @@ export function SettingsSidebar() {
                         key={tab.id}
                         href={tab.href}
                         className={cn(
-                            "flex items-center gap-3 px-4 py-3.5 rounded-2xl transition-all font-bold text-sm",
+                            "flex items-center gap-2 md:gap-3 px-3.5 md:px-4 py-2.5 md:py-3.5 rounded-xl md:rounded-2xl transition-all font-bold text-xs md:text-sm whitespace-nowrap shrink-0",
                             isActive
                                 ? "bg-amber-400 text-slate-950 shadow-lg shadow-amber-400/20"
-                                : "text-neutral-400 hover:text-white hover:bg-white/5"
+                                : "text-neutral-400 hover:text-white hover:bg-white/5 bg-white/[0.02] md:bg-transparent"
                         )}
                     >
-                        <Icon size={18} className={cn(isActive ? "text-slate-950" : "text-neutral-500")} />
+                        <Icon size={16} className={cn("md:w-[18px] md:h-[18px]", isActive ? "text-slate-950" : "text-neutral-500")} />
                         {tab.label}
                     </Link>
                 );

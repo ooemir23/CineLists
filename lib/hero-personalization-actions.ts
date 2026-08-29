@@ -127,7 +127,7 @@ export async function getFavoriteActorsUpcoming(): Promise<UpcomingActorProject[
 
         return projects.slice(0, 4); // Limit total to 4
     } catch (error) {
-        console.error("Error getting favorite actors upcoming:", error);
+        console.warn("[HeroPersonalization] Favorite actors skipped in dev:", error);
         return [];
     }
 }
@@ -308,7 +308,7 @@ export async function getWatchedShowsNextEpisodes(): Promise<UpcomingEpisode[]> 
         // Take top 20 items with upcoming dates
         return sorted.slice(0, 20);
     } catch (error) {
-        console.error("Error getting next episodes:", error);
+        console.warn("[HeroPersonalization] Next episodes skipped in dev:", error);
         return [];
     }
 }
@@ -371,7 +371,7 @@ export async function getFriendsViewingStats(): Promise<FriendStats[]> {
 
         return topStats;
     } catch (error) {
-        console.error("Error getting friends viewing stats:", error);
+        console.warn("[HeroPersonalization] Friends viewing stats skipped in dev:", error);
         return [];
     }
 }
@@ -472,7 +472,7 @@ export async function getFollowedHighlights(): Promise<FollowedHighlight[]> {
 
         return highlights.filter((item): item is FollowedHighlight => !!item && !!item.backdropPath).slice(0, 3);
     } catch (error) {
-        console.error("Error getting followed highlights:", error);
+        console.warn("[HeroPersonalization] Followed highlights skipped in dev:", error);
         return [];
     }
 }
