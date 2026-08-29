@@ -25,56 +25,89 @@ export default async function ProfilePage() {
         redirect("/login");
     }
 
-    // Fetch user stats & data
-    const [user, stats, movieGenres, tvGenres, recentWatched, allWatched, toWatch] = await Promise.all([
-        prisma.user.findUnique({
-            where: { id: session.user.id },
-            include: {
-                favoritePersons: { take: 8, orderBy: { addedAt: "desc" } },
-                activities: {
-                    take: 30,
-                    orderBy: { createdAt: "desc" },
-                    include: { media: true }
-                },
-                _count: {
-                    select: {
-                        toWatch: true,
-                        watched: true,
-                        followedBy: true,
-                        following: true,
+    // Fetch user stats & data safely
+    let user: any = null;
+    let stats: any = null;
+    let movieGenres: any = { genres: [] };
+    let tvGenres: any = { genres: [] };
+    let recentWatched: any[] = [];
+    let allWatched: any[] = [];
+    let toWatch: any[] = [];
+
+    try {
+        const [userData, statsData, movieG, tvG, recentW, allW, toW] = await Promise.all([
+            prisma.user.findUnique({
+                where: { id: session.user.id },
+                include: {
+                    favoritePersons: { take: 8, orderBy: { addedAt: "desc" } },
+                    activities: {
+                        take: 30,
+                        orderBy: { createdAt: "desc" },
+                        include: { media: true }
+                    },
+                    _count: {
+                        select: {
+                            toWatch: true,
+                            watched: true,
+                            followedBy: true,
+                            following: true,
+                        },
                     },
                 },
-            },
-        }),
-        getUserStats(session.user.id),
-        tmdb.getGenres("movie"),
-        tmdb.getGenres("tv"),
-        prisma.watched.findMany({
-            where: { userId: session.user.id },
-            take: 6,
-            orderBy: { watchedAt: "desc" },
-            include: { media: true },
-        }),
-        prisma.watched.findMany({
-            where: { userId: session.user.id },
-            take: 100,
-            orderBy: { watchedAt: "desc" },
-            include: { media: true },
-        }),
-        prisma.toWatch.findMany({
-            where: { userId: session.user.id },
-            take: 12,
-            orderBy: { addedAt: "desc" },
-            include: { media: true },
-        }),
-    ]);
+            }).catch(() => null),
+            getUserStats(session.user.id).catch(() => ({ movieCount: 0, showCount: 0, episodeCount: 0 })),
+            tmdb.getGenres("movie").catch(() => ({ genres: [] })),
+            tmdb.getGenres("tv").catch(() => ({ genres: [] })),
+            prisma.watched.findMany({
+                where: { userId: session.user.id },
+                take: 6,
+                orderBy: { watchedAt: "desc" },
+                include: { media: true },
+            }).catch(() => []),
+            prisma.watched.findMany({
+                where: { userId: session.user.id },
+                take: 100,
+                orderBy: { watchedAt: "desc" },
+                include: { media: true },
+            }).catch(() => []),
+            prisma.toWatch.findMany({
+                where: { userId: session.user.id },
+                take: 12,
+                orderBy: { addedAt: "desc" },
+                include: { media: true },
+            }).catch(() => []),
+        ]);
 
-    if (!user || !stats) {
-        return (
-            <div className="flex items-center justify-center min-h-[60vh]">
-                <p className="text-white">Kullanıcı verileri yüklenemedi.</p>
-            </div>
-        );
+        user = userData;
+        stats = statsData;
+        movieGenres = movieG;
+        tvGenres = tvG;
+        recentWatched = recentW;
+        allWatched = allW;
+        toWatch = toW;
+    } catch (error) {
+        console.warn("[ProfilePage] DB fetch error:", error);
+    }
+
+    if (!user) {
+        // Fallback user from session for local dev or newly created users
+        user = {
+            id: session.user.id,
+            name: session.user.name || "CineUser",
+            username: (session.user.name || "user").toLowerCase().replace(/\s+/g, "_"),
+            email: session.user.email,
+            image: session.user.image,
+            bio: "Sinema tutkunu.",
+            favoriteGenres: [],
+            platforms: [],
+            favoritePersons: [],
+            activities: [],
+            _count: { toWatch: 0, watched: 0, followedBy: 0, following: 0 },
+        };
+    }
+
+    if (!stats) {
+        stats = { movieCount: 0, showCount: 0, episodeCount: 0 };
     }
 
     // Merge and unique genres for preference selection

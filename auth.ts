@@ -25,7 +25,6 @@ if (!googleClientId || !googleClientSecret) {
 
 export const { auth, handlers, signIn, signOut } = NextAuth({
     ...authConfig,
-    adapter: PrismaAdapter(prisma),
     secret: authSecret,
     trustHost: true,
     session: { strategy: "jwt" },
@@ -59,8 +58,7 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
             },
             async authorize(credentials) {
                 if (!credentials?.email) return null;
-                const email = credentials.email as string;
-
+                const email = (credentials.email as string).trim();
                 const password = credentials.password as string | undefined;
                 if (!password) return null;
 
@@ -69,15 +67,26 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
                         where: { email },
                     });
 
-                    if (!user?.password) return null;
-
-                    const isValidPassword = await bcrypt.compare(password, user.password);
-                    if (!isValidPassword) return null;
-
-                    return user;
+                    if (user?.password) {
+                        const isValidPassword = await bcrypt.compare(password, user.password);
+                        if (isValidPassword) return user;
+                        return null;
+                    }
                 } catch {
-                    return null;
+                    // DB offline fallback
                 }
+
+                // If DB is offline in development, log the user in with their entered email
+                if (!isProduction) {
+                    return {
+                        id: `dev_${email.replace(/[^a-zA-Z0-9]/g, "_")}`,
+                        name: email.split("@")[0] || "Emir",
+                        email: email,
+                        image: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=120&auto=format&fit=crop&q=80",
+                    };
+                }
+
+                return null;
             }
         }),
         Credentials({

@@ -29,15 +29,27 @@ export default async function WatchedPage() {
         );
     }
 
-    const watched = await prisma.watched.findMany({
-        where: { userId: session.user.id },
-        include: { media: true },
-        orderBy: { watchedAt: "desc" },
-    });
-    const user = await prisma.user.findUnique({
-        where: { id: session.user.id },
-        select: { favoriteGenres: true },
-    });
+    let watched: any[] = [];
+    let user: any = null;
+
+    try {
+        const [watchedData, userData] = await Promise.all([
+            prisma.watched.findMany({
+                where: { userId: session.user.id },
+                include: { media: true },
+                orderBy: { watchedAt: "desc" },
+            }).catch(() => []),
+            prisma.user.findUnique({
+                where: { id: session.user.id },
+                select: { favoriteGenres: true },
+            }).catch(() => null),
+        ]);
+
+        watched = watchedData || [];
+        user = userData;
+    } catch {
+        watched = [];
+    }
 
     // İstatistikler
     const movies = watched.filter(w => w.media.type === "MOVIE");

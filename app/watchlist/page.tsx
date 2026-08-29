@@ -24,11 +24,16 @@ export default async function WatchlistPage() {
         );
     }
 
-    const watchlist = await prisma.toWatch.findMany({
-        where: { userId: session.user.id, status: "PLAN_TO_WATCH" },
-        include: { media: true },
-        orderBy: { addedAt: "desc" },
-    });
+    let watchlist: any[] = [];
+    try {
+        watchlist = await prisma.toWatch.findMany({
+            where: { userId: session.user.id, status: "PLAN_TO_WATCH" },
+            include: { media: true },
+            orderBy: { addedAt: "desc" },
+        });
+    } catch {
+        watchlist = [];
+    }
 
     return (
         <div className="max-w-7xl mx-auto px-3.5 sm:px-6 md:px-10 lg:px-16 py-4 sm:py-10">

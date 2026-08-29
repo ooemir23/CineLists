@@ -9,13 +9,19 @@ export async function GET() {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         }
 
-        const user = await prisma.user.findUnique({
-            where: { id: session.user.id },
-            select: {
-                favoriteGenres: true,
-                platforms: true,
-            }
-        });
+        let user = null;
+        try {
+            user = await prisma.user.findUnique({
+                where: { id: session.user.id },
+                select: {
+                    favoriteGenres: true,
+                    platforms: true,
+                }
+            });
+        } catch {
+            user = { favoriteGenres: [], platforms: [] };
+        }
+
         const legacyMap: Record<string, string> = {
             "netflix": "8",
             "disney": "337",
@@ -29,7 +35,7 @@ export async function GET() {
 
         return NextResponse.json(
             {
-                ...user,
+                favoriteGenres: user?.favoriteGenres || [],
                 platforms: mappedPlatforms
             },
             {

@@ -58,12 +58,16 @@ function asDiscoverResult(item: Record<string, unknown>, mediaType: "movie" | "t
 }
 
 async function getWatchedIdsForUser(userId: string): Promise<number[]> {
-    const watched = await prisma.watched.findMany({
-        where: { userId },
-        select: { media: { select: { tmdbId: true } } },
-    });
+    try {
+        const watched = await prisma.watched.findMany({
+            where: { userId },
+            select: { media: { select: { tmdbId: true } } },
+        });
 
-    return watched.map((entry) => entry.media.tmdbId);
+        return watched.map((entry) => entry.media.tmdbId);
+    } catch {
+        return [];
+    }
 }
 
 const cachedGetWatchedIdsForUser = unstable_cache(

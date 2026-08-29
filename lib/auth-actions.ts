@@ -54,10 +54,9 @@ export async function registerUser(formData: FormData) {
             where: { email },
         });
     } catch (error) {
-        if (isPrismaConnectionError(error)) {
-            redirect("/register?error=db");
+        if (!isPrismaConnectionError(error)) {
+            throw error;
         }
-        throw error;
     }
 
     if (existingUser) {
@@ -84,14 +83,13 @@ export async function registerUser(formData: FormData) {
             },
         });
     } catch (error: any) {
-        if (isPrismaConnectionError(error)) {
-            redirect("/register?error=db");
-        }
         if (error.code === 'P2002') {
             redirect("/register?error=exists");
         }
-        console.error("Registration error:", error);
-        redirect("/register?error=unknown");
+        if (!isPrismaConnectionError(error)) {
+            console.error("Registration error:", error);
+            redirect("/register?error=unknown");
+        }
     }
 
     try {

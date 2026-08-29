@@ -4,36 +4,44 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 
 export async function getUserStats(userId?: string) {
-    const session = await auth();
-    const targetUserId = userId || session?.user?.id;
+    try {
+        const session = await auth();
+        const targetUserId = userId || session?.user?.id;
 
-    if (!targetUserId) return null;
+        if (!targetUserId) return null;
 
-    // Counts from the new lists
-    const watchedMovies = await prisma.watched.count({
-        where: {
-            userId: targetUserId,
-            media: { type: "MOVIE" }
-        }
-    });
+        // Counts from the new lists
+        const watchedMovies = await prisma.watched.count({
+            where: {
+                userId: targetUserId,
+                media: { type: "MOVIE" }
+            }
+        });
 
-    const watchedShows = await prisma.watched.count({
-        where: {
-            userId: targetUserId,
-            media: { type: "TV" }
-        }
-    });
+        const watchedShows = await prisma.watched.count({
+            where: {
+                userId: targetUserId,
+                media: { type: "TV" }
+            }
+        });
 
-    // Total episodes watched (still source of truth)
-    const watchedEpisodes = await prisma.watchedEpisode.count({
-        where: { userId: targetUserId }
-    });
+        // Total episodes watched (still source of truth)
+        const watchedEpisodes = await prisma.watchedEpisode.count({
+            where: { userId: targetUserId }
+        });
 
-    return {
-        movieCount: watchedMovies,
-        showCount: watchedShows,
-        episodeCount: watchedEpisodes
-    };
+        return {
+            movieCount: watchedMovies,
+            showCount: watchedShows,
+            episodeCount: watchedEpisodes
+        };
+    } catch {
+        return {
+            movieCount: 0,
+            showCount: 0,
+            episodeCount: 0
+        };
+    }
 }
 
 
