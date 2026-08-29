@@ -1,7 +1,7 @@
 import { env } from "./env";
 
 const TMDB_BASE_URL = "https://api.themoviedb.org/3";
-const API_KEY = env.TMDB_API_KEY;
+const getApiKey = () => process.env.TMDB_API_KEY?.trim() || env.TMDB_API_KEY?.trim();
 
 const EMPTY_LIST_RESPONSE = {
     results: [],
@@ -30,7 +30,8 @@ type FetchOptions = {
 
 export const tmdb = {
     async fetch(endpoint: string, { params, cache }: FetchOptions = {}) {
-        if (!API_KEY || API_KEY.includes("buraya")) {
+        const apiKey = getApiKey();
+        if (!apiKey || apiKey.includes("buraya")) {
             console.error("TMDB_API_KEY is missing or placeholder value");
             if (isListEndpoint(endpoint)) {
                 return EMPTY_LIST_RESPONSE;
@@ -39,7 +40,7 @@ export const tmdb = {
         }
 
         const url = new URL(`${TMDB_BASE_URL}${endpoint}`);
-        url.searchParams.append("api_key", API_KEY);
+        url.searchParams.append("api_key", apiKey);
         url.searchParams.append("language", "tr-TR");
 
         if (params) {
