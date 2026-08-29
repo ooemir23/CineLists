@@ -10,7 +10,7 @@ import { HomeDiscoverySection } from "@/components/home/home-discovery-section";
 import { HomeViewModeProvider } from "@/components/home/use-shared-view-mode";
 
 export const dynamic = "force-dynamic";
-export const revalidate = 0;
+export const revalidate = 60;
 
 type HomeProps = {
   searchParams: Promise<{
