@@ -24,10 +24,11 @@ export function CastList({ cast }: CastListProps) {
     
     if (!cast || cast.length === 0) return null;
 
-    // We want about 9 or 10 items in the first row on desktop
+    // On desktop we have 9 columns in the row (lg:grid-cols-9)
     const desktopLimit = 9;
-    const initialItems = cast.slice(0, desktopLimit);
     const hasMore = cast.length > desktopLimit;
+    // When there are more items, show (desktopLimit - 1) actors so the "DAHA FAZLA" button takes the 9th slot
+    const initialItems = hasMore ? cast.slice(0, desktopLimit - 1) : cast;
 
     const ActorCard = ({ person }: { person: CastMember }) => (
         <Link
@@ -86,7 +87,7 @@ export function CastList({ cast }: CastListProps) {
                                 DAHA FAZLA
                             </p>
                             <p className="text-[8px] sm:text-[9px] md:text-[10px] font-bold text-neutral-500 uppercase tracking-widest">
-                                +{cast.length - desktopLimit} OYUNCU
+                                +{cast.length - initialItems.length} OYUNCU
                             </p>
                         </div>
                     </button>
