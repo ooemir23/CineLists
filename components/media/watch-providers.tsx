@@ -50,7 +50,7 @@ export function WatchProviders({ providers, isGlobal, isGuest, countryCode = "TR
             return q ? `https://www.netflix.com/search?q=${q}` : "https://www.netflix.com";
         }
         if (name.includes("disney")) {
-            return q ? `https://www.disneyplus.com/search?q=${q}` : "https://www.disneyplus.com";
+            return providers?.link || (q ? `https://www.google.com/search?q=${q}+disney+plus+izle` : "https://www.disneyplus.com");
         }
         if (name.includes("apple")) {
             return q ? `https://tv.apple.com/search?term=${q}` : "https://tv.apple.com";
