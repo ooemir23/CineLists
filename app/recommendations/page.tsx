@@ -84,7 +84,7 @@ export default async function RecommendationsPage({ searchParams }: Recommendati
     }
 
     return (
-        <div className=" bg-[#101624] pb-20">
+        <div className="bg-background pb-20">
             {/* Header Section */}
             <div className="relative pt-24 pb-12">
                 <div className="absolute inset-0 bg-gradient-to-b from-primary/10 via-transparent to-transparent" />

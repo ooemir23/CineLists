@@ -9,12 +9,29 @@ export default async function TasteMatchPage() {
   const session = await auth();
   if (!session?.user?.id) redirect("/login");
 
-  const [profile, topMatches] = await Promise.all([
-    getMyTasteProfile(),
-    getTopTasteMatches(session.user.id, 20),
-  ]);
+  let profile: any = null;
+  let topMatches: any[] = [];
 
-  if (!profile) return null;
+  try {
+    [profile, topMatches] = await Promise.all([
+      getMyTasteProfile(),
+      getTopTasteMatches(session.user.id, 20),
+    ]);
+  } catch (error) {
+    console.error("TasteMatch database query error:", error);
+  }
+
+  if (!profile) {
+    return (
+      <div className="max-w-4xl mx-auto px-3.5 sm:px-6 py-12 text-center">
+        <Heart className="w-12 h-12 text-pink-400/50 mx-auto mb-4" />
+        <h2 className="text-xl font-bold text-white mb-2">Veritabanına Bağlanılamadı</h2>
+        <p className="text-neutral-400 text-sm max-w-md mx-auto mb-6">
+          Zevk ikizleri ve profil verilerine erişilemedi. Lütfen veritabanı bağlantınızı kontrol edin.
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-4xl mx-auto px-3.5 sm:px-6 py-4 sm:py-8">
@@ -53,7 +70,7 @@ export default async function TasteMatchPage() {
             <span className="text-xs text-neutral-400 font-medium">Favori Türler</span>
           </div>
           <div className="flex flex-wrap gap-1.5">
-            {profile.favoriteGenres.slice(0, 3).map((g) => (
+            {profile.favoriteGenres.slice(0, 3).map((g: { genre: string }) => (
               <span
                 key={g.genre}
                 className="text-[10px] bg-purple-500/20 text-purple-300 px-2 py-1 rounded-md font-bold"
@@ -80,7 +97,7 @@ export default async function TasteMatchPage() {
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          {topMatches.map((match) => (
+          {topMatches.map((match: any) => (
             <Link
               key={match.userId}
               href={`/profile/${match.userId}`}

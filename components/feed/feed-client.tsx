@@ -24,7 +24,7 @@ export function FeedClient({ initialActivities, sessionUserId, followingCount }:
   }, [activeTab, initialActivities, sessionUserId]);
 
   return (
-    <div className="w-full min-h-screen bg-[#101624] font-hanken text-[#f1f5f9] pb-24 md:pb-12">
+    <div className="w-full min-h-screen bg-background font-hanken text-foreground pb-24 md:pb-12">
       <div className="max-w-2xl mx-auto px-3.5 sm:px-6 pt-2 sm:pt-6">
         {/* Header */}
         <div className="mb-4 flex flex-col gap-3">

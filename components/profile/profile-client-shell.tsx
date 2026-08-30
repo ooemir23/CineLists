@@ -129,7 +129,7 @@ export function ProfileClientShell({
   ];
 
   return (
-    <div className="w-full min-h-screen bg-[#101624] font-hanken text-[#f1f5f9] pb-24 md:pb-12">
+    <div className="w-full min-h-screen bg-background font-hanken text-foreground pb-24 md:pb-12">
       <div className="max-w-4xl mx-auto px-3.5 sm:px-6 pt-2 sm:pt-6">
         <div className="bg-[#0b1120] rounded-[2rem] sm:rounded-[2.5rem] border border-white/10 shadow-2xl overflow-hidden">
           

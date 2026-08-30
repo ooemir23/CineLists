@@ -102,9 +102,10 @@ export function EpisodeDetailsModal({
                         {/* Close Button - Floating */}
                         <button
                             onClick={onClose}
-                            className="absolute top-6 right-6 z-[70] p-3 bg-black/40 hover:bg-white/10 rounded-full text-white transition-all border border-white/10 backdrop-blur-xl group shadow-2xl"
+                            className="absolute top-4 right-4 md:top-6 md:right-6 z-[70] p-2.5 md:p-3 bg-black/50 hover:bg-white/10 rounded-full text-white transition-all border border-white/10 backdrop-blur-xl group shadow-2xl active:scale-95"
+                            aria-label="Kapat"
                         >
-                            <X size={24} className="group-hover:rotate-90 transition-transform duration-300" />
+                            <X size={20} className="md:w-6 md:h-6 group-hover:rotate-90 transition-transform duration-300" />
                         </button>
 
                         {/* LEFT: CONTENT SECTION */}
@@ -127,30 +128,30 @@ export function EpisodeDetailsModal({
                                 <div className="absolute inset-0 bg-gradient-to-t from-[#0f172a] via-transparent to-transparent" />
                                 
                                 {/* Episode Info Overlay */}
-                                <div className="absolute bottom-8 left-8 right-8">
-                                    <div className="flex items-center gap-3 mb-4 animate-in fade-in slide-in-from-left-4 duration-500">
-                                        <span className="px-4 py-1.5 bg-amber-400 text-black font-black text-xs uppercase tracking-widest rounded-xl italic shadow-[0_8px_20px_rgba(251,191,36,0.3)]">
+                                <div className="absolute bottom-4 left-4 right-4 md:bottom-8 md:left-8 md:right-8">
+                                    <div className="flex flex-wrap items-center gap-2 md:gap-3 mb-2 md:mb-4 animate-in fade-in slide-in-from-left-4 duration-500">
+                                        <span className="px-3 py-1 md:px-4 md:py-1.5 bg-amber-400 text-black font-black text-[10px] md:text-xs uppercase tracking-widest rounded-xl italic shadow-[0_8px_20px_rgba(251,191,36,0.3)]">
                                             Bölüm {episode.episode_number}
                                         </span>
                                         {isWatched && (
-                                            <span className="flex items-center gap-2 px-4 py-1.5 bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 font-black text-xs uppercase tracking-widest rounded-xl backdrop-blur-md">
+                                            <span className="flex items-center gap-1.5 px-3 py-1 md:px-4 md:py-1.5 bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 font-black text-[10px] md:text-xs uppercase tracking-widest rounded-xl backdrop-blur-md">
                                                 <Check size={14} strokeWidth={3} /> İzlendi
                                             </span>
                                         )}
                                         {episode.vote_average && (
-                                            <span className="flex items-center gap-1.5 px-3 py-1.5 bg-black/40 text-amber-400 border border-white/10 font-black text-xs rounded-xl backdrop-blur-md">
+                                            <span className="flex items-center gap-1 px-2.5 py-1 md:px-3 md:py-1.5 bg-black/40 text-amber-400 border border-white/10 font-black text-[10px] md:text-xs rounded-xl backdrop-blur-md">
                                                 <Star size={12} fill="currentColor" /> {episode.vote_average.toFixed(1)}
                                             </span>
                                         )}
                                     </div>
-                                    <h2 className="text-3xl md:text-6xl font-black text-white tracking-tighter leading-[0.9] italic animate-in fade-in slide-in-from-bottom-4 duration-500">
+                                    <h2 className="text-2xl sm:text-3xl md:text-6xl font-black text-white tracking-tighter leading-[0.95] italic animate-in fade-in slide-in-from-bottom-4 duration-500">
                                         {episode.name}
                                     </h2>
                                 </div>
                             </div>
 
                             {/* Details Content */}
-                            <div className="p-8 md:p-12 space-y-10">
+                            <div className="p-4 sm:p-6 md:p-12 space-y-6 md:space-y-10">
                                 <div className="flex flex-wrap items-center gap-6 text-[10px] md:text-xs font-black text-white/40 uppercase tracking-[0.2em]">
                                     {episode.air_date && (
                                         <div className="flex items-center gap-2.5">

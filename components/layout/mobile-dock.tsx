@@ -66,7 +66,7 @@ export function MobileDock({ user }: MobileDockProps) {
           </button>
 
           {menuOpen && (
-            <div className="absolute bottom-[4.6rem] left-0 z-50 flex w-60 flex-col overflow-hidden rounded-[1.75rem] border border-white/10 bg-[#0b1220]/95 py-3 shadow-2xl backdrop-blur-2xl animate-in slide-in-from-bottom-4 zoom-in-95 duration-200">
+            <div className="absolute bottom-[calc(100%+0.75rem)] left-0 z-50 flex w-60 flex-col overflow-hidden rounded-[1.75rem] border border-white/10 bg-[#0b1220]/95 py-3 shadow-2xl backdrop-blur-2xl animate-in slide-in-from-bottom-4 zoom-in-95 duration-200">
               <div className="px-4 py-2 mb-1">
                 <span className="font-hanken text-[10px] font-bold text-primary/70 uppercase tracking-widest">
                   Kütüphanem
@@ -150,7 +150,7 @@ export function MobileDock({ user }: MobileDockProps) {
           </button>
 
           {profileMenuOpen && (
-            <div className="absolute bottom-[4.6rem] right-0 z-50 flex w-56 flex-col overflow-hidden rounded-[1.75rem] border border-white/10 bg-[#0b1220]/95 py-3 shadow-2xl backdrop-blur-2xl animate-in slide-in-from-bottom-4 zoom-in-95 duration-200">
+            <div className="absolute bottom-[calc(100%+0.75rem)] right-0 z-50 flex w-56 flex-col overflow-hidden rounded-[1.75rem] border border-white/10 bg-[#0b1220]/95 py-3 shadow-2xl backdrop-blur-2xl animate-in slide-in-from-bottom-4 zoom-in-95 duration-200">
               {user ? (
                 <>
                   {profileNavItems.map((item) => (

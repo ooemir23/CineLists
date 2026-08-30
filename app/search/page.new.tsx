@@ -134,12 +134,12 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
   ]);
 
   return (
-    <div className="bg-[#101624] pb-20 pt-4">
-      <div className="max-w-7xl mx-auto px-6 mb-4">
+    <div className="bg-background pb-20 pt-2 sm:pt-4">
+      <div className="max-w-7xl mx-auto px-3.5 sm:px-6 mb-4">
         <MediaFilter />
       </div>
 
-      <div className="max-w-7xl mx-auto px-6">
+      <div className="max-w-7xl mx-auto px-3.5 sm:px-6">
         {!isFiltering ? (
           <DiscoveryEngine
             dayMovie={<MediaRow title="" items={trendingData.day.movie} type="movie" />}

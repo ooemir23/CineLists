@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { Hanken_Grotesk, Bricolage_Grotesque, JetBrains_Mono } from "next/font/google";
 import { auth } from "@/auth";
 import "./globals.css";
 // import { Sidebar } from "@/components/layout/sidebar";
@@ -7,6 +8,24 @@ import { MobileHeader } from "@/components/layout/mobile-header";
 import { MobileDock } from "@/components/layout/mobile-dock";
 import { cn } from "@/lib/utils";
 import { ErrorBoundary } from "@/components/ui/error-boundary";
+
+const hanken = Hanken_Grotesk({
+  subsets: ["latin"],
+  variable: "--font-hanken",
+  display: "swap",
+});
+
+const bricolage = Bricolage_Grotesque({
+  subsets: ["latin"],
+  variable: "--font-bricolage",
+  display: "swap",
+});
+
+const jetbrainsMono = JetBrains_Mono({
+  subsets: ["latin"],
+  variable: "--font-mono",
+  display: "swap",
+});
 
 // Viewport configuration for mobile optimization
 export const viewport: Viewport = {
@@ -65,12 +84,16 @@ export default async function RootLayout({
   const session = await auth();
 
   return (
-    <html lang="tr" className="dark" suppressHydrationWarning>
+    <html
+      lang="tr"
+      className={cn("dark", hanken.variable, bricolage.variable, jetbrainsMono.variable)}
+      suppressHydrationWarning
+    >
       <body className={cn("font-hanken bg-background text-foreground overflow-x-hidden")} suppressHydrationWarning>
         <div className="flex flex-col min-h-screen max-w-[1920px] mx-auto shadow-2xl shadow-black/50 mobile-app-shell">
           <TopNav user={session?.user} />
           <MobileHeader />
-          <main className="flex-1 pt-14 sm:pt-0 pb-28 md:pb-0 relative z-0">
+          <main className="flex-1 pt-[calc(3.5rem+env(safe-area-inset-top))] sm:pt-0 pb-28 md:pb-0 relative z-0">
             <ErrorBoundary>
               {children}
             </ErrorBoundary>

@@ -17,6 +17,7 @@ import { ExpandableImage } from "@/components/ui/expandable-image";
 import { TrailerButton } from "@/components/media/trailer-button";
 import { DetailTabs } from "@/components/media/detail-tabs";
 import { Metadata } from "next";
+import { BackButton } from "@/components/ui/back-button";
 
 import { ActionNotification } from "@/components/media/action-notification";
 
@@ -186,9 +187,7 @@ export default async function DetailsPage(props: Props) {
                             )}
                             <div className="absolute inset-0 bg-gradient-to-t from-[#070c16] via-transparent to-transparent" />
                             <div className="absolute top-3 left-3 right-3 flex items-center justify-between z-10">
-                                <Link href="/" className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-black/50 backdrop-blur-sm text-[11px] font-black uppercase tracking-widest text-white/70 hover:text-white transition-colors group">
-                                    <ArrowLeft className="w-3 h-3 group-hover:-translate-x-0.5 transition-transform" />Geri
-                                </Link>
+                                <BackButton />
                                 <span className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border ${type === "movie" ? "bg-amber-400/20 border-amber-400/30 text-amber-400" : "bg-emerald-400/20 border-emerald-400/30 text-emerald-400"}`}>
                                     {type === "movie" ? <Film className="w-3 h-3" /> : <Tv className="w-3 h-3" />}
                                     {type === "movie" ? "Film" : "Dizi"}
