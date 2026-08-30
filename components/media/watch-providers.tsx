@@ -23,26 +23,10 @@ type WatchProvidersProps = {
     isGlobal?: boolean;
     isGuest?: boolean;
     countryCode?: string;
+    mediaTitle?: string;
 };
 
-// Platform mappings for direct URLs (simplified assumption for popular ones)
-const PLATFORM_URLS: Record<string, string> = {
-    "Netflix": "https://www.netflix.com",
-    "Disney Plus": "https://www.disneyplus.com",
-    "Amazon Prime Video": "https://www.primevideo.com",
-    "Apple TV Plus": "https://www.apple.com/apple-tv-plus",
-    "Google Play Movies": "https://play.google.com/store/movies",
-    "YouTube": "https://www.youtube.com",
-    "BluTV": "https://www.blutv.com",
-    "MUBI": "https://mubi.com",
-    "Tod": "https://www.todtv.com.tr",
-    "Exxen": "https://www.exxen.com",
-    "Gain": "https://www.gain.tv",
-    "TV+": "https://tvplus.com.tr",
-    "Turkcell TV+": "https://tvplus.com.tr"
-};
-
-export function WatchProviders({ providers, isGlobal, isGuest, countryCode = "TR" }: WatchProvidersProps) {
+export function WatchProviders({ providers, isGlobal, isGuest, countryCode = "TR", mediaTitle }: WatchProvidersProps) {
     const [isOpen, setIsOpen] = useState(false);
 
     const allProviders = [
@@ -55,8 +39,63 @@ export function WatchProviders({ providers, isGlobal, isGuest, countryCode = "TR
     const displayProviders = uniqueProviders.slice(0, 2);
     const extraCount = uniqueProviders.length - 2;
 
-    const getProviderUrl = (name: string) => {
-        return PLATFORM_URLS[name] || providers?.link || "#";
+    const getProviderUrl = (providerName: string) => {
+        const q = mediaTitle ? encodeURIComponent(mediaTitle.trim()) : "";
+        const name = (providerName || "").toLowerCase();
+
+        if (name.includes("prime") || name.includes("amazon")) {
+            return q ? `https://www.primevideo.com/search/ref=atv_nb_sr?phrase=${q}` : "https://www.primevideo.com";
+        }
+        if (name.includes("netflix")) {
+            return q ? `https://www.netflix.com/search?q=${q}` : "https://www.netflix.com";
+        }
+        if (name.includes("disney")) {
+            return q ? `https://www.disneyplus.com/search?q=${q}` : "https://www.disneyplus.com";
+        }
+        if (name.includes("apple")) {
+            return q ? `https://tv.apple.com/search?term=${q}` : "https://tv.apple.com";
+        }
+        if (name.includes("blutv") || (name.includes("max") && !name.includes("hbo"))) {
+            return q ? `https://www.blutv.com/arama?q=${q}` : "https://www.blutv.com";
+        }
+        if (name.includes("max") || name.includes("hbo")) {
+            return q ? `https://play.max.com/search?q=${q}` : "https://play.max.com";
+        }
+        if (name.includes("tod")) {
+            return q ? `https://www.todtv.com.tr/arama?q=${q}` : "https://www.todtv.com.tr";
+        }
+        if (name.includes("exxen")) {
+            return q ? `https://www.exxen.com/tr/search?q=${q}` : "https://www.exxen.com";
+        }
+        if (name.includes("gain")) {
+            return q ? `https://www.gain.tv/arama?q=${q}` : "https://www.gain.tv";
+        }
+        if (name.includes("mubi")) {
+            return q ? `https://mubi.com/tr/search/films?query=${q}` : "https://mubi.com";
+        }
+        if (name.includes("tv+") || name.includes("turkcell")) {
+            return q ? `https://tvplus.com.tr/arama?q=${q}` : "https://tvplus.com.tr";
+        }
+        if (name.includes("hulu")) {
+            return q ? `https://www.hulu.com/search?q=${q}` : "https://www.hulu.com";
+        }
+        if (name.includes("peacock")) {
+            return q ? `https://www.peacocktv.com/search?q=${q}` : "https://www.peacocktv.com";
+        }
+        if (name.includes("paramount")) {
+            return q ? `https://www.paramountplus.com/search/?query=${q}` : "https://www.paramountplus.com";
+        }
+        if (name.includes("crunchyroll")) {
+            return q ? `https://www.crunchyroll.com/search?q=${q}` : "https://www.crunchyroll.com";
+        }
+        if (name.includes("google play") || name.includes("google tv")) {
+            return q ? `https://play.google.com/store/search?q=${q}&c=movies` : "https://play.google.com/store/movies";
+        }
+        if (name.includes("youtube")) {
+            return q ? `https://www.youtube.com/results?search_query=${q}+izle` : "https://www.youtube.com";
+        }
+
+        return providers?.link || (q ? `https://www.google.com/search?q=${q}+${encodeURIComponent(providerName)}+izle` : "#");
     };
 
     const hasProviders = uniqueProviders.length > 0;

@@ -235,7 +235,7 @@ export default async function DetailsPage(props: Props) {
                             )}
                             <div className="grid grid-cols-2 gap-1.5">
                                 <TrailerButton videos={videos?.results || []} title={title} className="w-full py-2.5" />
-                                <WatchProviders providers={activeProviders} isGlobal={isGlobal} isGuest={isGuest} countryCode={userCountry} />
+                                <WatchProviders providers={activeProviders} isGlobal={isGlobal} isGuest={isGuest} countryCode={userCountry} mediaTitle={title} />
                             </div>
                             <div className="flex items-center w-full">
                                 <MediaActions
@@ -274,7 +274,7 @@ export default async function DetailsPage(props: Props) {
                             {/* Trailer + Watch Providers — yan yana */}
                             <div className="mt-2 flex gap-2">
                                 <TrailerButton videos={videos?.results || []} title={title} className="flex-1" />
-                                <WatchProviders providers={activeProviders} isGlobal={isGlobal} isGuest={isGuest} countryCode={userCountry} />
+                                <WatchProviders providers={activeProviders} isGlobal={isGlobal} isGuest={isGuest} countryCode={userCountry} mediaTitle={title} />
                             </div>
                         </div>
 
