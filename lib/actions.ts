@@ -27,66 +27,45 @@ export async function toggleToWatch(mediaId: number, type: "movie" | "tv" | "per
         return { success: true, inWatchlist: true };
     }
 
-    // Verify user exists in DB
-    const dbUser = await prisma.user.findUnique({
-        where: { id: session.user.id },
-    });
-
-    if (!dbUser) {
-        return { error: "Oturum geçersiz, lütfen tekrar giriş yapın." };
-    }
-
-    // Ensure media exists in our DB
-    let media = await prisma.mediaItem.findUnique({
-        where: { tmdbId: mediaId },
-    });
-
-    if (!media) {
-        let genres: string[] = [];
-        let details: TmdbMediaDetails | null = null;
-        if (type !== "person") {
-            // Fetch genres from TMDB
-            details = await tmdb.getDetails(type, mediaId.toString()) as TmdbMediaDetails;
-            genres = details.genres?.map((genre) => GENRE_MAP[genre.id] || genre.name) || [];
-        }
-
-        media = await prisma.mediaItem.create({
-            data: {
-                tmdbId: mediaId,
-                type: type === "movie" ? "MOVIE" : type === "tv" ? "TV" : "PERSON",
-                title: title,
-                posterPath: posterPath,
-                genres: genres,
-                voteAverage: type !== "person" ? details?.vote_average || 0 : 0,
-                runtime: type === "movie" ? details?.runtime : null, // Only save runtime for movies
-            },
-        });
-    }
-
-    // Check if already in toWatch
-    const existing = await prisma.toWatch.findUnique({
-        where: {
-            userId_mediaId: {
-                userId: session.user.id,
-                mediaId: media.id,
-            },
-        },
-    });
-
-    if (existing) {
-        await prisma.toWatch.delete({
-            where: { id: existing.id },
+    try {
+        // Verify user exists in DB
+        const dbUser = await prisma.user.findUnique({
+            where: { id: session.user.id },
         });
 
-        revalidatePath("/watchlist");
-        revalidatePath("/feed");
-        if (type !== "person") {
-            revalidatePath(`/${type}/${mediaId}`);
+        if (!dbUser) {
+            return { error: "Oturum geçersiz, lütfen tekrar giriş yapın." };
         }
-        return { added: false };
-    } else {
-        // Remove from watched if it exists there (exclusive)
-        const watched = await prisma.watched.findUnique({
+
+        // Ensure media exists in our DB
+        let media = await prisma.mediaItem.findUnique({
+            where: { tmdbId: mediaId },
+        });
+
+        if (!media) {
+            let genres: string[] = [];
+            let details: TmdbMediaDetails | null = null;
+            if (type !== "person") {
+                // Fetch genres from TMDB
+                details = await tmdb.getDetails(type, mediaId.toString()) as TmdbMediaDetails;
+                genres = details.genres?.map((genre) => GENRE_MAP[genre.id] || genre.name) || [];
+            }
+
+            media = await prisma.mediaItem.create({
+                data: {
+                    tmdbId: mediaId,
+                    type: type === "movie" ? "MOVIE" : type === "tv" ? "TV" : "PERSON",
+                    title: title,
+                    posterPath: posterPath,
+                    genres: genres,
+                    voteAverage: type !== "person" ? details?.vote_average || 0 : 0,
+                    runtime: type === "movie" ? details?.runtime : null, // Only save runtime for movies
+                },
+            });
+        }
+
+        // Check if already in toWatch
+        const existing = await prisma.toWatch.findUnique({
             where: {
                 userId_mediaId: {
                     userId: session.user.id,
@@ -95,33 +74,61 @@ export async function toggleToWatch(mediaId: number, type: "movie" | "tv" | "per
             },
         });
 
-        if (watched) {
-            await prisma.watched.delete({
-                where: { id: watched.id },
+        if (existing) {
+            await prisma.toWatch.delete({
+                where: { id: existing.id },
             });
 
-            // Also remove WATCHED activities for this show/movie
-            await prisma.activity.deleteMany({
+            revalidatePath("/watchlist");
+            revalidatePath("/feed");
+            if (type !== "person") {
+                revalidatePath(`/${type}/${mediaId}`);
+            }
+            return { added: false };
+        } else {
+            // Remove from watched if it exists there (exclusive)
+            const watched = await prisma.watched.findUnique({
                 where: {
+                    userId_mediaId: {
+                        userId: session.user.id,
+                        mediaId: media.id,
+                    },
+                },
+            });
+
+            if (watched) {
+                await prisma.watched.delete({
+                    where: { id: watched.id },
+                });
+
+                // Also remove WATCHED activities for this show/movie
+                await prisma.activity.deleteMany({
+                    where: {
+                        userId: session.user.id,
+                        mediaId: media.id,
+                        type: "WATCHED",
+                        episodeId: null
+                    }
+                });
+            }
+
+            await prisma.toWatch.create({
+                data: {
                     userId: session.user.id,
                     mediaId: media.id,
-                    type: "WATCHED",
-                    episodeId: null
-                }
+                },
             });
+            revalidatePath("/watchlist");
+            if (type !== "person") {
+                revalidatePath(`/${type}/${mediaId}`);
+            }
+            return { added: true };
         }
-
-        await prisma.toWatch.create({
-            data: {
-                userId: session.user.id,
-                mediaId: media.id,
-            },
-        });
-        revalidatePath("/watchlist");
-        if (type !== "person") {
-            revalidatePath(`/${type}/${mediaId}`);
+    } catch (error: any) {
+        if (error?.message?.includes("Can't reach database server")) {
+            return { error: "Veritabanı bağlantısı kurulamadı. Lütfen veritabanı servisinin çalıştığından emin olun." };
         }
-        return { added: true };
+        return { error: error?.message || "İşlem gerçekleştirilemedi." };
     }
 }
 
@@ -129,22 +136,26 @@ export async function getToWatchStatus(mediaId: number) {
     const session = await auth();
     if (!session?.user?.id) return false;
 
-    const media = await prisma.mediaItem.findUnique({
-        where: { tmdbId: mediaId },
-    });
+    try {
+        const media = await prisma.mediaItem.findUnique({
+            where: { tmdbId: mediaId },
+        });
 
-    if (!media) return false;
+        if (!media) return false;
 
-    const item = await prisma.toWatch.findUnique({
-        where: {
-            userId_mediaId: {
-                userId: session.user.id,
-                mediaId: media.id,
+        const item = await prisma.toWatch.findUnique({
+            where: {
+                userId_mediaId: {
+                    userId: session.user.id,
+                    mediaId: media.id,
+                },
             },
-        },
-    });
+        });
 
-    return !!item;
+        return !!item;
+    } catch {
+        return false;
+    }
 }
 
 

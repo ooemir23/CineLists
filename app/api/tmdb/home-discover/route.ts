@@ -4,6 +4,7 @@ import { getFriendsActivity } from "@/lib/feed-actions";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { unstable_cache } from "next/cache";
+import { detectUserCountry } from "@/lib/country";
 
 type DiscoverResult = {
     id: number;
@@ -347,6 +348,7 @@ export async function GET(request: NextRequest) {
                 .filter((item) => !watchedIdSet.has(item.id));
         }
 
+        const userCountry = (country && country.length === 2) ? country.toUpperCase() : detectUserCountry(request.headers);
         const pagedResults = results.slice(0, limit);
 
         const resultsWithProviders = await Promise.all(
@@ -357,12 +359,12 @@ export async function GET(request: NextRequest) {
 
                 try {
                     const providerData = await cachedGetWatchProviders(item.media_type, item.id.toString());
-                    const trProviders = providerData?.results?.TR?.flatrate;
+                    const targetProviders = providerData?.results?.[userCountry]?.flatrate;
 
                     return {
                         ...item,
-                        watch_providers: trProviders?.length
-                            ? { flatrate: trProviders.slice(0, 5) }
+                        watch_providers: targetProviders?.length
+                            ? { flatrate: targetProviders.slice(0, 5) }
                             : null,
                     };
                 } catch {
@@ -378,6 +380,7 @@ export async function GET(request: NextRequest) {
             {
                 results: resultsWithProviders,
                 hasMore: results.length > limit,
+                country: userCountry,
             },
             {
                 headers: {

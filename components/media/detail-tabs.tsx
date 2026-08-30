@@ -139,23 +139,23 @@ export function DetailTabs({
     });
 
     return (
-        <div className="space-y-8">
-            <div className="flex items-center gap-1 p-1.5 bg-white/[0.03] border border-white/10 rounded-2xl md:rounded-3xl overflow-x-auto no-scrollbar">
+        <div className="space-y-3 sm:space-y-4 md:space-y-8">
+            <div className="flex items-center gap-1 p-1 bg-white/[0.03] border border-white/10 rounded-2xl md:rounded-3xl overflow-x-auto no-scrollbar">
                 {activeTabs.map((tab) => (
                     <button
                         key={tab.id}
                         onClick={() => handleTabChange(tab.id)}
                         className={cn(
-                            "flex items-center gap-2 px-4 md:px-6 py-2.5 md:py-3.5 rounded-xl md:rounded-2xl text-[10px] md:text-xs font-black uppercase tracking-widest transition-all whitespace-nowrap shrink-0",
+                            "flex items-center gap-1.5 px-3 md:px-6 py-2 md:py-3.5 rounded-xl md:rounded-2xl text-[10px] md:text-xs font-black uppercase tracking-widest transition-all whitespace-nowrap shrink-0",
                             activeTab === tab.id
                                 ? "bg-amber-400 text-slate-950 shadow-lg shadow-amber-400/20"
                                 : "text-neutral-500 hover:text-white hover:bg-white/5",
                         )}
                     >
-                        <tab.icon size={16} className={activeTab === tab.id ? "text-slate-950" : "text-neutral-500"} />
+                        <tab.icon size={14} className={cn("shrink-0", activeTab === tab.id ? "text-slate-950" : "text-neutral-500")} />
                         {tab.label}
                         {tab.id === "cast" && cast.length > 0 && (
-                            <span className={cn("ml-1 px-1.5 py-0.5 rounded-md text-[9px]", activeTab === tab.id ? "bg-slate-950/20" : "bg-white/5")}>
+                            <span className={cn("ml-0.5 px-1.5 py-0.2 rounded-md text-[8px] md:text-[9px] font-bold", activeTab === tab.id ? "bg-slate-950/20" : "bg-white/5")}>
                                 {cast.length}
                             </span>
                         )}

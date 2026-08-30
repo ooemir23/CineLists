@@ -138,6 +138,7 @@ export function HomeDiscoverySection() {
     const [hasMore, setHasMore] = useState(true);
     const [activeFilterCategory, setActiveFilterCategory] = useState(0);
     const [userPreferences, setUserPreferences] = useState<{ genres: string[], platforms: string[] } | null>(null);
+    const [detectedCountry, setDetectedCountry] = useState("TR");
     const discoveryCacheRef = useRef<Map<string, { results: DiscoverItem[]; hasMore: boolean }>>(new Map());
 
     // Staging states for filters (only applied when 'Uygula' is clicked)
@@ -298,6 +299,9 @@ export function HomeDiscoverySection() {
                 
                 const results = data?.results || [];
                 const more = Boolean(data?.hasMore);
+                if (data?.country) {
+                    setDetectedCountry(data.country);
+                }
 
                 if (page === 1) {
                     discoveryCacheRef.current.set(cacheKey, { results, hasMore: more });
@@ -831,6 +835,7 @@ export function HomeDiscoverySection() {
                                         compact={viewMode === "compact"}
                                         genres={item.genre_ids?.map((id: number) => genreOptions.find(o => o.id === id.toString())?.label).filter((l): l is string => Boolean(l)).slice(0, 2)}
                                         fullWidth={viewMode === "grid"}
+                                        countryCode={countries[0] || detectedCountry}
                                     />
                                 </div>
                             ) : (

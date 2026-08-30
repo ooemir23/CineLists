@@ -2,13 +2,14 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { Star, Send, Globe, X, User, Clock } from "lucide-react";
+import { Star, Send, Globe, X, User, Clock, Tv } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { AutoScrollText } from "@/components/ui/auto-scroll-text";
 import { RecommendModal } from "./recommend-modal";
 import { useState, useEffect, useRef } from "react";
 import { getFriendsRatings } from "@/lib/rating-actions";
 import { createPortal } from "react-dom";
+import { getCountryName, getCountryBadgeLabel } from "@/lib/country";
 
 type MediaCardProps = {
     id: number;
@@ -39,6 +40,7 @@ type MediaCardProps = {
     genres?: string[];
     statusLabel?: string;
     statusType?: "watching" | "plan_to_watch";
+    countryCode?: string;
 };
 
 const IMAGE_BASE_URL = "https://image.tmdb.org/t/p/w500";
@@ -76,7 +78,8 @@ export function MediaCard({
     compact = false,
     genres,
     statusLabel,
-    statusType
+    statusType,
+    countryCode = "TR"
 }: MediaCardProps) {
     type FriendRating = {
         userId: string;
@@ -204,18 +207,32 @@ export function MediaCard({
                     </div>
                 )}
 
-                {type !== "person" && ((genres && genres.length > 0) || watchProviders?.flatrate) && (
-                    <div className="flex items-end justify-between w-full px-2 mb-1 z-30 relative pointer-events-none overflow-visible">
-                        <div className="flex -space-x-1.5 z-30">
-                            {watchProviders?.flatrate?.slice(0, 3).map((provider) => (
-                                <div key={provider.provider_id} className="w-5 h-5 md:w-6 md:h-6 rounded-full overflow-hidden border-2 border-[#1e293b] shadow-md relative pointer-events-auto" title={provider.provider_name}>
-                                    <img
-                                        src={`https://image.tmdb.org/t/p/original${provider.logo_path}`}
-                                        alt={provider.provider_name}
-                                        className="w-full h-full object-cover"
-                                    />
+                {type !== "person" && (
+                    <div className="flex items-end justify-between w-full px-1.5 md:px-2 mb-1 z-30 relative pointer-events-none overflow-visible">
+                        <div className="flex items-center z-30">
+                            {watchProviders?.flatrate && watchProviders.flatrate.length > 0 ? (
+                                <div className="flex -space-x-1.5 pointer-events-auto">
+                                    {watchProviders.flatrate.slice(0, 3).map((provider) => (
+                                        <div key={provider.provider_id} className="w-5 h-5 md:w-6 md:h-6 rounded-full overflow-hidden border-2 border-[#1e293b] shadow-md relative" title={provider.provider_name}>
+                                            <img
+                                                src={`https://image.tmdb.org/t/p/original${provider.logo_path}`}
+                                                alt={provider.provider_name}
+                                                className="w-full h-full object-cover"
+                                            />
+                                        </div>
+                                    ))}
                                 </div>
-                            ))}
+                            ) : (
+                                <div 
+                                    className="flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-black/85 border border-white/10 text-neutral-400 shadow-md relative pointer-events-auto backdrop-blur-sm"
+                                    title={`${getCountryName(countryCode)}'de yayınlanan herhangi bir dijital platformda bulunmuyor`}
+                                >
+                                    <Tv className="w-2.5 h-2.5 md:w-3 md:h-3 text-neutral-400 shrink-0" />
+                                    <span className="text-[7px] md:text-[8px] font-black uppercase tracking-wider text-neutral-300">
+                                        {getCountryBadgeLabel(countryCode)}
+                                    </span>
+                                </div>
+                            )}
                         </div>
 
                         {genres && genres.length > 0 && (

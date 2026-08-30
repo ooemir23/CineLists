@@ -17,7 +17,9 @@ import { ExpandableImage } from "@/components/ui/expandable-image";
 import { TrailerButton } from "@/components/media/trailer-button";
 import { DetailTabs } from "@/components/media/detail-tabs";
 import { Metadata } from "next";
+import { headers } from "next/headers";
 import { BackButton } from "@/components/ui/back-button";
+import { detectUserCountry } from "@/lib/country";
 
 import { ActionNotification } from "@/components/media/action-notification";
 
@@ -73,28 +75,34 @@ export default async function DetailsPage(props: Props) {
         safe((async () => { const { getUserRating } = await import("@/lib/rating-actions"); return getUserRating(mediaId, type as "movie" | "tv"); })(), null),
         safe((async () => { const { getFriendsRatings } = await import("@/lib/rating-actions"); return getFriendsRatings(mediaId, type as "movie" | "tv"); })(), []),
         safe(getReceivedRecommendation(mediaId), null),
-        safe(prisma.mediaItem.findUnique({
-            where: { tmdbId: mediaId },
-            include: { 
-                activities: { 
-                    where: {
-                        OR: [
-                            { type: "REVIEWED" },
-                            { review: { not: null } },
-                            { comments: { some: {} } }
-                        ]
-                    }, 
+        safe((async () => {
+            try {
+                return await prisma.mediaItem.findUnique({
+                    where: { tmdbId: mediaId },
                     include: { 
-                        user: true,
-                        comments: {
-                            include: { user: true },
-                            orderBy: { createdAt: "asc" }
-                        }
-                    }, 
-                    orderBy: { createdAt: "desc" } 
-                } 
+                        activities: { 
+                            where: {
+                                OR: [
+                                    { type: "REVIEWED" },
+                                    { review: { not: null } },
+                                    { comments: { some: {} } }
+                                ]
+                            }, 
+                            include: { 
+                                user: true,
+                                comments: {
+                                    include: { user: true },
+                                    orderBy: { createdAt: "asc" }
+                                }
+                            }, 
+                            orderBy: { createdAt: "desc" } 
+                        } 
+                    }
+                });
+            } catch {
+                return null;
             }
-        }), null)
+        })(), null)
     ]) as [any, any, any, boolean, any, any, any, number | null, any[], any, any];
 
     if (!data) notFound();
@@ -118,11 +126,18 @@ export default async function DetailsPage(props: Props) {
         })) || []
     })) || [];
 
-    let trProviders = providersData?.results?.TR || null;
+    const headersList = await headers();
+    const userCountry = detectUserCountry(headersList);
+
+    let activeProviders = providersData?.results?.[userCountry] || null;
     let isGlobal = false;
-    if (!trProviders || (!trProviders.flatrate && !trProviders.buy)) {
-        const other = Object.entries(providersData?.results || {}).find(([, v]: [string, any]) => v.flatrate || v.buy);
-        if (other) { trProviders = other[1]; isGlobal = true; }
+    if (!activeProviders || (!activeProviders.flatrate && !activeProviders.buy)) {
+        if (providersData?.results?.TR?.flatrate || providersData?.results?.TR?.buy) {
+            activeProviders = providersData.results.TR;
+        } else {
+            const other = Object.entries(providersData?.results || {}).find(([, v]: [string, any]) => v.flatrate || v.buy);
+            if (other) { activeProviders = other[1]; isGlobal = true; }
+        }
     }
 
     const title = data.title || data.name;
@@ -169,12 +184,12 @@ export default async function DetailsPage(props: Props) {
             <div className="relative z-10">
 
                 {/* ════ TOP HEADER ════════════════════════════════════ */}
-                <div className="flex-shrink-0 px-4 md:px-6 lg:px-10 pt-4 pb-5 border-b border-white/[0.05]">
+                <div className="flex-shrink-0 px-3.5 sm:px-6 lg:px-10 pt-1.5 md:pt-4 pb-2.5 md:pb-5 border-b border-white/[0.05]">
 
                     {/* ── Mobile only ── */}
                     <div className="md:hidden">
                         {/* Backdrop-style poster on mobile */}
-                        <div className="relative w-full rounded-2xl overflow-hidden shadow-2xl ring-1 ring-white/10 mb-4" style={{ aspectRatio: "16/10" }}>
+                        <div className="relative w-full rounded-2xl overflow-hidden shadow-2xl ring-1 ring-white/10 mb-2.5" style={{ aspectRatio: "16/7.5" }}>
                             {(backdrop || data.poster_path) ? (
                                 <Image
                                     src={backdrop ?? `https://image.tmdb.org/t/p/w780${data.poster_path}`}
@@ -182,47 +197,47 @@ export default async function DetailsPage(props: Props) {
                                 />
                             ) : (
                                 <div className="w-full h-full bg-neutral-800/50 flex items-center justify-center">
-                                    {type === "movie" ? <Film className="w-12 h-12 text-white/10" /> : <Tv className="w-12 h-12 text-white/10" />}
+                                    {type === "movie" ? <Film className="w-10 h-10 text-white/10" /> : <Tv className="w-10 h-10 text-white/10" />}
                                 </div>
                             )}
                             <div className="absolute inset-0 bg-gradient-to-t from-[#070c16] via-transparent to-transparent" />
-                            <div className="absolute top-3 left-3 right-3 flex items-center justify-between z-10">
+                            <div className="absolute top-2.5 left-2.5 right-2.5 flex items-center justify-between z-10">
                                 <BackButton />
-                                <span className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border ${type === "movie" ? "bg-amber-400/20 border-amber-400/30 text-amber-400" : "bg-emerald-400/20 border-emerald-400/30 text-emerald-400"}`}>
+                                <span className={`flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-widest border ${type === "movie" ? "bg-amber-400/20 border-amber-400/30 text-amber-400" : "bg-emerald-400/20 border-emerald-400/30 text-emerald-400"}`}>
                                     {type === "movie" ? <Film className="w-3 h-3" /> : <Tv className="w-3 h-3" />}
                                     {type === "movie" ? "Film" : "Dizi"}
                                 </span>
                             </div>
                         </div>
-                        <div className="flex flex-col gap-3">
-                            <div className="flex flex-wrap gap-1.5">
-                                {(data.genres || []).slice(0, 4).map((g: any) => (
-                                    <span key={g.id} className="px-2.5 py-1 rounded-full text-[11px] font-black border bg-white/5 border-white/10 text-white/60">{g.name}</span>
+                        <div className="flex flex-col gap-2">
+                            <div className="flex flex-wrap gap-1 items-center">
+                                {(data.genres || []).slice(0, 3).map((g: any) => (
+                                    <span key={g.id} className="px-2 py-0.5 rounded-full text-[10px] font-black border bg-white/5 border-white/10 text-white/60">{g.name}</span>
                                 ))}
-                                {statusInfo && <span className={`px-2.5 py-1 rounded-full text-[11px] font-black uppercase tracking-wide border ${statusInfo.cls}`}>{statusInfo.label}</span>}
+                                {statusInfo && <span className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wide border ${statusInfo.cls}`}>{statusInfo.label}</span>}
                             </div>
                             <div>
-                                <h1 className="text-3xl font-black tracking-tighter leading-none text-white">{title}</h1>
+                                <h1 className="text-xl sm:text-2xl font-black tracking-tighter leading-tight text-white">{title}</h1>
                                 {(data.original_title || data.original_name) && (data.original_title || data.original_name) !== title && (
-                                    <p className="mt-1 text-xs text-white/35 italic">{data.original_title || data.original_name}</p>
+                                    <p className="text-[11px] text-white/35 italic leading-none">{data.original_title || data.original_name}</p>
                                 )}
                             </div>
-                            <div className="flex flex-wrap items-center gap-2">
-                                <div className="flex items-center gap-1.5"><Star className="w-4 h-4 text-amber-400 fill-amber-400" /><span className="text-base font-black text-amber-400">{data.vote_average?.toFixed(1)}</span><span className="text-xs text-white/35">/ 10</span></div>
-                                {voteCount && <><span className="text-white/20">·</span><span className="text-xs text-white/45">{voteCount} oy</span></>}
-                                <div className="flex items-center gap-1"><Globe className="w-3.5 h-3.5 text-sky-400" /><RatingDisplay userRating={userRating} friendsRatings={friendsRatings} mediaTitle={title} /></div>
-                                {year && <><span className="text-white/20">·</span><span className="text-xs text-white/55 font-bold">{year}</span></>}
-                                {runtimeFmt && <><span className="text-white/20">·</span><span className="text-xs text-white/55 font-bold">{runtimeFmt}</span></>}
-                                {data.number_of_seasons && <><span className="text-white/20">·</span><span className="text-xs text-white/55 font-bold">{data.number_of_seasons} Sezon</span></>}
+                            <div className="flex flex-wrap items-center gap-1.5 text-xs">
+                                <div className="flex items-center gap-1"><Star className="w-3.5 h-3.5 text-amber-400 fill-amber-400" /><span className="font-black text-amber-400">{data.vote_average?.toFixed(1)}</span><span className="text-[10px] text-white/35">/ 10</span></div>
+                                {voteCount && <><span className="text-white/20">·</span><span className="text-[11px] text-white/45">{voteCount} oy</span></>}
+                                <div className="flex items-center gap-1"><Globe className="w-3 h-3 text-sky-400" /><RatingDisplay userRating={userRating} friendsRatings={friendsRatings} mediaTitle={title} /></div>
+                                {year && <><span className="text-white/20">·</span><span className="text-[11px] text-white/55 font-bold">{year}</span></>}
+                                {runtimeFmt && <><span className="text-white/20">·</span><span className="text-[11px] text-white/55 font-bold">{runtimeFmt}</span></>}
+                                {data.number_of_seasons && <><span className="text-white/20">·</span><span className="text-[11px] text-white/55 font-bold">{data.number_of_seasons} Sezon</span></>}
                             </div>
                             {data.overview && (
-                                <p className="text-sm text-white/65 leading-relaxed line-clamp-3 border-l-2 border-amber-400/35 pl-3">{data.overview}</p>
+                                <p className="text-xs text-white/65 leading-relaxed line-clamp-2 border-l-2 border-amber-400/35 pl-2.5">{data.overview}</p>
                             )}
-                            <div className="grid grid-cols-2 gap-2">
-                                <TrailerButton videos={videos?.results || []} title={title} className="w-full" />
-                                <WatchProviders providers={trProviders} isGlobal={isGlobal} isGuest={isGuest} />
+                            <div className="grid grid-cols-2 gap-1.5">
+                                <TrailerButton videos={videos?.results || []} title={title} className="w-full py-2.5" />
+                                <WatchProviders providers={activeProviders} isGlobal={isGlobal} isGuest={isGuest} countryCode={userCountry} />
                             </div>
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center w-full">
                                 <MediaActions
                                     tmdbId={data.id}
                                     type={type as "movie" | "tv"}
@@ -259,7 +274,7 @@ export default async function DetailsPage(props: Props) {
                             {/* Trailer + Watch Providers — yan yana */}
                             <div className="mt-2 flex gap-2">
                                 <TrailerButton videos={videos?.results || []} title={title} className="flex-1" />
-                                <WatchProviders providers={trProviders} isGlobal={isGlobal} isGuest={isGuest} />
+                                <WatchProviders providers={activeProviders} isGlobal={isGlobal} isGuest={isGuest} countryCode={userCountry} />
                             </div>
                         </div>
 

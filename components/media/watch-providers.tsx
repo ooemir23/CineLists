@@ -5,6 +5,7 @@ import Image from "next/image";
 import { X, Tv, ExternalLink } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
+import { getCountryName } from "@/lib/country";
 
 type Provider = {
     provider_id: number;
@@ -21,6 +22,7 @@ type WatchProvidersProps = {
     } | null;
     isGlobal?: boolean;
     isGuest?: boolean;
+    countryCode?: string;
 };
 
 // Platform mappings for direct URLs (simplified assumption for popular ones)
@@ -40,7 +42,7 @@ const PLATFORM_URLS: Record<string, string> = {
     "Turkcell TV+": "https://tvplus.com.tr"
 };
 
-export function WatchProviders({ providers, isGlobal, isGuest }: WatchProvidersProps) {
+export function WatchProviders({ providers, isGlobal, isGuest, countryCode = "TR" }: WatchProvidersProps) {
     const [isOpen, setIsOpen] = useState(false);
 
     const allProviders = [
@@ -59,6 +61,8 @@ export function WatchProviders({ providers, isGlobal, isGuest }: WatchProvidersP
 
     const hasProviders = uniqueProviders.length > 0;
     const showRed = isGlobal || !hasProviders;
+    const activeCountryCode = (countryCode || "TR").toUpperCase();
+    const countryName = getCountryName(activeCountryCode);
 
     const handleTriggerClick = (e: React.MouseEvent) => {
         if (isGuest) return; // Guest handle by Link inside
@@ -75,60 +79,62 @@ export function WatchProviders({ providers, isGlobal, isGuest }: WatchProvidersP
             {/* ── Trigger ── */}
             <button
                 onClick={handleTriggerClick}
+                title={hasProviders ? "İzleme Seçenekleri" : `${countryName}'de yayınlanan herhangi bir platformda bulunmuyor`}
                 className={cn(
-                    "relative flex items-center gap-2 px-3 py-2 rounded-2xl transition-all group overflow-hidden border",
+                    "relative flex items-center justify-center gap-2 px-3 py-2 rounded-2xl transition-all group overflow-hidden border w-full",
                     showRed 
-                        ? "bg-red-500/10 border-red-500/20 hover:bg-red-500/20 hover:border-red-500/30" 
+                        ? "bg-rose-500/10 border-rose-500/20 hover:bg-rose-500/20 hover:border-rose-500/30" 
                         : "bg-white/[0.06] border-white/10 hover:bg-white/[0.10] hover:border-white/20"
                 )}
             >
                 {isGuest ? (
                     <div className="flex items-center gap-2 blur-sm select-none pointer-events-none">
-                        <Tv className={cn("w-4 h-4", showRed ? "text-red-400/30" : "text-white/30")} />
-                        <span className={cn("text-xs font-black uppercase tracking-wider", showRed ? "text-red-400/30" : "text-white/30")}>Platform</span>
+                        <Tv className={cn("w-4 h-4", showRed ? "text-rose-400/30" : "text-white/30")} />
+                        <span className={cn("text-xs font-black uppercase tracking-wider", showRed ? "text-rose-400/30" : "text-white/30")}>Platform</span>
                     </div>
                 ) : (
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center justify-center gap-2 w-full">
                         {/* Platform logos */}
                         {hasProviders ? (
-                            <div className="flex items-center -space-x-1.5">
-                                {displayProviders.map((p) => (
-                                    <div
-                                        key={p.provider_id}
-                                        className={cn(
-                                            "relative w-7 h-7 rounded-full overflow-hidden border-2 shadow-md flex-shrink-0 group-hover:scale-105 transition-transform",
-                                            showRed ? "border-red-900/50" : "border-[#0f1623]"
-                                        )}
-                                        title={p.provider_name}
-                                    >
-                                        <Image
-                                            src={`https://image.tmdb.org/t/p/original${p.logo_path}`}
-                                            alt={p.provider_name}
-                                            fill
-                                            className="object-cover"
-                                        />
-                                    </div>
-                                ))}
-                                {extraCount > 0 && (
-                                    <div className={cn(
-                                        "relative w-7 h-7 rounded-full border-2 flex items-center justify-center text-[10px] font-black flex-shrink-0",
-                                        showRed ? "bg-red-500/20 border-red-900/50 text-red-400/60" : "bg-white/10 border-[#0f1623] text-white/60"
-                                    )}>
-                                        +{extraCount}
-                                    </div>
-                                )}
-                            </div>
+                            <>
+                                <div className="flex items-center -space-x-1.5">
+                                    {displayProviders.map((p) => (
+                                        <div
+                                            key={p.provider_id}
+                                            className={cn(
+                                                "relative w-7 h-7 rounded-full overflow-hidden border-2 shadow-md flex-shrink-0 group-hover:scale-105 transition-transform",
+                                                showRed ? "border-red-900/50" : "border-[#0f1623]"
+                                            )}
+                                            title={p.provider_name}
+                                        >
+                                            <Image
+                                                src={`https://image.tmdb.org/t/p/original${p.logo_path}`}
+                                                alt={p.provider_name}
+                                                fill
+                                                className="object-cover"
+                                            />
+                                        </div>
+                                    ))}
+                                    {extraCount > 0 && (
+                                        <div className={cn(
+                                            "relative w-7 h-7 rounded-full border-2 flex items-center justify-center text-[10px] font-black flex-shrink-0",
+                                            showRed ? "bg-red-500/20 border-red-900/50 text-red-400/60" : "bg-white/10 border-[#0f1623] text-white/60"
+                                        )}>
+                                            +{extraCount}
+                                        </div>
+                                    )}
+                                </div>
+                                <Tv className={cn(
+                                    "w-3.5 h-3.5 transition-colors shrink-0",
+                                    showRed ? "text-rose-400/40 group-hover:text-rose-400/60" : "text-white/25 group-hover:text-white/50"
+                                )} />
+                            </>
                         ) : (
-                            <div className="flex items-center gap-1.5 text-red-400">
-                                <Tv className="w-3.5 h-3.5" />
-                                <span className="text-[10px] font-black uppercase tracking-wider">Yok</span>
+                            <div className="flex items-center justify-center gap-1.5 text-rose-400/80">
+                                <Tv className="w-3.5 h-3.5 shrink-0" />
+                                <span className="text-[10px] font-black uppercase tracking-tight">{activeCountryCode}&apos;de Yayın Yok</span>
                             </div>
                         )}
-                        
-                        <Tv className={cn(
-                            "w-3.5 h-3.5 transition-colors",
-                            showRed ? "text-red-400/40 group-hover:text-red-400/60" : "text-white/25 group-hover:text-white/50"
-                        )} />
                     </div>
                 )}
 

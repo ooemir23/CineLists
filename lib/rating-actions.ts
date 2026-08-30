@@ -153,8 +153,10 @@ export async function getUserRating(tmdbId: number, _type?: "movie" | "tv") {
         });
 
         return mediaItem?.watchedBy[0]?.rating ?? null;
-    } catch (error) {
-        console.error("Get user rating error:", error);
+    } catch (error: any) {
+        if (process.env.NODE_ENV === "development") {
+            console.warn("Get user rating DB unavailable:", error?.message || error);
+        }
         return null;
     }
 }
@@ -207,8 +209,10 @@ export async function getFriendsRatings(tmdbId: number, _type?: "movie" | "tv") 
             userImage: r.user.image,
             rating: r.rating,
         }));
-    } catch (error) {
-        console.error("Get friends ratings error:", error);
+    } catch (error: any) {
+        if (process.env.NODE_ENV === "development") {
+            console.warn("Get friends ratings DB unavailable:", error?.message || error);
+        }
         return [];
     }
 }
