@@ -128,101 +128,71 @@ export function MediaActions({
     const isMinimal = variant === "minimal";
 
     return (
-        <div className="flex flex-col gap-4 w-full md:w-auto">
-            <div className={cn("flex flex-wrap gap-3", isMinimal ? "justify-center md:justify-start" : "")}>
+        <div className="flex flex-col gap-3 w-full">
+            <div className="grid grid-cols-[1fr_1fr_1fr_auto] items-center gap-1.5 sm:gap-2 w-full max-w-xl">
                 {/* Watchlist (Takip Et) Button */}
                 <button
                     onClick={handleToggleWatchlist}
                     disabled={isPending || status === "COMPLETED" || status === "WATCHING"}
                     className={cn(
-                        "flex items-center justify-center gap-2 font-bold transition-all active:scale-95 shadow-lg backdrop-blur-md",
-                        isMinimal
-                            ? "px-5 py-3 rounded-2xl text-sm border hover:bg-white/20"
-                            : "px-6 py-3 rounded-xl",
+                        "h-11 px-2 sm:px-3 rounded-2xl flex items-center justify-center gap-1.5 text-xs font-black tracking-tight transition-all active:scale-95 border backdrop-blur-md select-none",
                         status === "PLAN_TO_WATCH"
-                            ? (isMinimal ? "bg-amber-400/20 text-amber-400 border-amber-400/30 shadow-amber-900/20" : "bg-amber-400 text-slate-900 hover:bg-amber-500 shadow-amber-500/25")
+                            ? "bg-amber-400/20 text-amber-400 border-amber-400/40 shadow-[0_0_15px_rgba(251,191,36,0.2)]"
                             : (status === "COMPLETED" || status === "WATCHING")
-                                ? "bg-neutral-800 text-neutral-500 cursor-not-allowed border-transparent"
-                                : (isMinimal ? "bg-white/10 text-white border-white/10" : "bg-white/10 text-white hover:bg-white/20 border-white/10 shadow-black/25 hover:scale-105")
+                                ? "bg-white/[0.02] text-neutral-600 border-white/5 cursor-not-allowed"
+                                : "bg-white/5 hover:bg-white/10 text-white/90 border-white/10 hover:border-white/20"
                     )}
+                    title={status === "PLAN_TO_WATCH" ? "Takipten Çıkar" : "Listeye Ekle"}
                 >
                     {status === "PLAN_TO_WATCH" ? (
-                        <Check className="w-5 h-5" />
+                        <Check className="w-4 h-4 text-amber-400 stroke-[3]" />
                     ) : (
-                        <Plus className="w-5 h-5" />
+                        <Plus className="w-4 h-4 stroke-[2.5]" />
                     )}
-                    <span className={cn(isMinimal && "font-semibold")}>
-                        {status === "PLAN_TO_WATCH" ? "Takiptesin" : "Takip Et"}
+                    <span className="truncate">
+                        {status === "PLAN_TO_WATCH" ? "Takipte" : "Takip Et"}
                     </span>
                 </button>
 
-                {/* Watching (İzlemeye Başladım) Button */}
+                {/* Watching (İzliyorum) Button */}
                 <button
                     onClick={handleMarkWatching}
                     disabled={isPending || status === "COMPLETED"}
                     className={cn(
-                        "flex items-center justify-center gap-2 font-bold transition-all active:scale-95 border-2 backdrop-blur-md",
-                        isMinimal
-                            ? "px-5 py-3 rounded-2xl text-sm border-white/5"
-                            : "px-6 py-3 rounded-xl",
+                        "h-11 px-2 sm:px-3 rounded-2xl flex items-center justify-center gap-1.5 text-xs font-black tracking-tight transition-all active:scale-95 border backdrop-blur-md select-none",
                         status === "WATCHING"
-                            ? (isMinimal ? "bg-sky-500/20 text-sky-400 border-sky-500/30" : "bg-sky-500 text-white border-sky-600 shadow-sky-500/25")
-                            : (isMinimal ? "bg-white/10 text-white border-transparent hover:bg-white/20" : "bg-white/5 text-white border-white/10 hover:bg-white/10")
+                            ? "bg-sky-500/20 text-sky-400 border-sky-500/40 shadow-[0_0_15px_rgba(14,165,233,0.2)]"
+                            : status === "COMPLETED"
+                                ? "bg-white/[0.02] text-neutral-600 border-white/5 cursor-not-allowed"
+                                : "bg-white/5 hover:bg-white/10 text-white/90 border-white/10 hover:border-white/20"
                     )}
+                    title={status === "WATCHING" ? "İzlemeyi Bırak" : "İzlemeye Başladım"}
                 >
-                    <Eye className={cn("w-5 h-5", status === "WATCHING" && "animate-pulse")} />
-                    <span className={cn(isMinimal && "font-semibold")}>
+                    <Eye className={cn("w-4 h-4 stroke-[2.5]", status === "WATCHING" && "animate-pulse")} />
+                    <span className="truncate">
                         {status === "WATCHING" ? "İzleniyor" : "İzliyorum"}
                     </span>
                 </button>
 
-                {/* Watched Button */}
+                {/* Watched (İzledim) Button */}
                 <button
                     onClick={handleMarkWatched}
                     disabled={isPending}
                     className={cn(
-                        "flex items-center justify-center gap-2 font-bold transition-all active:scale-95 border-2 backdrop-blur-md",
-                        isMinimal
-                            ? "px-5 py-3 rounded-2xl text-sm border-white/5"
-                            : "px-6 py-3 rounded-xl",
+                        "h-11 px-2 sm:px-3 rounded-2xl flex items-center justify-center gap-1.5 text-xs font-black tracking-tight transition-all active:scale-95 border backdrop-blur-md select-none",
                         status === "COMPLETED"
-                            ? (isMinimal ? "bg-emerald-500/20 text-emerald-400 border-emerald-500/30" : "bg-emerald-600 text-white border-emerald-600 shadow-emerald-500/25")
-                            : (isMinimal ? "bg-white/10 text-white border-transparent hover:bg-white/20" : "bg-white/5 text-white border-white/10 hover:bg-white/10")
+                            ? "bg-emerald-500/20 text-emerald-400 border-emerald-500/40 shadow-[0_0_15px_rgba(16,185,129,0.2)]"
+                            : "bg-white/5 hover:bg-white/10 text-white/90 border-white/10 hover:border-white/20"
                     )}
+                    title={status === "COMPLETED" ? "İzlemeyi İptal Et" : "İzledim Olarak İşaretle"}
                 >
-                    <Check className={cn("w-5 h-5", status === "COMPLETED" && "scale-110")} />
-                    <span className={cn(isMinimal && "font-semibold")}>
+                    <Check className={cn("w-4 h-4 stroke-[3]", status === "COMPLETED" && "scale-110")} />
+                    <span className="truncate">
                         {status === "COMPLETED" ? "İzlendi" : "İzledim"}
                     </span>
                 </button>
 
-                {/* Minimal Layout: Hide extra buttons in the main row or make them icon-only */}
-                {!isMinimal && (
-                    <>
-                        {status === "COMPLETED" && (
-                            <button
-                                onClick={() => setShowDetailsForm(!showDetailsForm)}
-                                className={cn(
-                                    "flex items-center gap-2 px-4 py-3 font-medium rounded-xl transition-all border text-xs",
-                                    showDetailsForm ? "bg-white/10 border-white/20" : "bg-transparent border-white/5 hover:bg-white/5"
-                                )}
-                            >
-                                {showDetailsForm ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-                                {showDetailsForm ? "Kapat" : "Detay"}
-                            </button>
-                        )}
-
-                        <Link
-                            href="#comments"
-                            className="flex items-center gap-2 px-6 py-3 bg-neutral-800 hover:bg-neutral-700 rounded-xl transition-colors text-sm font-bold border border-white/5"
-                        >
-                            <MessageSquare className="w-4 h-4 text-amber-400" />
-                            <span className="hidden sm:inline">Yorum</span>
-                        </Link>
-                    </>
-                )}
-
-                {/* Recommend Button - Always visible but styled differently */}
+                {/* Recommend / Share Button */}
                 <button
                     onClick={() => {
                         if (isRestrictedUser) {
@@ -231,16 +201,25 @@ export function MediaActions({
                         }
                         setIsRecommendOpen(true);
                     }}
-                    className={cn(
-                        "transition-colors border backdrop-blur-md text-neutral-400 hover:text-white flex items-center justify-center",
-                        isMinimal
-                            ? "w-11 h-11 rounded-2xl bg-white/10 border-white/10 hover:bg-white/20"
-                            : "p-3 bg-neutral-800 hover:bg-neutral-700 rounded-xl border-white/5"
-                    )}
+                    className="w-11 h-11 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 text-white/80 hover:text-white flex items-center justify-center transition-all active:scale-95 shrink-0 shadow-sm"
+                    title="Arkadaşına Tavsiye Et"
+                    aria-label="Tavsiye Et"
                 >
-                    <Share2 className="w-5 h-5" />
+                    <Share2 className="w-4 h-4 stroke-[2.5]" />
                 </button>
             </div>
+
+            {status === "COMPLETED" && (
+                <div className="flex items-center px-1">
+                    <button
+                        onClick={() => setShowDetailsForm(!showDetailsForm)}
+                        className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-400 hover:text-emerald-300 transition-colors py-0.5"
+                    >
+                        {showDetailsForm ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+                        <span>{showDetailsForm ? "Puan & İnceleme Formunu Kapat" : "Puan & İnceleme Ekle / Düzenle"}</span>
+                    </button>
+                </div>
+            )}
 
             {guestWarning && (
                 <div className="bg-amber-400/10 border border-amber-400/20 text-amber-400 px-4 py-2 rounded-xl text-xs font-bold animate-in slide-in-from-top-1 duration-300 flex items-center justify-between">
