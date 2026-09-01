@@ -14,6 +14,8 @@ interface Activity {
   rating?: number | null;
   media: {
     id: string;
+    tmdbId?: number;
+    type?: string;
     title: string;
     posterPath: string | null;
     releaseDate?: string | Date | null;
@@ -90,7 +92,7 @@ export function ActivityTimeline({ activities, showActivities }: ActivityTimelin
               return (
                 <Link
                   key={activity.id}
-                  href={`/media/${activity.media.id}`}
+                  href={`/${activity.media.type?.toLowerCase() === "tv" ? "tv" : "movie"}/${(activity.media as any).tmdbId || activity.media.id}`}
                   className="group flex gap-4 p-4 rounded-xl border border-white/5 backdrop-blur-sm transition-all hover:bg-white/5 hover:border-primary/20 active:scale-95"
                 >
                   {/* Poster Image */}

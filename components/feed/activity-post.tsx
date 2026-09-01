@@ -235,14 +235,25 @@ export function ActivityPost({ activity }: ActivityPostProps) {
 
             {/* User Review Note */}
             {activity.review && (
-                <div 
-                    onClick={() => setIsExpanded(!isExpanded)}
-                    className={cn(
-                        "text-[13.5px] leading-relaxed text-slate-300 mt-3 p-3 bg-white/[0.02] border-l-2 border-primary/50 rounded-r-xl cursor-pointer hover:bg-white/[0.04] transition-all",
-                        !isExpanded && "line-clamp-3"
+                <div className="mt-3">
+                    <div 
+                        className={cn(
+                            "text-sm leading-relaxed text-slate-200 p-3.5 bg-white/[0.03] border-l-[3px] border-amber-400/80 rounded-r-2xl relative transition-all duration-300",
+                            !isExpanded && activity.review.length > 220 && "line-clamp-3"
+                        )}
+                    >
+                        <Quote className="w-4 h-4 text-amber-400/50 mb-1 inline mr-1.5 shrink-0" />
+                        <span className="whitespace-pre-line font-medium">{activity.review}</span>
+                    </div>
+                    {activity.review.length > 220 && (
+                        <button
+                            type="button"
+                            onClick={() => setIsExpanded(!isExpanded)}
+                            className="mt-1.5 text-xs font-bold text-amber-400 hover:text-amber-300 hover:underline pl-1 inline-flex items-center gap-1 transition-colors"
+                        >
+                            {isExpanded ? "Daha az göster" : "Daha fazla oku..."}
+                        </button>
                     )}
-                >
-                    {activity.review}
                 </div>
             )}
 

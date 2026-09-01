@@ -131,14 +131,87 @@ export default async function FeedPage() {
 
         const followingIds = following.map(f => f.followingId);
 
-        // Get grouped activities (includes user's own + friends')
-        const allActivities = await getGroupedFeedActivities(session.user.id, followingIds);
+        // Fetch feed activities, suggested users, trending reviews and user stats in parallel
+        const [
+            allActivities,
+            suggestedUsers,
+            trendingReviews,
+            currentUser
+        ] = await Promise.all([
+            getGroupedFeedActivities(session.user.id, followingIds),
+            prisma.user.findMany({
+                where: {
+                    id: { notIn: [...followingIds, session.user.id] },
+                    isPrivate: false,
+                },
+                select: {
+                    id: true,
+                    name: true,
+                    username: true,
+                    image: true,
+                    _count: {
+                        select: {
+                            watched: true,
+                            followedBy: true,
+                        }
+                    }
+                },
+                orderBy: {
+                    watched: { _count: "desc" }
+                },
+                take: 4,
+            }).catch(() => []),
+            prisma.activity.findMany({
+                where: {
+                    OR: [
+                        { type: "REVIEWED" },
+                        { review: { not: null } }
+                    ],
+                },
+                include: {
+                    user: {
+                        select: {
+                            id: true,
+                            name: true,
+                            username: true,
+                            image: true,
+                        }
+                    },
+                    media: true
+                },
+                orderBy: {
+                    createdAt: "desc"
+                },
+                take: 3
+            }).catch(() => []),
+            prisma.user.findUnique({
+                where: { id: session.user.id },
+                select: {
+                    id: true,
+                    name: true,
+                    username: true,
+                    image: true,
+                    bio: true,
+                    _count: {
+                        select: {
+                            watched: true,
+                            toWatch: true,
+                            following: true,
+                            followedBy: true,
+                        }
+                    }
+                }
+            }).catch(() => null)
+        ]);
 
         return (
             <FeedClient 
                 initialActivities={allActivities} 
                 sessionUserId={session.user.id} 
-                followingCount={followingIds.length} 
+                followingCount={followingIds.length}
+                suggestedUsers={suggestedUsers}
+                trendingReviews={trendingReviews}
+                currentUser={currentUser}
             />
         );
     } catch (error) {
@@ -147,7 +220,10 @@ export default async function FeedPage() {
             <FeedClient 
                 initialActivities={[]} 
                 sessionUserId={session.user.id} 
-                followingCount={0} 
+                followingCount={0}
+                suggestedUsers={[]}
+                trendingReviews={[]}
+                currentUser={null}
             />
         );
     }

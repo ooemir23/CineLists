@@ -19,7 +19,9 @@ function isListEndpoint(endpoint: string): boolean {
         endpoint.includes("genre") ||
         endpoint.includes("upcoming") ||
         endpoint.includes("airing_today") ||
-        endpoint.includes("top_rated")
+        endpoint.includes("top_rated") ||
+        endpoint.includes("recommendations") ||
+        endpoint.includes("similar")
     );
 }
 
@@ -129,6 +131,10 @@ export const tmdb = {
 
     async getRecommendations(type: "movie" | "tv", id: string) {
         return this.fetch(`/${type}/${id}/recommendations`);
+    },
+
+    async getSimilar(type: "movie" | "tv", id: string) {
+        return this.fetch(`/${type}/${id}/similar`);
     },
 
     async getImages(type: "movie" | "tv", id: string) {

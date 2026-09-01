@@ -63,7 +63,7 @@ export default async function DetailsPage(props: Props) {
     const [
         data, credits, videos, inWatchlist, watchStatus, watchedEpisodes,
         providersData, userRating, friendsRatings,
-        activeRecommendation, dbMedia
+        activeRecommendation, dbMedia, recommendationsData
     ] = await Promise.all([
         tmdb.getDetails(type as "movie" | "tv", id).catch(() => null),
         tmdb.getCredits(type as "movie" | "tv", id).catch(() => null),
@@ -102,8 +102,24 @@ export default async function DetailsPage(props: Props) {
             } catch {
                 return null;
             }
-        })(), null)
-    ]) as [any, any, any, boolean, any, any, any, number | null, any[], any, any];
+        })(), null),
+        safe((async () => {
+            const [recs, sim] = await Promise.allSettled([
+                tmdb.getRecommendations(type as "movie" | "tv", id).catch(() => null),
+                tmdb.getSimilar(type as "movie" | "tv", id).catch(() => null),
+            ]);
+            const recList = recs.status === "fulfilled" && recs.value?.results ? recs.value.results : [];
+            const simList = sim.status === "fulfilled" && sim.value?.results ? sim.value.results : [];
+            const combined = [...recList, ...simList];
+            const seen = new Set<number>();
+            const unique = combined.filter((item: any) => {
+                if (!item || !item.id || item.id === mediaId || seen.has(item.id)) return false;
+                seen.add(item.id);
+                return true;
+            });
+            return unique;
+        })(), [])
+    ]) as [any, any, any, boolean, any, any, any, number | null, any[], any, any, any[]];
 
     if (!data) notFound();
 
@@ -399,7 +415,7 @@ export default async function DetailsPage(props: Props) {
                         title={title}
                         posterPath={data.poster_path}
                         initialComments={comments}
-                        initialRecommendations={[]}
+                        initialRecommendations={recommendationsData || []}
                         watchedEpisodes={watchedEpisodes}
                         currentUserId={session?.user?.id}
                         director={directors?.[0]?.name || creators?.[0]?.name}

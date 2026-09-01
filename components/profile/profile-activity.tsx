@@ -16,6 +16,8 @@ interface Activity {
   rating?: number | null;
   media: {
     id: string;
+    tmdbId?: number;
+    type?: string;
     title: string;
     posterPath: string | null;
     releaseDate?: string | Date | null;
@@ -78,7 +80,7 @@ export function ProfileActivity({
           )}
         >
           <Link
-            href={`/media/${activity.media.id}`}
+            href={`/${activity.media.type?.toLowerCase() === "tv" ? "tv" : "movie"}/${(activity.media as any).tmdbId || activity.media.id}`}
             className={cn(
               "flex gap-3 p-3 rounded-xl border border-white/5 backdrop-blur-sm transition-all hover:bg-white/5 hover:border-primary/20 active:scale-95",
               variant === "list" ? "bg-white/2" : variant === "carousel" ? "flex-col bg-white/2 w-32" : "flex-col bg-white/2"

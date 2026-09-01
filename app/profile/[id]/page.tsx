@@ -99,7 +99,7 @@ export default async function PublicProfilePage({
 
   // Recent watched for poster grid
   const recentMediaItems = recentWatched.map((w: any) => ({
-    id: w.media.id,
+    id: w.media.tmdbId,
     title: w.media.title,
     posterPath: w.media.posterPath,
     rating: w.rating,

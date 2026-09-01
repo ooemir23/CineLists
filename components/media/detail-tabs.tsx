@@ -82,6 +82,10 @@ export function DetailTabs({
     const [recommendations, setRecommendations] = useState<RecommendationItem[]>(initialRecommendations);
     const [recommendationsLoaded, setRecommendationsLoaded] = useState(initialRecommendations.length > 0);
     const [recommendationsLoading, setRecommendationsLoading] = useState(false);
+    useEffect(() => {
+        setRecommendations(initialRecommendations);
+        setRecommendationsLoaded(initialRecommendations.length > 0);
+    }, [tmdbId, initialRecommendations]);
 
     useEffect(() => {
         if (queryTab && TABS.some((tab) => tab.id === queryTab)) {

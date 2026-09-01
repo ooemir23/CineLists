@@ -33,7 +33,7 @@ export function CurrentlyWatching({
         {displayed.map((item, idx) => (
           <Link
             key={item.id || idx}
-            href={`/${item.type === "TV" ? "tv" : "movie"}/${item.id}`}
+            href={`/${item.type?.toLowerCase() === "tv" ? "tv" : "movie"}/${item.tmdbId ?? item.id}`}
             className="group flex gap-3 p-3 bg-white/[0.02] hover:bg-white/[0.06] border border-white/5 hover:border-primary/30 rounded-xl transition-all active:scale-95"
           >
             {/* Poster */}

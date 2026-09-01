@@ -69,7 +69,7 @@ export function RecentMedia({
         {displayed.map((item) => (
           <Link
             key={item.id}
-            href={`/${item.type === "TV" ? "tv" : "movie"}/${item.id}`}
+            href={`/${item.type?.toLowerCase() === "tv" ? "tv" : "movie"}/${item.id}`}
             className="group relative aspect-[2/3] rounded-lg overflow-hidden bg-neutral-900 active:scale-[0.97] transition-transform"
           >
             {item.posterPath && !imageErrors.has(item.id) ? (

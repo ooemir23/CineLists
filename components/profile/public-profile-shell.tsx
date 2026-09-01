@@ -191,7 +191,7 @@ export function PublicProfileShell({
         {/* Followed Content */}
         <RecentMedia
           items={watchlistItems.map((item: any) => ({
-            id: item.media.id,
+            id: item.media.tmdbId,
             title: item.media.title,
             posterPath: item.media.posterPath,
             rating: item.media.voteAverage || 0,
@@ -200,7 +200,6 @@ export function PublicProfileShell({
           }))}
           title="Listesi"
           emptyMessage="Listesine eklenen bir içerik yok"
-          viewAllHref="/watchlist"
           maxItems={6}
         />
 
