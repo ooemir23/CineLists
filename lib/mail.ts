@@ -2,7 +2,7 @@ import { Resend } from "resend";
 
 const resendApiKey = process.env.RESEND_API_KEY;
 const resend = resendApiKey ? new Resend(resendApiKey) : null;
-const FROM_EMAIL = process.env.MAIL_FROM || "CineLists <info@cinelists.com>";
+const FROM_EMAIL = process.env.MAIL_FROM || "CineLists <onboarding@resend.dev>";
 
 export const sendPasswordResetEmail = async (email: string, token: string) => {
     if (!resend) {
