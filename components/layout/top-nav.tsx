@@ -18,6 +18,7 @@ import {
   Users,
   Eye,
 } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { NotificationBell } from "./notification-bell";
 import { handleSignOut } from "@/lib/auth-actions";
 import {
@@ -57,6 +58,7 @@ export function TopNav({ user }: TopNavProps) {
     if (pathname.startsWith("/search")) return "explore";
     if (pathname.startsWith("/profile")) return "profile";
     if (pathname.startsWith("/watched")) return "watched";
+    if (pathname.startsWith("/search")) return "search";
     if (pathname.startsWith("/watching")) return "watching";
     if (pathname.startsWith("/watchlist")) return "watchlist";
     if (pathname.startsWith("/achievements")) return "achievements";
@@ -143,23 +145,28 @@ export function TopNav({ user }: TopNavProps) {
               <Link
                 href="/search"
                 className="group relative flex items-center justify-center"
-                style={{ marginTop: 15 }}
+                style={{ marginTop: 2 }}
               >
                 {/* Glowing Aura Effect */}
-                <div className="absolute inset-0 bg-amber-400/20 blur-2xl rounded-full scale-150 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                <div className="absolute inset-0 bg-amber-400/20 blur-xl rounded-full scale-125 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
 
                 <div
-                  className="relative z-10 w-14 h-14 md:w-16 md:h-16 bg-amber-400 rounded-full flex items-center justify-center shadow-lg shadow-amber-400/20 group-hover:shadow-amber-400/40 group-hover:scale-110 transition-all duration-300 text-slate-950"
+                  className={cn(
+                    "relative z-10 w-13 h-13 md:w-14 md:h-14 rounded-full flex items-center justify-center shadow-lg transition-all duration-300",
+                    activeView === "search"
+                      ? "bg-amber-400 text-slate-950 shadow-amber-400/30 scale-105"
+                      : "bg-amber-400 text-slate-950 shadow-amber-400/20 group-hover:shadow-amber-400/40 group-hover:scale-110"
+                  )}
                 >
-                  <Search size={32} strokeWidth={3} />
+                  <Search size={26} strokeWidth={2.8} />
                 </div>
 
                 {/* CURVED TEXT */}
                 <motion.div
-                  className="absolute -bottom-10 w-40 h-16 pointer-events-none z-30 flex items-center justify-center"
-                  initial={{ opacity: 0.8 }}
+                  className="absolute -bottom-6 w-36 h-12 pointer-events-none z-30 flex items-center justify-center"
+                  initial={{ opacity: 0.85 }}
                   animate={{
-                    opacity: [0.8, 1, 0.8],
+                    opacity: [0.85, 1, 0.85],
                     scale: [1, 1.02, 1]
                   }}
                   transition={{
@@ -168,9 +175,9 @@ export function TopNav({ user }: TopNavProps) {
                     ease: "easeInOut"
                   }}
                 >
-                  <svg viewBox="0 0 160 60" className="w-full h-full overflow-visible">
-                    <path id="curve-path" d="M 20,15 Q 80,55 140,15" fill="transparent" />
-                    <text className="text-[9px] font-black fill-amber-400 tracking-[0.1em] uppercase drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]">
+                  <svg viewBox="0 0 160 50" className="w-full h-full overflow-visible">
+                    <path id="curve-path" d="M 20,10 Q 80,45 140,10" fill="transparent" />
+                    <text className="text-[8.5px] font-black fill-amber-400 tracking-[0.1em] uppercase drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)]">
                       <textPath href="#curve-path" startOffset="50%" textAnchor="middle">
                         Ara • Keşfet • İzle
                       </textPath>

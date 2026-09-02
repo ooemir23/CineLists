@@ -134,7 +134,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
   ]);
 
   return (
-    <div className="bg-background pb-20 pt-2 sm:pt-4">
+    <div className="bg-background pb-20 pt-6 sm:pt-10 md:pt-12">
       <div className="max-w-7xl mx-auto px-3.5 sm:px-6 mb-4">
         <MediaFilter />
       </div>
