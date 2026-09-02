@@ -52,7 +52,7 @@ export function MobileDock({ user }: MobileDockProps) {
         <div className="relative mx-auto flex w-full max-w-[25rem] items-center justify-between">
           <button
             className={cn(
-              "flex min-h-[50px] min-w-[50px] flex-col items-center justify-center gap-0.5 rounded-2xl transition-all",
+              "flex min-h-[50px] min-w-[50px] flex-col items-center justify-center gap-0.5 rounded-2xl transition-all active:scale-90",
               menuOpen ? "bg-primary/10 text-primary shadow-inner" : "text-slate-400"
             )}
             onClick={() => {
@@ -66,23 +66,24 @@ export function MobileDock({ user }: MobileDockProps) {
           </button>
 
           {menuOpen && (
-            <div className="absolute bottom-[calc(100%+0.75rem)] left-0 z-50 flex w-60 flex-col overflow-hidden rounded-[1.75rem] border border-white/10 bg-[#0b1220]/95 py-3 shadow-2xl backdrop-blur-2xl animate-in slide-in-from-bottom-4 zoom-in-95 duration-200">
-              <div className="px-4 py-2 mb-1">
-                <span className="font-hanken text-[10px] font-bold text-primary/70 uppercase tracking-widest">
+            <div className="absolute bottom-[calc(100%+0.75rem)] left-0 z-50 flex w-64 flex-col overflow-hidden rounded-[1.75rem] border border-amber-400/20 bg-[#0b1220]/95 py-3 shadow-[0_25px_60px_rgba(0,0,0,0.95)] backdrop-blur-3xl animate-in slide-in-from-bottom-4 zoom-in-95 duration-200 ring-1 ring-white/10">
+              <div className="px-4 py-2 mb-1 flex items-center justify-between border-b border-white/5">
+                <span className="font-hanken text-[10px] font-black text-amber-400 uppercase tracking-widest">
                   Kütüphanem
                 </span>
+                <span className="text-[10px] text-neutral-500 font-bold">Listeler</span>
               </div>
               {libraryNavItems.map((item) => (
                 <Link
                   key={item.key}
                   href={item.href}
-                  className="flex items-center gap-3 px-4 py-3 text-sm text-white transition hover:bg-white/5 active:scale-95"
+                  className="flex items-center gap-3 px-4 py-2.5 text-sm text-white transition hover:bg-white/5 active:scale-[0.97]"
                   onClick={() => setMenuOpen(false)}
                 >
-                  <div className={cn("flex h-8 w-8 items-center justify-center rounded-lg", item.iconBgClass, item.iconTextClass)}>
+                  <div className={cn("flex h-8 w-8 items-center justify-center rounded-xl transition-transform active:scale-95", item.iconBgClass, item.iconTextClass)}>
                     <item.icon size={18} strokeWidth={2.5} />
                   </div>
-                  <span className="font-bold">{item.label}</span>
+                  <span className="font-bold tracking-tight">{item.label}</span>
                 </Link>
               ))}
             </div>
@@ -91,8 +92,8 @@ export function MobileDock({ user }: MobileDockProps) {
           <Link
             href="/"
             className={cn(
-              "flex min-h-[50px] min-w-[50px] flex-col items-center justify-center gap-0.5 rounded-2xl transition-all",
-              activeView === "home" && !menuOpen && !profileMenuOpen ? "text-primary" : "text-slate-400"
+              "flex min-h-[50px] min-w-[50px] flex-col items-center justify-center gap-0.5 rounded-2xl transition-all active:scale-90",
+              activeView === "home" && !menuOpen && !profileMenuOpen ? "text-primary font-bold" : "text-slate-400"
             )}
             onClick={closeMenus}
           >
@@ -114,8 +115,8 @@ export function MobileDock({ user }: MobileDockProps) {
           <Link
             href="/feed"
             className={cn(
-              "flex min-h-[50px] min-w-[50px] flex-col items-center justify-center gap-0.5 rounded-2xl transition-all",
-              activeView === "feed" ? "text-primary" : "text-slate-400"
+              "flex min-h-[50px] min-w-[50px] flex-col items-center justify-center gap-0.5 rounded-2xl transition-all active:scale-90",
+              activeView === "feed" ? "text-primary font-bold" : "text-slate-400"
             )}
             onClick={closeMenus}
           >
@@ -125,7 +126,7 @@ export function MobileDock({ user }: MobileDockProps) {
 
           <button
             className={cn(
-              "flex min-h-[50px] min-w-[50px] flex-col items-center justify-center gap-0.5 rounded-2xl transition-all",
+              "flex min-h-[50px] min-w-[50px] flex-col items-center justify-center gap-0.5 rounded-2xl transition-all active:scale-90",
               profileMenuOpen ? "bg-primary/10 text-primary shadow-inner" : "text-slate-400"
             )}
             onClick={() => {
@@ -150,32 +151,38 @@ export function MobileDock({ user }: MobileDockProps) {
           </button>
 
           {profileMenuOpen && (
-            <div className="absolute bottom-[calc(100%+0.75rem)] right-0 z-50 flex w-56 flex-col overflow-hidden rounded-[1.75rem] border border-white/10 bg-[#0b1220]/95 py-3 shadow-2xl backdrop-blur-2xl animate-in slide-in-from-bottom-4 zoom-in-95 duration-200">
+            <div className="absolute bottom-[calc(100%+0.75rem)] right-0 z-50 flex w-60 flex-col overflow-hidden rounded-[1.75rem] border border-amber-400/20 bg-[#0b1220]/95 py-3 shadow-[0_25px_60px_rgba(0,0,0,0.95)] backdrop-blur-3xl animate-in slide-in-from-bottom-4 zoom-in-95 duration-200 ring-1 ring-white/10">
               {user ? (
                 <>
+                  <div className="px-4 py-2 mb-1 flex items-center justify-between border-b border-white/5">
+                    <span className="font-hanken text-[10px] font-black text-amber-400 uppercase tracking-widest">
+                      Hesabım
+                    </span>
+                    <span className="text-[10px] text-neutral-400 font-bold truncate max-w-[100px]">{user.name || "Kullanıcı"}</span>
+                  </div>
                   {profileNavItems.map((item) => (
                     <Link
                       key={item.key}
                       href={item.href}
-                      className="flex items-center gap-3 px-4 py-3 text-sm text-white transition hover:bg-white/5 active:scale-95"
+                      className="flex items-center gap-3 px-4 py-2.5 text-sm text-white transition hover:bg-white/5 active:scale-[0.97]"
                       onClick={() => setProfileMenuOpen(false)}
                     >
-                      <div className={cn("flex h-8 w-8 items-center justify-center rounded-lg", item.iconBgClass, item.iconTextClass)}>
+                      <div className={cn("flex h-8 w-8 items-center justify-center rounded-xl", item.iconBgClass, item.iconTextClass)}>
                         <item.icon size={18} strokeWidth={2.5} />
                       </div>
-                      <span className="font-bold">{item.label}</span>
+                      <span className="font-bold tracking-tight">{item.label}</span>
                     </Link>
                   ))}
                   <div className="mx-4 my-2 h-px bg-white/5" />
                   <form action={handleSignOut}>
                     <button
                       type="submit"
-                      className="flex w-full items-center gap-3 px-4 py-3 text-sm text-rose-400 transition hover:bg-rose-500/10 active:scale-95"
+                      className="flex w-full items-center gap-3 px-4 py-2.5 text-sm text-rose-400 transition hover:bg-rose-500/10 active:scale-[0.97]"
                     >
-                      <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-rose-500/5">
+                      <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-rose-500/10 text-rose-400">
                         <LogOut size={18} strokeWidth={2.5} />
                       </div>
-                      <span className="font-bold uppercase tracking-wide">Çıkış Yap</span>
+                      <span className="font-bold uppercase tracking-wider text-xs">Çıkış Yap</span>
                     </button>
                   </form>
                 </>

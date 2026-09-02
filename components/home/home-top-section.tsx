@@ -151,7 +151,7 @@ export async function HomeTopSection({
                     ) : null}
                 </div>
 
-                <div className="w-full flex-1 min-h-[350px] max-[380px]:min-h-[330px] sm:min-h-[410px] lg:min-h-0">
+                <div className="w-full flex-1 min-h-[320px] max-[380px]:min-h-[300px] sm:min-h-[380px] lg:min-h-0">
                     <HeroSlider items={items} friendPopularIds={[]} />
                 </div>
             </div>

@@ -213,13 +213,13 @@ export function HeroSlider({ items }: HeroSliderProps) {
                             <div className="max-w-3xl space-y-3 md:space-y-4">
                                 <Link href={`/${currentItem.media_type}/${currentItem.id}`} className="space-y-2 block group/content">
                                     <h2
-                                        className="text-[2rem] max-[380px]:text-[1.7rem] md:text-4xl lg:text-5xl font-black text-white leading-[0.96] tracking-tighter drop-shadow-2xl italic uppercase group-hover/content:text-amber-400 transition-colors animate-hero-slide-up"
+                                        className="text-[1.85rem] max-[380px]:text-[1.6rem] md:text-4xl lg:text-5xl font-black text-white leading-[0.98] tracking-tighter drop-shadow-2xl italic uppercase group-hover/content:text-amber-400 transition-colors animate-hero-slide-up"
                                         style={{ animationDelay: "0.25s" }}
                                     >
                                         {currentItem.title}
                                     </h2>
                                     <p
-                                        className="text-xs md:text-base text-neutral-300 font-bold max-w-xl line-clamp-3 leading-relaxed drop-shadow-md border-l-2 md:border-l-4 border-amber-400 pl-3 md:pl-5 group-hover/content:border-white transition-colors animate-hero-slide-up"
+                                        className="text-xs md:text-base text-neutral-300 font-bold max-w-xl line-clamp-2 md:line-clamp-3 leading-relaxed drop-shadow-md border-l-2 md:border-l-4 border-amber-400 pl-3 md:pl-5 group-hover/content:border-white transition-colors animate-hero-slide-up"
                                         style={{ animationDelay: "0.35s" }}
                                     >
                                         {currentItem.overview}
