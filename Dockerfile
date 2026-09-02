@@ -2,7 +2,7 @@ FROM node:20-slim AS base
 
 # Install dependencies only when needed
 FROM base AS deps
-RUN apt-get update && apt-get install -y openssl && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y openssl ca-certificates && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
 
 # Copy package files
@@ -17,7 +17,7 @@ RUN npx prisma generate
 
 # Build stage
 FROM base AS builder
-RUN apt-get update && apt-get install -y openssl && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y openssl ca-certificates && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
 
 ARG APP_COMMIT_SHA=unknown
@@ -31,20 +31,22 @@ ENV APP_COMMIT_SHA=$APP_COMMIT_SHA
 ENV APP_BUILD_DATE=$APP_BUILD_DATE
 ENV APP_DEPLOYMENT_ID=$APP_DEPLOYMENT_ID
 ENV NEXT_SERVER_ACTIONS_ENCRYPTION_KEY=$NEXT_SERVER_ACTIONS_ENCRYPTION_KEY
-ENV AUTH_SECRET=$AUTH_SECRET
-ENV NEXTAUTH_SECRET=$NEXTAUTH_SECRET
+ENV AUTH_SECRET=${AUTH_SECRET:-cinelists-secret-key-development-2026-auth-3891724}
+ENV NEXTAUTH_SECRET=${NEXTAUTH_SECRET:-cinelists-secret-key-development-2026-auth-3891724}
+ENV TMDB_API_KEY=bf8f936fe43431e6714917c0c9a172e5
+ENV NEXT_PUBLIC_APP_URL=https://cinelists.com
+ENV NEXT_TELEMETRY_DISABLED=1
+ENV NEXT_TURBOPACK_EXPERIMENTAL_USE_SYSTEM_TLS_CERTS=1
 
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
-
-# Environment variables are provided by Dokploy at runtime
 
 # Build only; database migrations are run separately from the web container
 RUN npm run build
 
 # Production stage
 FROM base AS runner
-RUN apt-get update && apt-get install -y openssl && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y openssl ca-certificates && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
 
 ARG APP_COMMIT_SHA=unknown
