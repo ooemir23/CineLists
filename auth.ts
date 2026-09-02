@@ -123,37 +123,22 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
                 if (token.name) session.user.name = token.name;
                 if (token.email) session.user.email = token.email;
                 if (token.picture) session.user.image = token.picture as string;
-                (session.user as any).hasCompletedOnboarding = true;
-
-                try {
-                    const dbUser = await prisma.user.findUnique({
-                        where: { id: token.sub },
-                        select: {
-                            hasCompletedOnboarding: true,
-                            isSuspended: true,
-                            name: true,
-                            image: true,
-                        }
-                    });
-
-                    if (dbUser) {
-                        (session.user as any).hasCompletedOnboarding = dbUser.hasCompletedOnboarding;
-                        (session.user as any).isSuspended = dbUser.isSuspended;
-                        session.user.name = dbUser.name;
-                        session.user.image = dbUser.image;
-                    }
-                } catch {
-                    // Local dev DB error fallback
-                }
+                (session.user as any).hasCompletedOnboarding = (token as any).hasCompletedOnboarding ?? true;
+                (session.user as any).isSuspended = (token as any).isSuspended ?? false;
             }
             return session;
         },
-        async jwt({ token, user }) {
+        async jwt({ token, user, trigger, session }) {
             if (user) {
                 token.sub = user.id;
                 token.name = user.name;
                 token.email = user.email;
                 token.picture = user.image;
+                (token as any).hasCompletedOnboarding = (user as any).hasCompletedOnboarding ?? true;
+                (token as any).isSuspended = (user as any).isSuspended ?? false;
+            }
+            if (trigger === "update" && session) {
+                token = { ...token, ...session };
             }
             return token;
         },
