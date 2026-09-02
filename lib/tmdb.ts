@@ -30,6 +30,35 @@ type FetchOptions = {
     cache?: RequestCache;
 };
 
+// Global in-memory cache to prevent blocking TMDB requests and 502/504 gateway timeouts
+interface CacheEntry {
+    data: any;
+    expiresAt: number;
+}
+
+const memoryCache = new Map<string, CacheEntry>();
+const inFlightRequests = new Map<string, Promise<any>>();
+const MAX_CACHE_SIZE = 1000;
+
+function getCacheTTL(endpoint: string): number {
+    if (endpoint.includes("/genre") || endpoint.includes("/providers")) {
+        return 24 * 60 * 60 * 1000; // 24 hours
+    }
+    if (endpoint.includes("/credits") || endpoint.includes("/videos") || endpoint.includes("/images")) {
+        return 6 * 60 * 60 * 1000; // 6 hours
+    }
+    if (endpoint.includes("/trending") || endpoint.includes("/popular") || endpoint.includes("/top_rated")) {
+        return 30 * 60 * 1000; // 30 minutes
+    }
+    if (endpoint.includes("/discover") || endpoint.includes("/recommendations") || endpoint.includes("/similar")) {
+        return 15 * 60 * 1000; // 15 minutes
+    }
+    if (endpoint.includes("/search")) {
+        return 5 * 60 * 1000; // 5 minutes
+    }
+    return 60 * 60 * 1000; // 1 hour for details
+}
+
 export const tmdb = {
     async fetch(endpoint: string, { params, cache }: FetchOptions = {}) {
         const apiKey = getApiKey();
@@ -51,37 +80,83 @@ export const tmdb = {
             });
         }
 
-        try {
-            const fetchOptions: RequestInit & { next?: { revalidate: number } } = {
-                signal: AbortSignal.timeout(15000),
-            };
+        const cacheKey = url.toString();
+        const now = Date.now();
 
-            if (cache === "no-store") {
-                fetchOptions.next = { revalidate: 0 };
-            } else {
-                fetchOptions.next = { revalidate: 3600 };
+        // 1. Check in-memory cache
+        if (cache !== "no-store") {
+            const cached = memoryCache.get(cacheKey);
+            if (cached && cached.expiresAt > now) {
+                return cached.data;
             }
+        }
 
-            const res = await fetch(url.toString(), fetchOptions);
+        // 2. In-flight request deduplication (SingleFlight pattern)
+        if (inFlightRequests.has(cacheKey)) {
+            return inFlightRequests.get(cacheKey);
+        }
 
-            if (!res.ok) {
-                // Log only in dev or conditionally to avoid spamming prod logs
-                console.warn(`TMDB API Warning: ${res.status} ${res.statusText} at ${endpoint}`);
-                // Return empty results instead of throwing to prevent pages from crashing
+        const fetchPromise = (async () => {
+            try {
+                const fetchOptions: RequestInit & { next?: { revalidate: number } } = {
+                    signal: AbortSignal.timeout(10000),
+                };
+
+                if (cache === "no-store") {
+                    fetchOptions.next = { revalidate: 0 };
+                } else {
+                    fetchOptions.next = { revalidate: 3600 };
+                }
+
+                const res = await fetch(cacheKey, fetchOptions);
+
+                if (!res.ok) {
+                    console.warn(`TMDB API Warning: ${res.status} ${res.statusText} at ${endpoint}`);
+                    
+                    // Fallback to stale cache if available
+                    const stale = memoryCache.get(cacheKey);
+                    if (stale) return stale.data;
+
+                    if (isListEndpoint(endpoint)) {
+                        return EMPTY_LIST_RESPONSE;
+                    }
+                    return null;
+                }
+
+                const data = await res.json();
+
+                // Save to in-memory cache
+                if (cache !== "no-store" && data) {
+                    if (memoryCache.size >= MAX_CACHE_SIZE) {
+                        const firstKey = memoryCache.keys().next().value;
+                        if (firstKey) memoryCache.delete(firstKey);
+                    }
+                    const ttl = getCacheTTL(endpoint);
+                    memoryCache.set(cacheKey, {
+                        data,
+                        expiresAt: now + ttl,
+                    });
+                }
+
+                return data;
+            } catch (error) {
+                console.warn(`Network error fetching from TMDB (${endpoint}):`, error);
+                
+                // Fallback to stale cache if available
+                const stale = memoryCache.get(cacheKey);
+                if (stale) return stale.data;
+
                 if (isListEndpoint(endpoint)) {
                     return EMPTY_LIST_RESPONSE;
                 }
-                return null; // Return null instead of throwing Error for detail endpoints
+                return null;
+            } finally {
+                inFlightRequests.delete(cacheKey);
             }
+        })();
 
-            return res.json();
-        } catch (error) {
-            console.warn(`Network error fetching from TMDB (${endpoint}):`, error);
-            if (isListEndpoint(endpoint)) {
-                return EMPTY_LIST_RESPONSE;
-            }
-            return null;
-        }
+        inFlightRequests.set(cacheKey, fetchPromise);
+        return fetchPromise;
     },
 
     async getTrendingMovies() {
