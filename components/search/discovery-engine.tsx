@@ -46,10 +46,10 @@ export function DiscoveryEngine({
 
     return (
         <div className="flex flex-col gap-3">
-            {/* Dynamic Header & Switchers */}
-            <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-1">
+            {/* Dynamic Header & Switchers (Responsive, No Mobile Scroll) */}
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 py-1">
                 {/* Period Pills */}
-                <div className="flex items-center gap-1 bg-slate-900/80 p-1 rounded-xl border border-white/10 shrink-0">
+                <div className="grid grid-cols-3 sm:flex items-center gap-1 bg-slate-900/80 p-1 rounded-xl border border-white/10 w-full sm:w-auto">
                     {periods.map((p) => {
                         const Icon = p.icon;
                         const isActive = period === p.id;
@@ -58,7 +58,7 @@ export function DiscoveryEngine({
                                 key={p.id}
                                 onClick={() => setPeriod(p.id as Period)}
                                 className={cn(
-                                    "flex items-center gap-1.5 px-3 sm:px-4 py-2 rounded-lg text-xs font-black uppercase tracking-wider transition-all relative overflow-hidden group",
+                                    "flex items-center justify-center gap-1.5 px-2.5 sm:px-4 py-2 rounded-lg text-xs font-black uppercase tracking-wider transition-all relative overflow-hidden group",
                                     isActive ? "text-white" : "text-neutral-400 hover:text-white"
                                 )}
                             >
@@ -75,7 +75,7 @@ export function DiscoveryEngine({
                 </div>
 
                 {/* Type Switcher */}
-                <div className="flex items-center gap-1 bg-slate-900/80 p-1 rounded-xl border border-white/10 shrink-0">
+                <div className="grid grid-cols-2 sm:flex items-center gap-1 bg-slate-900/80 p-1 rounded-xl border border-white/10 w-full sm:w-auto">
                     {types.map((t) => {
                         const Icon = t.icon;
                         const isActive = type === t.id;
@@ -84,7 +84,7 @@ export function DiscoveryEngine({
                                 key={t.id}
                                 onClick={() => setType(t.id as MediaType)}
                                 className={cn(
-                                    "flex items-center gap-1.5 px-3 sm:px-4 py-2 rounded-lg text-xs font-black uppercase tracking-wider transition-all relative overflow-hidden group",
+                                    "flex items-center justify-center gap-1.5 px-3 sm:px-4 py-2 rounded-lg text-xs font-black uppercase tracking-wider transition-all relative overflow-hidden group",
                                     isActive ? "text-white" : "text-neutral-400 hover:text-white"
                                 )}
                             >

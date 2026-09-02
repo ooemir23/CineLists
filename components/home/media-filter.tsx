@@ -638,15 +638,15 @@ export function MediaFilter() {
                 )}
             </div>
 
-            {/* ═════════ 2. STREAMLINED HORIZONTAL FILTER BAR ═════════ */}
-            <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-0.5">
+            {/* ═════════ 2. RESPONSIVE FILTER BAR (NO MOBILE HORIZONTAL SCROLL) ═════════ */}
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 py-0.5">
                 {/* Type Segmented Pill */}
-                <div className="flex bg-slate-900/80 p-1 rounded-xl border border-white/10 shrink-0">
+                <div className="flex bg-slate-900/80 p-1 rounded-xl border border-white/10 shrink-0 w-full sm:w-auto">
                     <button
                         type="button"
                         onClick={() => setType("")}
                         className={cn(
-                            "px-3 py-1.5 rounded-lg text-xs font-black uppercase tracking-wider transition-all",
+                            "flex-1 sm:flex-initial px-3 py-1.5 rounded-lg text-xs font-black uppercase tracking-wider transition-all text-center",
                             !type ? "bg-amber-400 text-slate-950 shadow-md" : "text-neutral-400 hover:text-white"
                         )}
                     >
@@ -656,7 +656,7 @@ export function MediaFilter() {
                         type="button"
                         onClick={() => setType("movie")}
                         className={cn(
-                            "px-3 py-1.5 rounded-lg text-xs font-black uppercase tracking-wider transition-all flex items-center gap-1",
+                            "flex-1 sm:flex-initial px-3 py-1.5 rounded-lg text-xs font-black uppercase tracking-wider transition-all flex items-center justify-center gap-1",
                             type === "movie" ? "bg-amber-400 text-slate-950 shadow-md" : "text-neutral-400 hover:text-white"
                         )}
                     >
@@ -667,7 +667,7 @@ export function MediaFilter() {
                         type="button"
                         onClick={() => setType("tv")}
                         className={cn(
-                            "px-3 py-1.5 rounded-lg text-xs font-black uppercase tracking-wider transition-all flex items-center gap-1",
+                            "flex-1 sm:flex-initial px-3 py-1.5 rounded-lg text-xs font-black uppercase tracking-wider transition-all flex items-center justify-center gap-1",
                             type === "tv" ? "bg-amber-400 text-slate-950 shadow-md" : "text-neutral-400 hover:text-white"
                         )}
                     >
@@ -676,96 +676,102 @@ export function MediaFilter() {
                     </button>
                 </div>
 
-                {/* Platform Chip */}
-                <button
-                    type="button"
-                    onClick={() => setActiveModal("provider")}
-                    className={cn(
-                        "flex items-center gap-1.5 px-3 py-2 rounded-xl border text-xs font-black uppercase tracking-wider shrink-0 transition-all active:scale-95",
-                        selectedProviders.length > 0
-                            ? "bg-sky-500/20 border-sky-400 text-sky-300 shadow-md shadow-sky-500/10"
-                            : "bg-slate-900/80 border-white/10 text-neutral-300 hover:border-white/25 hover:text-white"
-                    )}
-                >
-                    <Tv className="w-3.5 h-3.5" />
-                    <span>Platform</span>
-                    {selectedProviders.length > 0 && (
-                        <span className="px-1.5 py-0.2 rounded-full bg-sky-500 text-slate-950 text-[10px] font-black">
-                            {selectedProviders.length}
-                        </span>
-                    )}
-                    <ChevronDown className="w-3 h-3 opacity-60" />
-                </button>
+                {/* Filter Chips Grid on Mobile / Row on Desktop */}
+                <div className="grid grid-cols-4 sm:flex sm:items-center gap-1.5 sm:gap-2 flex-1">
+                    {/* Platform Chip */}
+                    <button
+                        type="button"
+                        onClick={() => setActiveModal("provider")}
+                        className={cn(
+                            "flex items-center justify-center gap-1 px-1.5 sm:px-3 py-2 rounded-xl border text-[11px] sm:text-xs font-black uppercase tracking-wider transition-all active:scale-95",
+                            selectedProviders.length > 0
+                                ? "bg-sky-500/20 border-sky-400 text-sky-300 shadow-md shadow-sky-500/10"
+                                : "bg-slate-900/80 border-white/10 text-neutral-300 hover:border-white/25 hover:text-white"
+                        )}
+                    >
+                        <Tv className="w-3 h-3 sm:w-3.5 sm:h-3.5 shrink-0" />
+                        <span className="truncate">Platform</span>
+                        {selectedProviders.length > 0 ? (
+                            <span className="px-1.5 py-0.2 rounded-full bg-sky-500 text-slate-950 text-[10px] font-black shrink-0">
+                                {selectedProviders.length}
+                            </span>
+                        ) : (
+                            <ChevronDown className="w-2.5 h-2.5 sm:w-3 sm:h-3 opacity-60 shrink-0" />
+                        )}
+                    </button>
 
-                {/* Genre Chip */}
-                <button
-                    type="button"
-                    onClick={() => setActiveModal("genre")}
-                    className={cn(
-                        "flex items-center gap-1.5 px-3 py-2 rounded-xl border text-xs font-black uppercase tracking-wider shrink-0 transition-all active:scale-95",
-                        selectedGenres.length > 0
-                            ? "bg-purple-500/20 border-purple-400 text-purple-300 shadow-md shadow-purple-500/10"
-                            : "bg-slate-900/80 border-white/10 text-neutral-300 hover:border-white/25 hover:text-white"
-                    )}
-                >
-                    <SlidersHorizontal className="w-3.5 h-3.5" />
-                    <span>Tür</span>
-                    {selectedGenres.length > 0 && (
-                        <span className="px-1.5 py-0.2 rounded-full bg-purple-500 text-white text-[10px] font-black">
-                            {selectedGenres.length}
-                        </span>
-                    )}
-                    <ChevronDown className="w-3 h-3 opacity-60" />
-                </button>
+                    {/* Genre Chip */}
+                    <button
+                        type="button"
+                        onClick={() => setActiveModal("genre")}
+                        className={cn(
+                            "flex items-center justify-center gap-1 px-1.5 sm:px-3 py-2 rounded-xl border text-[11px] sm:text-xs font-black uppercase tracking-wider transition-all active:scale-95",
+                            selectedGenres.length > 0
+                                ? "bg-purple-500/20 border-purple-400 text-purple-300 shadow-md shadow-purple-500/10"
+                                : "bg-slate-900/80 border-white/10 text-neutral-300 hover:border-white/25 hover:text-white"
+                        )}
+                    >
+                        <SlidersHorizontal className="w-3 h-3 sm:w-3.5 sm:h-3.5 shrink-0" />
+                        <span className="truncate">Tür</span>
+                        {selectedGenres.length > 0 ? (
+                            <span className="px-1.5 py-0.2 rounded-full bg-purple-500 text-white text-[10px] font-black shrink-0">
+                                {selectedGenres.length}
+                            </span>
+                        ) : (
+                            <ChevronDown className="w-2.5 h-2.5 sm:w-3 sm:h-3 opacity-60 shrink-0" />
+                        )}
+                    </button>
 
-                {/* Year & Rating Chip */}
-                <button
-                    type="button"
-                    onClick={() => setActiveModal("year_rating")}
-                    className={cn(
-                        "flex items-center gap-1.5 px-3 py-2 rounded-xl border text-xs font-black uppercase tracking-wider shrink-0 transition-all active:scale-95",
-                        year || minRating
-                            ? "bg-amber-500/20 border-amber-400 text-amber-300 shadow-md shadow-amber-500/10"
-                            : "bg-slate-900/80 border-white/10 text-neutral-300 hover:border-white/25 hover:text-white"
-                    )}
-                >
-                    <Calendar className="w-3.5 h-3.5" />
-                    <span>
-                        {year ? year : minRating ? `${minRating}+ Puan` : "Yıl & Puan"}
-                    </span>
-                    {year && minRating && (
-                        <span className="px-1.5 py-0.2 rounded-full bg-amber-400 text-slate-950 text-[10px] font-black">
-                            {minRating}+
+                    {/* Year & Rating Chip */}
+                    <button
+                        type="button"
+                        onClick={() => setActiveModal("year_rating")}
+                        className={cn(
+                            "flex items-center justify-center gap-1 px-1.5 sm:px-3 py-2 rounded-xl border text-[11px] sm:text-xs font-black uppercase tracking-wider transition-all active:scale-95",
+                            year || minRating
+                                ? "bg-amber-500/20 border-amber-400 text-amber-300 shadow-md shadow-amber-500/10"
+                                : "bg-slate-900/80 border-white/10 text-neutral-300 hover:border-white/25 hover:text-white"
+                        )}
+                    >
+                        <Calendar className="w-3 h-3 sm:w-3.5 sm:h-3.5 shrink-0" />
+                        <span className="truncate">
+                            {year ? year : minRating ? `${minRating}+` : "Yıl/Puan"}
                         </span>
-                    )}
-                    <ChevronDown className="w-3 h-3 opacity-60" />
-                </button>
+                        {year && minRating ? (
+                            <span className="px-1.5 py-0.2 rounded-full bg-amber-400 text-slate-950 text-[10px] font-black shrink-0">
+                                {minRating}+
+                            </span>
+                        ) : (
+                            <ChevronDown className="w-2.5 h-2.5 sm:w-3 sm:h-3 opacity-60 shrink-0" />
+                        )}
+                    </button>
 
-                {/* Country Flag Chip */}
-                <button
-                    type="button"
-                    onClick={() => setActiveModal("country")}
-                    className={cn(
-                        "flex items-center gap-1.5 px-3 py-2 rounded-xl border text-xs font-black uppercase tracking-wider shrink-0 transition-all active:scale-95",
-                        country !== "TR"
-                            ? "bg-indigo-500/20 border-indigo-400 text-indigo-300"
-                            : "bg-slate-900/80 border-white/10 text-neutral-300 hover:border-white/25 hover:text-white"
-                    )}
-                >
-                    <span className="text-base leading-none">{selectedCountry.flag}</span>
-                    <span className="text-xs">{selectedCountry.code}</span>
-                    <ChevronDown className="w-3 h-3 opacity-60" />
-                </button>
+                    {/* Country Flag Chip */}
+                    <button
+                        type="button"
+                        onClick={() => setActiveModal("country")}
+                        className={cn(
+                            "flex items-center justify-center gap-1 px-1.5 sm:px-3 py-2 rounded-xl border text-[11px] sm:text-xs font-black uppercase tracking-wider transition-all active:scale-95",
+                            country !== "TR"
+                                ? "bg-indigo-500/20 border-indigo-400 text-indigo-300"
+                                : "bg-slate-900/80 border-white/10 text-neutral-300 hover:border-white/25 hover:text-white"
+                        )}
+                    >
+                        <span className="text-sm leading-none">{selectedCountry.flag}</span>
+                        <span className="text-xs">{selectedCountry.code}</span>
+                        <ChevronDown className="w-2.5 h-2.5 sm:w-3 sm:h-3 opacity-60 shrink-0" />
+                    </button>
+                </div>
 
                 {/* Clear All Active Filters */}
                 {hasActiveFilters && (
                     <button
                         type="button"
                         onClick={handleClear}
-                        className="flex items-center gap-1 px-3 py-2 rounded-xl bg-red-500/15 hover:bg-red-500/25 text-red-400 border border-red-500/30 text-xs font-black uppercase tracking-wider shrink-0 transition-all active:scale-95"
+                        className="flex items-center justify-center gap-1 px-3 py-2 rounded-xl bg-red-500/15 hover:bg-red-500/25 text-red-400 border border-red-500/30 text-xs font-black uppercase tracking-wider shrink-0 transition-all active:scale-95 w-full sm:w-auto"
                     >
                         <X className="w-3.5 h-3.5" />
-                        <span>Temizle ({activeFilterCount})</span>
+                        <span>Filtreleri Temizle ({activeFilterCount})</span>
                     </button>
                 )}
             </div>
