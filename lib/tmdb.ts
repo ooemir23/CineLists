@@ -38,25 +38,53 @@ interface CacheEntry {
 
 const memoryCache = new Map<string, CacheEntry>();
 const inFlightRequests = new Map<string, Promise<any>>();
-const MAX_CACHE_SIZE = 1000;
+const MAX_CACHE_SIZE = 1500;
+
+// ── Rate Limiter & Concurrency Queue (Prevents TMDB 429 Too Many Requests) ──
+const MAX_CONCURRENT_REQUESTS = 4;
+let activeRequests = 0;
+const requestQueue: Array<() => void> = [];
+
+function acquireSlot(): Promise<void> {
+    if (activeRequests < MAX_CONCURRENT_REQUESTS) {
+        activeRequests++;
+        return Promise.resolve();
+    }
+    return new Promise<void>((resolve) => {
+        requestQueue.push(() => {
+            activeRequests++;
+            resolve();
+        });
+    });
+}
+
+function releaseSlot() {
+    activeRequests--;
+    if (requestQueue.length > 0) {
+        const next = requestQueue.shift();
+        next?.();
+    }
+}
+
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 function getCacheTTL(endpoint: string): number {
     if (endpoint.includes("/genre") || endpoint.includes("/providers")) {
         return 24 * 60 * 60 * 1000; // 24 hours
     }
-    if (endpoint.includes("/credits") || endpoint.includes("/videos") || endpoint.includes("/images")) {
-        return 6 * 60 * 60 * 1000; // 6 hours
+    if (endpoint.includes("/credits") || endpoint.includes("/videos") || endpoint.includes("/images") || endpoint.includes("/combined_credits")) {
+        return 12 * 60 * 60 * 1000; // 12 hours
     }
     if (endpoint.includes("/trending") || endpoint.includes("/popular") || endpoint.includes("/top_rated")) {
-        return 30 * 60 * 1000; // 30 minutes
+        return 60 * 60 * 1000; // 1 hour
     }
     if (endpoint.includes("/discover") || endpoint.includes("/recommendations") || endpoint.includes("/similar")) {
-        return 15 * 60 * 1000; // 15 minutes
+        return 30 * 60 * 1000; // 30 minutes
     }
     if (endpoint.includes("/search")) {
-        return 5 * 60 * 1000; // 5 minutes
+        return 10 * 60 * 1000; // 10 minutes
     }
-    return 60 * 60 * 1000; // 1 hour for details
+    return 2 * 60 * 60 * 1000; // 2 hours for details
 }
 
 export const tmdb = {
@@ -97,6 +125,9 @@ export const tmdb = {
         }
 
         const fetchPromise = (async () => {
+            // Acquire concurrency slot
+            await acquireSlot();
+
             try {
                 const fetchOptions: RequestInit & { next?: { revalidate: number } } = {
                     signal: AbortSignal.timeout(10000),
@@ -108,11 +139,16 @@ export const tmdb = {
                     fetchOptions.next = { revalidate: 3600 };
                 }
 
-                const res = await fetch(cacheKey, fetchOptions);
+                let res = await fetch(cacheKey, fetchOptions);
+
+                // Handle 429 (Rate Limit) with graceful backoff retry
+                if (res.status === 429) {
+                    console.warn(`[TMDB RateLimit] 429 on ${endpoint}, waiting 600ms before retry...`);
+                    await sleep(600);
+                    res = await fetch(cacheKey, fetchOptions);
+                }
 
                 if (!res.ok) {
-                    console.warn(`TMDB API Warning: ${res.status} ${res.statusText} at ${endpoint}`);
-                    
                     // Fallback to stale cache if available
                     const stale = memoryCache.get(cacheKey);
                     if (stale) return stale.data;
@@ -140,8 +176,6 @@ export const tmdb = {
 
                 return data;
             } catch (error) {
-                console.warn(`Network error fetching from TMDB (${endpoint}):`, error);
-                
                 // Fallback to stale cache if available
                 const stale = memoryCache.get(cacheKey);
                 if (stale) return stale.data;
@@ -151,6 +185,7 @@ export const tmdb = {
                 }
                 return null;
             } finally {
+                releaseSlot();
                 inFlightRequests.delete(cacheKey);
             }
         })();
@@ -280,7 +315,7 @@ export const tmdb = {
 
     async getTVShow(id: string) {
         return this.fetch(`/tv/${id}`, {
-            params: { append_to_response: "networks,next_episode_to_air" }
+            params: { append_to_response: "networks,next_episode_to_air,watch/providers" }
         });
     },
 };

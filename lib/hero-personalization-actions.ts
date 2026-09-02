@@ -182,7 +182,7 @@ export async function getWatchedShowsNextEpisodes(): Promise<UpcomingEpisode[]> 
         ];
 
         // Dedup by media ID and take top 10 most recent shows to keep response fast
-        const uniqueShows = Array.from(new Map(combinedShows.map(s => [s.media.id, s])).values()).slice(0, 10);
+        const uniqueShows = Array.from(new Map(combinedShows.map(s => [s.media.id, s])).values()).slice(0, 6);
         if (uniqueShows.length === 0) return [];
 
         const episodes: UpcomingEpisode[] = [];
@@ -193,10 +193,8 @@ export async function getWatchedShowsNextEpisodes(): Promise<UpcomingEpisode[]> 
         await Promise.all(uniqueShows.map(async (item) => {
             if (item.media.type === "TV") {
                 try {
-                    const [details, providers] = await Promise.all([
-                        tmdb.getTVShow(item.media.tmdbId.toString()).catch(() => null),
-                        tmdb.getWatchProviders("tv", item.media.tmdbId.toString()).catch(() => null),
-                    ]);
+                    const details = await tmdb.getTVShow(item.media.tmdbId.toString()).catch(() => null);
+                    const providers = details?.["watch/providers"] || details?.watch_providers;
 
                     const nextEpisode = details?.next_episode_to_air;
                     const showStatus = details?.status;
