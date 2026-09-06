@@ -151,19 +151,23 @@ export async function searchUsers(query: string) {
                 name: true,
                 username: true,
                 image: true,
+                bio: true,
+                favoriteGenres: true,
                 _count: {
                     select: { 
+                        watched: true,
                         followedBy: true,
                         achievements: true,
                         activities: true
                     },
                 },
             },
-            take: 10,
+            take: 24,
         });
 
         return users.map(u => ({
             ...u,
+            watchedCount: u._count.watched,
             followersCount: u._count.followedBy,
             achievementsCount: u._count.achievements,
             activitiesCount: u._count.activities
@@ -176,20 +180,24 @@ export async function searchUsers(query: string) {
 
 export async function getGlobalActiveUsers() {
     try {
-        // Get top 10 users by achievement count + activity count
+        // Get top users by achievement count + activity count + watched
         const users = await prisma.user.findMany({
-            take: 10,
+            take: 24,
             orderBy: [
                 { achievements: { _count: 'desc' } },
-                { activities: { _count: 'desc' } }
+                { activities: { _count: 'desc' } },
+                { watched: { _count: 'desc' } },
             ],
             select: {
                 id: true,
                 name: true,
                 username: true,
                 image: true,
+                bio: true,
+                favoriteGenres: true,
                 _count: {
                     select: { 
+                        watched: true,
                         followedBy: true,
                         achievements: true,
                         activities: true
@@ -200,6 +208,7 @@ export async function getGlobalActiveUsers() {
 
         return users.map(u => ({
             ...u,
+            watchedCount: u._count.watched,
             followersCount: u._count.followedBy,
             achievementsCount: u._count.achievements,
             activitiesCount: u._count.activities
@@ -207,6 +216,27 @@ export async function getGlobalActiveUsers() {
     } catch (error) {
         console.warn("[Social] Error in getGlobalActiveUsers:", (error as Error)?.message || error);
         return [];
+    }
+}
+
+export async function getCommunityStats() {
+    try {
+        const [totalUsers, totalWatched, totalActivities] = await Promise.all([
+            prisma.user.count(),
+            prisma.watched.count(),
+            prisma.activity.count(),
+        ]);
+        return {
+            totalUsers,
+            totalWatched,
+            totalActivities,
+        };
+    } catch {
+        return {
+            totalUsers: 0,
+            totalWatched: 0,
+            totalActivities: 0,
+        };
     }
 }
 
