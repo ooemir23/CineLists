@@ -12,7 +12,7 @@ export default async function NotificationsPage() {
     const notifications = await getNotifications();
 
     return (
-        <div className="max-w-4xl mx-auto px-3.5 sm:px-6 py-4 sm:py-8">
+        <div className="max-w-[1600px] mx-auto px-3 sm:px-6 md:px-8 lg:px-12 py-4 sm:py-8">
             <NotificationsList initialNotifications={notifications} />
         </div>
     );
