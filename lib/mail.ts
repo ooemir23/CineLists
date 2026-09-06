@@ -2,14 +2,29 @@ import { Resend } from "resend";
 
 const resendApiKey = process.env.RESEND_API_KEY;
 const resend = resendApiKey ? new Resend(resendApiKey) : null;
-const FROM_EMAIL = process.env.MAIL_FROM || "CineLists <onboarding@resend.dev>";
+const FROM_EMAIL = (process.env.MAIL_FROM && !process.env.MAIL_FROM.includes("onboarding@resend.dev"))
+    ? process.env.MAIL_FROM
+    : "CineLists <noreply@cinelists.com>";
+
+export function getAppDomain(): string {
+    if (process.env.NEXT_PUBLIC_APP_URL && !process.env.NEXT_PUBLIC_APP_URL.includes("localhost")) {
+        return process.env.NEXT_PUBLIC_APP_URL.replace(/\/$/, "");
+    }
+    if (process.env.AUTH_URL && !process.env.AUTH_URL.includes("localhost")) {
+        return process.env.AUTH_URL.replace(/\/$/, "");
+    }
+    if (process.env.NODE_ENV === "production") {
+        return "https://cinelists.com";
+    }
+    return (process.env.NEXT_PUBLIC_APP_URL || process.env.AUTH_URL || process.env.NEXTAUTH_URL || "http://localhost:3000").replace(/\/$/, "");
+}
 
 export const sendPasswordResetEmail = async (email: string, token: string) => {
     if (!resend) {
         console.error("RESEND_API_KEY eksik! Lütfen .env dosyanızı kontrol edin.");
         throw new Error("E-posta servisi yapilandirilmamis.");
     }
-    const domain = process.env.NEXT_PUBLIC_APP_URL || process.env.AUTH_URL || process.env.NEXTAUTH_URL || "http://localhost:3000";
+    const domain = getAppDomain();
     const resetLink = `${domain}/reset-password?token=${token}`;
 
     try {
@@ -91,7 +106,7 @@ export const sendRecommendationEmail = async (params: {
         return;
     }
 
-    const domain = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+    const domain = getAppDomain();
     const mediaLabel = mediaType === "movie" ? "FİLM" : "DİZİ";
     const posterUrl = posterPath ? `https://image.tmdb.org/t/p/w400${posterPath}` : null;
     const backdropUrl = backdropPath ? `https://image.tmdb.org/t/p/w780${backdropPath}` : posterUrl;
@@ -227,7 +242,7 @@ export const sendRecommendationEmail = async (params: {
 export const sendDailyReminderEmail = async (email: string, userName: string, shows: { title: string, posterPath: string | null, episodeInfo: string, platforms: string[] }[]) => {
     if (!resend) return;
 
-    const domain = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+    const domain = getAppDomain();
 
     try {
         await resend.emails.send({

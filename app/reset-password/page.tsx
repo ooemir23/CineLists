@@ -17,7 +17,11 @@ export default async function ResetPasswordPage({ searchParams }: ResetPasswordP
                 ? "Şifreler birbiriyle eşleşmiyor."
                 : params.error === "weak"
                     ? "Şifre en az 6 karakter olmalıdır."
-                    : null;
+                    : params.error === "missing"
+                        ? "Lütfen tüm alanları doldurun."
+                        : params.error === "db"
+                            ? "Şifre güncellenirken bir hata oluştu. Lütfen tekrar deneyin."
+                            : null;
 
     if (!token && !errorMessage) {
         return (

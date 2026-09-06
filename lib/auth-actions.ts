@@ -133,21 +133,31 @@ export async function signInWithGoogle() {
 }
 
 export async function requestPasswordReset(formData: FormData) {
-    const email = String(formData.get("email") || "").trim();
+    const rawEmail = String(formData.get("email") || "").trim();
 
-    if (!email) {
+    if (!rawEmail) {
         redirect("/forgot-password?error=missing");
     }
 
+    const email = rawEmail.toLowerCase();
+
     try {
-        const user = await prisma.user.findUnique({
-            where: { email },
+        // Case-insensitive lookup so users entering upper/mixed-case email always match
+        const user = await prisma.user.findFirst({
+            where: {
+                email: {
+                    equals: email,
+                    mode: "insensitive"
+                }
+            }
         });
 
-        if (!user) {
-            // Güvenlik nedeniyle e-posta gönderildi mesajı veriyoruz
-            redirect("/forgot-password?success=sent");
+        if (!user || !user.email) {
+            console.warn(`Password reset requested for non-existent email: ${rawEmail}`);
+            redirect("/forgot-password?error=not-found");
         }
+
+        const userEmail = user.email.toLowerCase();
 
         // 1 saat geçerli bir token oluştur
         const token = crypto.randomBytes(32).toString("hex");
@@ -155,26 +165,29 @@ export async function requestPasswordReset(formData: FormData) {
 
         // Eski tokenları temizle ve yenisini kaydet
         await prisma.verificationToken.deleteMany({
-            where: { identifier: email }
+            where: { identifier: userEmail }
         });
 
         await prisma.verificationToken.create({
             data: {
-                identifier: email,
+                identifier: userEmail,
                 token,
                 expires
             }
         });
 
         // E-posta gönder
-        await sendPasswordResetEmail(email, token);
+        await sendPasswordResetEmail(userEmail, token);
         
         redirect("/forgot-password?success=sent");
-    } catch (error) {
+    } catch (error: any) {
         if (error instanceof Error && error.message.includes("NEXT_REDIRECT")) {
             throw error;
         }
         console.error("Password reset request error:", error);
+        if (error?.message?.includes("E-posta")) {
+            redirect("/forgot-password?error=mail");
+        }
         redirect("/forgot-password?error=db");
     }
 }
@@ -182,7 +195,7 @@ export async function requestPasswordReset(formData: FormData) {
 export async function resetPassword(formData: FormData) {
     const password = String(formData.get("password") || "");
     const confirmPassword = String(formData.get("confirmPassword") || "");
-    const token = String(formData.get("token") || "");
+    const token = String(formData.get("token") || "").trim();
 
     if (!password || !confirmPassword || !token) {
         redirect(`/reset-password?token=${token}&error=missing`);
@@ -208,18 +221,32 @@ export async function resetPassword(formData: FormData) {
 
         const hashedPassword = await bcrypt.hash(password, 12);
         
-        // Şifreyi güncelle
+        // Find user case-insensitively
+        const targetUser = await prisma.user.findFirst({
+            where: {
+                email: {
+                    equals: verificationToken.identifier,
+                    mode: "insensitive"
+                }
+            }
+        });
+
+        if (!targetUser) {
+            redirect(`/reset-password?token=${token}&error=invalid`);
+        }
+
+        // Şifreyi güncelle (ID ile güvenli güncelleme)
         await prisma.user.update({
-            where: { email: verificationToken.identifier },
+            where: { id: targetUser.id },
             data: { password: hashedPassword }
         });
 
-        // Kullanılan token'ı sil
-        await prisma.verificationToken.delete({
-            where: { token }
+        // Kullanılan token'ları sil
+        await prisma.verificationToken.deleteMany({
+            where: { identifier: verificationToken.identifier }
         });
 
-        console.log(`Password reset successfully for user: ${verificationToken.identifier}`);
+        console.log(`Password reset successfully for user: ${targetUser.email}`);
         
         redirect("/login?reset=success");
     } catch (error) {
