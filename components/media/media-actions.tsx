@@ -54,6 +54,17 @@ export function MediaActions({
         setTimeout(() => setGuestWarning(null), 3000);
     };
 
+    const handleActionError = (error: string, oldStatus: string | null, revertForm?: boolean) => {
+        setStatus(oldStatus);
+        if (revertForm) setShowDetailsForm(false);
+        toast.error(error);
+        if (error.includes("Oturum geçersiz") || error.includes("Giriş yapmalısınız")) {
+            setTimeout(() => {
+                window.location.href = "/login";
+            }, 1200);
+        }
+    };
+
     const handleToggleWatchlist = () => {
         if (isRestrictedUser) {
             showAuthWarning("Listeye eklemek için kayıt olmalısın!");
@@ -67,8 +78,7 @@ export function MediaActions({
         startTransition(async () => {
             const result = await toggleToWatch(tmdbId, type, title, posterPath);
             if (result.error) {
-                setStatus(oldStatus);
-                toast.error(result.error);
+                handleActionError(result.error, oldStatus);
             } else {
                 toast.success(newStatus ? "Listeye eklendi" : "Listeden çıkarıldı");
             }
@@ -88,8 +98,7 @@ export function MediaActions({
         startTransition(async () => {
             const result = await setWatchStatus(tmdbId, type, title, posterPath, newStatus);
             if (result.error) {
-                setStatus(oldStatus);
-                toast.error(result.error);
+                handleActionError(result.error, oldStatus);
             } else {
                 toast.success(newStatus === "WATCHING" ? "İzleniyor olarak işaretlendi" : "İzleme listesinden çıkarıldı");
             }
@@ -116,9 +125,7 @@ export function MediaActions({
         startTransition(async () => {
             const result = await toggleWatchedStatus(tmdbId, type, title, posterPath);
             if (result.error) {
-                setStatus(oldStatus);
-                if (!isWatched) setShowDetailsForm(false);
-                toast.error(result.error);
+                handleActionError(result.error, oldStatus, !isWatched);
             } else {
                 toast.success(newStatus === "COMPLETED" ? "İzlenenlere eklendi" : "İzlenenlerden çıkarıldı");
             }

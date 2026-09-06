@@ -87,13 +87,39 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
 
         async session({ session, token }) {
             if (token.sub && session.user) {
-                session.user.id = token.sub;
-                if (token.name) session.user.name = token.name;
-                if (token.email) session.user.email = token.email;
-                if (token.picture) session.user.image = token.picture as string;
-                if ((token as any).username) (session.user as any).username = (token as any).username;
-                (session.user as any).hasCompletedOnboarding = (token as any).hasCompletedOnboarding ?? false;
-                (session.user as any).isSuspended = (token as any).isSuspended ?? false;
+                try {
+                    let dbUser = await prisma.user.findUnique({
+                        where: { id: token.sub },
+                        select: { id: true, name: true, email: true, username: true, image: true, hasCompletedOnboarding: true, isSuspended: true }
+                    });
+
+                    if (!dbUser && token.email) {
+                        dbUser = await prisma.user.findUnique({
+                            where: { email: token.email },
+                            select: { id: true, name: true, email: true, username: true, image: true, hasCompletedOnboarding: true, isSuspended: true }
+                        });
+                    }
+
+                    if (dbUser) {
+                        session.user.id = dbUser.id;
+                        if (dbUser.name) session.user.name = dbUser.name;
+                        if (dbUser.email) session.user.email = dbUser.email;
+                        if (dbUser.image) session.user.image = dbUser.image;
+                        if (dbUser.username) (session.user as any).username = dbUser.username;
+                        (session.user as any).hasCompletedOnboarding = dbUser.hasCompletedOnboarding ?? false;
+                        (session.user as any).isSuspended = dbUser.isSuspended ?? false;
+                    } else {
+                        // User does not exist in DB (stale cookie from previous DB / deleted user)
+                        return { expires: session.expires } as any;
+                    }
+                } catch (error) {
+                    console.error("[Auth] Session validation error:", error);
+                    session.user.id = token.sub;
+                    if (token.name) session.user.name = token.name;
+                    if (token.email) session.user.email = token.email;
+                    if (token.picture) session.user.image = token.picture as string;
+                    if ((token as any).username) (session.user as any).username = (token as any).username;
+                }
             }
             return session;
         },
