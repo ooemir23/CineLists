@@ -86,25 +86,59 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
         },
 
         async session({ session, token }) {
-            if (token.sub && session.user) {
-                try {
-                    let dbUser = await prisma.user.findUnique({
-                        where: { id: token.sub },
-                        select: { id: true, name: true, email: true, username: true, image: true, hasCompletedOnboarding: true, isSuspended: true }
-                    });
+            if (!session) {
+                session = { expires: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString() } as any;
+            }
+            if (!session.user) {
+                session.user = {} as any;
+            }
 
-                    if (!dbUser && token.email) {
+            if (token) {
+                try {
+                    let dbUser = null;
+
+                    // 1. Find by token.sub (Prisma User ID)
+                    if (token.sub) {
                         dbUser = await prisma.user.findUnique({
-                            where: { email: token.email },
+                            where: { id: token.sub },
                             select: { id: true, name: true, email: true, username: true, image: true, hasCompletedOnboarding: true, isSuspended: true }
                         });
                     }
 
+                    // 2. Find by token.email (case-insensitive)
+                    if (!dbUser && token.email) {
+                        const emailLower = (token.email as string).trim().toLowerCase();
+                        dbUser = await prisma.user.findFirst({
+                            where: {
+                                email: {
+                                    equals: emailLower,
+                                    mode: "insensitive"
+                                }
+                            },
+                            select: { id: true, name: true, email: true, username: true, image: true, hasCompletedOnboarding: true, isSuspended: true }
+                        });
+                    }
+
+                    // 3. Find by providerAccountId in Account table (for Google/OAuth)
+                    if (!dbUser && token.sub) {
+                        const acc = await prisma.account.findFirst({
+                            where: { providerAccountId: token.sub },
+                            include: {
+                                user: {
+                                    select: { id: true, name: true, email: true, username: true, image: true, hasCompletedOnboarding: true, isSuspended: true }
+                                }
+                            }
+                        });
+                        if (acc?.user) {
+                            dbUser = acc.user;
+                        }
+                    }
+
                     if (dbUser) {
                         session.user.id = dbUser.id;
-                        if (dbUser.name) session.user.name = dbUser.name;
-                        if (dbUser.email) session.user.email = dbUser.email;
-                        if (dbUser.image) session.user.image = dbUser.image;
+                        session.user.name = dbUser.name || (token.name as string) || "Kullanıcı";
+                        session.user.email = dbUser.email || (token.email as string) || "";
+                        session.user.image = dbUser.image || (token.picture as string) || null;
                         if (dbUser.username) (session.user as any).username = dbUser.username;
                         (session.user as any).hasCompletedOnboarding = dbUser.hasCompletedOnboarding ?? false;
                         (session.user as any).isSuspended = dbUser.isSuspended ?? false;
@@ -114,11 +148,13 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
                     }
                 } catch (error) {
                     console.error("[Auth] Session validation error:", error);
-                    session.user.id = token.sub;
-                    if (token.name) session.user.name = token.name;
-                    if (token.email) session.user.email = token.email;
-                    if (token.picture) session.user.image = token.picture as string;
-                    if ((token as any).username) (session.user as any).username = (token as any).username;
+                    if (token.sub) {
+                        session.user.id = token.sub;
+                        if (token.name) session.user.name = token.name as string;
+                        if (token.email) session.user.email = token.email as string;
+                        if (token.picture) session.user.image = token.picture as string;
+                        if ((token as any).username) (session.user as any).username = (token as any).username;
+                    }
                 }
             }
             return session;
