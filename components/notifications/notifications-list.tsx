@@ -1,16 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import Image from "next/image";
 import {
     Bell,
     UserPlus,
     MessageSquare,
-    Star,
     Check,
     Clock,
     ChevronRight,
-    Trash2,
     Sparkles,
     Ghost,
     MailOpen
@@ -20,52 +17,49 @@ import { formatDistanceToNow } from "date-fns";
 import { tr } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import { markNotificationAsRead, markAllNotificationsAsRead } from "@/lib/notification-actions";
-// framer-motion removed — list animations replaced with CSS animate-in utilities
 
-type Notification = {
+export type NotificationItem = {
     id: string;
     type: string;
     message: string;
     link: string | null;
     isRead: boolean;
     image?: string | null;
-    createdAt: Date;
+    createdAt: string | Date;
 };
 
 type NotificationsListProps = {
-    initialNotifications: Notification[];
+    initialNotifications: NotificationItem[];
 };
 
-function NotificationMedia({ 
-    type, 
-    image, 
-    message 
-}: { 
-    type: string; 
-    image?: string | null; 
-    message: string; 
+function getNotificationIcon(type: string) {
+    switch (type) {
+        case "NEW_FOLLOWER":
+            return <UserPlus className="w-5 h-5 text-blue-400" />;
+        case "NEW_COMMENT":
+            return <MessageSquare className="w-5 h-5 text-emerald-400" />;
+        case "NEW_RECOMMENDATION":
+            return <Sparkles className="w-5 h-5 text-amber-400" />;
+        case "MENTION":
+            return <span className="w-5 h-5 flex items-center justify-center font-black text-purple-400 text-sm">@</span>;
+        default:
+            return <Bell className="w-5 h-5 text-neutral-400" />;
+    }
+}
+
+function NotificationBadge({
+    type,
+    image,
+    message
+}: {
+    type: string;
+    image?: string | null;
+    message: string;
 }) {
-    const [imgError, setImgError] = useState(false);
-
-    const getIcon = () => {
-        switch (type) {
-            case "NEW_FOLLOWER":
-                return <UserPlus className="w-5 h-5 text-blue-400" />;
-            case "NEW_COMMENT":
-                return <MessageSquare className="w-5 h-5 text-emerald-400" />;
-            case "NEW_RECOMMENDATION":
-                return <Sparkles className="w-5 h-5 text-amber-400" />;
-            case "MENTION":
-                return <span className="w-5 h-5 flex items-center justify-center font-black text-purple-400 text-sm">@</span>;
-            default:
-                return <Bell className="w-5 h-5 text-neutral-400" />;
-        }
-    };
-
-    if (!image || imgError) {
+    if (!image) {
         return (
             <div className="w-11 h-11 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center shrink-0 shadow-lg">
-                {getIcon()}
+                {getNotificationIcon(type)}
             </div>
         );
     }
@@ -81,7 +75,11 @@ function NotificationMedia({
                     src={src}
                     alt={message}
                     className="w-full h-full object-cover"
-                    onError={() => setImgError(true)}
+                    loading="lazy"
+                    onError={(e) => {
+                        e.currentTarget.style.display = "none";
+                        e.currentTarget.parentElement?.classList.add("hidden");
+                    }}
                 />
             </div>
         );
@@ -93,14 +91,18 @@ function NotificationMedia({
                 src={src}
                 alt="İçerik afişi"
                 className="w-full h-full object-cover"
-                onError={() => setImgError(true)}
+                loading="lazy"
+                onError={(e) => {
+                    e.currentTarget.style.display = "none";
+                    e.currentTarget.parentElement?.classList.add("hidden");
+                }}
             />
         </div>
     );
 }
 
 export function NotificationsList({ initialNotifications }: NotificationsListProps) {
-    const [notifications, setNotifications] = useState(initialNotifications);
+    const [notifications, setNotifications] = useState<NotificationItem[]>(initialNotifications);
     const [filter, setFilter] = useState<"ALL" | "UNREAD">("ALL");
 
     const filteredNotifications = filter === "ALL"
@@ -112,7 +114,7 @@ export function NotificationsList({ initialNotifications }: NotificationsListPro
     const handleMarkAsRead = async (id: string) => {
         const res = await markNotificationAsRead(id);
         if (res.success) {
-            setNotifications(notifications.map(n =>
+            setNotifications(prev => prev.map(n =>
                 n.id === id ? { ...n, isRead: true } : n
             ));
         }
@@ -120,7 +122,7 @@ export function NotificationsList({ initialNotifications }: NotificationsListPro
 
     const handleMarkAllRead = async () => {
         await markAllNotificationsAsRead();
-        setNotifications(notifications.map(n => ({ ...n, isRead: true })));
+        setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
     };
 
     return (
@@ -151,9 +153,10 @@ export function NotificationsList({ initialNotifications }: NotificationsListPro
                 <div className="flex items-center gap-2 self-start sm:self-auto">
                     <div className="bg-white/5 p-1 rounded-2xl border border-white/10 flex gap-1">
                         <button
+                            type="button"
                             onClick={() => setFilter("ALL")}
                             className={cn(
-                                "px-4 py-2 text-xs font-black rounded-xl transition-all",
+                                "px-4 py-2 text-xs font-black rounded-xl transition-all cursor-pointer",
                                 filter === "ALL" 
                                     ? "bg-amber-400 text-slate-950 shadow-lg shadow-amber-400/20" 
                                     : "text-neutral-400 hover:text-white"
@@ -162,9 +165,10 @@ export function NotificationsList({ initialNotifications }: NotificationsListPro
                             Tümü
                         </button>
                         <button
+                            type="button"
                             onClick={() => setFilter("UNREAD")}
                             className={cn(
-                                "px-4 py-2 text-xs font-black rounded-xl transition-all flex items-center gap-2",
+                                "px-4 py-2 text-xs font-black rounded-xl transition-all flex items-center gap-2 cursor-pointer",
                                 filter === "UNREAD" 
                                     ? "bg-amber-400 text-slate-950 shadow-lg shadow-amber-400/20" 
                                     : "text-neutral-400 hover:text-white"
@@ -184,8 +188,9 @@ export function NotificationsList({ initialNotifications }: NotificationsListPro
 
                     {unreadCount > 0 && (
                         <button
+                            type="button"
                             onClick={handleMarkAllRead}
-                            className="p-2.5 bg-white/5 hover:bg-amber-400/10 text-neutral-400 hover:text-amber-400 border border-white/10 rounded-2xl transition-all group"
+                            className="p-2.5 bg-white/5 hover:bg-amber-400/10 text-neutral-400 hover:text-amber-400 border border-white/10 rounded-2xl transition-all group cursor-pointer"
                             title="Tümünü Okundu İşaretle"
                         >
                             <MailOpen className="w-5 h-5 group-hover:scale-110 transition-transform" />
@@ -221,77 +226,94 @@ export function NotificationsList({ initialNotifications }: NotificationsListPro
                     </div>
                 ) : (
                     filteredNotifications.map((notification, index) => {
+                        const content = (
+                            <div className="flex items-center gap-4 flex-1 min-w-0">
+                                <NotificationBadge
+                                    type={notification.type}
+                                    image={notification.image}
+                                    message={notification.message}
+                                />
+                                <div className="flex-1 min-w-0">
+                                    <p className={cn(
+                                        "text-xs sm:text-sm leading-relaxed transition-colors line-clamp-2",
+                                        !notification.isRead ? "text-white font-bold" : "text-neutral-400 font-medium"
+                                    )}>
+                                        {notification.message}
+                                    </p>
+                                    <div className="flex items-center gap-3 mt-1.5">
+                                        <span 
+                                            className="text-[10px] text-neutral-500 flex items-center gap-1 font-bold uppercase tracking-wider"
+                                            suppressHydrationWarning
+                                        >
+                                            <Clock className="w-3 h-3" />
+                                            {formatDistanceToNow(new Date(notification.createdAt), { addSuffix: true, locale: tr })}
+                                        </span>
+                                        {!notification.isRead && (
+                                            <span className="text-[9px] bg-amber-400/15 text-amber-400 border border-amber-400/20 px-2 py-0.5 rounded-full font-black uppercase tracking-widest">
+                                                Yeni
+                                            </span>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                        );
+
                         return (
                             <div
                                 key={notification.id}
                                 className={cn(
-                                    "group rounded-2xl border transition-all relative overflow-hidden animate-in fade-in slide-in-from-bottom-2 duration-300",
+                                    "group rounded-2xl border transition-all relative overflow-hidden flex items-center justify-between p-4 sm:p-5 gap-3",
                                     notification.isRead
                                         ? "bg-white/[0.02] border-white/5 opacity-75 hover:opacity-100 hover:bg-white/[0.04]"
                                         : "bg-[#0e1626]/80 border-white/10 hover:border-amber-400/30 shadow-lg shadow-black/20"
                                 )}
-                                style={{ animationDelay: `${index * 30}ms` }}
                             >
-                                <Link
-                                    href={notification.link || "#"}
-                                    className="flex items-center gap-4 p-4 sm:p-5"
-                                    onClick={() => !notification.isRead && handleMarkAsRead(notification.id)}
-                                >
-                                    {/* Media: Avatar / Poster / Fallback Icon */}
-                                    <NotificationMedia 
-                                        type={notification.type} 
-                                        image={notification.image} 
-                                        message={notification.message} 
-                                    />
+                                {/* Unread indicator bar */}
+                                {!notification.isRead && (
+                                    <div className="absolute top-0 left-0 bottom-0 w-1 bg-amber-400" />
+                                )}
 
-                                    {/* Content */}
-                                    <div className="flex-1 min-w-0">
-                                        <p className={cn(
-                                            "text-xs sm:text-sm leading-relaxed transition-colors line-clamp-2",
-                                            !notification.isRead ? "text-white font-bold" : "text-neutral-400 font-medium"
-                                        )}>
-                                            {notification.message}
-                                        </p>
-                                        <div className="flex items-center gap-3 mt-1.5">
-                                            <span className="text-[10px] text-neutral-500 flex items-center gap-1 font-bold uppercase tracking-wider">
-                                                <Clock className="w-3 h-3" />
-                                                {formatDistanceToNow(new Date(notification.createdAt), { addSuffix: true, locale: tr })}
-                                            </span>
-                                            {!notification.isRead && (
-                                                <span className="text-[9px] bg-amber-400/15 text-amber-400 border border-amber-400/20 px-2 py-0.5 rounded-full font-black uppercase tracking-widest">
-                                                    Yeni
-                                                </span>
-                                            )}
-                                        </div>
+                                {notification.link ? (
+                                    <Link
+                                        href={notification.link}
+                                        onClick={() => !notification.isRead && handleMarkAsRead(notification.id)}
+                                        className="flex items-center gap-4 flex-1 min-w-0 group/link cursor-pointer"
+                                    >
+                                        {content}
+                                    </Link>
+                                ) : (
+                                    <div className="flex items-center gap-4 flex-1 min-w-0">
+                                        {content}
                                     </div>
+                                )}
 
-                                    {/* Actions */}
-                                    <div className="flex items-center gap-1 shrink-0">
-                                        {!notification.isRead && (
-                                            <button
-                                                onClick={(e) => {
-                                                    e.preventDefault();
-                                                    e.stopPropagation();
-                                                    handleMarkAsRead(notification.id);
-                                                }}
-                                                className="p-2 text-neutral-500 hover:text-amber-400 hover:bg-white/5 rounded-xl transition-all"
-                                                title="Okundu İşaretle"
-                                            >
-                                                <Check className="w-4 h-4" />
-                                            </button>
-                                        )}
-                                        {notification.link && (
-                                            <div className="p-1.5 text-neutral-600 group-hover:text-amber-400 group-hover:translate-x-0.5 transition-all">
-                                                <ChevronRight className="w-4 h-4" />
-                                            </div>
-                                        )}
-                                    </div>
-
-                                    {/* Unread indicator bar */}
+                                {/* Action Buttons - Independent from Link! */}
+                                <div className="flex items-center gap-1 shrink-0">
                                     {!notification.isRead && (
-                                        <div className="absolute top-0 left-0 bottom-0 w-1 bg-amber-400" />
+                                        <button
+                                            type="button"
+                                            onClick={(e) => {
+                                                e.preventDefault();
+                                                e.stopPropagation();
+                                                handleMarkAsRead(notification.id);
+                                            }}
+                                            className="p-2 text-neutral-500 hover:text-amber-400 hover:bg-white/5 rounded-xl transition-all cursor-pointer"
+                                            title="Okundu İşaretle"
+                                        >
+                                            <Check className="w-4 h-4" />
+                                        </button>
                                     )}
-                                </Link>
+                                    {notification.link && (
+                                        <Link
+                                            href={notification.link}
+                                            onClick={() => !notification.isRead && handleMarkAsRead(notification.id)}
+                                            className="p-1.5 text-neutral-600 hover:text-amber-400 hover:translate-x-0.5 transition-all cursor-pointer"
+                                            title="Git"
+                                        >
+                                            <ChevronRight className="w-4 h-4" />
+                                        </Link>
+                                    )}
+                                </div>
                             </div>
                         );
                     })

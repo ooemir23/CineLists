@@ -15,7 +15,15 @@ export async function getNotifications() {
             take: 50,
         });
 
-        return notifications;
+        return notifications.map(n => ({
+            id: n.id,
+            type: n.type,
+            message: n.message,
+            link: n.link,
+            isRead: n.isRead,
+            image: n.image,
+            createdAt: n.createdAt.toISOString()
+        }));
     } catch (error) {
         console.warn("[Notifications] Error in getNotifications:", (error as Error)?.message || error);
         return [];
