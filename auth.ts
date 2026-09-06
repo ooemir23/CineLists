@@ -45,31 +45,55 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
             id: "email",
             name: "Email",
             credentials: {
-                email: { label: "Email", type: "email" },
+                email: { label: "Email", type: "text" },
                 password: { label: "Password", type: "password" },
             },
             async authorize(credentials) {
-                if (!credentials?.email) return null;
-                const email = (credentials.email as string).trim().toLowerCase();
-                const password = credentials.password as string | undefined;
-                if (!password) return null;
+                const rawIdentifier = String(credentials?.email || "").trim();
+                const password = credentials?.password as string | undefined;
+                if (!rawIdentifier || !password) return null;
+
+                const normalizedEmail = rawIdentifier.toLowerCase();
+                const turkishNormalized = rawIdentifier
+                    .replace(/I/g, "i")
+                    .replace(/İ/g, "i")
+                    .replace(/ı/g, "i")
+                    .toLowerCase();
 
                 try {
-                    const user = await prisma.user.findUnique({
-                        where: { email },
+                    const user = await prisma.user.findFirst({
+                        where: {
+                            OR: [
+                                { email: { equals: rawIdentifier, mode: "insensitive" } },
+                                { email: { equals: normalizedEmail, mode: "insensitive" } },
+                                { email: { equals: turkishNormalized, mode: "insensitive" } },
+                                { username: { equals: rawIdentifier, mode: "insensitive" } },
+                                { username: { equals: normalizedEmail, mode: "insensitive" } },
+                            ],
+                        },
                     });
 
-                    if (user?.password) {
-                        const isValidPassword = await bcrypt.compare(password, user.password);
-                        if (isValidPassword) return user;
+                    if (!user) {
+                        console.warn(`[Auth] User not found for identifier: ${rawIdentifier}`);
                         return null;
                     }
+
+                    if (!user.password) {
+                        console.warn(`[Auth] User ${user.email} has no password set (OAuth account)`);
+                        return null;
+                    }
+
+                    const isValidPassword = await bcrypt.compare(password, user.password);
+                    if (isValidPassword) {
+                        return user;
+                    }
+
+                    console.warn(`[Auth] Invalid password attempt for user: ${user.email}`);
+                    return null;
                 } catch (error) {
                     console.error("[Auth] Database authorize error:", error);
                     return null;
                 }
-
-                return null;
             }
         }),
     ],
@@ -163,8 +187,13 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
             if (user) {
                 if (account && account.provider !== "credentials" && user.email) {
                     try {
-                        const dbUser = await prisma.user.findUnique({
-                            where: { email: user.email },
+                        const dbUser = await prisma.user.findFirst({
+                            where: {
+                                email: {
+                                    equals: user.email,
+                                    mode: "insensitive"
+                                }
+                            },
                             select: { id: true, name: true, email: true, username: true, image: true, hasCompletedOnboarding: true, isSuspended: true }
                         });
                         if (dbUser) {

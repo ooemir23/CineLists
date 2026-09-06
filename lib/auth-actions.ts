@@ -9,15 +9,15 @@ import { sendPasswordResetEmail } from "./mail";
 import crypto from "crypto";
 
 export async function loginUser(formData: FormData) {
-    const email = String(formData.get("email") || "").trim().toLowerCase();
+    const rawInput = String(formData.get("email") || "").trim();
     const password = String(formData.get("password") || "");
 
-    if (!email || !password) {
+    if (!rawInput || !password) {
         redirect("/login?error=missing");
     }
 
     try {
-        await signIn("email", { email, password, redirectTo: "/" });
+        await signIn("email", { email: rawInput, password, redirectTo: "/" });
     } catch (error) {
         if (error instanceof AuthError) {
             redirect("/login?error=invalid");
@@ -31,7 +31,8 @@ export async function loginUser(formData: FormData) {
 }
 
 export async function registerUser(formData: FormData) {
-    const email = String(formData.get("email") || "").trim().toLowerCase();
+    const rawEmail = String(formData.get("email") || "").trim();
+    const email = rawEmail.toLowerCase();
     const password = String(formData.get("password") || "");
     const name = String(formData.get("name") || "").trim();
 
@@ -46,8 +47,10 @@ export async function registerUser(formData: FormData) {
     // Check if user already exists
     let existingUser = null;
     try {
-        existingUser = await prisma.user.findUnique({
-            where: { email },
+        existingUser = await prisma.user.findFirst({
+            where: {
+                email: { equals: email, mode: "insensitive" },
+            },
         });
     } catch (error) {
         console.error("User lookup error during register:", error);
@@ -70,8 +73,8 @@ export async function registerUser(formData: FormData) {
     let username = baseUsername || "user";
 
     try {
-        const existingUsername = await prisma.user.findUnique({
-            where: { username },
+        const existingUsername = await prisma.user.findFirst({
+            where: { username: { equals: username, mode: "insensitive" } },
         });
         if (existingUsername) {
             username = `${username}_${Math.floor(1000 + Math.random() * 9000)}`;

@@ -79,15 +79,18 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
                     <form action={loginUser} className="space-y-3">
                         <div className="space-y-1">
                             <label htmlFor="email" className="text-[10px] font-black text-neutral-500 uppercase tracking-widest ml-3">
-                                E-posta Adresi
+                                E-posta veya Kullanıcı Adı
                             </label>
                             <div className="relative group/input">
                                 <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-500 group-focus-within/input:text-amber-400 transition-colors" />
                                 <input
                                     id="email"
                                     name="email"
-                                    type="email"
-                                    placeholder="ornek@mail.com"
+                                    type="text"
+                                    autoCapitalize="none"
+                                    autoCorrect="off"
+                                    spellCheck={false}
+                                    placeholder="ornek@mail.com veya kullanıcı adı"
                                     required
                                     className="w-full pl-10 pr-4 py-2.5 sm:py-4 bg-white/5 border border-white/10 rounded-xl sm:rounded-2xl text-white placeholder-neutral-600 focus:outline-none focus:border-amber-400/50 focus:ring-4 focus:ring-amber-400/10 transition-all font-bold text-sm"
                                 />
