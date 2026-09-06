@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition, useEffect, useRef } from "react";
-import { ChevronDown, Loader2, Layers, CheckCircle2, ChevronRight, ChevronLeft } from "lucide-react";
+import { ChevronDown, Loader2, CheckCircle2 } from "lucide-react";
 import EpisodeItem from "./episode-item";
 import { cn } from "@/lib/utils";
 import { fetchSeasonEpisodes } from "@/lib/client-actions";
@@ -26,10 +26,9 @@ type SeasonListProps = {
 };
 
 export default function SeasonList({ tmdbId, seasons, watchedEpisodes: initialWatchedEpisodes }: SeasonListProps) {
-    const [isAllVisible, setIsAllVisible] = useState(true);
     const validSeasons = seasons?.filter(s => s.episode_count > 0 && s.season_number > 0) || [];
     const [expandedSeason, setExpandedSeason] = useState<number | null>(validSeasons[0]?.season_number || null);
-    const [isPending, startTransition] = useTransition();
+    const [, startTransition] = useTransition();
     const [watchedEpisodes, setWatchedEpisodes] = useState(initialWatchedEpisodes);
     const router = useRouter();
     const scrollRef = useRef<HTMLDivElement>(null);
@@ -74,14 +73,6 @@ export default function SeasonList({ tmdbId, seasons, watchedEpisodes: initialWa
                 setWatchedEpisodes(initialWatchedEpisodes);
             }
         });
-    };
-
-    const scroll = (direction: 'left' | 'right') => {
-        if (scrollRef.current) {
-            const { scrollLeft, clientWidth } = scrollRef.current;
-            const scrollTo = direction === 'left' ? scrollLeft - clientWidth / 2 : scrollLeft + clientWidth / 2;
-            scrollRef.current.scrollTo({ left: scrollTo, behavior: 'smooth' });
-        }
     };
 
     return (

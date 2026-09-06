@@ -3,12 +3,10 @@
 import { sendMessage } from "@/lib/message-actions";
 import { Send, Loader2 } from "lucide-react";
 import { useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
 
 export function ChatInput({ partnerId }: { partnerId: string }) {
     const [content, setContent] = useState("");
     const [isPending, startTransition] = useTransition();
-    const router = useRouter();
 
     const handleSend = async (e: React.FormEvent) => {
         e.preventDefault();

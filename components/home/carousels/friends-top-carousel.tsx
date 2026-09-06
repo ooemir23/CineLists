@@ -1,6 +1,6 @@
 "use client";
 
-import { Users, TrendingUp } from "lucide-react";
+import { Users } from "lucide-react";
 import { MediaCarousel } from "./media-carousel";
 import type { FriendStats } from "@/lib/hero-personalization-actions";
 

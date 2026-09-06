@@ -55,7 +55,7 @@ export function EpisodeInteraction({
                     await removeEpisodeWatch(tmdbId, seasonNumber, episodeNumber);
                 }
                 router.refresh();
-            } catch (err) {
+            } catch (_err) {
                 setIsWatched(!newState);
                 alert("Bir hata oluştu.");
             }
@@ -88,7 +88,7 @@ export function EpisodeInteraction({
                     airDate
                 });
                 router.refresh();
-            } catch (err) {
+            } catch (_err) {
                 alert("Puanlama sırasında bir hata oluştu.");
                 router.refresh();
             }
@@ -118,7 +118,7 @@ export function EpisodeInteraction({
                 await addEpisodeComment(dbEp.id, text, window.location.pathname, isSpoiler);
                 setIsSpoiler(false);
                 router.refresh();
-            } catch (err) {
+            } catch (_err) {
                 setCommentText(text);
                 alert("Yorum eklenirken bir hata oluştu.");
             }

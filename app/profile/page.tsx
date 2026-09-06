@@ -3,13 +3,6 @@ import { prisma } from "@/lib/prisma";
 import { tmdb } from "@/lib/tmdb";
 import { getUserStats } from "@/lib/stats-actions";
 import { redirect } from "next/navigation";
-import { ProfileStats } from "@/components/profile/profile-stats";
-import { ProfileActivity } from "@/components/profile/profile-activity";
-import { FavoritePersons } from "@/components/profile/favorite-persons";
-import { GenreTags } from "@/components/profile/genre-tags";
-import { RecentMedia } from "@/components/profile/recent-media";
-import { ProfileCompletion } from "@/components/profile/profile-completion";
-import { InsightsCard } from "@/components/profile/insights-card";
 import { ProfileClientShell } from "@/components/profile/profile-client-shell";
 
 export default async function ProfilePage() {

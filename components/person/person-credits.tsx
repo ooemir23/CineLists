@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { Film, Tv, Calendar, Filter, X } from "lucide-react";
+import { Film, Calendar, Filter, X } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { cn } from "@/lib/utils";

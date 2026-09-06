@@ -4,7 +4,7 @@ import { UserSearchInput } from "@/components/social/user-search-input";
 import { FollowButton } from "@/components/social/follow-button";
 import Image from "next/image";
 import Link from "next/link";
-import { Users, Award, Zap, Search, Trophy, Medal, Film, Heart, ChevronRight, Sparkles, X } from "lucide-react";
+import { Users, Award, Zap, Search, Trophy, Medal, Film, Heart, ChevronRight, X } from "lucide-react";
 
 export default async function CommunityPage(props: { searchParams: Promise<{ q?: string }> }) {
     const searchParams = await props.searchParams;

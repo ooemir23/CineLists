@@ -2,10 +2,8 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { Star, Clock } from "lucide-react";
+import { Star } from "lucide-react";
 import { useState } from "react";
-import { cn } from "@/lib/utils";
-
 interface MediaItem {
   id: string;
   title: string;

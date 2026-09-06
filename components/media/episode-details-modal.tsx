@@ -2,11 +2,8 @@
 
 import { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
-import { X, Calendar, Clock, ThumbsUp, ThumbsDown, Send, User, Check, Eye, Play, ArrowLeft, EyeOff, AlertTriangle, Loader2, MessageSquare, Star } from "lucide-react";
-import Image from "next/image";
-// framer-motion removed — modal animations replaced with CSS animate-in utilities
-import { ExpandableImage } from "@/components/ui/expandable-image";
-import { cn } from "@/lib/utils";
+import { X, Calendar, Clock, ThumbsUp, ThumbsDown, Send, User, Check, Eye, Play, EyeOff, Loader2, MessageSquare, Star } from "lucide-react";
+import Image from "next/image";import { cn } from "@/lib/utils";
 
 type Episode = {
     id: string;

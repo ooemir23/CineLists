@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { formatDistanceToNow, format } from "date-fns";
 import { tr } from "date-fns/locale";
-import { Star, Eye, MessageCircle, Plus } from "lucide-react";
+import { Star, Eye, Plus } from "lucide-react";
 import { useState } from "react";
 
 interface Activity {
@@ -68,7 +68,7 @@ export function ActivityTimeline({ activities, showActivities }: ActivityTimelin
 
   return (
     <div className="space-y-8">
-      {sortedDates.map((date, dateIndex) => (
+      {sortedDates.map((date) => (
         <div key={date}>
           {/* Date Header */}
           <div className="flex items-center gap-3 mb-4 sticky top-20 bg-background/80 backdrop-blur-md py-2 z-10">

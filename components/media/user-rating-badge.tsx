@@ -1,8 +1,6 @@
 "use client";
 
 import { Star, Users } from "lucide-react";
-import { cn } from "@/lib/utils";
-
 type UserRatingBadgeProps = {
     rating: number | null;
     friendsCount: number;

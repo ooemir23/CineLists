@@ -1,6 +1,4 @@
-import { auth } from "@/auth";
-import { prisma } from "@/lib/prisma";
-import { redirect } from "next/navigation";
+import { auth } from "@/auth";import { redirect } from "next/navigation";
 import { SettingsSidebar } from "@/components/profile/settings-sidebar";
 
 export default async function SettingsLayout({ children }: { children: React.ReactNode }) {

@@ -31,7 +31,7 @@ export function ProfileHeader({
   isPrivate = false,
   isOwnProfile = false,
   isVerified = false,
-  joinedAt,
+  joinedAt: _joinedAt,
   onSettingsClick,
 }: ProfileHeaderProps) {
   const [isFollowing, setIsFollowing] = useState(false);

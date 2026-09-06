@@ -5,7 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { getWatchedEpisodes } from "@/lib/tv-actions";
 import Link from "next/link";
 import Image from "next/image";
-import { ArrowLeft, MessageSquare, Star, Calendar, Clock, ChevronRight } from "lucide-react";
+import { ArrowLeft, MessageSquare, Star } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { EpisodeInteraction } from "./episode-interaction";
 

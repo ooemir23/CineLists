@@ -175,7 +175,7 @@ export const tmdb = {
                 }
 
                 return data;
-            } catch (error) {
+            } catch (_error) {
                 // Fallback to stale cache if available
                 const stale = memoryCache.get(cacheKey);
                 if (stale) return stale.data;

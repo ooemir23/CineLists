@@ -1,7 +1,5 @@
 import { auth } from "@/auth";
-import { prisma } from "@/lib/prisma";
-import { MediaCard } from "@/components/media/media-card";
-import { redirect } from "next/navigation";
+import { prisma } from "@/lib/prisma";import { redirect } from "next/navigation";
 
 import { Check } from "lucide-react";
 

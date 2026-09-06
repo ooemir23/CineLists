@@ -3,11 +3,9 @@ import { prisma } from "@/lib/prisma";
 import { auth } from "@/auth";
 import { notFound } from "next/navigation";
 import Image from "next/image";
-import { Calendar, Clock, Star, MessageSquare, ArrowLeft, Play, User, Check, ThumbsUp, ThumbsDown } from "lucide-react";
+import { Calendar, Clock, Star, MessageSquare, ArrowLeft, Play } from "lucide-react";
 import Link from "next/link";
 import { CommentsSection } from "@/components/media/comments";
-import { cn } from "@/lib/utils";
-
 export default async function EpisodePage({ params }: { params: Promise<{ id: string, seasonNumber: string, episodeNumber: string }> }) {
     const { id, seasonNumber, episodeNumber } = await params;
     const session = await auth();

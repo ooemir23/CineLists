@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 import { useRouter, useSearchParams, useParams, usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
-import { ChevronDown, Filter, X, Check, Search, Film, Tv, TrendingUp, Star, Calendar, Sparkles } from "lucide-react";
+import { Filter, X, Check, Film, Tv, TrendingUp, Star, Calendar, Sparkles } from "lucide-react";
 
 const TYPE_OPTIONS = [
   { id: "movie", label: "Film", icon: Film },
@@ -41,10 +41,6 @@ export function ExploreFilterBar() {
     return () => window.removeEventListener("resize", checkMobile);
   }, []);
 
-  const [year, setYear] = useState(searchParams.get("year") || "");
-  const [rating, setRating] = useState(searchParams.get("rating") || "");
-  const [genre, setGenre] = useState(searchParams.get("genre") || "");
-  const [provider, setProvider] = useState(searchParams.get("provider") || "");
 
   const [genres, setGenres] = useState<{ id: number; name: string }[]>([]);
   const [providers, setProviders] = useState<{ id: string; name: string; logo: string }[]>([]);

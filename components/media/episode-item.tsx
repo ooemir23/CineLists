@@ -2,12 +2,10 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { Eye, Check, MessageSquare, ThumbsUp, ThumbsDown, ChevronRight, Play, Star, Calendar, Clock, Plus, Loader2 } from "lucide-react";
+import { Eye, Check, MessageSquare, ThumbsUp, ChevronRight, Play, Star, Calendar, Clock, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState, useTransition, useEffect } from "react";
-import { markEpisodeAsWatched, removeEpisodeWatch, rateEpisode, ensureEpisodeExists } from "@/lib/tv-actions";
-import { addEpisodeComment } from "@/lib/comment-actions";
-import { useRouter } from "next/navigation";
+import { markEpisodeAsWatched, removeEpisodeWatch } from "@/lib/tv-actions";
 
 type Episode = {
     id: string;
@@ -41,7 +39,6 @@ export default function EpisodeItem({
 }: EpisodeItemProps) {
     const [isWatched, setIsWatched] = useState(initialIsWatched);
     const [isPending, startTransition] = useTransition();
-    const router = useRouter();
 
     useEffect(() => {
         setIsWatched(initialIsWatched);

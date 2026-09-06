@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useTransition } from "react";
-import { X, Search, Send, Loader2, Check, User as UserIcon, Instagram, Twitter, MessageCircle, Link as LinkIcon, Share2, UserPlus } from "lucide-react";
+import { X, Search, Send, Loader2, Check, User as UserIcon, Instagram, Twitter, MessageCircle, Link as LinkIcon } from "lucide-react";
 import { getFriends, searchUsers } from "@/lib/social-actions";
 import { recommendMedia } from "@/lib/recommendation-actions";
 import { cn } from "@/lib/utils";

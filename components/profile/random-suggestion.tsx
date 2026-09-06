@@ -34,10 +34,6 @@ export function RandomSuggestion({
 
   const suggested = watchlistItems[current];
 
-  const handleNext = () => {
-    setCurrent((prev) => (prev + 1) % watchlistItems.length);
-  };
-
   const handleRefresh = () => {
     const random = Math.floor(Math.random() * watchlistItems.length);
     setCurrent(random);

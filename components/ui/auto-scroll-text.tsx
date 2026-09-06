@@ -42,7 +42,7 @@ export function AutoScrollText({ text, className, speed = 10 }: AutoScrollTextPr
                 // Marquee: Two copies of the text container
                 <div
                     className="flex w-fit animate-marquee-infinite hover:[animation-play-state:running] [animation-play-state:paused]"
-                    style={{ animationDuration: `${Math.max(10, text.length * 0.5)}s` }} // Dynamic speed based on length
+                    style={{ animationDuration: `${speed || Math.max(10, text.length * 0.5)}s` }} // Dynamic speed based on length
                 >
                     <span className="whitespace-nowrap pr-8">
                         {text}

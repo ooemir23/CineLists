@@ -1,28 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import {
-    X,
-    User,
-    Lock,
-    Eye,
-    EyeOff,
-    Check,
-    Loader2,
-    Camera,
-    Shield,
-    Activity,
-    BarChart3,
-    Smartphone,
-    Trash2,
-    AlertTriangle,
-    History,
-    Sparkles,
-    CheckCircle2,
-    Heart,
-    Monitor,
-    Search
-} from "lucide-react";
+import { Lock, Eye, Check, Loader2, Camera, Activity, BarChart3, Trash2, AlertTriangle, History, CheckCircle2, Heart, Monitor, Search } from "lucide-react";
 // framer-motion removed — tab transitions replaced with CSS animate-in utilities
 import { cn } from "@/lib/utils";
 import { updateProfile, updatePrivacySettings, deleteAccount, suspendAccount, checkUsernameAvailability, updateUserPreferences } from "@/lib/profile-actions";
@@ -57,7 +36,7 @@ export function SettingsContent({ user, activeTab }: SettingsContentProps) {
     const [name, setName] = useState(user.name || "");
     const [username, setUsername] = useState(user.username || "");
     const [bio, setBio] = useState(user.bio || "");
-    const [image, setImage] = useState(user.image || "");
+    const [image] = useState(user.image || "");
 
     const [favoriteGenres, setFavoriteGenres] = useState<string[]>(user.favoriteGenres || []);
     // Handle legacy platform strings ("netflix", "disney", etc) to TMDB IDs
@@ -171,13 +150,6 @@ export function SettingsContent({ user, activeTab }: SettingsContentProps) {
         { id: "blutv", name: "BluTV", icon: "https://www.google.com/s2/favicons?domain=blutv.com&sz=64" },
         { id: "mubi", name: "MUBI", icon: "https://www.google.com/s2/favicons?domain=mubi.com&sz=64" },
         { id: "apple", name: "Apple TV+", icon: "https://www.google.com/s2/favicons?domain=tv.apple.com&sz=64" },
-    ];
-
-    const tabs = [
-        { id: "general", label: "Genel", icon: User },
-        { id: "privacy", label: "Gizlilik", icon: Shield },
-        { id: "preferences", label: "Tercihler", icon: Sparkles },
-        { id: "account", label: "Hesap", icon: Smartphone },
     ];
 
     return (

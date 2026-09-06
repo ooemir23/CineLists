@@ -3,9 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { Users, ChevronRight, ChevronDown } from "lucide-react";
-import { cn } from "@/lib/utils";
-
+import { Users, ChevronDown } from "lucide-react";
 export type CastMember = {
     id: number;
     name: string;

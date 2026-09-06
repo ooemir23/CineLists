@@ -1,7 +1,7 @@
 import { auth } from "@/auth";
-import { getMessages, sendMessage } from "@/lib/message-actions";
+import { getMessages } from "@/lib/message-actions";
 import { prisma } from "@/lib/prisma";
-import { MessageSquare, Send, ArrowLeft } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { redirect } from "next/navigation";

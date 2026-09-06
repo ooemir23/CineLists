@@ -3,32 +3,7 @@
 import { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import {
-    Heart,
-    MessageSquare,
-    Share2,
-    Star,
-    MoreHorizontal,
-    CheckCircle2,
-    PlusCircle,
-    StarHalf,
-    Film,
-    Tv,
-    Clock,
-    User,
-    X,
-    Send,
-    Instagram,
-    Copy,
-    MessageCircle,
-    Users,
-    Loader2,
-    Sparkles,
-    Quote,
-    MapPin,
-    ChevronRight,
-    Bookmark
-} from "lucide-react";
+import { Heart, MessageSquare, Share2, Star, CheckCircle2, User, X, Send, Instagram, Copy, MessageCircle, Loader2, Quote, ChevronRight, Bookmark } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { tr } from "date-fns/locale";
 import { cn } from "@/lib/utils";
@@ -155,11 +130,6 @@ export function ActivityPost({ activity }: ActivityPostProps) {
         window.open(`https://wa.me/?text=${text}`, "_blank");
     };
 
-    const actionText = {
-        WATCHED: "izledi",
-        RATED: "puan verdi",
-        REVIEWED: "inceledi",
-    }[activity.type];
 
     const formatRuntime = (minutes: number) => {
         if (!minutes) return "";

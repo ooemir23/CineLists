@@ -3,10 +3,9 @@
 import { useState, useEffect } from "react";
 import { fetchSeasonEpisodes } from "@/lib/client-actions";
 import { getEpisodeStatsBulk } from "@/lib/rating-actions";
-import { Loader2, Grid3X3, MessageCircle, Star, Users } from "lucide-react";
+import { Loader2, MessageCircle, Star, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
-import { useParams } from "next/navigation";
 
 type Season = {
     season_number: number;
@@ -37,7 +36,6 @@ type SeasonData = {
 export function TvHeatmap({ tmdbId, seasons }: TvHeatmapProps) {
     const [heatmapData, setHeatmapData] = useState<SeasonData[]>([]);
     const [loading, setLoading] = useState(true);
-    const params = useParams();
 
     const validSeasons = seasons.filter(s => s.episode_count > 0 && s.season_number > 0);
 

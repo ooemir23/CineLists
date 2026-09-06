@@ -2,7 +2,7 @@
 
 import { Search as SearchIcon, X } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useCallback, useState, useTransition } from "react";
+import { useState, useTransition } from "react";
 import { useDebouncedCallback } from "use-debounce"; // We need to install this or write our own
 
 export function SearchInput() {

@@ -3,17 +3,6 @@ import { prisma } from "@/lib/prisma";
 import { tmdb } from "@/lib/tmdb";
 import { getUserStats } from "@/lib/stats-actions";
 import { notFound } from "next/navigation";
-import { ProfileHeader } from "@/components/profile/profile-header";
-import { ProfileStats } from "@/components/profile/profile-stats";
-import { ProfileActivity } from "@/components/profile/profile-activity";
-import { FavoritePersons } from "@/components/profile/favorite-persons";
-import { GenreTags } from "@/components/profile/genre-tags";
-import { RecentMedia } from "@/components/profile/recent-media";
-import { AchievementsBadges } from "@/components/profile/achievements-badges";
-import { ActivityHeatmap } from "@/components/profile/activity-heatmap";
-import { RandomSuggestion } from "@/components/profile/random-suggestion";
-import { WatchCountries } from "@/components/profile/watch-countries";
-import { PeriodStats } from "@/components/profile/period-stats";
 import { PublicProfileShell } from "@/components/profile/public-profile-shell";
 import { getFollowStatus } from "@/lib/social-actions";
 

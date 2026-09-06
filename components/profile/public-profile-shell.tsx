@@ -7,9 +7,7 @@ import { ProfileActivity } from "./profile-activity";
 import { FavoritePersons } from "./favorite-persons";
 import { GenreTags } from "./genre-tags";
 import { RecentMedia } from "./recent-media";
-import { AchievementsBadges } from "./achievements-badges";
-import { ActivityHeatmap } from "./activity-heatmap";
-import { TasteMatchCard } from "./taste-match-card";
+import { AchievementsBadges } from "./achievements-badges";import { TasteMatchCard } from "./taste-match-card";
 
 import { WatchCountries } from "./watch-countries";
 import { PeriodStats } from "./period-stats";
@@ -58,9 +56,9 @@ interface PublicProfileShellProps {
 export function PublicProfileShell({
   user,
   stats,
-  recentMediaItems,
+  recentMediaItems: _recentMediaItems,
   allGenres,
-  thisMonthCount,
+  thisMonthCount: _thisMonthCount,
   averageRating,
   watchedItems = [],
   watchlistItems = [],
@@ -69,8 +67,6 @@ export function PublicProfileShell({
   currentUserId,
 }: PublicProfileShellProps) {
   const [isFollowing, setIsFollowing] = useState(initialIsFollowing);
-
-  const totalHours = Math.round(stats.movieCount * 1.5 + stats.episodeCount * 0.75);
 
   return (
     <div className="w-full min-h-screen bg-background">

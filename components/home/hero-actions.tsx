@@ -1,8 +1,6 @@
 "use client";
 
-import { useState } from "react";
-import Link from "next/link";
-import { Play, Info, X } from "lucide-react";
+import { useState } from "react";import { Play, X } from "lucide-react";
 import { createPortal } from "react-dom";
 
 type HeroActionsProps = {

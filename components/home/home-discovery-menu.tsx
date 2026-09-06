@@ -50,7 +50,7 @@ export function HomeDiscoveryMenu({ activeType, activeCategory }: HomeDiscoveryM
         </div>
 
         <div className="flex-1 flex bg-white/5 p-1.5 rounded-[2rem] border border-white/10 backdrop-blur-xl overflow-x-auto no-scrollbar">
-          {categoryOptions.map((opt, index) => (
+          {categoryOptions.map((opt) => (
             <Link
               key={opt.id}
               href={`/?homeType=${activeType}&homeCategory=${opt.id}#home-discover`}

@@ -24,7 +24,7 @@ interface PersonCommentsProps {
 }
 
 export function PersonComments({ personId, initialComments }: PersonCommentsProps) {
-    const [comments, setComments] = useState<Comment[]>(initialComments);
+    const [comments] = useState<Comment[]>(initialComments);
     const [newComment, setNewComment] = useState("");
     const [isPending, startTransition] = useTransition();
 

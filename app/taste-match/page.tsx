@@ -1,7 +1,7 @@
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
 import { getMyTasteProfile, getTopTasteMatches } from "@/lib/taste-match-actions";
-import { Heart, Users, Film, Tv, Star, Sparkles, UserCheck, Flame, Compass } from "lucide-react";
+import { Heart, Users, Film, Star, Flame, Compass } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 

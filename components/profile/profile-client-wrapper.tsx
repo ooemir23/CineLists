@@ -1,11 +1,9 @@
 "use client";
 
-import { Settings, LogOut, User as UserIcon } from "lucide-react";
+import { Settings, LogOut } from "lucide-react";
 import { handleSignOut } from "@/lib/auth-actions";
 import Image from "next/image";
 import Link from "next/link";
-import { cn } from "@/lib/utils";
-
 type UserData = {
     id: string;
     name: string | null;

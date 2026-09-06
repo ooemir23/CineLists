@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { getPersonalizedRecommendations } from "@/lib/recommendations";
 import { MediaCard } from "@/components/media/media-card";
 import { MediaFilter } from "@/components/home/media-filter";
-import { Sparkles, Monitor, TrendingUp } from "lucide-react";
+import { Sparkles } from "lucide-react";
 import { tmdb } from "@/lib/tmdb";
 
 type RecommendationsPageProps = {

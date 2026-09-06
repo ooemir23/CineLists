@@ -2,25 +2,7 @@
 
 import { useState, useEffect, useRef, useMemo } from "react";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
-import {
-    X,
-    Search,
-    Film,
-    Tv,
-    Star,
-    Camera,
-    Loader2,
-    Scissors,
-    SlidersHorizontal,
-    Calendar,
-    Sparkles,
-    Check,
-    History,
-    ChevronDown,
-    Trash2,
-    User as UserIcon,
-    Flame
-} from "lucide-react";
+import { X, Search, Film, Tv, Star, Camera, Loader2, Scissors, SlidersHorizontal, Calendar, Check, History, ChevronDown, Flame } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
 import { createPortal } from "react-dom";

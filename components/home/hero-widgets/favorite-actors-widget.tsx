@@ -2,9 +2,7 @@
 
 import { Star, User } from "lucide-react";
 import Link from "next/link";
-import Image from "next/image";
-import { cn } from "@/lib/utils";
-import type { UpcomingActorProject } from "@/lib/hero-personalization-actions";
+import Image from "next/image";import type { UpcomingActorProject } from "@/lib/hero-personalization-actions";
 
 interface FavoriteActorsWidgetProps {
     projects: UpcomingActorProject[];

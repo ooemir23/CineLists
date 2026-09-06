@@ -9,7 +9,7 @@ import { checkAndUnlockAchievements } from "@/lib/achievement-actions";
 
 async function resolveUserId(session: any): Promise<string | null> {
     if (!session?.user?.id) return null;
-    let userId = session.user.id;
+    const userId = session.user.id;
     const exists = await prisma.user.findUnique({ where: { id: userId }, select: { id: true } });
     if (exists) return exists.id;
     if (session.user.email) {

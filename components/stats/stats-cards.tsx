@@ -1,4 +1,4 @@
-import { Film, Tv, Layers, TrendingUp, TrendingDown, Minus } from "lucide-react";
+import { TrendingUp, TrendingDown, Minus } from "lucide-react";
 
 interface StatCardProps {
     title: string;

@@ -3,20 +3,7 @@
 import React, { useState, useMemo } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import {
-    Sparkles,
-    Search,
-    Users,
-    Star,
-    Flame,
-    UserPlus,
-    Film,
-    Tv,
-    TrendingUp,
-    Quote,
-    Bookmark,
-    ChevronRight
-} from "lucide-react";
+import { Sparkles, Search, Users, Star, Flame, UserPlus, Bookmark } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ActivityPost } from "./activity-post";
 import { FollowButton } from "@/components/social/follow-button";
@@ -76,7 +63,7 @@ interface FeedClientProps {
 export function FeedClient({
     initialActivities,
     sessionUserId,
-    followingCount,
+    followingCount: _followingCount,
     suggestedUsers = [],
     trendingReviews = [],
     currentUser

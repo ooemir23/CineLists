@@ -2,12 +2,7 @@
 
 import { useState, useTransition, useEffect } from "react";
 import { createPortal } from "react-dom";
-import { 
-    MessageSquare, Send, User, EyeOff, Eye, Loader2, Share2, X, 
-    Trash2, Edit3, Link2, Twitter, MessageCircle, 
-    ThumbsUp, ThumbsDown, Reply, CornerDownRight, Sparkles,
-    Clapperboard, Flame
-} from "lucide-react";
+import { MessageSquare, Send, User, EyeOff, Eye, Loader2, Share2, X, Trash2, Edit3, Link2, Twitter, MessageCircle, ThumbsUp, ThumbsDown, Reply, CornerDownRight, Sparkles, Clapperboard } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { addComment, deleteComment, updateComment, voteActivity, voteComment } from "@/lib/activity-actions";
 import { useRouter } from "next/navigation";

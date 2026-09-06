@@ -1,6 +1,6 @@
 "use client";
 
-import { Heart, Sparkles } from "lucide-react";
+import { Sparkles } from "lucide-react";
 import { MediaCarousel } from "./media-carousel";
 
 interface PersonalizedCarouselProps {

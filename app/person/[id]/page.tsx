@@ -1,12 +1,9 @@
-import { auth } from "@/auth";
 import { tmdb } from "@/lib/tmdb";
 import { getIsFavoritePerson } from "@/lib/person-actions";
 import Image from "next/image";
-import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Instagram, Twitter, Globe, Facebook, Star, Film, Tv } from "lucide-react";
+import { Instagram, Twitter, Globe, Facebook, Star } from "lucide-react";
 import { FavoritePersonButton } from "@/components/media/favorite-person-button";
-import { MediaRow } from "@/components/media/media-row";
 import { Biography } from "@/components/person/biography";
 import { PersonCredits } from "@/components/person/person-credits";
 import { PersonComments } from "@/components/person/person-comments";

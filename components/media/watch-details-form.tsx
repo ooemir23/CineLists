@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useTransition } from "react";
-import { Calendar, Users, Star, MessageSquare, Loader2, X, Check, Plus, UserPlus } from "lucide-react";
+import { Calendar, Users, Star, MessageSquare, Loader2, X, Check, Plus } from "lucide-react";
 import { getFriends } from "@/lib/social-actions";
 import { saveWatchDetails } from "@/lib/activity-actions";
 import { cn } from "@/lib/utils";
@@ -41,12 +41,9 @@ export function WatchDetailsForm({
     const [rating, setRating] = useState(initialRating || 0);
     const [watchedAt, setWatchedAt] = useState(new Date().toISOString().split("T")[0]);
     const [friends, setFriends] = useState<Friend[]>([]);
-    const [selectedPeople, setSelectedPeople] = useState<string[]>([]); // Can be IDs or names
-    const [recommendedById, setRecommendedById] = useState<string>("");
-    const [recommendedByText, setRecommendedByText] = useState<string>("");
+    const [selectedPeople, setSelectedPeople] = useState<string[]>([]);
     const [review, setReview] = useState("");
     const [isPending, startTransition] = useTransition();
-    const [isLoadingFriends, setIsLoadingFriends] = useState(true);
     const [customPerson, setCustomPerson] = useState("");
     const [selectedRecommenders, setSelectedRecommenders] = useState<string[]>(
         initialRecommendation ? [initialRecommendation.name] : []
@@ -60,8 +57,6 @@ export function WatchDetailsForm({
                 setFriends(data);
             } catch (err) {
                 console.error("Failed to load friends", err);
-            } finally {
-                setIsLoadingFriends(false);
             }
         }
         loadFriends();

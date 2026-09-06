@@ -3,8 +3,6 @@
 import Image from "next/image";
 import Link from "next/link";
 import { Play, Clock } from "lucide-react";
-import { cn } from "@/lib/utils";
-
 interface CurrentlyWatchingProps {
   mediaItems?: any[];
   maxDisplay?: number;

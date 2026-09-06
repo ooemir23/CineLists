@@ -225,7 +225,7 @@ export function NotificationsList({ initialNotifications }: NotificationsListPro
                         )}
                     </div>
                 ) : (
-                    filteredNotifications.map((notification, index) => {
+                    filteredNotifications.map((notification) => {
                         const content = (
                             <div className="flex items-center gap-4 flex-1 min-w-0">
                                 <NotificationBadge

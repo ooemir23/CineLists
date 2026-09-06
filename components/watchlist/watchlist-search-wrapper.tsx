@@ -2,7 +2,7 @@
 import React, { useState, useMemo } from "react";
 import WatchedSearchBar from "@/components/watched/watched-search-bar";
 import { MediaCard } from "@/components/media/media-card";
-import { Calendar, Star, User, Users, Film } from "@/components/Icons";
+import { Calendar, Film } from "@/components/Icons";
 import { cn } from "@/lib/utils";
 
 

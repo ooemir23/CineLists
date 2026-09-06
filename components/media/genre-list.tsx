@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Plus, X, Layers } from "lucide-react";
+import { X, Layers } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
 

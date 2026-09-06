@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { TrendingUp, Calendar } from "lucide-react";
+import { TrendingUp } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 

@@ -2,9 +2,7 @@
 
 import { Users, TrendingUp } from "lucide-react";
 import Link from "next/link";
-import Image from "next/image";
-import { cn } from "@/lib/utils";
-import type { FriendStats } from "@/lib/hero-personalization-actions";
+import Image from "next/image";import type { FriendStats } from "@/lib/hero-personalization-actions";
 
 interface FriendsStatsWidgetProps {
     stats: FriendStats[];

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { calculateTasteMatch } from "@/lib/taste-match-actions";
-import { Heart, Film, Tv, Loader2, Sparkles } from "lucide-react";
+import { Heart, Film, Loader2, Sparkles } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 
@@ -17,7 +17,7 @@ export function TasteMatchCard({
   currentUserId,
   profileUserId,
   profileUserName,
-  profileUserImage,
+  profileUserImage: _profileUserImage,
 }: TasteMatchCardProps) {
   const [match, setMatch] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -71,14 +71,6 @@ export function TasteMatchCard({
     if (score >= 40) return "Orta Düzey Uyum";
     if (score >= 20) return "Biraz Farklı";
     return "Tamamen Farklı";
-  };
-
-  const getScoreGradient = (score: number) => {
-    if (score >= 80) return "from-green-400 to-emerald-500";
-    if (score >= 60) return "from-emerald-400 to-teal-500";
-    if (score >= 40) return "from-amber-400 to-yellow-500";
-    if (score >= 20) return "from-orange-400 to-amber-500";
-    return "from-red-400 to-orange-500";
   };
 
   const circumference = 2 * Math.PI * 42;

@@ -1,6 +1,6 @@
 "use client";
 
-import { Trophy, Award, Star, Flame, Eye, Heart } from "lucide-react";
+import { Trophy, Award, Star, Flame, Eye } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
 
@@ -25,12 +25,12 @@ interface AchievementsBadgesProps {
 }
 
 export function AchievementsBadges({
-  achievements = [],
+  achievements: _achievements = [],
   movieCount,
   showCount,
   watchedCount,
   averageRating,
-  hasVerifiedEmail = false,
+  hasVerifiedEmail: _hasVerifiedEmail = false,
 }: AchievementsBadgesProps) {
   // Auto-generate achievements based on stats
   const generatedAchievements: Achievement[] = [];

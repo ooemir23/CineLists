@@ -1,5 +1,4 @@
 import { tmdb } from "@/lib/tmdb";
-import { MediaRow } from "@/components/media/media-row";
 import { ExploreFilterBar } from "@/components/explore/explore-filter-bar";
 import { MediaCard } from "@/components/media/media-card";
 import { notFound } from "next/navigation";

@@ -1,16 +1,5 @@
 import type { LucideIcon } from "lucide-react";
-import {
-  Award,
-  Bell,
-  Bookmark,
-  Check,
-  Compass,
-  MessageCircle,
-  User,
-  Users,
-  Eye,
-  Heart,
-} from "lucide-react";
+import { Bell, Bookmark, Check, Compass, MessageCircle, User, Eye, Heart } from "lucide-react";
 
 export type NavItem = {
   key: string;

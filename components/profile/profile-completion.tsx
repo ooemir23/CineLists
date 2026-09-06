@@ -1,10 +1,8 @@
 "use client";
 
-import { CheckCircle2, Circle, Sparkles, X } from "lucide-react";
+import { Circle, Sparkles, X } from "lucide-react";
 import { useState } from "react";
 import Link from "next/link";
-import { cn } from "@/lib/utils";
-
 interface ProfileCompletionProps {
   hasAvatar: boolean;
   hasBio: boolean;

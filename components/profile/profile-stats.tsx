@@ -1,6 +1,6 @@
 "use client";
 
-import { Film, Tv, Bookmark, Eye, Activity, Lock } from "lucide-react";
+import { Film, Tv, Bookmark, Eye, Lock } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 

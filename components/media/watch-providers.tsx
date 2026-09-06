@@ -26,7 +26,7 @@ type WatchProvidersProps = {
     mediaTitle?: string;
 };
 
-export function WatchProviders({ providers, isGlobal, isGuest, countryCode = "TR", mediaTitle }: WatchProvidersProps) {
+export function WatchProviders({ providers, isGlobal, isGuest, countryCode = "TR", mediaTitle: _mediaTitle }: WatchProvidersProps) {
     const [isOpen, setIsOpen] = useState(false);
 
     const allProviders = [
@@ -68,7 +68,7 @@ export function WatchProviders({ providers, isGlobal, isGuest, countryCode = "TR
     const activeCountryCode = (countryCode || "TR").toUpperCase();
     const countryName = getCountryName(activeCountryCode);
 
-    const handleTriggerClick = (e: React.MouseEvent) => {
+    const handleTriggerClick = (_e: React.MouseEvent) => {
         if (isGuest) return; // Guest handle by Link inside
         
         if (uniqueProviders.length === 1) {

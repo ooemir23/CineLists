@@ -4,9 +4,7 @@ import React, { useMemo } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { Settings, ChevronRight, Star, Heart, User, Edit } from "lucide-react";
-import { cn } from "@/lib/utils";
-
+import { Settings, ChevronRight, Star } from "lucide-react";
 interface UserData {
   id: string;
   name: string | null;
@@ -42,11 +40,11 @@ interface ProfileClientShellProps {
 
 export function ProfileClientShell({
   user,
-  stats,
+  stats: _stats,
   recentMediaItems,
-  allGenres,
-  thisMonthCount,
-  averageRating,
+  allGenres: _allGenres,
+  thisMonthCount: _thisMonthCount,
+  averageRating: _averageRating,
   watchedItems = [],
   watchlistItems = [],
 }: ProfileClientShellProps) {

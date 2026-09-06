@@ -241,7 +241,7 @@ export default function WatchedSearchBarWrapper({ watched }: { watched: any[] })
                                                     try {
                                                         const parsed = JSON.parse(item.watchedWith);
                                                         return Array.isArray(parsed) ? parsed.join(", ") : parsed;
-                                                    } catch (e) {
+                                                    } catch (_e) {
                                                         return item.watchedWith;
                                                     }
                                                 })()}

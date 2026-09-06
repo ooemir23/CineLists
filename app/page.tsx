@@ -1,11 +1,8 @@
-import Link from "next/link";
 import { tmdb } from "@/lib/tmdb";
 import { MediaRow } from "@/components/media/media-row";
-import { ChevronRight } from "lucide-react";
 import { PersonalizedRecommendations } from "@/components/home/personalized-recommendations";
 import { getPersonalizedRecommendations } from "@/lib/recommendations";
 import { HomeTopSection } from "@/components/home/home-top-section";
-import { SectionTabs } from "@/components/home/section-tabs";
 import { HomeDiscoverySection } from "@/components/home/home-discovery-section";
 import { HomeViewModeProvider } from "@/components/home/use-shared-view-mode";
 
@@ -27,10 +24,9 @@ type HomeProps = {
 export default async function Home({ searchParams }: HomeProps) {
 
   const params = await searchParams;
-  const { type = "", year, rating, provider, genre, q, trType = "all", poType = "all" } = params;
+  const { type = "", year, rating, provider, genre, q } = params;
   const isFiltering = year || rating || provider || genre || type || q;
-  let trendingMovies, trendingTV, popularMovies, upcomingMovies, popularTV, filterResults, personalizedMovies: any;
-  let userName = "";
+  let trendingMovies, trendingTV, popularMovies, upcomingMovies, filterResults, personalizedMovies: any;
 
   if (isFiltering) {
     // If there's a search query, use search API
@@ -111,19 +107,17 @@ export default async function Home({ searchParams }: HomeProps) {
   } else {
     const { auth } = await import("@/auth");
     const session = await auth();
-    userName = session?.user?.name || "";
 
     let personalizedPromise: Promise<any> = Promise.resolve(null);
     if (session?.user?.id) {
       personalizedPromise = getPersonalizedRecommendations(session.user.id);
     }
 
-    [trendingMovies, trendingTV, popularMovies, upcomingMovies, popularTV, personalizedMovies] = await Promise.all([
+    [trendingMovies, trendingTV, popularMovies, upcomingMovies, personalizedMovies] = await Promise.all([
       tmdb.getTrendingMovies(),
       tmdb.getTrendingTV(),
       tmdb.getPopular("movie"),
       tmdb.getUpcomingMovies(),
-      tmdb.getPopular("tv"),
       personalizedPromise
     ]);
   }

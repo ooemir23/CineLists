@@ -3,12 +3,7 @@
 import { Settings } from "lucide-react";
 import Link from "next/link";
 
-type UserData = {
-    id: string;
-    // ... we don't need all types but keep them just in case
-};
-
-export function SettingsButton({ user }: { user: any }) {
+export function SettingsButton({ user: _user }: { user?: any }) {
     return (
         <Link
             href="/settings/general"

@@ -1,7 +1,7 @@
 "use client";
 
-import { useTransition, useState, useEffect, useRef } from "react";
-import { Plus, Check, Loader2, Eye, ChevronDown, ChevronUp, MessageSquare, Share2 } from "lucide-react";
+import { useTransition, useState, useRef } from "react";
+import { Plus, Check, Eye, ChevronDown, ChevronUp, Share2 } from "lucide-react";
 import Link from "next/link";
 import { RecommendModal } from "./recommend-modal";
 import { toggleToWatch } from "@/lib/actions";
@@ -32,18 +32,17 @@ export function MediaActions({
     type,
     title,
     posterPath,
-    initialInWatchlist,
+    initialInWatchlist: _initialInWatchlist,
     initialStatus,
     initialRating,
     initialRecommendation,
     isAuthenticated,
     isGuest,
-    variant = "standard"
+    variant: _variant = "standard"
 }: MediaActionsProps) {
     const [status, setStatus] = useState<string | null>(initialStatus || null);
     const [showDetailsForm, setShowDetailsForm] = useState(false);
     const [isRecommendOpen, setIsRecommendOpen] = useState(false);
-    const [userRating, setUserRating] = useState(initialRating || 0);
     const [guestWarning, setGuestWarning] = useState<string | null>(null);
     const [isPending, startTransition] = useTransition();
     const formRef = useRef<HTMLDivElement>(null);
@@ -132,7 +131,6 @@ export function MediaActions({
         });
     };
 
-    const isMinimal = variant === "minimal";
 
     return (
         <div className="flex flex-col gap-3 w-full">
@@ -255,7 +253,7 @@ export function MediaActions({
                         type={type}
                         title={title}
                         posterPath={posterPath}
-                        initialRating={userRating}
+                        initialRating={initialRating}
                         initialRecommendation={initialRecommendation}
                         isGuest={isGuest}
                         onClose={() => setShowDetailsForm(false)}

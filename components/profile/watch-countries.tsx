@@ -1,13 +1,6 @@
 "use client";
 
 import { Globe } from "lucide-react";
-import { cn } from "@/lib/utils";
-
-interface CountryData {
-  country: string;
-  count: number;
-  iso: string;
-}
 
 interface WatchCountriesProps {
   watchedItems?: any[];

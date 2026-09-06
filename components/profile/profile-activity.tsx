@@ -35,7 +35,7 @@ export function ProfileActivity({
   activities,
   showActivities,
   variant = "list",
-  userId,
+  userId: _userId,
 }: ProfileActivityProps) {
   const [imageErrors, setImageErrors] = useState<Set<string>>(new Set());
 

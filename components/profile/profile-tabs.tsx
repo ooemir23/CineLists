@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, ReactNode } from "react";
-import { LayoutGrid, Bookmark, Heart, Activity } from "lucide-react";
+import { LayoutGrid } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface Tab {

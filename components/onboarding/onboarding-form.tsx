@@ -2,18 +2,7 @@
 
 import { useState } from "react";
 // framer-motion removed — step transitions and progress bar use CSS animations
-import { 
-    Check, 
-    ChevronRight, 
-    ChevronLeft, 
-    User, 
-    Film, 
-    Tv, 
-    Search,
-    Sparkles,
-    CheckCircle2,
-    Loader2
-} from "lucide-react";
+import { Check, ChevronRight, ChevronLeft, User, Search, Sparkles, CheckCircle2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { completeOnboarding } from "@/lib/onboarding-actions";
 
@@ -45,7 +34,6 @@ export function OnboardingForm({ genres, platforms, defaultUsername = "" }: Onbo
     const [isSearching, setIsSearching] = useState(false);
     const [genreSearch, setGenreSearch] = useState("");
     const [platformSearch, setPlatformSearch] = useState("");
-    const [isSubmitting, setIsSubmitting] = useState(false);
 
     const totalSteps = 4;
 

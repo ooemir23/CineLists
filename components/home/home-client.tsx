@@ -2,7 +2,7 @@
 
 import React, { useState, useMemo } from "react";
 import Link from "next/link";
-import { Compass, Search, Star, Play, Settings, Bell, ChevronRight, Bookmark } from "lucide-react";
+import { Search, Star, Play, Bell } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface MovieItem {
