@@ -13,7 +13,7 @@ export default function GenreChart({ genres }: GenreChartProps) {
         );
     }
 
-    const maxCount = Math.max(...genres.map(g => g.count));
+    const maxCount = Math.max(...genres.map(g => g.count), 1);
 
     return (
         <div className="bg-gradient-to-br from-indigo-600/10 to-purple-600/10 border border-indigo-500/20 p-6 rounded-2xl backdrop-blur-sm shadow-lg">

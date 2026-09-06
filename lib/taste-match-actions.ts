@@ -126,14 +126,16 @@ export async function calculateTasteMatch(userId1: string, userId2: string): Pro
         .map((mediaId) => {
             const w1 = watched1.find((w) => w.mediaId === mediaId);
             const w2 = watched2.find((w) => w.mediaId === mediaId);
+            if (!w1?.media) return null;
             return {
-                tmdbId: w1!.media.tmdbId,
-                title: w1!.media.title,
-                posterPath: w1!.media.posterPath,
+                tmdbId: w1.media.tmdbId,
+                title: w1.media.title,
+                posterPath: w1.media.posterPath,
                 user1Rating: w1?.rating || null,
                 user2Rating: w2?.rating || null,
             };
         })
+        .filter((item): item is NonNullable<typeof item> => item !== null)
         .slice(0, 20);
 
     const commonRated = commonMedia.filter((m) => m.user1Rating !== null && m.user2Rating !== null).length;
@@ -142,15 +144,19 @@ export async function calculateTasteMatch(userId1: string, userId2: string): Pro
     const genreCounts2: Record<string, number> = {};
 
     watched1.forEach((w) => {
-        w.media.genres.forEach((g) => {
-            genreCounts1[g] = (genreCounts1[g] || 0) + 1;
-        });
+        if (Array.isArray(w.media?.genres)) {
+            w.media.genres.forEach((g) => {
+                if (g) genreCounts1[g] = (genreCounts1[g] || 0) + 1;
+            });
+        }
     });
 
     watched2.forEach((w) => {
-        w.media.genres.forEach((g) => {
-            genreCounts2[g] = (genreCounts2[g] || 0) + 1;
-        });
+        if (Array.isArray(w.media?.genres)) {
+            w.media.genres.forEach((g) => {
+                if (g) genreCounts2[g] = (genreCounts2[g] || 0) + 1;
+            });
+        }
     });
 
     const genreMatches = calculateGenreSimilarity(genreCounts1, genreCounts2);
@@ -276,9 +282,11 @@ export async function getMyTasteProfile() {
 
     const genreCounts: Record<string, number> = {};
     genres.forEach((g) => {
-        g.media.genres.forEach((genre) => {
-            genreCounts[genre] = (genreCounts[genre] || 0) + 1;
-        });
+        if (Array.isArray(g.media?.genres)) {
+            g.media.genres.forEach((genre) => {
+                if (genre) genreCounts[genre] = (genreCounts[genre] || 0) + 1;
+            });
+        }
     });
 
     const avgRating =

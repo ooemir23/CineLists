@@ -28,18 +28,18 @@ export function FollowButton({
     try {
       const result = await toggleFollow(targetUserId);
       
-      if (result.error) {
+      if (result?.error) {
         toast.error(result.error);
         return;
       }
 
-      const newState = result.isFollowing;
-      setIsFollowing(newState as boolean);
-      onFollowChange?.(newState as boolean);
+      const newState = Boolean(result?.isFollowing);
+      setIsFollowing(newState);
+      onFollowChange?.(newState);
       toast.success(newState ? "Takip edildi" : "Takip bırakıldı");
-    } catch (error) {
+    } catch (error: any) {
       console.error("Follow error:", error);
-      toast.error("Bir hata oluştu");
+      toast.error(error?.message || "Bir hata oluştu");
     } finally {
       setIsLoading(false);
     }

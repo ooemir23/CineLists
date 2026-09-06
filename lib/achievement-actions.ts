@@ -54,9 +54,13 @@ export async function checkAndUnlockAchievements(userId: string) {
   const uniqueGenres = new Set<string>();
   const genreCounts: Record<string, number> = {};
   for (const w of genres) {
-    for (const g of w.media.genres) {
-      uniqueGenres.add(g);
-      genreCounts[g] = (genreCounts[g] || 0) + 1;
+    if (Array.isArray(w.media?.genres)) {
+      for (const g of w.media.genres) {
+        if (g) {
+          uniqueGenres.add(g);
+          genreCounts[g] = (genreCounts[g] || 0) + 1;
+        }
+      }
     }
   }
   const hasGenreMaster = Object.values(genreCounts).some((c) => c >= 20);
@@ -136,28 +140,38 @@ export async function checkAndUnlockAchievements(userId: string) {
 // ============================================
 
 export async function getUserAchievements(userId: string) {
-  const achievements = await prisma.achievement.findMany({
-    where: { userId },
-    orderBy: { unlockedAt: "desc" },
-  });
+  try {
+    const achievements = await prisma.achievement.findMany({
+      where: { userId },
+      orderBy: { unlockedAt: "desc" },
+    });
 
-  const unlockedTypes = new Set(achievements.map((a: any) => a.type));
+    const allAchievements = ACHIEVEMENT_DEFINITIONS.map((def) => {
+      const unlocked = achievements.find((a: { type: string; unlockedAt: Date }) => a.type === def.type);
+      return {
+        ...def,
+        unlocked: !!unlocked,
+        unlockedAt: unlocked?.unlockedAt ? new Date(unlocked.unlockedAt).toISOString() : null,
+      };
+    });
 
-  // Tüm rozetleri döndür (kilitli/kilitsiz)
-  const allAchievements = ACHIEVEMENT_DEFINITIONS.map((def) => {
-    const unlocked = achievements.find((a: any) => a.type === def.type);
     return {
-      ...def,
-      unlocked: !!unlocked,
-      unlockedAt: unlocked?.unlockedAt || null,
+      achievements: allAchievements,
+      totalUnlocked: achievements.length,
+      totalPossible: ACHIEVEMENT_DEFINITIONS.length,
     };
-  });
-
-  return {
-    achievements: allAchievements,
-    totalUnlocked: achievements.length,
-    totalPossible: ACHIEVEMENT_DEFINITIONS.length,
-  };
+  } catch (error) {
+    console.warn("[Achievements] DB query failed, using defaults:", (error as Error)?.message || error);
+    return {
+      achievements: ACHIEVEMENT_DEFINITIONS.map((def) => ({
+        ...def,
+        unlocked: false,
+        unlockedAt: null,
+      })),
+      totalUnlocked: 0,
+      totalPossible: ACHIEVEMENT_DEFINITIONS.length,
+    };
+  }
 }
 
 export async function getAchievementStats(userId: string) {

@@ -1,17 +1,18 @@
 "use client";
 
-import React from "react";
+import React, { Component, type ErrorInfo, type ReactNode } from "react";
+import { usePathname } from "next/navigation";
+
+interface ErrorBoundaryProps {
+    children: ReactNode;
+}
 
 interface ErrorBoundaryState {
     hasError: boolean;
     error?: Error;
 }
 
-interface ErrorBoundaryProps {
-    children: React.ReactNode;
-}
-
-export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundaryState> {
+class ErrorBoundaryInner extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
     constructor(props: ErrorBoundaryProps) {
         super(props);
         this.state = { hasError: false };
@@ -21,7 +22,7 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
         return { hasError: true, error };
     }
 
-    componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+    componentDidCatch(error: Error, errorInfo: ErrorInfo) {
         console.error("Error caught by boundary:", error, errorInfo);
     }
 
@@ -47,4 +48,9 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
 
         return this.props.children;
     }
+}
+
+export function ErrorBoundary({ children }: ErrorBoundaryProps) {
+    const pathname = usePathname();
+    return <ErrorBoundaryInner key={pathname}>{children}</ErrorBoundaryInner>;
 }

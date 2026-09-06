@@ -122,6 +122,12 @@ export default async function FeedPage() {
         redirect("/login");
     }
 
+    let allActivities: any[] = [];
+    let followingIds: string[] = [];
+    let suggestedUsers: any[] = [];
+    let trendingReviews: any[] = [];
+    let currentUser: any = null;
+
     try {
         // Get IDs of users I follow
         const following = await prisma.follow.findMany({
@@ -129,14 +135,14 @@ export default async function FeedPage() {
             select: { followingId: true },
         });
 
-        const followingIds = following.map(f => f.followingId);
+        followingIds = following.map(f => f.followingId);
 
         // Fetch feed activities, suggested users, trending reviews and user stats in parallel
         const [
-            allActivities,
-            suggestedUsers,
-            trendingReviews,
-            currentUser
+            activities,
+            users,
+            reviews,
+            user
         ] = await Promise.all([
             getGroupedFeedActivities(session.user.id, followingIds),
             prisma.user.findMany({
@@ -204,27 +210,22 @@ export default async function FeedPage() {
             }).catch(() => null)
         ]);
 
-        return (
-            <FeedClient 
-                initialActivities={allActivities} 
-                sessionUserId={session.user.id} 
-                followingCount={followingIds.length}
-                suggestedUsers={suggestedUsers}
-                trendingReviews={trendingReviews}
-                currentUser={currentUser}
-            />
-        );
+        allActivities = activities;
+        suggestedUsers = users;
+        trendingReviews = reviews;
+        currentUser = user;
     } catch (error) {
         console.warn("[Feed] Database unavailable:", error);
-        return (
-            <FeedClient 
-                initialActivities={[]} 
-                sessionUserId={session.user.id} 
-                followingCount={0}
-                suggestedUsers={[]}
-                trendingReviews={[]}
-                currentUser={null}
-            />
-        );
     }
+
+    return (
+        <FeedClient 
+            initialActivities={allActivities} 
+            sessionUserId={session.user.id} 
+            followingCount={followingIds.length}
+            suggestedUsers={suggestedUsers}
+            trendingReviews={trendingReviews}
+            currentUser={currentUser}
+        />
+    );
 }

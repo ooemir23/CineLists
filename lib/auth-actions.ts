@@ -5,19 +5,11 @@ import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 import { AuthError } from "next-auth";
 import { redirect } from "next/navigation";
-import { Prisma } from "@prisma/client";
 import { sendPasswordResetEmail } from "./mail";
 import crypto from "crypto";
 
-function isPrismaConnectionError(error: unknown) {
-    if (error instanceof Prisma.PrismaClientInitializationError) return true;
-    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P1001") return true;
-    if (error instanceof Error && error.message.includes("Can't reach database server")) return true;
-    return false;
-}
-
 export async function loginUser(formData: FormData) {
-    const email = String(formData.get("email") || "").trim();
+    const email = String(formData.get("email") || "").trim().toLowerCase();
     const password = String(formData.get("password") || "");
 
     if (!email || !password) {
@@ -30,12 +22,16 @@ export async function loginUser(formData: FormData) {
         if (error instanceof AuthError) {
             redirect("/login?error=invalid");
         }
+        const msg = (error as any)?.message || "";
+        if (msg.includes("CredentialsSignin") || msg.includes("CallbackRouteError")) {
+            redirect("/login?error=invalid");
+        }
         throw error;
     }
 }
 
 export async function registerUser(formData: FormData) {
-    const email = String(formData.get("email") || "").trim();
+    const email = String(formData.get("email") || "").trim().toLowerCase();
     const password = String(formData.get("password") || "");
     const name = String(formData.get("name") || "").trim();
 
@@ -54,9 +50,8 @@ export async function registerUser(formData: FormData) {
             where: { email },
         });
     } catch (error) {
-        if (!isPrismaConnectionError(error)) {
-            throw error;
-        }
+        console.error("User lookup error during register:", error);
+        redirect("/register?error=db");
     }
 
     if (existingUser) {
@@ -65,14 +60,27 @@ export async function registerUser(formData: FormData) {
 
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 12);
+    const resolvedName = name || email.split("@")[0] || "Kullanıcı";
 
-    const resolvedName = name || email.split("@")[0] || "Kullanici";
+    // Clean username
+    const baseUsername = (name || email.split("@")[0])
+        .toLowerCase()
+        .replace(/[^a-z0-9_]/g, "")
+        .slice(0, 20);
+    let username = baseUsername || "user";
 
-    // Generate unique username
-    const baseUsername = email.split("@")[0].replace(/[^a-zA-Z0-9_]/g, "");
-    const username = baseUsername + "_" + Math.random().toString(36).slice(-4);
+    try {
+        const existingUsername = await prisma.user.findUnique({
+            where: { username },
+        });
+        if (existingUsername) {
+            username = `${username}_${Math.floor(1000 + Math.random() * 9000)}`;
+        }
+    } catch (error) {
+        console.error("Username uniqueness check error:", error);
+    }
 
-    // Create user
+    // Create user in real PostgreSQL database
     try {
         await prisma.user.create({
             data: {
@@ -80,22 +88,25 @@ export async function registerUser(formData: FormData) {
                 username,
                 name: resolvedName,
                 password: hashedPassword,
+                hasCompletedOnboarding: false,
             },
         });
     } catch (error: any) {
-        if (error.code === 'P2002') {
+        if (error?.code === "P2002") {
             redirect("/register?error=exists");
         }
-        if (!isPrismaConnectionError(error)) {
-            console.error("Registration error:", error);
-            redirect("/register?error=unknown");
-        }
+        console.error("Registration database error:", error);
+        redirect("/register?error=unknown");
     }
 
     try {
         await signIn("email", { email, password, redirectTo: "/onboarding" });
     } catch (error) {
         if (error instanceof AuthError) {
+            redirect("/login?error=invalid");
+        }
+        const msg = (error as any)?.message || "";
+        if (msg.includes("CredentialsSignin") || msg.includes("CallbackRouteError")) {
             redirect("/login?error=invalid");
         }
         throw error;
@@ -107,7 +118,6 @@ export async function handleSignOut() {
     const user = session?.user;
 
     if (user?.email?.endsWith("@guest.cinelists.local")) {
-        // Guest users are not persisted in DB (JWT-only), no cleanup needed
         console.log(`Guest user ${user.id} signing out.`);
     }
 
@@ -115,16 +125,11 @@ export async function handleSignOut() {
 }
 
 export async function signInWithGoogle() {
-    const hasGoogleKeys = process.env.AUTH_GOOGLE_ID && process.env.AUTH_GOOGLE_SECRET;
+    const hasGoogleKeys = Boolean(process.env.AUTH_GOOGLE_ID && process.env.AUTH_GOOGLE_SECRET);
     if (!hasGoogleKeys) {
-        await signIn("dev-login", { redirectTo: "/" });
-        return;
+        redirect("/login?error=OAuthNotConfigured");
     }
     await signIn("google", { redirectTo: "/onboarding" });
-}
-
-export async function devLogin() {
-    await signIn("dev-login", { redirectTo: "/" });
 }
 
 export async function requestPasswordReset(formData: FormData) {

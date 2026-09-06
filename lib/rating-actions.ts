@@ -24,9 +24,17 @@ export async function rateMedia(tmdbId: number, type: "movie" | "tv", rating: nu
         return { success: false, error: "Puanlama yapmak için giriş yapmalısınız" };
     }
 
-    const dbUser = await prisma.user.findUnique({
-        where: { id: session.user.id },
+    let currentUserId = session.user.id;
+    let dbUser = await prisma.user.findUnique({
+        where: { id: currentUserId },
     });
+
+    if (!dbUser && (session.user as any).email) {
+        dbUser = await prisma.user.findUnique({
+            where: { email: (session.user as any).email },
+        });
+        if (dbUser) currentUserId = dbUser.id;
+    }
 
     if (!dbUser) {
         return { success: false, error: "Oturum geçersiz, lütfen tekrar giriş yapın." };
@@ -79,7 +87,7 @@ export async function rateMedia(tmdbId: number, type: "movie" | "tv", rating: nu
         await prisma.watched.upsert({
             where: {
                 userId_mediaId: {
-                    userId: session.user.id,
+                    userId: currentUserId,
                     mediaId: mediaItem.id,
                 },
             },
@@ -87,7 +95,7 @@ export async function rateMedia(tmdbId: number, type: "movie" | "tv", rating: nu
                 rating: rating,
             },
             create: {
-                userId: session.user.id,
+                userId: currentUserId,
                 mediaId: mediaItem.id,
                 rating: rating,
             },
@@ -96,7 +104,7 @@ export async function rateMedia(tmdbId: number, type: "movie" | "tv", rating: nu
         // Also create/update Activity for social feed
         const existingActivity = await prisma.activity.findFirst({
             where: {
-                userId: session.user.id,
+                userId: currentUserId,
                 mediaId: mediaItem.id,
                 type: "RATED",
                 episodeId: null
@@ -114,7 +122,7 @@ export async function rateMedia(tmdbId: number, type: "movie" | "tv", rating: nu
         } else {
             await prisma.activity.create({
                 data: {
-                    userId: session.user.id,
+                    userId: currentUserId,
                     mediaId: mediaItem.id,
                     type: "RATED",
                     rating,
@@ -122,7 +130,7 @@ export async function rateMedia(tmdbId: number, type: "movie" | "tv", rating: nu
             });
         }
 
-        checkAndUnlockAchievements(session.user.id).catch(console.error);
+        checkAndUnlockAchievements(currentUserId).catch(console.error);
 
         revalidatePath(`/${type}/${tmdbId}`);
         revalidatePath("/profile");

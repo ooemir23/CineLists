@@ -14,11 +14,21 @@ export async function sendMessage(receiverId: string, content: string) {
 
     if (!content.trim()) return { error: "Mesaj boş olamaz" };
 
+    let senderId = session.user.id;
+    const senderExists = await prisma.user.findUnique({ where: { id: senderId }, select: { id: true } });
+    if (!senderExists && (session.user as any).email) {
+        const dbUser = await prisma.user.findUnique({ where: { email: (session.user as any).email }, select: { id: true } });
+        if (dbUser) senderId = dbUser.id;
+    }
+
+    const receiver = await prisma.user.findUnique({ where: { id: receiverId }, select: { id: true } });
+    if (!receiver) return { error: "Alıcı kullanıcı bulunamadı." };
+
     await prisma.message.create({
         data: {
-            senderId: session.user.id,
-            receiverId: receiverId,
-            content: content,
+            senderId,
+            receiverId,
+            content: content.trim(),
         },
     });
 
@@ -33,7 +43,6 @@ export async function getConversations() {
     if (!session?.user?.id) return [];
 
     // Group messages to find unique conversation partners
-    // This is tricky with Prisma. 
     // We can fetch recent messages where user is sender OR receiver.
     const messages = await prisma.message.findMany({
         where: {
@@ -47,8 +56,6 @@ export async function getConversations() {
             sender: { select: { id: true, name: true, image: true } },
             receiver: { select: { id: true, name: true, image: true } },
         },
-        // We should probably distinct on partnerId but Prisma assumes distinct on columns.
-        // Instead, we fetch many and process in JS for MVP.
         take: 50,
     });
 
@@ -56,7 +63,7 @@ export async function getConversations() {
 
     messages.forEach((msg) => {
         const partner = msg.senderId === session.user?.id ? msg.receiver : msg.sender;
-        if (!conversations.has(partner.id)) {
+        if (partner && !conversations.has(partner.id)) {
             conversations.set(partner.id, {
                 partner,
                 lastMessage: msg,

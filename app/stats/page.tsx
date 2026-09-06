@@ -4,7 +4,7 @@ import { getDetailedUserStats } from "@/lib/detailed-stats-actions";
 import { getUserAchievements } from "@/lib/achievement-actions";
 import { BarChart3, Film, Tv, Layers, Clock, MessageSquare, Send, Star, Users, TrendingUp, Award } from "lucide-react";
 import Leaderboard from "@/components/stats/leaderboard";
-import { StatCard, TimeStatCard } from "@/components/stats/stats-cards";
+import { StatCard } from "@/components/stats/stats-cards";
 import GenreChart from "@/components/stats/genre-chart";
 import ActivityTimeline from "@/components/stats/activity-timeline";
 import WeeklyPatternChart from "@/components/stats/weekly-pattern-chart";
@@ -14,7 +14,8 @@ import { redirect } from "next/navigation";
 
 export default async function StatsPage() {
     const session = await auth();
-    if (!session?.user?.id) redirect("/login");
+    const isGuest = (session?.user as any)?.isGuest || session?.user?.id?.startsWith("guest_");
+    if (!session?.user?.id || isGuest) redirect("/login");
 
     const [detailedStats, leaderboard, achievementsData] = await Promise.all([
         getDetailedUserStats(session.user.id),
@@ -22,7 +23,15 @@ export default async function StatsPage() {
         getUserAchievements(session.user.id)
     ]);
 
-    if (!detailedStats) return null;
+    if (!detailedStats) {
+        return (
+            <div className="max-w-[1600px] mx-auto px-4 py-16 text-center">
+                <BarChart3 className="w-12 h-12 text-primary mx-auto mb-4" />
+                <h2 className="text-xl font-bold text-white mb-2">İstatistikler Yüklenemedi</h2>
+                <p className="text-neutral-400 text-sm">Lütfen daha sonra tekrar deneyin.</p>
+            </div>
+        );
+    }
 
     const { viewingTime, contentAnalysis, socialStats, genreBreakdown, temporalStats, personalInsights } = detailedStats;
 
@@ -183,35 +192,35 @@ export default async function StatsPage() {
                                             {achievementsData.totalUnlocked} / {achievementsData.totalPossible} Rozet
                                         </span>
                                         <span className="text-sm font-bold text-amber-400">
-                                            %{Math.round((achievementsData.totalUnlocked / achievementsData.totalPossible) * 100)}
+                                            %{Math.min(100, Math.round((achievementsData.totalUnlocked / (achievementsData.totalPossible || 1)) * 100))}
                                         </span>
                                     </div>
                                     <div className="w-full h-3 bg-white/10 rounded-full overflow-hidden">
                                         <div
                                             className="h-full bg-gradient-to-r from-amber-400 to-orange-500 rounded-full transition-all duration-1000"
                                             style={{
-                                                width: `${(achievementsData.totalUnlocked / achievementsData.totalPossible) * 100}%`,
+                                                width: `${Math.min(100, Math.round((achievementsData.totalUnlocked / (achievementsData.totalPossible || 1)) * 100))}%`,
                                             }}
                                         />
                                     </div>
                                     <p className="text-xs text-neutral-500 mt-2">
-                                        {achievementsData.totalPossible - achievementsData.totalUnlocked} rozet daha kazanabilirsin!
+                                        {Math.max(0, achievementsData.totalPossible - achievementsData.totalUnlocked)} rozet daha kazanabilirsin!
                                     </p>
                                 </div>
 
                                 <div className="space-y-10">
                                     {Object.entries({
-                                        watch: { label: "İzleme", items: achievementsData.achievements.filter((a: any) => a.category === "watch") },
-                                        rate: { label: "Puanlama & İnceleme", items: achievementsData.achievements.filter((a: any) => a.category === "rate") },
-                                        social: { label: "Sosyal", items: achievementsData.achievements.filter((a: any) => a.category === "social") },
-                                        list: { label: "Listeler", items: achievementsData.achievements.filter((a: any) => a.category === "list") },
-                                        special: { label: "Özel", items: achievementsData.achievements.filter((a: any) => a.category === "special") },
+                                        watch: { label: "İzleme", items: achievementsData.achievements.filter((a) => a.category === "watch") },
+                                        rate: { label: "Puanlama & İnceleme", items: achievementsData.achievements.filter((a) => a.category === "rate") },
+                                        social: { label: "Sosyal", items: achievementsData.achievements.filter((a) => a.category === "social") },
+                                        list: { label: "Listeler", items: achievementsData.achievements.filter((a) => a.category === "list") },
+                                        special: { label: "Özel", items: achievementsData.achievements.filter((a) => a.category === "special") },
                                     }).map(([key, category]) => (
                                         <div key={key}>
                                             <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
                                                 {category.label}
                                                 <span className="text-xs text-neutral-500 font-normal">
-                                                    ({category.items.filter((i: any) => i.unlocked).length}/{category.items.length})
+                                                    ({category.items.filter((i) => i.unlocked).length}/{category.items.length})
                                                 </span>
                                             </h3>
                                             <AchievementGrid achievements={category.items} />

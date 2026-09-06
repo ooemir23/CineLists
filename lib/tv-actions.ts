@@ -7,6 +7,18 @@ import { tmdb } from "./tmdb";
 import { GENRE_MAP } from "./genres";
 import { checkAndUnlockAchievements } from "@/lib/achievement-actions";
 
+async function resolveUserId(session: any): Promise<string | null> {
+    if (!session?.user?.id) return null;
+    let userId = session.user.id;
+    const exists = await prisma.user.findUnique({ where: { id: userId }, select: { id: true } });
+    if (exists) return exists.id;
+    if (session.user.email) {
+        const dbUser = await prisma.user.findUnique({ where: { email: session.user.email }, select: { id: true } });
+        if (dbUser) return dbUser.id;
+    }
+    return null;
+}
+
 export async function markEpisodeAsWatched(
     tmdbId: number,
     seasonNumber: number,
@@ -19,11 +31,12 @@ export async function markEpisodeAsWatched(
     try {
         const session = await auth();
         if (!session?.user?.id) return { error: "Giriş yapmalısınız" };
-        const userId = session.user.id;
-
-        if ((session.user as any).isGuest || userId.startsWith("guest_")) {
+        if ((session.user as any).isGuest || session.user.id.startsWith("guest_")) {
             return { success: true };
         }
+
+        const userId = await resolveUserId(session);
+        if (!userId) return { error: "Kullanıcı hesabı bulunamadı, lütfen tekrar giriş yapın." };
 
         // 1. Ensure MediaItem exists and has correct info
         let media = await prisma.mediaItem.findUnique({
@@ -168,11 +181,12 @@ export async function markSeasonAsWatched(tmdbId: number, seasonNumber: number) 
     try {
         const session = await auth();
         if (!session?.user?.id) return { error: "Giriş yapmalısınız" };
-        const userId = session.user.id;
-
-        if ((session.user as any).isGuest || userId.startsWith("guest_")) {
+        if ((session.user as any).isGuest || session.user.id.startsWith("guest_")) {
             return { success: true };
         }
+
+        const userId = await resolveUserId(session);
+        if (!userId) return { error: "Kullanıcı hesabı bulunamadı, lütfen tekrar giriş yapın." };
 
         // Get season data from TMDB
         const seasonData = await tmdb.getSeasonDetails(String(tmdbId), seasonNumber);
@@ -373,11 +387,12 @@ export async function removeEpisodeWatch(tmdbId: number, seasonNumber: number, e
     try {
         const session = await auth();
         if (!session?.user?.id) return { error: "Giriş yapmalısınız" };
-        const userId = session.user.id;
-
-        if ((session.user as any).isGuest || userId.startsWith("guest_")) {
+        if ((session.user as any).isGuest || session.user.id.startsWith("guest_")) {
             return { success: true };
         }
+
+        const userId = await resolveUserId(session);
+        if (!userId) return { error: "Kullanıcı hesabı bulunamadı, lütfen tekrar giriş yapın." };
 
         const media = await prisma.mediaItem.findUnique({ where: { tmdbId } });
         if (!media) return { error: "Medya bulunamadı" };
@@ -515,11 +530,12 @@ export async function rateEpisode(params: {
     try {
         const session = await auth();
         if (!session?.user?.id) return { error: "Giriş yapmalısınız" };
-        const userId = session.user.id;
-
-        if ((session.user as any).isGuest || userId.startsWith("guest_")) {
+        if ((session.user as any).isGuest || session.user.id.startsWith("guest_")) {
             return { success: true };
         }
+
+        const userId = await resolveUserId(session);
+        if (!userId) return { error: "Kullanıcı hesabı bulunamadı, lütfen tekrar giriş yapın." };
 
         const episode = await ensureEpisodeExists(params);
 

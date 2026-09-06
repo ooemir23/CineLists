@@ -15,7 +15,7 @@ export default function ActivityTimeline({ monthlyActivity }: ActivityTimelinePr
         );
     }
 
-    const maxCount = Math.max(...monthlyActivity.map(m => m.count));
+    const maxCount = Math.max(...monthlyActivity.map(m => m.count), 1);
 
     return (
         <div className="bg-gradient-to-br from-blue-600/10 to-cyan-600/10 border border-blue-500/20 p-6 rounded-2xl backdrop-blur-sm shadow-lg">

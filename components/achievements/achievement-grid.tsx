@@ -12,7 +12,7 @@ interface Achievement {
   color: string;
   category: string;
   unlocked: boolean;
-  unlockedAt: Date | null;
+  unlockedAt: Date | string | null;
 }
 
 interface AchievementGridProps {

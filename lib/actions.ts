@@ -29,13 +29,21 @@ export async function toggleToWatch(mediaId: number, type: "movie" | "tv" | "per
 
     try {
         // Verify user exists in DB
-        const dbUser = await prisma.user.findUnique({
+        let dbUser = await prisma.user.findUnique({
             where: { id: session.user.id },
         });
+
+        if (!dbUser && (session.user as any).email) {
+            dbUser = await prisma.user.findUnique({
+                where: { email: (session.user as any).email },
+            });
+        }
 
         if (!dbUser) {
             return { error: "Oturum geçersiz, lütfen tekrar giriş yapın." };
         }
+
+        const currentUserId = dbUser.id;
 
         // Ensure media exists in our DB
         let media = await prisma.mediaItem.findUnique({
@@ -68,7 +76,7 @@ export async function toggleToWatch(mediaId: number, type: "movie" | "tv" | "per
         const existing = await prisma.toWatch.findUnique({
             where: {
                 userId_mediaId: {
-                    userId: session.user.id,
+                    userId: currentUserId,
                     mediaId: media.id,
                 },
             },
@@ -90,7 +98,7 @@ export async function toggleToWatch(mediaId: number, type: "movie" | "tv" | "per
             const watched = await prisma.watched.findUnique({
                 where: {
                     userId_mediaId: {
-                        userId: session.user.id,
+                        userId: currentUserId,
                         mediaId: media.id,
                     },
                 },
@@ -104,7 +112,7 @@ export async function toggleToWatch(mediaId: number, type: "movie" | "tv" | "per
                 // Also remove WATCHED activities for this show/movie
                 await prisma.activity.deleteMany({
                     where: {
-                        userId: session.user.id,
+                        userId: currentUserId,
                         mediaId: media.id,
                         type: "WATCHED",
                         episodeId: null
@@ -114,10 +122,11 @@ export async function toggleToWatch(mediaId: number, type: "movie" | "tv" | "per
 
             await prisma.toWatch.create({
                 data: {
-                    userId: session.user.id,
+                    userId: currentUserId,
                     mediaId: media.id,
                 },
             });
+
             revalidatePath("/watchlist");
             if (type !== "person") {
                 revalidatePath(`/${type}/${mediaId}`);

@@ -5,16 +5,21 @@ import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 
 export async function getNotifications() {
-    const session = await auth();
-    if (!session?.user?.id) return [];
+    try {
+        const session = await auth();
+        if (!session?.user?.id) return [];
 
-    const notifications = await prisma.indicates.findMany({
-        where: { userId: session.user.id },
-        orderBy: { createdAt: "desc" },
-        take: 50,
-    });
+        const notifications = await prisma.indicates.findMany({
+            where: { userId: session.user.id },
+            orderBy: { createdAt: "desc" },
+            take: 50,
+        });
 
-    return notifications;
+        return notifications;
+    } catch (error) {
+        console.warn("[Notifications] Error in getNotifications:", (error as Error)?.message || error);
+        return [];
+    }
 }
 
 export async function markNotificationAsRead(id: string) {
@@ -22,7 +27,7 @@ export async function markNotificationAsRead(id: string) {
     if (!session?.user?.id) return { success: false };
 
     try {
-        await prisma.indicates.update({
+        await prisma.indicates.updateMany({
             where: { id, userId: session.user.id },
             data: { isRead: true },
         });

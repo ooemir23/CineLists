@@ -9,7 +9,7 @@ export default function WeeklyPatternChart({ weeklyPattern }: WeeklyPatternChart
         return null;
     }
 
-    const maxCount = Math.max(...weeklyPattern.map(w => w.count));
+    const maxCount = Math.max(...weeklyPattern.map(w => w.count), 1);
 
     return (
         <div className="bg-gradient-to-br from-emerald-600/10 to-teal-600/10 border border-emerald-500/20 p-6 rounded-2xl backdrop-blur-sm shadow-lg">

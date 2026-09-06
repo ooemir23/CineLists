@@ -23,6 +23,9 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
             case "OAuthAccountNotLinked":
                 errorMessage = "Bu e-posta adresiyle zaten bir hesap var (Şifre ile kayıt olmuş olabilirsiniz). Lütfen e-posta ve şifrenizle giriş yapın ve ardından profil ayarlarından Google hesabınızı bağlayın.";
                 break;
+            case "OAuthNotConfigured":
+                errorMessage = "Google ile giriş bu ortamda henüz yapılandırılmamış. Lütfen e-posta ve şifrenizle giriş yapın.";
+                break;
             case "AccessDenied":
                 errorMessage = "Giriş izni reddedildi. Google hesabınızın e-postası doğrulanmamış olabilir.";
                 break;

@@ -1,5 +1,5 @@
 import { registerUser } from "@/lib/auth-actions";
-import { Mail, Lock, UserPlus } from "lucide-react";
+import { Mail, Lock, UserPlus, User } from "lucide-react";
 import Link from "next/link";
 import { SocialAuth } from "@/components/auth/social-auth";
 import { PosterBackground } from "@/components/auth/poster-background";
@@ -13,11 +13,13 @@ export default async function RegisterPage({ searchParams }: RegisterPageProps) 
     const params = await searchParams;
     const errorMessage =
         params.error === "missing"
-            ? "Mail ve şifre zorunludur."
+            ? "Tüm zorunlu alanları doldurunuz."
             : params.error === "weak"
                 ? "Şifre en az 6 karakter olmalıdır."
                 : params.error === "exists"
                     ? "Bu e-posta zaten kayıtlı."
+                    : params.error === "OAuthNotConfigured"
+                        ? "Google ile kayıt bu ortamda henüz yapılandırılmamış. Lütfen e-posta ve şifrenizle kayıt olun."
                     : params.error === "db"
                         ? "Kayıt servisine şu anda bağlanılamıyor. Lütfen birazdan tekrar deneyin."
                         : params.error === "unknown"
@@ -50,6 +52,23 @@ export default async function RegisterPage({ searchParams }: RegisterPageProps) 
                     )}
 
                     <form action={registerUser} className="space-y-3">
+                        <div className="space-y-1">
+                            <label htmlFor="name" className="text-[10px] font-black text-neutral-500 uppercase tracking-widest ml-3">
+                                Ad Soyad / İsim
+                            </label>
+                            <div className="relative group/input">
+                                <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-500 group-focus-within/input:text-amber-400 transition-colors" />
+                                <input
+                                    id="name"
+                                    name="name"
+                                    type="text"
+                                    placeholder="Adınız Soyadınız"
+                                    required
+                                    className="w-full pl-10 pr-4 py-2.5 sm:py-4 bg-white/5 border border-white/10 rounded-xl sm:rounded-2xl text-white placeholder-neutral-600 focus:outline-none focus:border-amber-400/50 focus:ring-4 focus:ring-amber-400/10 transition-all font-bold text-sm"
+                                />
+                            </div>
+                        </div>
+
                         <div className="space-y-1">
                             <label htmlFor="email" className="text-[10px] font-black text-neutral-500 uppercase tracking-widest ml-3">
                                 E-posta Adresi

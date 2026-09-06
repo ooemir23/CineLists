@@ -25,60 +25,70 @@ export default async function PublicProfilePage({
   const session = await auth();
   const { id: userId } = await params;
 
-  const isOwnProfile = session?.user?.id === userId;
+  // Fetch user data (support lookup by id or username)
+  const user = await prisma.user.findFirst({
+    where: {
+      OR: [
+        { id: userId },
+        { username: userId },
+      ],
+    },
+    include: {
+      favoritePersons: { take: 8, orderBy: { addedAt: "desc" } },
+      activities: {
+        take: 30,
+        orderBy: { createdAt: "desc" },
+        include: { media: true },
+      },
+      _count: {
+        select: {
+          toWatch: true,
+          watched: true,
+          followedBy: true,
+          following: true,
+        },
+      },
+    },
+  });
 
-  // Redirect to /profile if viewing own profile via ID
-  if (isOwnProfile) {
+  if (!user) {
+    notFound();
+  }
+
+  // Redirect to /profile if viewing own profile
+  if (session?.user?.id && (session.user.id === user.id || session.user.id === userId)) {
     const { redirect } = await import("next/navigation");
     redirect("/profile");
   }
 
-  // Fetch user data
-    const [user, stats, movieGenres, tvGenres, recentWatched, allWatched, toWatch, isFollowing] = await Promise.all([
-      prisma.user.findUnique({
-        where: { id: userId },
-        include: {
-          favoritePersons: { take: 8, orderBy: { addedAt: "desc" } },
-          activities: {
-            take: 30,
-            orderBy: { createdAt: "desc" },
-            include: { media: true },
-          },
-          _count: {
-            select: {
-              toWatch: true,
-              watched: true,
-              followedBy: true,
-              following: true,
-            },
-          },
-        },
-      }),
-      getUserStats(userId),
-      tmdb.getGenres("movie"),
-      tmdb.getGenres("tv"),
-      prisma.watched.findMany({
-        where: { userId },
-        take: 6,
-        orderBy: { watchedAt: "desc" },
-        include: { media: true },
-      }),
-      prisma.watched.findMany({
-        where: { userId },
-        take: 100,
-        orderBy: { watchedAt: "desc" },
-        include: { media: true },
-      }),
-      prisma.toWatch.findMany({
-        where: { userId },
-        take: 12,
-        orderBy: { addedAt: "desc" },
-        include: { media: true },
-      }),
-      session?.user?.id ? getFollowStatus(userId) : false,
-    ]);
+  const resolvedUserId = user.id;
 
-  if (!user || !stats) {
+  const [stats, movieGenres, tvGenres, recentWatched, allWatched, toWatch, isFollowing] = await Promise.all([
+    getUserStats(resolvedUserId),
+    tmdb.getGenres("movie"),
+    tmdb.getGenres("tv"),
+    prisma.watched.findMany({
+      where: { userId: resolvedUserId },
+      take: 6,
+      orderBy: { watchedAt: "desc" },
+      include: { media: true },
+    }),
+    prisma.watched.findMany({
+      where: { userId: resolvedUserId },
+      take: 100,
+      orderBy: { watchedAt: "desc" },
+      include: { media: true },
+    }),
+    prisma.toWatch.findMany({
+      where: { userId: resolvedUserId },
+      take: 12,
+      orderBy: { addedAt: "desc" },
+      include: { media: true },
+    }),
+    session?.user?.id ? getFollowStatus(resolvedUserId) : false,
+  ]);
+
+  if (!stats) {
     notFound();
   }
 

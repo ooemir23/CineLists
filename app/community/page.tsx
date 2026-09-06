@@ -15,10 +15,14 @@ export default async function CommunityPage(props: { searchParams: Promise<{ q?:
     let users: any[] = [];
     let topUsers: any[] = [];
 
-    if (query) {
-        users = await searchUsers(query);
-    } else {
-        topUsers = await getGlobalActiveUsers();
+    try {
+        if (query) {
+            users = await searchUsers(query);
+        } else {
+            topUsers = await getGlobalActiveUsers();
+        }
+    } catch (e) {
+        console.warn("[CommunityPage] Fetch failed:", e);
     }
 
     return (

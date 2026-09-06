@@ -25,13 +25,21 @@ export async function toggleWatchedStatus(mediaId: number, type: "movie" | "tv",
     }
 
     try {
-        const dbUser = await prisma.user.findUnique({
+        let dbUser = await prisma.user.findUnique({
             where: { id: session.user.id },
         });
+
+        if (!dbUser && session.user.email) {
+            dbUser = await prisma.user.findUnique({
+                where: { email: session.user.email },
+            });
+        }
 
         if (!dbUser) {
             return { error: "Oturum geçersiz, lütfen tekrar giriş yapın." };
         }
+
+        const currentUserId = dbUser.id;
 
         let media = await prisma.mediaItem.findUnique({
             where: { tmdbId: mediaId },
@@ -59,7 +67,7 @@ export async function toggleWatchedStatus(mediaId: number, type: "movie" | "tv",
         const existingEntry = await prisma.watched.findUnique({
             where: {
                 userId_mediaId: {
-                    userId: session.user.id,
+                    userId: currentUserId,
                     mediaId: media.id,
                 },
             },
@@ -72,7 +80,7 @@ export async function toggleWatchedStatus(mediaId: number, type: "movie" | "tv",
             await prisma.watched.delete({
                 where: {
                     userId_mediaId: {
-                        userId: session.user.id,
+                        userId: currentUserId,
                         mediaId: media.id,
                     },
                 },
@@ -81,7 +89,7 @@ export async function toggleWatchedStatus(mediaId: number, type: "movie" | "tv",
             // Remove major WATCHED activities (where episodeId is null) to keep feed clean
             await prisma.activity.deleteMany({
                 where: {
-                    userId: session.user.id,
+                    userId: currentUserId,
                     mediaId: media.id,
                     type: "WATCHED",
                     episodeId: null
@@ -101,7 +109,7 @@ export async function toggleWatchedStatus(mediaId: number, type: "movie" | "tv",
             const toWatch = await prisma.toWatch.findUnique({
                 where: {
                     userId_mediaId: {
-                        userId: session.user.id,
+                        userId: currentUserId,
                         mediaId: media.id,
                     },
                 },
@@ -115,14 +123,14 @@ export async function toggleWatchedStatus(mediaId: number, type: "movie" | "tv",
 
             await prisma.watched.create({
                 data: {
-                    userId: session.user.id,
+                    userId: currentUserId,
                     mediaId: media.id,
                 },
             });
 
             const existingActivity = await prisma.activity.findFirst({
                 where: {
-                    userId: session.user.id,
+                    userId: currentUserId,
                     mediaId: media.id,
                     type: "WATCHED",
                     episodeId: null
@@ -140,7 +148,7 @@ export async function toggleWatchedStatus(mediaId: number, type: "movie" | "tv",
             } else {
                 await prisma.activity.create({
                     data: {
-                        userId: session.user.id,
+                        userId: currentUserId,
                         mediaId: media.id,
                         type: "WATCHED",
                         watchedAt: new Date(),
@@ -148,7 +156,7 @@ export async function toggleWatchedStatus(mediaId: number, type: "movie" | "tv",
                 });
             }
 
-            checkAndUnlockAchievements(session.user.id).catch(console.error);
+            checkAndUnlockAchievements(currentUserId).catch(console.error);
 
             revalidatePath("/watchlist");
             revalidatePath("/profile");
@@ -169,6 +177,22 @@ export async function setWatchStatus(mediaId: number, type: "movie" | "tv", titl
     if (!session?.user?.id) return { error: "Giriş yapmalısınız" };
 
     try {
+        let dbUser = await prisma.user.findUnique({
+            where: { id: session.user.id },
+        });
+
+        if (!dbUser && session.user.email) {
+            dbUser = await prisma.user.findUnique({
+                where: { email: session.user.email },
+            });
+        }
+
+        if (!dbUser) {
+            return { error: "Oturum geçersiz, lütfen tekrar giriş yapın." };
+        }
+
+        const currentUserId = dbUser.id;
+
         let media = await prisma.mediaItem.findUnique({
             where: { tmdbId: mediaId },
         });
@@ -193,7 +217,7 @@ export async function setWatchStatus(mediaId: number, type: "movie" | "tv", titl
         if (status === null) {
             await prisma.toWatch.deleteMany({
                 where: {
-                    userId: session.user.id,
+                    userId: currentUserId,
                     mediaId: media.id,
                 },
             });
@@ -208,7 +232,7 @@ export async function setWatchStatus(mediaId: number, type: "movie" | "tv", titl
         // Remove from watched if moving to a to-watch state
         await prisma.watched.deleteMany({
             where: {
-                userId: session.user.id,
+                userId: currentUserId,
                 mediaId: media.id,
             },
         });
@@ -217,13 +241,13 @@ export async function setWatchStatus(mediaId: number, type: "movie" | "tv", titl
         await prisma.toWatch.upsert({
             where: {
                 userId_mediaId: {
-                    userId: session.user.id,
+                    userId: currentUserId,
                     mediaId: media.id,
                 },
             },
             update: { status: status as any },
             create: {
-                userId: session.user.id,
+                userId: currentUserId,
                 mediaId: media.id,
                 status: status as any,
             },
@@ -317,11 +341,18 @@ export async function addComment(mediaId: number, type: "movie" | "tv", content:
             });
         }
 
+        let currentUserId = session.user.id;
+        const userExists = await prisma.user.findUnique({ where: { id: currentUserId }, select: { id: true } });
+        if (!userExists && (session.user as any).email) {
+            const dbUser = await prisma.user.findUnique({ where: { email: (session.user as any).email }, select: { id: true } });
+            if (dbUser) currentUserId = dbUser.id;
+        }
+
         if (parentId) {
             // This is a reply to an existing activity (review)
             await prisma.comment.create({
                 data: {
-                    userId: session.user.id,
+                    userId: currentUserId,
                     activityId: parentId,
                     content: content,
                     isSpoiler: isSpoiler,
@@ -331,7 +362,7 @@ export async function addComment(mediaId: number, type: "movie" | "tv", content:
             // This is a new top-level review
             await prisma.activity.create({
                 data: {
-                    userId: session.user.id,
+                    userId: currentUserId,
                     mediaId: media.id,
                     type: "REVIEWED",
                     review: content,
@@ -437,11 +468,23 @@ export async function saveWatchDetails(params: {
         });
     }
 
+    let currentUserId = session.user.id;
+    let dbUser = await prisma.user.findUnique({
+        where: { id: currentUserId },
+    });
+
+    if (!dbUser && (session.user as any).email) {
+        dbUser = await prisma.user.findUnique({
+            where: { email: (session.user as any).email },
+        });
+        if (dbUser) currentUserId = dbUser.id;
+    }
+
     // Update Watched entry
     await prisma.watched.upsert({
         where: {
             userId_mediaId: {
-                userId: session.user.id,
+                userId: currentUserId,
                 mediaId: media.id,
             },
         },
@@ -452,7 +495,7 @@ export async function saveWatchDetails(params: {
             recommendedByText: recommendedByText || null,
         },
         create: {
-            userId: session.user.id,
+            userId: currentUserId,
             mediaId: media.id,
             rating: rating || null,
             watchedAt: watchedAt || new Date(),
@@ -464,7 +507,7 @@ export async function saveWatchDetails(params: {
     // Update Activity
     const existingActivity = await prisma.activity.findFirst({
         where: {
-            userId: session.user.id,
+            userId: currentUserId,
             mediaId: media.id,
             type: "WATCHED",
             episodeId: null
@@ -487,7 +530,7 @@ export async function saveWatchDetails(params: {
     } else {
         await prisma.activity.create({
             data: {
-                userId: session.user.id,
+                userId: currentUserId,
                 mediaId: media.id,
                 type: "WATCHED",
                 rating: rating || null,
@@ -501,16 +544,20 @@ export async function saveWatchDetails(params: {
     }
 
     // Create notification for the recommender if applicable
-    if (recommendedById && recommendedById !== session.user.id) {
-        await prisma.indicates.create({
-            data: {
-                userId: recommendedById,
-                type: "NEW_RECOMMENDATION",
-                message: `${session.user.name || "Birisi"} tavsiye ettiğin ${title} içeriğini izledi!`,
-                link: `/profile/${session.user.id}`,
-                image: posterPath,
-            }
-        });
+    if (recommendedById && recommendedById !== currentUserId) {
+        try {
+            await prisma.indicates.create({
+                data: {
+                    userId: recommendedById,
+                    type: "NEW_RECOMMENDATION",
+                    message: `${session.user.name || "Birisi"} tavsiye ettiğin ${title} içeriğini izledi!`,
+                    link: `/profile/${currentUserId}`,
+                    image: posterPath,
+                }
+            });
+        } catch {
+            // Recommender might not exist or connection hiccup
+        }
     }
 
     revalidatePath("/watchlist");
