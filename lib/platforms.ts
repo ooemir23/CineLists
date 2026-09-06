@@ -24,10 +24,23 @@ export async function getAppPlatforms() {
                 id: p.provider_id.toString(),
                 name: p.provider_name,
                 icon: `https://image.tmdb.org/t/p/original${p.logo_path}`,
-                priority: p.display_priorities?.TR || p.display_priority || 999
+                priority: p.display_priorities?.TR ?? p.display_priority ?? 999
             });
         }
     });
+
+    // Ensure Netflix is always present and top-priority (provider_id 8)
+    if (!platformsMap.has(8)) {
+        platformsMap.set(8, {
+            id: "8",
+            name: "Netflix",
+            icon: "https://image.tmdb.org/t/p/original/rK1KljqmbvO9HQa1PBFLILWah72.png",
+            priority: 0
+        });
+    } else {
+        const netflix = platformsMap.get(8)!;
+        netflix.priority = 0;
+    }
 
     const sortedPlatforms = Array.from(platformsMap.values())
         .sort((a, b) => a.priority - b.priority)

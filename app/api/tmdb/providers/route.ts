@@ -37,7 +37,7 @@ export async function GET(request: NextRequest) {
                 ? `https://image.tmdb.org/t/p/original${provider.logo_path}`
                 : "",
             // Use TMDB priority by default
-            priority: provider.display_priorities?.[country] || 999,
+            priority: provider.display_priorities?.[country] ?? 999,
             rawName: provider.provider_name // Keep raw name for custom sorting checks
         })) || [];
 

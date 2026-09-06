@@ -164,7 +164,7 @@ async function getPersonalizedRecommendationsForUser(userId: string) {
 
         // 4. Map platforms to provider IDs
         const providerIds = (user.platforms || [])
-            .map(p => PLATFORM_MAP[p])
+            .map(p => PLATFORM_MAP[p] || p)
             .filter(Boolean);
 
         // 5. Prepare discover params
