@@ -104,15 +104,17 @@ export function FeedClient({
         return gradients[sum % gradients.length];
     };
 
+    const hasSidebar = Boolean(currentUser || suggestedUsers.length > 0 || trendingReviews.length > 0);
+
     return (
         <div className="w-full min-h-screen bg-background font-hanken text-foreground pb-24 md:pb-12">
-            <div className="max-w-6xl mx-auto px-3.5 sm:px-6 pt-3 sm:pt-6">
+            <div className="max-w-[1600px] mx-auto px-3 sm:px-6 md:px-8 lg:px-12 pt-3 sm:pt-6">
                 
                 {/* ═════════ 2-COLUMN RESPONSIVE LAYOUT ═════════ */}
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
                     
                     {/* ───── LEFT: MAIN ACTIVITY FEED (8 cols) ───── */}
-                    <div className="lg:col-span-8 space-y-4">
+                    <div className={cn("space-y-4", hasSidebar ? "lg:col-span-8" : "lg:col-span-12 max-w-4xl mx-auto")}>
                         
                         {/* Header Banner */}
                         <div className="bg-[#0b1120] border border-white/10 rounded-2xl p-4 shadow-xl flex flex-col gap-3.5">

@@ -40,7 +40,7 @@ export default async function PersonPage(props: Props) {
 
     return (
         <div className=" bg-background pb-20">
-            <div className="max-w-7xl mx-auto px-6 md:px-10 py-12">
+            <div className="max-w-[1600px] mx-auto px-3 sm:px-6 md:px-8 lg:px-12 py-6 sm:py-12">
                 <div className="flex flex-col md:flex-row gap-12 items-start">
                     {/* Left Column: Image and Social */}
                     <div className="w-full md:w-80 shrink-0 space-y-8 mx-auto md:mx-0">

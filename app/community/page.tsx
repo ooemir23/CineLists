@@ -22,7 +22,7 @@ export default async function CommunityPage(props: { searchParams: Promise<{ q?:
     }
 
     return (
-        <div className="container mx-auto px-3.5 sm:px-6 py-4 sm:py-12 max-w-5xl min-h-[70vh] flex flex-col">
+        <div className="max-w-[1600px] mx-auto px-3 sm:px-6 md:px-8 lg:px-12 py-4 sm:py-12 min-h-[70vh] flex flex-col">
             {/* Minimal Header Section */}
             <div className={`flex flex-col items-center transition-all duration-700 ease-in-out ${!query ? "mt-1 sm:mt-4 mb-8 sm:mb-14" : "mb-6 sm:mb-10"}`}>
                 <div className="relative group mb-4">
@@ -55,7 +55,7 @@ export default async function CommunityPage(props: { searchParams: Promise<{ q?:
                         </h2>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                         {await Promise.all(users.map(async (user) => {
                             const isFollowing = currentUserId ? await getFollowStatus(user.id) : false;
 
@@ -113,7 +113,7 @@ export default async function CommunityPage(props: { searchParams: Promise<{ q?:
                     <div className="h-[1px] flex-1 mx-4 bg-gradient-to-r from-white/10 to-transparent" />
                 </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                         {await Promise.all(topUsers.map(async (user, index) => {
                             const isFollowing = currentUserId ? await getFollowStatus(user.id) : false;
                             const isTop3 = index < 3;

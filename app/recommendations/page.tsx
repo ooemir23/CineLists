@@ -90,7 +90,7 @@ export default async function RecommendationsPage({ searchParams }: Recommendati
                 <div className="absolute inset-0 bg-gradient-to-b from-primary/10 via-transparent to-transparent" />
                 <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-primary/5 via-transparent to-transparent" />
 
-                <div className="relative max-w-7xl mx-auto px-6">
+                <div className="relative max-w-[1600px] mx-auto px-3 sm:px-6 md:px-8 lg:px-12">
                     <div className="text-center mb-8">
                         <div className="inline-flex items-center gap-2 px-4 py-2 bg-primary/20 rounded-full border border-primary/30 mb-4">
                             <Sparkles className="w-4 h-4 text-primary fill-primary/20" />
@@ -151,12 +151,12 @@ export default async function RecommendationsPage({ searchParams }: Recommendati
             </div>
 
             {/* Filter Section */}
-            <div className="max-w-7xl mx-auto px-6 mb-12">
+            <div className="max-w-[1600px] mx-auto px-3 sm:px-6 md:px-8 lg:px-12 mb-12">
                 <MediaFilter />
             </div>
 
             {/* Results Section */}
-            <div className="max-w-7xl mx-auto px-6">
+            <div className="max-w-[1600px] mx-auto px-3 sm:px-6 md:px-8 lg:px-12">
                 {results.length === 0 ? (
                     <div className="flex flex-col items-center justify-center py-32 text-center">
                         <div className="p-8 bg-white/5 rounded-full mb-6 border border-white/10">

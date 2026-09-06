@@ -70,7 +70,7 @@ export default function WatchlistSearchBarWrapper({ watchlist }: { watchlist: an
     const planToWatchItems = filtered.filter(item => item.status === "PLAN_TO_WATCH");
 
     const renderGrid = (items: any[]) => (
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-8 mt-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-4 sm:gap-6 mt-4">
             {items.map((item: any) => (
                 <MediaCard
                     key={item.id}

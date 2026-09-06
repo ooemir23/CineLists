@@ -27,7 +27,7 @@ export default async function StatsPage() {
     const { viewingTime, contentAnalysis, socialStats, genreBreakdown, temporalStats, personalInsights } = detailedStats;
 
     return (
-        <div className="max-w-7xl mx-auto px-3.5 sm:px-6 md:px-10 lg:px-16 py-4 sm:py-10">
+        <div className="max-w-[1600px] mx-auto px-3 sm:px-6 md:px-8 lg:px-12 py-4 sm:py-10">
             {/* Header */}
             <div className="flex flex-col md:flex-row md:items-end gap-2 md:gap-4 mb-6 sm:mb-10">
                 <div className="flex items-center gap-2.5">

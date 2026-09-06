@@ -192,7 +192,7 @@ export default function WatchedSearchBarWrapper({ watched }: { watched: any[] })
                 </motion.div>
             )}
             {viewMode === "grid" ? (
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-8 mt-8">
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-4 sm:gap-6 mt-8">
                     {filtered.length === 0 ? (
                         <div className="text-center text-neutral-500 mt-20 w-full">
                             <p className="text-xl font-bold">Sonuç bulunamadı.</p>

@@ -14,7 +14,7 @@ export default async function WatchingPage() {
     const isGuest = (session.user as any).isGuest || (session.user as any).id?.startsWith("guest_");
     if (isGuest) {
         return (
-            <div className="max-w-7xl mx-auto px-6 md:px-10 lg:px-16 py-10 ">
+            <div className="max-w-[1600px] mx-auto px-3 sm:px-6 md:px-8 lg:px-12 py-6 sm:py-10">
                 <div className="flex items-center gap-3 mb-12">
                     <span className="w-12 h-12 flex items-center justify-center rounded-2xl bg-sky-500/20 text-sky-400 border border-sky-500/20 shadow-lg shadow-sky-500/10">
                         <Eye className="w-6 h-6" />
@@ -41,7 +41,7 @@ export default async function WatchingPage() {
     }
 
     return (
-        <div className="max-w-7xl mx-auto px-6 md:px-10 lg:px-16 py-10 ">
+        <div className="max-w-[1600px] mx-auto px-3 sm:px-6 md:px-8 lg:px-12 py-6 sm:py-10">
             <div className="flex items-center gap-3 mb-12">
                 <div className="w-12 h-12 flex items-center justify-center rounded-2xl bg-sky-500/20 text-sky-400 border border-sky-500/20 shadow-lg shadow-sky-500/10">
                     <Eye className="w-6 h-6" />
