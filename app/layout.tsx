@@ -8,6 +8,8 @@ import { MobileHeader } from "@/components/layout/mobile-header";
 import { MobileDock } from "@/components/layout/mobile-dock";
 import { cn } from "@/lib/utils";
 import { ErrorBoundary } from "@/components/ui/error-boundary";
+import { Pageview } from "@/components/analytics/pageview";
+import { isAdminId } from "@/lib/admin/policy";
 
 const hanken = Hanken_Grotesk({
   subsets: ["latin"],
@@ -91,14 +93,15 @@ export default async function RootLayout({
     >
       <body className={cn("font-hanken bg-background text-foreground overflow-x-hidden")} suppressHydrationWarning>
         <div className="flex flex-col min-h-screen max-w-[1920px] mx-auto shadow-2xl shadow-black/50 mobile-app-shell">
-          <TopNav user={session?.user} />
+          <TopNav user={session?.user} isAdmin={isAdminId(session?.user?.id)} />
+          {process.env.ANALYTICS_ENABLED === "true" && <Pageview />}
           <MobileHeader />
           <main className="flex-1 pt-[calc(3.5rem+env(safe-area-inset-top))] sm:pt-0 pb-28 md:pb-0 relative z-0">
             <ErrorBoundary>
               {children}
             </ErrorBoundary>
           </main>
-          <MobileDock user={session?.user} />
+          <MobileDock user={session?.user} isAdmin={isAdminId(session?.user?.id)} />
           <Toaster theme="dark" position="bottom-right" richColors />
         </div>
       </body>

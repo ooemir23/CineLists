@@ -78,6 +78,7 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
                         return null;
                     }
 
+                    if (user.isSuspended) return null;
                     if (!user.password) {
                         console.warn(`[Auth] User ${user.email} has no password set (OAuth account)`);
                         return null;
@@ -106,6 +107,10 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
                 hasSub: !!(profile as any)?.sub,
             });
 
+            if (user.id) {
+                const currentUser = await prisma.user.findUnique({ where: { id: user.id }, select: { isSuspended: true } });
+                if (currentUser?.isSuspended) return false;
+            }
             return true;
         },
 
@@ -159,6 +164,7 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
                     }
 
                     if (dbUser) {
+                        if (dbUser.isSuspended) return { expires: session.expires } as any;
                         session.user.id = dbUser.id;
                         session.user.name = dbUser.name || (token.name as string) || "Kullanıcı";
                         session.user.email = dbUser.email || (token.email as string) || "";
@@ -172,18 +178,12 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
                     }
                 } catch (error) {
                     console.error("[Auth] Session validation error:", error);
-                    if (token.sub) {
-                        session.user.id = token.sub;
-                        if (token.name) session.user.name = token.name as string;
-                        if (token.email) session.user.email = token.email as string;
-                        if (token.picture) session.user.image = token.picture as string;
-                        if ((token as any).username) (session.user as any).username = (token as any).username;
-                    }
+                    return { expires: session.expires } as any;
                 }
             }
             return session;
         },
-        async jwt({ token, user, trigger, session, account }) {
+        async jwt({ token, user, account }) {
             if (user) {
                 if (account && account.provider !== "credentials" && user.email) {
                     try {
@@ -219,13 +219,21 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
                 (token as any).hasCompletedOnboarding = (user as any).hasCompletedOnboarding ?? false;
                 (token as any).isSuspended = (user as any).isSuspended ?? false;
             }
-            if (trigger === "update" && session) {
-                token = { ...token, ...session };
-            }
+            // Never merge client session updates into identity/authorization claims.
             return token;
         },
     },
     events: {
+        async createUser({ user }) {
+            if (!user.id) return;
+            try {
+                await prisma.userAdminProfile.upsert({
+                    where: { userId: user.id },
+                    create: { userId: user.id, registeredAt: new Date() },
+                    update: {},
+                });
+            } catch { console.warn("[Admin] Registration analytics unavailable"); }
+        },
         async signIn({ user, account, profile }) {
             if (account?.provider !== "google" || !user.id) return;
 

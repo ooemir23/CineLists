@@ -6,7 +6,7 @@ import { PosterBackground } from "@/components/auth/poster-background";
 import { BrandLogo } from "@/components/layout/brand-logo";
 
 type LoginPageProps = {
-    searchParams: Promise<{ error?: string; reset?: string }>;
+    searchParams: Promise<{ error?: string; reset?: string; callbackUrl?: string }>;
 };
 
 export default async function LoginPage({ searchParams }: LoginPageProps) {
@@ -77,6 +77,9 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
                     )}
 
                     <form action={loginUser} className="space-y-3">
+                        {params.callbackUrl && (
+                            <input type="hidden" name="callbackUrl" value={params.callbackUrl} />
+                        )}
                         <div className="space-y-1">
                             <label htmlFor="email" className="text-[10px] font-black text-neutral-500 uppercase tracking-widest ml-3">
                                 E-posta veya Kullanıcı Adı

@@ -36,6 +36,15 @@ export function SettingsSidebar() {
                     </Link>
                 );
             })}
+
+            <div className="hidden md:block pt-6 mt-6 border-t border-white/10">
+                <Link
+                    href="/privacy"
+                    className="text-xs text-neutral-400 hover:text-white transition-colors block px-4 py-1"
+                >
+                    Gizlilik Politikası
+                </Link>
+            </div>
         </div>
     );
 }

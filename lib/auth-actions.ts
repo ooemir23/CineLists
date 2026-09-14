@@ -7,24 +7,27 @@ import { AuthError } from "next-auth";
 import { redirect } from "next/navigation";
 import { sendPasswordResetEmail } from "./mail";
 import crypto from "crypto";
+import { safeInternalRedirect } from "@/lib/admin/policy";
 
 export async function loginUser(formData: FormData) {
     const rawInput = String(formData.get("email") || "").trim();
     const password = String(formData.get("password") || "");
+    const rawCallbackUrl = String(formData.get("callbackUrl") || "");
+    const callbackUrl = safeInternalRedirect(rawCallbackUrl);
 
     if (!rawInput || !password) {
         redirect("/login?error=missing");
     }
 
     try {
-        await signIn("email", { email: rawInput, password, redirectTo: "/" });
+        await signIn("email", { email: rawInput, password, redirectTo: callbackUrl });
     } catch (error) {
         if (error instanceof AuthError) {
-            redirect("/login?error=invalid");
+            redirect(`/login?error=invalid${rawCallbackUrl ? `&callbackUrl=${encodeURIComponent(rawCallbackUrl)}` : ""}`);
         }
         const msg = (error as any)?.message || "";
         if (msg.includes("CredentialsSignin") || msg.includes("CallbackRouteError")) {
-            redirect("/login?error=invalid");
+            redirect(`/login?error=invalid${rawCallbackUrl ? `&callbackUrl=${encodeURIComponent(rawCallbackUrl)}` : ""}`);
         }
         throw error;
     }
@@ -85,7 +88,7 @@ export async function registerUser(formData: FormData) {
 
     // Create user in real PostgreSQL database
     try {
-        await prisma.user.create({
+        const newUser = await prisma.user.create({
             data: {
                 email,
                 username,
@@ -94,6 +97,9 @@ export async function registerUser(formData: FormData) {
                 hasCompletedOnboarding: false,
             },
         });
+        try {
+            await prisma.userAdminProfile.create({ data: { userId: newUser.id, registeredAt: new Date() } });
+        } catch { console.warn("[Admin] Registration analytics unavailable"); }
     } catch (error: any) {
         if (error?.code === "P2002") {
             redirect("/register?error=exists");
@@ -260,4 +266,3 @@ export async function resetPassword(formData: FormData) {
         redirect(`/reset-password?token=${token}&error=db`);
     }
 }
-

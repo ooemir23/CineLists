@@ -3,7 +3,7 @@
 import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Compass, Home, List, LogOut, Search, User } from "lucide-react";
+import { Compass, Home, List, LogOut, Search, User, ShieldCheck } from "lucide-react";
 import { handleSignOut } from "@/lib/auth-actions";
 import { cn } from "@/lib/utils";
 import {
@@ -13,13 +13,14 @@ import {
 } from "@/components/layout/nav-items";
 
 interface MobileDockProps {
+  isAdmin?: boolean;
   user?: {
     name?: string | null;
     image?: string | null;
   };
 }
 
-export function MobileDock({ user }: MobileDockProps) {
+export function MobileDock({ user, isAdmin = false }: MobileDockProps) {
   const pathname = usePathname();
   const [menuOpen, setMenuOpen] = React.useState(false);
   const [profileMenuOpen, setProfileMenuOpen] = React.useState(false);
@@ -160,6 +161,7 @@ export function MobileDock({ user }: MobileDockProps) {
                     </span>
                     <span className="text-[10px] text-neutral-400 font-bold truncate max-w-[100px]">{user.name || "Kullanıcı"}</span>
                   </div>
+                  {isAdmin && <Link href="/admin" onClick={closeMenus} className="flex items-center gap-3 px-4 py-2.5 text-sm font-bold text-amber-400"><ShieldCheck size={18} />Yönetim Merkezi</Link>}
                   {profileNavItems.map((item) => (
                     <Link
                       key={item.key}

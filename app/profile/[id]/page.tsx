@@ -22,7 +22,10 @@ export default async function PublicProfilePage({
         { username: userId },
       ],
     },
-    include: {
+    select: {
+      id: true, name: true, username: true, image: true, bio: true,
+      favoriteGenres: true, platforms: true, isPrivate: true,
+      showActivities: true, showStats: true,
       favoritePersons: { take: 8, orderBy: { addedAt: "desc" } },
       activities: {
         take: 30,

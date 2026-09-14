@@ -1,0 +1,137 @@
+[
+  {
+    "path": "/watched",
+    "status": 307,
+    "location": "http://localhost:3001/login?callbackUrl=http%3A%2F%2Flocalhost%3A3001%2Fwatched"
+  },
+  {
+    "path": "/watching",
+    "status": 307,
+    "location": "/login"
+  },
+  {
+    "path": "/watchlist",
+    "status": 307,
+    "location": "http://localhost:3001/login?callbackUrl=http%3A%2F%2Flocalhost%3A3001%2Fwatchlist"
+  },
+  {
+    "path": "/feed",
+    "status": 307,
+    "location": "http://localhost:3001/login?callbackUrl=http%3A%2F%2Flocalhost%3A3001%2Ffeed"
+  },
+  {
+    "path": "/stats",
+    "status": 307,
+    "location": "http://localhost:3001/login?callbackUrl=http%3A%2F%2Flocalhost%3A3001%2Fstats"
+  },
+  {
+    "path": "/community",
+    "status": 307,
+    "location": "http://localhost:3001/login?callbackUrl=http%3A%2F%2Flocalhost%3A3001%2Fcommunity"
+  },
+  {
+    "path": "/notifications",
+    "status": 307,
+    "location": "http://localhost:3001/login?callbackUrl=http%3A%2F%2Flocalhost%3A3001%2Fnotifications"
+  },
+  {
+    "path": "/messages",
+    "status": 307,
+    "location": "http://localhost:3001/login?callbackUrl=http%3A%2F%2Flocalhost%3A3001%2Fmessages"
+  },
+  {
+    "path": "/recommendations",
+    "status": 307,
+    "location": "http://localhost:3001/login?callbackUrl=http%3A%2F%2Flocalhost%3A3001%2Frecommendations"
+  },
+  {
+    "path": "/profile",
+    "status": 307,
+    "location": "http://localhost:3001/login?callbackUrl=http%3A%2F%2Flocalhost%3A3001%2Fprofile"
+  },
+  {
+    "path": "/achievements",
+    "status": 307,
+    "location": "http://localhost:3001/login?callbackUrl=http%3A%2F%2Flocalhost%3A3001%2Fachievements"
+  },
+  {
+    "path": "/taste-match",
+    "status": 307,
+    "location": "/login"
+  },
+  {
+    "path": "/calendar",
+    "status": 307,
+    "location": "/login"
+  },
+  {
+    "path": "/upcoming-episodes",
+    "status": 307,
+    "location": "/login"
+  },
+  {
+    "path": "/settings",
+    "status": 307,
+    "location": "/login"
+  },
+  {
+    "path": "/settings/account",
+    "status": 307,
+    "location": "/login"
+  },
+  {
+    "path": "/settings/general",
+    "status": 307,
+    "location": "/login"
+  },
+  {
+    "path": "/settings/privacy",
+    "status": 307,
+    "location": "/login"
+  },
+  {
+    "path": "/settings/preferences",
+    "status": 307,
+    "location": "/login"
+  },
+  {
+    "path": "/onboarding",
+    "status": 307,
+    "location": "/login"
+  },
+  {
+    "path": "/register",
+    "status": 200,
+    "location": ""
+  },
+  {
+    "path": "/forgot-password",
+    "status": 200,
+    "location": ""
+  },
+  {
+    "path": "/reset-password",
+    "status": 200,
+    "location": ""
+  },
+  {
+    "path": "/api/user/preferences",
+    "status": 401,
+    "location": ""
+  },
+  {
+    "path": "/api/taste-match",
+    "status": 401,
+    "location": ""
+  },
+  {
+    "path": "/api/home/friends-activity",
+    "status": 200,
+    "location": ""
+  },
+  {
+    "path": "/api/cron/daily-reminders",
+    "status": 401,
+    "location": ""
+  }
+]

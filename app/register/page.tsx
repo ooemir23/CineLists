@@ -111,6 +111,13 @@ export default async function RegisterPage({ searchParams }: RegisterPageProps) 
                             Kayıt Ol
                             <UserPlus className="w-4 h-4" />
                         </button>
+                        <p className="text-[11px] text-center text-neutral-400 pt-1">
+                            Kayıt olarak{" "}
+                            <Link href="/privacy" className="text-amber-400 hover:underline">
+                                Gizlilik Politikası
+                            </Link>
+                            &apos;nı kabul etmiş olursunuz.
+                        </p>
                     </form>
 
                     <div className="relative my-3 sm:my-8">

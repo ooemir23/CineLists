@@ -75,6 +75,52 @@ model User {
   watchedRecommendations  Watched[]        @relation("WatchedRecommendations")
   watched                 Watched[]        @relation("UserWatched")
   watchedEpisodes         WatchedEpisode[]
+  adminProfile            UserAdminProfile?
+  adminActions            AdminAuditLog[]
+}
+
+// Existing users have no fabricated registration date. New registrations are
+// recorded by the authentication createUser event.
+model UserAdminProfile {
+  userId       String    @id
+  registeredAt DateTime?
+  lastSeenAt   DateTime?
+  country      String?
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([registeredAt])
+  @@index([lastSeenAt])
+  @@index([country])
+}
+
+// Aggregate page views; no IP address, visitor cookie, query or full referrer.
+model AnalyticsDaily {
+  id        String   @id @default(cuid())
+  day       DateTime @db.Date
+  country   String
+  device    String
+  path      String
+  audience  String
+  views     Int      @default(0)
+
+  @@unique([day, country, device, path, audience])
+  @@index([day])
+  @@index([country, day])
+}
+
+model AdminAuditLog {
+  id        String   @id @default(cuid())
+  actorId   String?
+  actorName String
+  action    String
+  targetId  String
+  reason    String
+  createdAt DateTime @default(now())
+  actor     User?    @relation(fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@index([actorId])
+  @@index([createdAt(sort: Desc)])
+  @@index([targetId, createdAt(sort: Desc)])
 }
 
 model FavoritePerson {

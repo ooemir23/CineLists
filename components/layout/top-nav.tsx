@@ -26,13 +26,14 @@ import {
 } from "@/components/layout/nav-items";
 
 interface TopNavProps {
+  isAdmin?: boolean;
   user?: {
     name?: string | null;
     image?: string | null;
   };
 }
 
-export function TopNav({ user }: TopNavProps) {
+export function TopNav({ user, isAdmin = false }: TopNavProps) {
   const pathname = usePathname();
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
@@ -262,8 +263,12 @@ export function TopNav({ user }: TopNavProps) {
                   )}
                 </div>
                 <div className="hidden lg:flex flex-col items-start leading-none gap-0.5 text-left">
-                  <span className="text-[11px] font-black uppercase tracking-tight text-white">{user?.name?.split(' ')[0] || "Profil"}</span>
-                  <span className="text-[9px] font-bold text-slate-500">Hesabım</span>
+                  <span className="text-[11px] font-black uppercase tracking-tight text-white">
+                    {user?.name ? user.name.split(' ')[0] : "Giriş Yap"}
+                  </span>
+                  <span className="text-[9px] font-bold text-slate-500">
+                    {user?.name ? "Hesabım" : "veya Kayıt Ol"}
+                  </span>
                 </div>
               </button>
             </div>
@@ -317,6 +322,7 @@ export function TopNav({ user }: TopNavProps) {
                       <p className="text-[10px] text-amber-400 font-black uppercase tracking-[0.2em] mb-1">Hesap</p>
                       <p className="text-sm text-white font-black truncate">{user?.name || "Kullanıcı"}</p>
                     </div>
+                    {isAdmin && <Link href="/admin" onClick={() => setProfileMenuOpen(false)} className="flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-semibold text-amber-400 hover:bg-amber-400/10"><BarChart3 size={18} />Yönetim Merkezi</Link>}
                     {profileNavItems.map((item) => (
                       <Link
                         key={item.key}
