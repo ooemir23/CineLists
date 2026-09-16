@@ -1,7 +1,13 @@
 import type { NextAuthConfig } from "next-auth";
 
+if (!process.env.AUTH_TRUST_HOST) {
+    process.env.AUTH_TRUST_HOST = "true";
+}
+
+const fallbackSecret = "cinelists-secret-key-development-2026-auth-3891724";
+
 export const authConfig = {
-    secret: process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET,
+    secret: process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET || fallbackSecret,
     trustHost: true,
     pages: {
         signIn: "/login",

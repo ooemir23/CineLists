@@ -6,12 +6,21 @@ echo "=== CineLists Starting ==="
 export PORT=3000
 export HOSTNAME="0.0.0.0"
 
-if [ -z "$NEXT_SERVER_ACTIONS_ENCRYPTION_KEY" ]; then
-  if [ -n "$AUTH_SECRET" ]; then
-    export NEXT_SERVER_ACTIONS_ENCRYPTION_KEY="$AUTH_SECRET"
-  elif [ -n "$NEXTAUTH_SECRET" ]; then
-    export NEXT_SERVER_ACTIONS_ENCRYPTION_KEY="$NEXTAUTH_SECRET"
+if [ -z "$AUTH_SECRET" ]; then
+  if [ -n "$NEXTAUTH_SECRET" ]; then
+    export AUTH_SECRET="$NEXTAUTH_SECRET"
+  else
+    export AUTH_SECRET="cinelists-secret-key-development-2026-auth-3891724"
+    export NEXTAUTH_SECRET="cinelists-secret-key-development-2026-auth-3891724"
   fi
+fi
+
+if [ -z "$AUTH_TRUST_HOST" ]; then
+  export AUTH_TRUST_HOST="true"
+fi
+
+if [ -z "$NEXT_SERVER_ACTIONS_ENCRYPTION_KEY" ]; then
+  export NEXT_SERVER_ACTIONS_ENCRYPTION_KEY="$AUTH_SECRET"
 fi
 
 echo "--- Runtime Environment Check ---"

@@ -6,6 +6,10 @@ import { prisma } from "@/lib/prisma";
 import { authConfig } from "./auth.config";
 import bcrypt from "bcryptjs";
 
+if (!process.env.AUTH_TRUST_HOST) {
+    process.env.AUTH_TRUST_HOST = "true";
+}
+
 function firstEnv(...keys: string[]) {
     for (const key of keys) {
         const value = process.env[key]?.trim();
@@ -14,7 +18,8 @@ function firstEnv(...keys: string[]) {
     return undefined;
 }
 
-const authSecret = firstEnv("AUTH_SECRET", "NEXTAUTH_SECRET");
+const fallbackSecret = "cinelists-secret-key-development-2026-auth-3891724";
+const authSecret = firstEnv("AUTH_SECRET", "NEXTAUTH_SECRET") || fallbackSecret;
 const googleClientId = firstEnv("AUTH_GOOGLE_ID", "GOOGLE_CLIENT_ID", "GOOGLE_ID");
 const googleClientSecret = firstEnv("AUTH_GOOGLE_SECRET", "GOOGLE_CLIENT_SECRET", "GOOGLE_SECRET");
 const isProduction = process.env.NODE_ENV === "production";
