@@ -19,6 +19,19 @@ if [ -z "$AUTH_TRUST_HOST" ]; then
   export AUTH_TRUST_HOST="true"
 fi
 
+if [ -z "$AUTH_URL" ]; then
+  if [ -n "$NEXTAUTH_URL" ]; then
+    export AUTH_URL="$NEXTAUTH_URL"
+  else
+    export AUTH_URL="https://cinelists.com"
+    export NEXTAUTH_URL="https://cinelists.com"
+  fi
+fi
+
+if [ -z "$NEXTAUTH_URL" ]; then
+  export NEXTAUTH_URL="$AUTH_URL"
+fi
+
 if [ -z "$NEXT_SERVER_ACTIONS_ENCRYPTION_KEY" ]; then
   export NEXT_SERVER_ACTIONS_ENCRYPTION_KEY="$AUTH_SECRET"
 fi

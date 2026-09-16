@@ -66,6 +66,9 @@ ARG RESEND_API_KEY
 ENV RESEND_API_KEY=$RESEND_API_KEY
 ENV MAIL_FROM="CineLists <noreply@cinelists.com>"
 ENV NEXT_PUBLIC_APP_URL=https://cinelists.com
+ENV AUTH_URL=https://cinelists.com
+ENV NEXTAUTH_URL=https://cinelists.com
+ENV AUTH_TRUST_HOST=true
 
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs

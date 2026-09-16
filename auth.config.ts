@@ -4,6 +4,12 @@ if (!process.env.AUTH_TRUST_HOST) {
     process.env.AUTH_TRUST_HOST = "true";
 }
 
+if (!process.env.AUTH_URL && !process.env.NEXTAUTH_URL) {
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://cinelists.com";
+    process.env.AUTH_URL = appUrl;
+    process.env.NEXTAUTH_URL = appUrl;
+}
+
 const fallbackSecret = "cinelists-secret-key-development-2026-auth-3891724";
 
 export const authConfig = {
