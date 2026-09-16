@@ -134,7 +134,10 @@ export async function handleSignOut() {
 }
 
 export async function signInWithGoogle() {
-    const hasGoogleKeys = Boolean(process.env.AUTH_GOOGLE_ID && process.env.AUTH_GOOGLE_SECRET);
+    const hasGoogleKeys = Boolean(
+        (process.env.AUTH_GOOGLE_ID || process.env.GOOGLE_CLIENT_ID || process.env.GOOGLE_ID) &&
+        (process.env.AUTH_GOOGLE_SECRET || process.env.GOOGLE_CLIENT_SECRET || process.env.GOOGLE_SECRET)
+    );
     if (!hasGoogleKeys) {
         redirect("/login?error=OAuthNotConfigured");
     }

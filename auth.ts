@@ -11,7 +11,8 @@ if (!process.env.AUTH_TRUST_HOST) {
 }
 
 if (!process.env.AUTH_URL && !process.env.NEXTAUTH_URL) {
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://cinelists.com";
+    const isProd = process.env.NODE_ENV === "production";
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || (isProd ? "https://cinelists.com" : "http://localhost:3000");
     process.env.AUTH_URL = appUrl;
     process.env.NEXTAUTH_URL = appUrl;
 }

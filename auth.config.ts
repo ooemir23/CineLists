@@ -5,7 +5,8 @@ if (!process.env.AUTH_TRUST_HOST) {
 }
 
 if (!process.env.AUTH_URL && !process.env.NEXTAUTH_URL) {
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://cinelists.com";
+    const isProd = process.env.NODE_ENV === "production";
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || (isProd ? "https://cinelists.com" : "http://localhost:3000");
     process.env.AUTH_URL = appUrl;
     process.env.NEXTAUTH_URL = appUrl;
 }
@@ -13,6 +14,8 @@ if (!process.env.AUTH_URL && !process.env.NEXTAUTH_URL) {
 const fallbackSecret = "cinelists-secret-key-development-2026-auth-3891724";
 
 export const authConfig = {
+    basePath: "/api/auth",
+    session: { strategy: "jwt" },
     secret: process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET || fallbackSecret,
     trustHost: true,
     pages: {
