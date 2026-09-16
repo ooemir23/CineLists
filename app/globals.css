@@ -453,3 +453,49 @@ a,
 .animate-heart-burst {
   animation: heart-burst 0.8s ease-out forwards;
 }
+
+/* Merlin-inspired Portal Styling & Utilities */
+.heat-bar-track {
+  height: 4px;
+  width: 100%;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 9999px;
+  overflow: hidden;
+}
+
+.heat-bar-fill {
+  height: 100%;
+  border-radius: 9999px;
+  background: linear-gradient(90deg, #38bdf8 0%, #f59e0b 55%, #ef4444 100%);
+  transition: width 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.score-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 0.75rem;
+  padding: 0.2rem 0.55rem;
+  border-radius: 0.5rem;
+  letter-spacing: -0.02em;
+}
+
+.score-pill-gold {
+  background: rgba(245, 158, 11, 0.15);
+  color: #fbbf24;
+  border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+.score-pill-emerald {
+  background: rgba(16, 185, 129, 0.15);
+  color: #34d399;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.score-pill-sky {
+  background: rgba(14, 165, 233, 0.15);
+  color: #38bdf8;
+  border: 1px solid rgba(14, 165, 233, 0.3);
+}
+

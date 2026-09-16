@@ -76,6 +76,8 @@ export const metadata: Metadata = {
   }
 };
 
+import { PortalSidebar } from "@/components/portal/portal-sidebar";
+import { PortalTopbar } from "@/components/portal/portal-topbar";
 import { Toaster } from "sonner";
 import { getServerLocale } from "@/lib/i18n/server";
 import { I18nProvider } from "@/lib/i18n/i18n-context";
@@ -98,17 +100,22 @@ export default async function RootLayout({
     >
       <body className={cn("font-hanken bg-background text-foreground overflow-x-hidden")} suppressHydrationWarning>
         <I18nProvider initialLocale={locale}>
-          <div className="flex flex-col min-h-screen max-w-[1920px] mx-auto shadow-2xl shadow-black/50 mobile-app-shell">
-            <TopNav user={session?.user} isAdmin={isAdminId(session?.user?.id)} />
-            {process.env.ANALYTICS_ENABLED === "true" && <Pageview />}
-            <MobileHeader />
-            <main className="flex-1 pt-[calc(3.5rem+env(safe-area-inset-top))] sm:pt-0 pb-28 md:pb-0 relative z-0">
-              <ErrorBoundary>
-                {children}
-              </ErrorBoundary>
-            </main>
-            <MobileDock user={session?.user} isAdmin={isAdminId(session?.user?.id)} />
-            <Toaster theme="dark" position="bottom-right" richColors />
+          <div className="flex min-h-screen bg-slate-950 text-foreground">
+            {/* Left Portal Sidebar (Desktop xl+) */}
+            <PortalSidebar user={session?.user} />
+
+            {/* Main Portal View (Topbar + Page Content) */}
+            <div className="flex-1 flex flex-col min-w-0 min-h-screen">
+              <PortalTopbar user={session?.user} />
+              {process.env.ANALYTICS_ENABLED === "true" && <Pageview />}
+              <main className="flex-1 pb-24 md:pb-12 relative z-0">
+                <ErrorBoundary>
+                  {children}
+                </ErrorBoundary>
+              </main>
+              <MobileDock user={session?.user} isAdmin={isAdminId(session?.user?.id)} />
+              <Toaster theme="dark" position="bottom-right" richColors />
+            </div>
           </div>
         </I18nProvider>
       </body>
