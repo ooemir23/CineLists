@@ -108,7 +108,11 @@ const COUNTRY_OPTIONS = [
     { id: "IT", label: "İtalya" },
 ];
 
-export function HomeDiscoverySection() {
+type CachedDiscovery = { results: DiscoverItem[]; hasMore: boolean; country: string; expires: number };
+// Memory-only, bounded and account-scoped. No personal data survives a page reload.
+const discoveryCache = new Map<string, CachedDiscovery>();
+
+export function HomeDiscoverySection({ userKey = "anonymous" }: { userKey?: string }) {
     const headerRef = useRef<HTMLDivElement>(null);
     const userTriggeredRef = useRef(false);
     const [activeType, setActiveType] = useState<MenuType>("all");
@@ -133,13 +137,13 @@ export function HomeDiscoverySection() {
 
     const [items, setItems] = useState<DiscoverItem[]>([]);
     const [page, setPage] = useState(1);
-    const [isLoading, setIsLoading] = useState(false);
+    const [isLoading, setIsLoading] = useState(true);
     const [isMoreLoading, setIsMoreLoading] = useState(false);
     const [hasMore, setHasMore] = useState(true);
     const [activeFilterCategory, setActiveFilterCategory] = useState(0);
     const [userPreferences, setUserPreferences] = useState<{ genres: string[], platforms: string[] } | null>(null);
     const [detectedCountry, setDetectedCountry] = useState("TR");
-    const discoveryCacheRef = useRef<Map<string, { results: DiscoverItem[]; hasMore: boolean }>>(new Map());
+
 
     // Staging states for filters (only applied when 'Uygula' is clicked)
     const [stagedGenres, setStagedGenres] = useState<string[]>([]);
@@ -260,18 +264,19 @@ export function HomeDiscoverySection() {
     useEffect(() => {
         const controller = new AbortController();
 
-        const cacheKey = `${activeType}-${activeCategory}-${activeTimeWindow}-${upcomingFilter}-${genres.join(",")}-${years.join(",")}-${ratings.join(",")}-${providers.join(",")}-${languages.join(",")}-${countries.join(",")}-${page}-${discoveryPageSize}`;
+        const cacheKey = `${userKey}-${activeType}-${activeCategory}-${activeTimeWindow}-${upcomingFilter}-${genres.join(",")}-${years.join(",")}-${ratings.join(",")}-${providers.join(",")}-${languages.join(",")}-${countries.join(",")}-${page}-${discoveryPageSize}`;
 
-        if (page === 1 && discoveryCacheRef.current.has(cacheKey)) {
-            const cached = discoveryCacheRef.current.get(cacheKey)!;
+        const cached = discoveryCache.get(cacheKey);
+        const canCache = activeCategory !== "friends" && activeCategory !== "upcoming" && activeCategory !== "random";
+        if (page === 1 && canCache && cached && cached.expires > Date.now()) {
             setItems(cached.results);
             setHasMore(cached.hasMore);
+            setDetectedCountry(cached.country);
             setIsLoading(false);
-        } else if (page === 1) {
-            setIsLoading(true);
-        } else {
-            setIsMoreLoading(true);
+            return;
         }
+        if (page === 1) setIsLoading(true);
+        else setIsMoreLoading(true);
 
         const fetchData = async () => {
             try {
@@ -281,6 +286,7 @@ export function HomeDiscoverySection() {
                 url.searchParams.set("timeWindow", activeTimeWindow);
                 url.searchParams.set("page", page.toString());
                 url.searchParams.set("limit", discoveryPageSize.toString());
+                url.searchParams.set("includeProviders", "false");
                 if (activeCategory === "upcoming") {
                     url.searchParams.set("upcomingFilter", upcomingFilter);
                 }
@@ -295,8 +301,9 @@ export function HomeDiscoverySection() {
                 const res = await fetch(url.toString(), {
                     signal: controller.signal,
                 });
+                if (!res.ok) throw new Error("Discovery request failed");
                 const data = await res.json();
-                
+                if (controller.signal.aborted) return;
                 const results = data?.results || [];
                 const more = Boolean(data?.hasMore);
                 if (data?.country) {
@@ -304,25 +311,51 @@ export function HomeDiscoverySection() {
                 }
 
                 if (page === 1) {
-                    discoveryCacheRef.current.set(cacheKey, { results, hasMore: more });
                     setItems(results);
                 } else {
                     setItems(prev => [...prev, ...results]);
                 }
                 setHasMore(more);
+                setIsLoading(false);
+                setIsMoreLoading(false);
+                // Cards are already visible while their platform badges load.
+                const providerItems = results.filter((item: DiscoverItem) => item.media_type === "movie" || item.media_type === "tv");
+                let enriched = results;
+                if (providerItems.length) {
+                    const providerParams = new URLSearchParams({
+                        items: providerItems.map((item: DiscoverItem) => `${item.media_type}:${item.id}`).join(","),
+                        country: data.country || "TR"
+                    });
+                    const providerResponse = await fetch(`/api/tmdb/providers-batch?${providerParams}`, { signal: controller.signal });
+                    if (providerResponse.ok) {
+                        const providerData = await providerResponse.json();
+                        if (controller.signal.aborted) return;
+                        enriched = results.map((item: DiscoverItem) => ({ ...item,
+                            watch_providers: providerData.providers?.[`${item.media_type}:${item.id}`] ?? item.watch_providers ?? null
+                        }));
+                        const updates = new Map<string, DiscoverItem>(enriched.map((item: DiscoverItem) => [`${item.media_type}:${item.id}`, item]));
+                        setItems(previous => previous.map(item => updates.get(`${item.media_type}:${item.id}`) || item));
+                    }
+                }
+                if (canCache && page === 1 && !controller.signal.aborted) {
+                    if (discoveryCache.size >= 40) discoveryCache.delete(discoveryCache.keys().next().value!);
+                    discoveryCache.set(cacheKey, { results: enriched, hasMore: more, country: data.country || "TR", expires: Date.now() + 60000 });
+                }
             } catch (err: unknown) {
                 if (err instanceof DOMException && err.name === "AbortError") return;
                 console.error("Discovery fetch error:", err);
-                if (page === 1 && !discoveryCacheRef.current.has(cacheKey)) setItems([]);
+                // Keep already displayed cards if only provider enrichment failed.
             } finally {
-                setIsLoading(false);
-                setIsMoreLoading(false);
+                if (!controller.signal.aborted) {
+                    setIsLoading(false);
+                    setIsMoreLoading(false);
+                }
             }
         };
 
         fetchData();
         return () => controller.abort();
-    }, [activeType, activeCategory, activeTimeWindow, genres, years, ratings, providers, languages, countries, page, upcomingFilter, discoveryPageSize]);
+    }, [activeType, activeCategory, activeTimeWindow, genres, years, ratings, providers, languages, countries, page, upcomingFilter, discoveryPageSize, userKey]);
 
     const [isFilterSheetOpen, setIsFilterSheetOpen] = useState(false);
 

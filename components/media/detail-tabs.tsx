@@ -9,7 +9,7 @@ import SeasonList, { type Season } from "./season-list";
 import { CommentsSection, type Comment } from "./comments";
 import { MediaCard } from "./media-card";
 import { TvHeatmap } from "./tv-heatmap";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 
 type Tab = "cast" | "seasons" | "comments" | "similar" | "heatmap";
 
@@ -45,6 +45,8 @@ interface DetailTabsProps {
     producer?: string;
 }
 
+const EMPTY_RECOMMENDATIONS: RecommendationItem[] = [];
+
 const TABS: { id: Tab; label: string; icon: LucideIcon }[] = [
     { id: "cast", label: "Oyuncular", icon: Users },
     { id: "seasons", label: "Sezonlar", icon: LayoutGrid },
@@ -60,7 +62,7 @@ export function DetailTabs({
     posterPath,
     cast,
     seasons,
-    initialRecommendations = [],
+    initialRecommendations = EMPTY_RECOMMENDATIONS,
     watchedEpisodes,
     initialComments,
     currentUserId,
@@ -68,7 +70,6 @@ export function DetailTabs({
     producer,
 }: DetailTabsProps) {
     const searchParams = useSearchParams();
-    const router = useRouter();
     const pathname = usePathname();
 
     const queryTab = searchParams.get("tab") as Tab | null;
@@ -88,13 +89,11 @@ export function DetailTabs({
     }, [tmdbId, initialRecommendations]);
 
     useEffect(() => {
-        if (queryTab && TABS.some((tab) => tab.id === queryTab)) {
-            setActiveTab(queryTab);
-        }
-    }, [queryTab]);
+        setActiveTab(initialTab);
+    }, [initialTab]);
 
     useEffect(() => {
-        if (activeTab !== "similar" || recommendationsLoaded || recommendationsLoading) {
+        if (activeTab !== "similar" || recommendationsLoaded) {
             return;
         }
 
@@ -109,31 +108,30 @@ export function DetailTabs({
                     cache: "force-cache",
                 });
 
-                if (!res.ok) {
-                    return;
-                }
+                if (!res.ok) throw new Error("Recommendations request failed");
 
                 const data: { results?: RecommendationItem[] } = await res.json();
+                if (controller.signal.aborted) return;
                 setRecommendations(Array.isArray(data?.results) ? data.results : []);
+                setRecommendationsLoaded(true);
             } catch {
                 // Silent fallback is intentional.
             } finally {
-                setRecommendationsLoaded(true);
-                setRecommendationsLoading(false);
+                if (!controller.signal.aborted) setRecommendationsLoading(false);
             }
         };
 
         loadRecommendations();
 
         return () => controller.abort();
-    }, [activeTab, recommendationsLoaded, recommendationsLoading, tmdbId, type]);
+    }, [activeTab, recommendationsLoaded, tmdbId, type]);
 
     const handleTabChange = (tabId: Tab) => {
         setActiveTab(tabId);
 
         const params = new URLSearchParams(searchParams);
         params.set("tab", tabId);
-        router.push(`${pathname}?${params.toString()}`, { scroll: false });
+        window.history.pushState(null, "", `${pathname}?${params.toString()}`);
     };
 
     const activeTabs = TABS.filter((tab) => {

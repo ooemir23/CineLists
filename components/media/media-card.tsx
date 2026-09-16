@@ -215,14 +215,14 @@ export function MediaCard({
                                     {watchProviders.flatrate.slice(0, 3).map((provider) => (
                                         <div key={provider.provider_id} className="w-5 h-5 md:w-6 md:h-6 rounded-full overflow-hidden border-2 border-[#1e293b] shadow-md relative" title={provider.provider_name}>
                                             <img
-                                                src={`https://image.tmdb.org/t/p/original${provider.logo_path}`}
+                                                src={`https://image.tmdb.org/t/p/w92${provider.logo_path}`}
                                                 alt={provider.provider_name}
                                                 className="w-full h-full object-cover"
                                             />
                                         </div>
                                     ))}
                                 </div>
-                            ) : (
+                            ) : watchProviders === null ? (
                                 <div 
                                     className="flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-black/85 border border-white/10 text-neutral-400 shadow-md relative pointer-events-auto backdrop-blur-sm"
                                     title={`${getCountryName(countryCode)}'de yayınlanan herhangi bir dijital platformda bulunmuyor`}
@@ -232,7 +232,7 @@ export function MediaCard({
                                         {getCountryBadgeLabel(countryCode)}
                                     </span>
                                 </div>
-                            )}
+                            ) : null}
                         </div>
 
                         {genres && genres.length > 0 && (
@@ -425,7 +425,7 @@ export function MediaCard({
                                         {watchProviders.flatrate.slice(0, 3).map((provider) => (
                                             <div key={provider.provider_id} className="w-5 h-5 rounded-md overflow-hidden border border-white/10 shadow-lg">
                                                 <img
-                                                    src={`https://image.tmdb.org/t/p/original${provider.logo_path}`}
+                                                    src={`https://image.tmdb.org/t/p/w92${provider.logo_path}`}
                                                     alt={provider.provider_name}
                                                     className="w-full h-full object-cover"
                                                 />

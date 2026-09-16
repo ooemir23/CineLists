@@ -1,31 +1,27 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useTransition } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { Calendar, Clock, Star, Play, Tv } from "lucide-react";
-
-interface DiscoveryEngineProps {
-    dayMovie: React.ReactNode;
-    dayTV: React.ReactNode;
-    weekMovie: React.ReactNode;
-    weekTV: React.ReactNode;
-    monthMovie: React.ReactNode;
-    monthTV: React.ReactNode;
-}
 
 type Period = "day" | "week" | "month";
 type MediaType = "movie" | "tv";
 
-export function DiscoveryEngine({
-    dayMovie,
-    dayTV,
-    weekMovie,
-    weekTV,
-    monthMovie,
-    monthTV,
-}: DiscoveryEngineProps) {
-    const [period, setPeriod] = useState<Period>("day");
-    const [type, setType] = useState<MediaType>("movie");
+export function DiscoveryEngine({ period, type, children }: {
+    period: Period;
+    type: MediaType;
+    children: React.ReactNode;
+}) {
+    const router = useRouter();
+    const searchParams = useSearchParams();
+    const [pending, startTransition] = useTransition();
+    function select(nextPeriod: Period, nextType: MediaType) {
+        const params = new URLSearchParams(searchParams.toString());
+        params.set("discoveryPeriod", nextPeriod);
+        params.set("discoveryType", nextType);
+        startTransition(() => router.push(`/search?${params}`, { scroll: false }));
+    }
 
     const periods = [
         { id: "day", label: "Günün", icon: Clock, color: "from-amber-400 to-orange-500" },
@@ -37,12 +33,6 @@ export function DiscoveryEngine({
         { id: "movie", label: "Filmler", icon: Play },
         { id: "tv", label: "Diziler", icon: Tv },
     ];
-
-    const activeContent = {
-        day: { movie: dayMovie, tv: dayTV },
-        week: { movie: weekMovie, tv: weekTV },
-        month: { movie: monthMovie, tv: monthTV },
-    }[period][type];
 
     return (
         <div className="flex flex-col gap-3">
@@ -56,7 +46,7 @@ export function DiscoveryEngine({
                         return (
                             <button
                                 key={p.id}
-                                onClick={() => setPeriod(p.id as Period)}
+                                onClick={() => select(p.id as Period, type)}
                                 className={cn(
                                     "flex items-center justify-center gap-1.5 px-2.5 sm:px-4 py-2 rounded-lg text-xs font-black uppercase tracking-wider transition-all relative overflow-hidden group",
                                     isActive ? "text-white" : "text-neutral-400 hover:text-white"
@@ -82,7 +72,7 @@ export function DiscoveryEngine({
                         return (
                             <button
                                 key={t.id}
-                                onClick={() => setType(t.id as MediaType)}
+                                onClick={() => select(period, t.id as MediaType)}
                                 className={cn(
                                     "flex items-center justify-center gap-1.5 px-3 sm:px-4 py-2 rounded-lg text-xs font-black uppercase tracking-wider transition-all relative overflow-hidden group",
                                     isActive ? "text-white" : "text-neutral-400 hover:text-white"
@@ -102,12 +92,13 @@ export function DiscoveryEngine({
             </div>
 
             {/* Content Area with Animation */}
-            <div className="relative min-h-[300px]">
+            <div className="relative min-h-[300px]" aria-busy={pending}>
+                {pending && <p role="status" className="text-sm text-amber-400 py-2">Yükleniyor…</p>}
                 <div
                     key={period + type}
                     className="animate-in fade-in slide-in-from-bottom-2 duration-400"
                 >
-                    {activeContent}
+                    {children}
                 </div>
             </div>
         </div>

@@ -1,3 +1,4 @@
+import { cachedGetWatchProviders } from "@/lib/watch-provider-cache";
 import { NextRequest, NextResponse } from "next/server";
 import { tmdb } from "@/lib/tmdb";
 import { getFriendsActivity } from "@/lib/feed-actions";
@@ -75,14 +76,6 @@ const cachedGetWatchedIdsForUser = unstable_cache(
     getWatchedIdsForUser,
     ["home-discover-watched-ids"],
     { revalidate: 120 }
-);
-
-const cachedGetWatchProviders = unstable_cache(
-    async (type: "movie" | "tv", id: string) => {
-        return tmdb.getWatchProviders(type, id);
-    },
-    ["tmdb-watch-providers-v2"],
-    { revalidate: 86400 }
 );
 
 export async function GET(request: NextRequest) {
@@ -351,7 +344,7 @@ export async function GET(request: NextRequest) {
         const userCountry = (country && country.length === 2) ? country.toUpperCase() : detectUserCountry(request.headers);
         const pagedResults = results.slice(0, limit);
 
-        const resultsWithProviders = await Promise.all(
+        const resultsWithProviders = searchParams.get("includeProviders") === "false" ? pagedResults : await Promise.all(
             pagedResults.map(async (item) => {
                 if (!item.media_type || (item.media_type !== "movie" && item.media_type !== "tv")) {
                     return item;

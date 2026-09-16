@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { auth } from "@/auth";
 import Link from "next/link";
 import Image from "next/image";
@@ -59,12 +60,16 @@ export default async function DetailsPage(props: Props) {
         try { return await p; } catch { return fb; }
     };
 
+    const data = await tmdb.getDetails(type as "movie" | "tv", id).catch(() => null);
+    if (!data) notFound();
+    const userCountry = detectUserCountry(await headers());
+    // These requests stream into their own slots; the title/overview/afiş do not wait for them.
+    const extras = (async () => {
     const [
-        data, credits, videos, inWatchlist, watchStatus, watchedEpisodes,
+        credits, videos, inWatchlist, watchStatus, watchedEpisodes,
         providersData, userRating, friendsRatings,
-        activeRecommendation, dbMedia, recommendationsData
+        activeRecommendation, dbMedia
     ] = await Promise.all([
-        tmdb.getDetails(type as "movie" | "tv", id).catch(() => null),
         tmdb.getCredits(type as "movie" | "tv", id).catch(() => null),
         tmdb.getVideos(type as "movie" | "tv", id).catch(() => null),
         safe(getToWatchStatus(mediaId), false),
@@ -102,26 +107,7 @@ export default async function DetailsPage(props: Props) {
                 return null;
             }
         })(), null),
-        safe((async () => {
-            const [recs, sim] = await Promise.allSettled([
-                tmdb.getRecommendations(type as "movie" | "tv", id).catch(() => null),
-                tmdb.getSimilar(type as "movie" | "tv", id).catch(() => null),
-            ]);
-            const recList = recs.status === "fulfilled" && recs.value?.results ? recs.value.results : [];
-            const simList = sim.status === "fulfilled" && sim.value?.results ? sim.value.results : [];
-            const combined = [...recList, ...simList];
-            const seen = new Set<number>();
-            const unique = combined.filter((item: any) => {
-                if (!item || !item.id || item.id === mediaId || seen.has(item.id)) return false;
-                seen.add(item.id);
-                return true;
-            });
-            return unique;
-        })(), [])
-    ]) as [any, any, any, boolean, any, any, any, number | null, any[], any, any, any[]];
-
-    if (!data) notFound();
-
+    ]);
     const comments = dbMedia?.activities.map((a: any) => ({
         id: a.id, 
         content: a.review || "", 
@@ -141,9 +127,6 @@ export default async function DetailsPage(props: Props) {
         })) || []
     })) || [];
 
-    const headersList = await headers();
-    const userCountry = detectUserCountry(headersList);
-
     let activeProviders = providersData?.results?.[userCountry] || null;
     let isGlobal = false;
     if (!activeProviders || (!activeProviders.flatrate && !activeProviders.buy)) {
@@ -155,6 +138,11 @@ export default async function DetailsPage(props: Props) {
         }
     }
 
+    const directors = credits?.crew?.filter((c: any) => c.job === "Director").slice(0, 2) || [];
+    return { credits, videos, inWatchlist, watchStatus, watchedEpisodes, userRating,
+        friendsRatings, activeRecommendation, comments, activeProviders, isGlobal, directors };
+    })();
+
     const title = data.title || data.name;
     const releaseDate = data.release_date || data.first_air_date;
     const runtime = data.runtime || (data.episode_run_time?.[0]) || (data.last_episode_to_air?.runtime) || null;
@@ -163,8 +151,7 @@ export default async function DetailsPage(props: Props) {
         : null;
     const voteCount = data.vote_count ? data.vote_count.toLocaleString("tr-TR") : null;
     const year = releaseDate ? new Date(releaseDate).getFullYear() : "";
-    const backdrop = data.backdrop_path ? `https://image.tmdb.org/t/p/original${data.backdrop_path}` : null;
-    const directors = credits?.crew?.filter((c: any) => c.job === "Director").slice(0, 2) || [];
+    const backdrop = data.backdrop_path ? `https://image.tmdb.org/t/p/w1280${data.backdrop_path}` : null;
     const creators = (data.created_by || []).slice(0, 2);
 
     const statusMap: Record<string, { label: string; cls: string }> = {
@@ -175,6 +162,128 @@ export default async function DetailsPage(props: Props) {
     };
     const statusInfo = data.status ? (statusMap[data.status] ?? { label: data.status, cls: "text-white/40 border-white/10 bg-white/5" }) : null;
 
+    async function DeferredRating1() {
+        const { userRating, friendsRatings } = await extras;
+        return (<>
+<RatingDisplay userRating={userRating} friendsRatings={friendsRatings} mediaTitle={title} />
+        </>);
+    }
+
+    async function DeferredRating0() {
+        const { userRating, friendsRatings } = await extras;
+        return (<>
+<RatingDisplay userRating={userRating} friendsRatings={friendsRatings} mediaTitle={title} />
+        </>);
+    }
+
+    async function DeferredTrailer1() {
+        const { videos } = await extras;
+        return (<>
+<TrailerButton videos={videos?.results || []} title={title} className="flex-1" />
+        </>);
+    }
+
+    async function DeferredTrailer0() {
+        const { videos } = await extras;
+        return (<>
+<TrailerButton videos={videos?.results || []} title={title} className="w-full py-2.5" />
+        </>);
+    }
+
+    async function DeferredProviders1() {
+        const { activeProviders, isGlobal } = await extras;
+        return (<>
+<WatchProviders providers={activeProviders} isGlobal={isGlobal} isGuest={isGuest} countryCode={userCountry} mediaTitle={title} />
+        </>);
+    }
+
+    async function DeferredProviders0() {
+        const { activeProviders, isGlobal } = await extras;
+        return (<>
+<WatchProviders providers={activeProviders} isGlobal={isGlobal} isGuest={isGuest} countryCode={userCountry} mediaTitle={title} />
+        </>);
+    }
+
+    async function DeferredActions1() {
+        const { inWatchlist, watchStatus, userRating, activeRecommendation } = await extras;
+        return (<>
+<MediaActions
+                                    tmdbId={data.id}
+                                    type={type as "movie" | "tv"}
+                                    title={title}
+                                    posterPath={data.poster_path}
+                                    initialInWatchlist={inWatchlist}
+                                    initialStatus={watchStatus}
+                                    initialRating={userRating}
+                                    initialRecommendation={activeRecommendation?.sender ? {
+                                        id: activeRecommendation.sender.id,
+                                        name: activeRecommendation.sender.name || "Bilinmiyor"
+                                    } : undefined}
+                                    isAuthenticated={isAuthenticated}
+                                    isGuest={isGuest}
+                                    variant="minimal"
+                                />
+        </>);
+    }
+
+    async function DeferredActions0() {
+        const { inWatchlist, watchStatus, userRating, activeRecommendation } = await extras;
+        return (<>
+<MediaActions
+                                    tmdbId={data.id}
+                                    type={type as "movie" | "tv"}
+                                    title={title}
+                                    posterPath={data.poster_path}
+                                    initialInWatchlist={inWatchlist}
+                                    initialStatus={watchStatus}
+                                    initialRating={userRating}
+                                    initialRecommendation={activeRecommendation?.sender ? {
+                                        id: activeRecommendation.sender.id,
+                                        name: activeRecommendation.sender.name || "Bilinmiyor"
+                                    } : undefined}
+                                    isAuthenticated={isAuthenticated}
+                                    isGuest={isGuest}
+                                    variant="minimal"
+                                />
+        </>);
+    }
+
+    async function DeferredDirectors0() {
+        const { directors } = await extras;
+        return (<>
+{(directors.length > 0 || creators.length > 0) && (
+                                    <>
+                                        <span className="text-white/25">·</span>
+                                        {directors.slice(0, 1).map((p: any) => (
+                                            <span key={p.id} className="text-xs text-white/60 font-bold">{p.name}</span>
+                                        ))}
+                                        {creators.slice(0, 1).map((p: any) => (
+                                            <span key={p.id} className="text-xs text-white/60 font-bold">{p.name}</span>
+                                        ))}
+                                    </>
+                                )}
+        </>);
+    }
+
+    async function DeferredTabs0() {
+        const { credits, comments, watchedEpisodes, directors } = await extras;
+        return (<>
+<DetailTabs
+                        cast={credits?.cast || []}
+                        seasons={data.seasons}
+                        tmdbId={data.id}
+                        type={type as "movie" | "tv"}
+                        title={title}
+                        posterPath={data.poster_path}
+                        initialComments={comments}
+                        watchedEpisodes={watchedEpisodes}
+                        currentUserId={session?.user?.id}
+                        director={directors?.[0]?.name || creators?.[0]?.name}
+                        producer={directors?.[1]?.name || creators?.[1]?.name || data.production_companies?.[0]?.name}
+                    />
+        </>);
+    }
+
     return (
         <div className="relative min-h-screen">
             <ActionNotification />
@@ -183,9 +292,10 @@ export default async function DetailsPage(props: Props) {
             <div className="absolute top-0 left-0 right-0 h-[520px] z-0 pointer-events-none overflow-hidden">
                 {(backdrop || data.poster_path) && (
                     <Image
-                        src={backdrop ?? `https://image.tmdb.org/t/p/original${data.poster_path}`}
+                        src={backdrop ?? `https://image.tmdb.org/t/p/w1280${data.poster_path}`}
                         alt=""
                         fill
+                        sizes="100vw"
                         priority
                         className="object-cover object-top"
                         style={{ filter: "brightness(0.32) saturate(1.2) blur(3px)", transform: "scale(1.06)" }}
@@ -208,7 +318,7 @@ export default async function DetailsPage(props: Props) {
                             {(backdrop || data.poster_path) ? (
                                 <Image
                                     src={backdrop ?? `https://image.tmdb.org/t/p/w780${data.poster_path}`}
-                                    alt={title} fill className="object-cover object-top" priority
+                                    alt={title} fill sizes="(max-width: 768px) 100vw, 1px" className="object-cover object-top" priority
                                 />
                             ) : (
                                 <div className="w-full h-full bg-neutral-800/50 flex items-center justify-center">
@@ -240,7 +350,7 @@ export default async function DetailsPage(props: Props) {
                             <div className="flex flex-wrap items-center gap-1.5 text-xs">
                                 <div className="flex items-center gap-1"><Star className="w-3.5 h-3.5 text-amber-400 fill-amber-400" /><span className="font-black text-amber-400">{data.vote_average?.toFixed(1)}</span><span className="text-[10px] text-white/35">/ 10</span></div>
                                 {voteCount && <><span className="text-white/20">·</span><span className="text-[11px] text-white/45">{voteCount} oy</span></>}
-                                <div className="flex items-center gap-1"><Globe className="w-3 h-3 text-sky-400" /><RatingDisplay userRating={userRating} friendsRatings={friendsRatings} mediaTitle={title} /></div>
+                                <div className="flex items-center gap-1"><Globe className="w-3 h-3 text-sky-400" /><Suspense fallback={<span className="inline-block h-8 min-w-16 rounded-lg bg-white/5 motion-safe:animate-pulse" aria-label="Yükleniyor" />}><DeferredRating0 /></Suspense></div>
                                 {year && <><span className="text-white/20">·</span><span className="text-[11px] text-white/55 font-bold">{year}</span></>}
                                 {runtimeFmt && <><span className="text-white/20">·</span><span className="text-[11px] text-white/55 font-bold">{runtimeFmt}</span></>}
                                 {data.number_of_seasons && <><span className="text-white/20">·</span><span className="text-[11px] text-white/55 font-bold">{data.number_of_seasons} Sezon</span></>}
@@ -249,26 +359,11 @@ export default async function DetailsPage(props: Props) {
                                 <p className="text-xs text-white/65 leading-relaxed line-clamp-2 border-l-2 border-amber-400/35 pl-2.5">{data.overview}</p>
                             )}
                             <div className="grid grid-cols-2 gap-1.5">
-                                <TrailerButton videos={videos?.results || []} title={title} className="w-full py-2.5" />
-                                <WatchProviders providers={activeProviders} isGlobal={isGlobal} isGuest={isGuest} countryCode={userCountry} mediaTitle={title} />
+                                <Suspense fallback={<span className="inline-block h-8 min-w-16 rounded-lg bg-white/5 motion-safe:animate-pulse" aria-label="Yükleniyor" />}><DeferredTrailer0 /></Suspense>
+                                <Suspense fallback={<span className="inline-block h-8 min-w-16 rounded-lg bg-white/5 motion-safe:animate-pulse" aria-label="Yükleniyor" />}><DeferredProviders0 /></Suspense>
                             </div>
                             <div className="flex items-center w-full">
-                                <MediaActions
-                                    tmdbId={data.id}
-                                    type={type as "movie" | "tv"}
-                                    title={title}
-                                    posterPath={data.poster_path}
-                                    initialInWatchlist={inWatchlist}
-                                    initialStatus={watchStatus}
-                                    initialRating={userRating}
-                                    initialRecommendation={activeRecommendation?.sender ? {
-                                        id: activeRecommendation.sender.id,
-                                        name: activeRecommendation.sender.name || "Bilinmiyor"
-                                    } : undefined}
-                                    isAuthenticated={isAuthenticated}
-                                    isGuest={isGuest}
-                                    variant="minimal"
-                                />
+                                <Suspense fallback={<span className="inline-block h-8 min-w-16 rounded-lg bg-white/5 motion-safe:animate-pulse" aria-label="Yükleniyor" />}><DeferredActions0 /></Suspense>
                             </div>
                         </div>
                     </div>
@@ -288,8 +383,8 @@ export default async function DetailsPage(props: Props) {
                             </div>
                             {/* Trailer + Watch Providers — yan yana */}
                             <div className="mt-2 flex gap-2">
-                                <TrailerButton videos={videos?.results || []} title={title} className="flex-1" />
-                                <WatchProviders providers={activeProviders} isGlobal={isGlobal} isGuest={isGuest} countryCode={userCountry} mediaTitle={title} />
+                                <Suspense fallback={<span className="inline-block h-8 min-w-16 rounded-lg bg-white/5 motion-safe:animate-pulse" aria-label="Yükleniyor" />}><DeferredTrailer1 /></Suspense>
+                                <Suspense fallback={<span className="inline-block h-8 min-w-16 rounded-lg bg-white/5 motion-safe:animate-pulse" aria-label="Yükleniyor" />}><DeferredProviders1 /></Suspense>
                             </div>
                         </div>
 
@@ -356,22 +451,12 @@ export default async function DetailsPage(props: Props) {
                                 )}
                                 <div className="flex items-center gap-1.5">
                                     <Globe className="w-3.5 h-3.5 text-sky-400" />
-                                    <RatingDisplay userRating={userRating} friendsRatings={friendsRatings} mediaTitle={title} />
+                                    <Suspense fallback={<span className="inline-block h-8 min-w-16 rounded-lg bg-white/5 motion-safe:animate-pulse" aria-label="Yükleniyor" />}><DeferredRating1 /></Suspense>
                                 </div>
                                 {year && <><span className="text-white/25">·</span><span className="text-xs text-white/60 font-bold">{year}</span></>}
                                 {runtimeFmt && <><span className="text-white/25">·</span><span className="text-xs text-white/60 font-bold">{runtimeFmt}</span></>}
                                 {data.number_of_seasons && <><span className="text-white/25">·</span><span className="text-xs text-white/60 font-bold">{data.number_of_seasons} Sezon</span></>}
-                                {(directors.length > 0 || creators.length > 0) && (
-                                    <>
-                                        <span className="text-white/25">·</span>
-                                        {directors.slice(0, 1).map((p: any) => (
-                                            <span key={p.id} className="text-xs text-white/60 font-bold">{p.name}</span>
-                                        ))}
-                                        {creators.slice(0, 1).map((p: any) => (
-                                            <span key={p.id} className="text-xs text-white/60 font-bold">{p.name}</span>
-                                        ))}
-                                    </>
-                                )}
+                                <Suspense fallback={<span className="inline-block h-8 min-w-16 rounded-lg bg-white/5 motion-safe:animate-pulse" aria-label="Yükleniyor" />}><DeferredDirectors0 /></Suspense>
                             </div>
 
                             {/* Row 5: Overview (2 lines max) */}
@@ -383,22 +468,7 @@ export default async function DetailsPage(props: Props) {
 
                             {/* Row 6: Actions only */}
                             <div className="flex flex-wrap items-center gap-2 pt-0.5">
-                                <MediaActions
-                                    tmdbId={data.id}
-                                    type={type as "movie" | "tv"}
-                                    title={title}
-                                    posterPath={data.poster_path}
-                                    initialInWatchlist={inWatchlist}
-                                    initialStatus={watchStatus}
-                                    initialRating={userRating}
-                                    initialRecommendation={activeRecommendation?.sender ? {
-                                        id: activeRecommendation.sender.id,
-                                        name: activeRecommendation.sender.name || "Bilinmiyor"
-                                    } : undefined}
-                                    isAuthenticated={isAuthenticated}
-                                    isGuest={isGuest}
-                                    variant="minimal"
-                                />
+                                <Suspense fallback={<span className="inline-block h-8 min-w-16 rounded-lg bg-white/5 motion-safe:animate-pulse" aria-label="Yükleniyor" />}><DeferredActions1 /></Suspense>
                             </div>
                         </div>
                     </div>
@@ -406,20 +476,7 @@ export default async function DetailsPage(props: Props) {
 
                 {/* ════ BOTTOM: FULL-WIDTH TABS ════════════════════════ */}
                 <div className="px-6 lg:px-10 pt-4 pb-10 bg-[#070c16]">
-                    <DetailTabs
-                        cast={credits?.cast || []}
-                        seasons={data.seasons}
-                        tmdbId={data.id}
-                        type={type as "movie" | "tv"}
-                        title={title}
-                        posterPath={data.poster_path}
-                        initialComments={comments}
-                        initialRecommendations={recommendationsData || []}
-                        watchedEpisodes={watchedEpisodes}
-                        currentUserId={session?.user?.id}
-                        director={directors?.[0]?.name || creators?.[0]?.name}
-                        producer={directors?.[1]?.name || creators?.[1]?.name || data.production_companies?.[0]?.name}
-                    />
+                    <Suspense fallback={<span className="inline-block h-8 min-w-16 rounded-lg bg-white/5 motion-safe:animate-pulse" aria-label="Yükleniyor" />}><DeferredTabs0 /></Suspense>
                 </div>
             </div>
         </div>

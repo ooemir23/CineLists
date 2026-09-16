@@ -3,6 +3,7 @@
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { tmdb } from "@/lib/tmdb";
+import { after } from "next/server";
 import { revalidatePath } from "next/cache";
 import { Prisma } from "@prisma/client";
 import { checkAndUnlockAchievements } from "@/lib/achievement-actions";
@@ -569,115 +570,24 @@ export async function saveWatchDetails(params: {
 }
 
 export async function getMediaMetadataBulk(items: { id: number; type: "movie" | "tv" }[]) {
-    if (items.length === 0) return {};
-
-    const tmdbIds = items.map(i => i.id);
-
-    const getRuntimeFromDetails = (details: any, type: "movie" | "tv") => {
-        if (type === "movie") {
-            return (typeof details.runtime === "number" && details.runtime > 0) ? details.runtime : null;
-        }
-
-        const runtime = (details.episode_run_time && details.episode_run_time.length > 0)
-            ? details.episode_run_time[0]
-            : (details.last_episode_to_air?.runtime || details.next_episode_to_air?.runtime || details.runtime || null);
-
-        return (typeof runtime === "number" && runtime > 0) ? runtime : null;
-    };
-
-    const buildMetadataFromTmdb = async (targetItems: { id: number; type: "movie" | "tv" }[]) => {
-        const metadataMap: Record<number, { runtime?: number | null }> = {};
-
-        const fetched = await Promise.all(
-            targetItems.map(async (item) => {
-                try {
-                    const details = await tmdb.getDetails(item.type, item.id.toString());
-                    return { id: item.id, runtime: getRuntimeFromDetails(details, item.type) };
-                } catch {
-                    return { id: item.id, runtime: null };
-                }
-            })
-        );
-
-        fetched.forEach((res) => {
-            metadataMap[res.id] = { runtime: res.runtime };
-        });
-
-        return metadataMap;
-    };
-
+    if (!items.length) return {};
     try {
-        // 1. Get existing data from DB
-        let mediaItems: Array<{ tmdbId: number; runtime: number | null }> = [];
-
-        try {
-            mediaItems = await prisma.mediaItem.findMany({
-                where: {
-                    tmdbId: { in: tmdbIds },
-                    runtime: { not: null }
-                },
-                select: {
-                    tmdbId: true,
-                    runtime: true
-                }
-            });
-        } catch (error) {
-            if (isPrismaConnectionError(error)) {
-                return buildMetadataFromTmdb(items);
-            }
-            throw error;
-        }
-
-        const metadataMap: Record<number, { runtime?: number | null }> = {};
-        mediaItems.forEach(item => {
-            metadataMap[item.tmdbId] = { runtime: item.runtime };
+        const mediaItems = await prisma.mediaItem.findMany({
+            where: { tmdbId: { in: items.map(item => item.id) } },
+            select: { tmdbId: true, type: true, runtime: true }
         });
-
-        // 2. Identify missing ones
-        const missingItems = items.filter(item => !metadataMap[item.id]);
-
-        if (missingItems.length > 0) {
-            // Fetch missing from TMDB in parallel
-            const fetchedResults = await Promise.all(
-                missingItems.map(async (item) => {
-                    try {
-                        const details = await tmdb.getDetails(item.type, item.id.toString());
-
-                        const validRuntime = getRuntimeFromDetails(details, item.type);
-
-                        try {
-                            // Save/Update in DB for future requests when DB is reachable.
-                            await prisma.mediaItem.upsert({
-                                where: { tmdbId: item.id },
-                                update: { runtime: validRuntime },
-                                create: {
-                                    tmdbId: item.id,
-                                    type: item.type === "movie" ? "MOVIE" : "TV",
-                                    title: details.title || details.name || "Tarih Bekleniyor",
-                                    posterPath: details.poster_path,
-                                    genres: details.genres?.map((g: any) => g.name) || [],
-                                    runtime: validRuntime
-                                }
-                            });
-                        } catch (error) {
-                            if (!isPrismaConnectionError(error)) {
-                                throw error;
-                            }
-                        }
-
-                        return { id: item.id, runtime: validRuntime };
-                    } catch (e) {
-                        console.error(`Failed to fetch runtime for ${item.type} ${item.id}:`, e);
-                        return { id: item.id, runtime: null };
-                    }
-                })
-            );
-
-            fetchedResults.forEach(res => {
-                metadataMap[res.id] = { runtime: res.runtime };
+        const metadataMap: Record<number, { runtime: number | null }> = {};
+        for (const item of items) {
+            const stored = mediaItems.find(row => row.tmdbId === item.id && row.type === item.type.toUpperCase());
+            if (stored) metadataMap[item.id] = { runtime: stored.runtime };
+        }
+        const missing = items.filter(item => !metadataMap[item.id]?.runtime);
+        if (missing.length) {
+            after(async () => {
+                const { refreshMediaRuntime } = await import("@/lib/media-runtime");
+                await Promise.all(missing.map(item => refreshMediaRuntime(item)));
             });
         }
-
         return metadataMap;
     } catch (error) {
         console.error("Get bulk media metadata error:", error);

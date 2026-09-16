@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { auth } from "@/auth";
 import { tmdb } from "@/lib/tmdb";
 import { getWatchedShowsNextEpisodes } from "@/lib/hero-personalization-actions";
@@ -26,12 +27,14 @@ type HeroItem = {
 
 export async function HomeTopSection({
     personalizedResults,
+    personalizedPromise,
     initialTrendingMovies,
     initialUpcomingMovies,
     initialTrendingTV,
     initialPopularMovies,
 }: {
     personalizedResults?: PersonalizedResult[];
+    personalizedPromise?: Promise<{ results?: PersonalizedResult[] } | null>;
     initialTrendingMovies?: any;
     initialUpcomingMovies?: any;
     initialTrendingTV?: any;
@@ -39,12 +42,11 @@ export async function HomeTopSection({
 }) {
     const session = await auth();
 
-    const [trendingMovies, upcomingMovies, trendingTV, popularMovies, upcomingEpisodes] = await Promise.all([
+    const [trendingMovies, upcomingMovies, trendingTV, popularMovies] = await Promise.all([
         initialTrendingMovies ? Promise.resolve(initialTrendingMovies) : tmdb.getTrendingMovies(),
         initialUpcomingMovies ? Promise.resolve(initialUpcomingMovies) : tmdb.getUpcomingMovies(),
         initialTrendingTV ? Promise.resolve(initialTrendingTV) : tmdb.getTrendingTV(),
         initialPopularMovies ? Promise.resolve(initialPopularMovies) : tmdb.getPopular("movie"),
-        getWatchedShowsNextEpisodes(),
     ]);
 
     const trendingMovie = trendingMovies?.results?.[0];
@@ -99,6 +101,9 @@ export async function HomeTopSection({
 
     const items = [...personalizedItems, ...trendingItems].slice(0, 6);
 
+
+    async function Upcoming() {
+        const upcomingEpisodes = session ? await getWatchedShowsNextEpisodes() : [];
     const validUpcomingEpisodes = upcomingEpisodes.filter(ep => {
         if (!ep.nextEpisodeDate) return false;
         const date = new Date(ep.nextEpisodeDate);
@@ -107,11 +112,7 @@ export async function HomeTopSection({
         const startOfTarget = new Date(date.getFullYear(), date.getMonth(), date.getDate());
         return Math.round((startOfTarget.getTime() - startOfToday.getTime()) / (1000 * 60 * 60 * 24)) >= 0;
     });
-
-    return (
-        <section className="w-full grid grid-cols-1 lg:grid-cols-12 gap-3 md:gap-4 items-stretch lg:h-[600px]">
-            <div className="lg:col-span-7 xl:col-span-8 flex flex-col gap-3 md:gap-4">
-                <div className="w-full">
+        return (<>
                     {validUpcomingEpisodes.length > 0 ? (
                         <div className="relative z-20 backdrop-blur-sm bg-gradient-to-br from-[#0f1a2b]/88 via-[#0f1a2b]/70 to-[#0b1220]/78 rounded-[1.75rem] md:rounded-[2.5rem] p-2.5 md:p-3 border border-white/10 shadow-lg">
                             <UpcomingEpisodesCarousel episodes={validUpcomingEpisodes} />
@@ -149,10 +150,30 @@ export async function HomeTopSection({
                             </div>
                         </div>
                     ) : null}
+        </>);
+    }
+    async function PersonalizedHero() {
+        const personalized = await personalizedPromise;
+        const extra: HeroItem[] = (personalized?.results || []).slice(0, 3).map(item => ({
+            id: Number(item.id), title: String(item.title || item.name || ""),
+            overview: String(item.overview || ""), backdrop_path: item.backdrop_path || null,
+            vote_average: Number(item.vote_average || 0), media_type: item.mediaType || "movie",
+            category: "personalized" as const
+        })).filter(item => item.backdrop_path);
+        return <HeroSlider items={[...extra, ...items].slice(0, 6)} friendPopularIds={[]} />;
+    }
+
+    return (
+        <section className="w-full grid grid-cols-1 lg:grid-cols-12 gap-3 md:gap-4 items-stretch lg:h-[600px]">
+            <div className="lg:col-span-7 xl:col-span-8 flex flex-col gap-3 md:gap-4">
+                <div className="w-full">
+                    <Suspense fallback={session ? <div className="h-24 rounded-3xl bg-white/5 motion-safe:animate-pulse" /> : null}>
+                        <Upcoming />
+                    </Suspense>
                 </div>
 
                 <div className="w-full flex-1 min-h-[320px] max-[380px]:min-h-[300px] sm:min-h-[380px] lg:min-h-0">
-                    <HeroSlider items={items} friendPopularIds={[]} />
+                    <Suspense fallback={<HeroSlider items={items} friendPopularIds={[]} />}><PersonalizedHero /></Suspense>
                 </div>
             </div>
 
@@ -179,7 +200,7 @@ export async function HomeTopSection({
                     </div>
 
                     <div className="flex-1 overflow-y-auto custom-scrollbar relative p-3">
-                        <FriendsActivity compact maxItems={6} />
+                        <Suspense fallback={<div className="h-48 bg-white/5 motion-safe:animate-pulse rounded-xl" />}><FriendsActivity compact maxItems={6} /></Suspense>
                     </div>
                 </div>
             </div>

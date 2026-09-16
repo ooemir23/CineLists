@@ -1,12 +1,14 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { Lock, Eye, Check, Loader2, Camera, Activity, BarChart3, Trash2, AlertTriangle, History, CheckCircle2, Heart, Monitor, Search } from "lucide-react";
+import { Lock, Eye, Check, Loader2, Camera, Activity, BarChart3, Trash2, AlertTriangle, History, CheckCircle2, Heart, Monitor, Search, Globe } from "lucide-react";
 // framer-motion removed — tab transitions replaced with CSS animate-in utilities
 import { cn } from "@/lib/utils";
 import { updateProfile, updatePrivacySettings, deleteAccount, suspendAccount, checkUsernameAvailability, updateUserPreferences } from "@/lib/profile-actions";
 import Image from "next/image";
 import { handleSignOut } from "@/lib/auth-actions";
+import { useTranslation } from "@/lib/i18n/i18n-context";
+import { SUPPORTED_LOCALES } from "@/lib/i18n/types";
 
 type UserData = {
     id: string;
@@ -30,6 +32,7 @@ type SettingsContentProps = {
 };
 
 export function SettingsContent({ user, activeTab }: SettingsContentProps) {
+    const { t, locale, setLocale } = useTranslation();
     const [isPending, startTransition] = useTransition();
 
     // Form States
@@ -226,6 +229,43 @@ export function SettingsContent({ user, activeTab }: SettingsContentProps) {
                                                     placeholder="Kendinden bahset..."
                                                 />
                                             </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Language Selection */}
+                                    <div className="pt-6 border-t border-white/5 space-y-3">
+                                        <div>
+                                            <label className="text-sm font-black text-white flex items-center gap-2">
+                                                <Globe size={16} className="text-amber-400" />
+                                                {t("settings.language", "Uygulama Dili")}
+                                            </label>
+                                            <p className="text-xs text-neutral-500 font-medium">
+                                                {t("settings.languageDescription", "Arayüzün görüntüleneceği dili seçin")}
+                                            </p>
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-3 max-w-md">
+                                            {SUPPORTED_LOCALES.map((l) => {
+                                                const isSelected = locale === l.code;
+                                                return (
+                                                    <button
+                                                        key={l.code}
+                                                        type="button"
+                                                        onClick={() => setLocale(l.code)}
+                                                        className={cn(
+                                                            "flex items-center justify-between p-4 rounded-2xl border transition-all text-left",
+                                                            isSelected
+                                                                ? "bg-amber-400/10 border-amber-400 text-white font-bold"
+                                                                : "bg-white/5 border-white/5 text-neutral-400 hover:border-white/10 hover:text-white"
+                                                        )}
+                                                    >
+                                                        <div className="flex items-center gap-2.5">
+                                                            <span className="text-lg">{l.flag}</span>
+                                                            <span className="text-sm">{l.label}</span>
+                                                        </div>
+                                                        {isSelected && <CheckCircle2 size={16} className="text-amber-400" />}
+                                                    </button>
+                                                );
+                                            })}
                                         </div>
                                     </div>
 

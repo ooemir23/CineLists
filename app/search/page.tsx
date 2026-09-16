@@ -15,6 +15,8 @@ type SearchPageProps = {
     rating?: string;
     provider?: string;
     genre?: string;
+    discoveryPeriod?: string;
+    discoveryType?: string;
   }>;
 };
 
@@ -85,40 +87,12 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
     }
   }
 
-  // Pre-fetch trending data if not filtering
-  let trendingData: any = {};
-  if (!isFiltering) {
-    const [
-      trendingDayMovie,
-      trendingDayTV,
-      trendingWeekMovie,
-      trendingWeekTV,
-      popularMovie,
-      popularTV
-    ] = await Promise.all([
-      tmdb.getTrending("movie", "day"),
-      tmdb.getTrending("tv", "day"),
-      tmdb.getTrending("movie", "week"),
-      tmdb.getTrending("tv", "week"),
-      tmdb.getPopular("movie"),
-      tmdb.getPopular("tv")
-    ]);
-
-    trendingData = {
-      day: {
-        movie: trendingDayMovie.results.slice(0, 15),
-        tv: trendingDayTV.results.slice(0, 15)
-      },
-      week: {
-        movie: trendingWeekMovie.results.slice(0, 15),
-        tv: trendingWeekTV.results.slice(0, 15)
-      },
-      month: {
-        movie: popularMovie.results.slice(0, 15),
-        tv: popularTV.results.slice(0, 15)
-      }
-    };
-  }
+  const period = params.discoveryPeriod === "week" || params.discoveryPeriod === "month"
+    ? params.discoveryPeriod : "day";
+  const discoveryType = params.discoveryType === "tv" ? "tv" : "movie";
+  const trendingData = !isFiltering
+    ? await (period === "month" ? tmdb.getPopular(discoveryType) : tmdb.getTrending(discoveryType, period))
+    : null;
 
   // Common metadata pre-fetching
   const people = results.filter((item: any) => (item.media_type || type) === "person");
@@ -141,14 +115,9 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
 
       <div className="max-w-7xl mx-auto px-3.5 sm:px-6">
         {!isFiltering ? (
-          <DiscoveryEngine
-            dayMovie={<MediaRow title="" items={trendingData.day.movie} type="movie" />}
-            dayTV={<MediaRow title="" items={trendingData.day.tv} type="tv" />}
-            weekMovie={<MediaRow title="" items={trendingData.week.movie} type="movie" />}
-            weekTV={<MediaRow title="" items={trendingData.week.tv} type="tv" />}
-            monthMovie={<MediaRow title="" items={trendingData.month.movie} type="movie" />}
-            monthTV={<MediaRow title="" items={trendingData.month.tv} type="tv" />}
-          />
+          <DiscoveryEngine period={period} type={discoveryType}>
+            <MediaRow title="" items={(trendingData?.results || []).slice(0, 15)} type={discoveryType} />
+          </DiscoveryEngine>
         ) : results.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-32 text-center">
             <div className="p-8 bg-white/5 rounded-full mb-6 border border-white/10">

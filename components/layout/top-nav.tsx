@@ -18,6 +18,8 @@ import {
   Users,
   Eye,
 } from "lucide-react";import { NotificationBell } from "./notification-bell";
+import { LanguageSelector } from "./language-selector";
+import { useTranslation } from "@/lib/i18n/i18n-context";
 import { handleSignOut } from "@/lib/auth-actions";
 import {
   libraryNavItems,
@@ -37,6 +39,7 @@ export function TopNav({ user, isAdmin = false }: TopNavProps) {
   const pathname = usePathname();
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
+  const { t, locale } = useTranslation();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -113,7 +116,7 @@ export function TopNav({ user, isAdmin = false }: TopNavProps) {
                 <div className={`p-1.5 rounded-xl transition-colors ${activeView === 'watched' ? 'bg-amber-400/10' : 'group-hover:bg-white/5'}`}>
                   <Check size={20} />
                 </div>
-                <span className="text-[9px] mt-0.5 font-bold uppercase tracking-tight whitespace-nowrap">İzlenenler</span>
+                <span className="text-[9px] mt-0.5 font-bold uppercase tracking-tight whitespace-nowrap">{t("nav.watched", "İzlenenler")}</span>
               </Link>
 
               {/* İzliyorum */}
@@ -124,7 +127,7 @@ export function TopNav({ user, isAdmin = false }: TopNavProps) {
                 <div className={`p-1.5 rounded-xl transition-colors ${activeView === 'watching' ? 'bg-sky-400/10' : 'group-hover:bg-white/5'}`}>
                   <Eye size={20} />
                 </div>
-                <span className="text-[9px] mt-0.5 font-bold uppercase tracking-tight whitespace-nowrap">İzliyorum</span>
+                <span className="text-[9px] mt-0.5 font-bold uppercase tracking-tight whitespace-nowrap">{t("nav.watching", "İzliyorum")}</span>
               </Link>
 
               {/* Takip Ettiklerim */}
@@ -135,7 +138,7 @@ export function TopNav({ user, isAdmin = false }: TopNavProps) {
                 <div className={`p-1.5 rounded-xl transition-colors ${activeView === 'watchlist' ? 'bg-amber-400/10' : 'group-hover:bg-white/5'}`}>
                   <Bookmark size={20} />
                 </div>
-                <span className="text-[9px] mt-0.5 font-bold uppercase tracking-tight whitespace-nowrap">Takip Ettiklerim</span>
+                <span className="text-[9px] mt-0.5 font-bold uppercase tracking-tight whitespace-nowrap">{t("nav.watchlist", "Takip Ettiklerim")}</span>
               </Link>
             </div>
 
@@ -173,7 +176,7 @@ export function TopNav({ user, isAdmin = false }: TopNavProps) {
                     <path id="curve-path" d="M 20,15 Q 80,55 140,15" fill="transparent" />
                     <text className="text-[9px] font-black fill-amber-400 tracking-[0.1em] uppercase drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]">
                       <textPath href="#curve-path" startOffset="50%" textAnchor="middle">
-                        Ara • Keşfet • İzle
+                        {locale === "en" ? "Search • Explore • Watch" : "Ara • Keşfet • İzle"}
                       </textPath>
                     </text>
                   </svg>
@@ -191,7 +194,7 @@ export function TopNav({ user, isAdmin = false }: TopNavProps) {
                 <div className={`p-1.5 rounded-xl transition-colors ${activeView === 'feed' ? 'bg-amber-400/10' : 'group-hover:bg-white/5'}`}>
                   <Compass size={20} />
                 </div>
-                <span className="text-[9px] mt-0.5 font-bold uppercase tracking-tight whitespace-nowrap">Sosyal Akış</span>
+                <span className="text-[9px] mt-0.5 font-bold uppercase tracking-tight whitespace-nowrap">{t("nav.feed", "Sosyal Akış")}</span>
               </Link>
 
               {/* İstatistikler */}
@@ -202,7 +205,7 @@ export function TopNav({ user, isAdmin = false }: TopNavProps) {
                 <div className={`p-1.5 rounded-xl transition-colors ${activeView === 'stats' ? 'bg-amber-400/10' : 'group-hover:bg-white/5'}`}>
                   <BarChart3 size={20} />
                 </div>
-                <span className="text-[9px] mt-0.5 font-bold uppercase tracking-tight whitespace-nowrap">İstatistik</span>
+                <span className="text-[9px] mt-0.5 font-bold uppercase tracking-tight whitespace-nowrap">{t("nav.stats", "İstatistik")}</span>
               </Link>
 
               {/* Topluluk */}
@@ -213,7 +216,7 @@ export function TopNav({ user, isAdmin = false }: TopNavProps) {
                 <div className={`p-1.5 rounded-xl transition-colors ${activeView === 'community' ? 'bg-amber-400/10' : 'group-hover:bg-white/5'}`}>
                   <Users size={20} />
                 </div>
-                <span className="text-[9px] mt-0.5 font-bold uppercase tracking-tight whitespace-nowrap">Topluluk</span>
+                <span className="text-[9px] mt-0.5 font-bold uppercase tracking-tight whitespace-nowrap">{t("nav.community", "Topluluk")}</span>
               </Link>
 
               {desktopLibraryItems.map((item) => (
@@ -225,7 +228,7 @@ export function TopNav({ user, isAdmin = false }: TopNavProps) {
                   <div className={`p-1.5 rounded-xl transition-colors ${activeView === item.key ? 'bg-amber-400/10' : 'group-hover:bg-white/5'}`}>
                     <item.icon size={20} />
                   </div>
-                  <span className="text-[9px] mt-0.5 font-bold uppercase tracking-tight whitespace-nowrap">{item.label}</span>
+                  <span className="text-[9px] mt-0.5 font-bold uppercase tracking-tight whitespace-nowrap">{t(item.translationKey || "", item.label)}</span>
                 </Link>
               ))}
             </div>
@@ -233,6 +236,7 @@ export function TopNav({ user, isAdmin = false }: TopNavProps) {
 
           {/* Right Section - Profile and Utilities */}
           <div className="flex-1 flex justify-end items-center gap-2">
+            <LanguageSelector />
             <NotificationBell />
             <Link href="/messages" className="p-2.5 text-slate-400 hover:text-amber-400 hover:bg-white/5 rounded-xl transition-all">
               <MessageCircle size={22} />
@@ -264,10 +268,10 @@ export function TopNav({ user, isAdmin = false }: TopNavProps) {
                 </div>
                 <div className="hidden lg:flex flex-col items-start leading-none gap-0.5 text-left">
                   <span className="text-[11px] font-black uppercase tracking-tight text-white">
-                    {user?.name ? user.name.split(' ')[0] : "Giriş Yap"}
+                    {user?.name ? user.name.split(' ')[0] : t("nav.login", "Giriş Yap")}
                   </span>
                   <span className="text-[9px] font-bold text-slate-500">
-                    {user?.name ? "Hesabım" : "veya Kayıt Ol"}
+                    {user?.name ? t("nav.account", "Hesabım") : t("auth.signUp", "veya Kayıt Ol")}
                   </span>
                 </div>
               </button>
@@ -319,10 +323,10 @@ export function TopNav({ user, isAdmin = false }: TopNavProps) {
                 {user ? (
                   <>
                     <div className="px-5 py-4 border-b border-white/5 mb-2 bg-white/5">
-                      <p className="text-[10px] text-amber-400 font-black uppercase tracking-[0.2em] mb-1">Hesap</p>
+                      <p className="text-[10px] text-amber-400 font-black uppercase tracking-[0.2em] mb-1">{t("nav.account", "Hesap")}</p>
                       <p className="text-sm text-white font-black truncate">{user?.name || "Kullanıcı"}</p>
                     </div>
-                    {isAdmin && <Link href="/admin" onClick={() => setProfileMenuOpen(false)} className="flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-semibold text-amber-400 hover:bg-amber-400/10"><BarChart3 size={18} />Yönetim Merkezi</Link>}
+                    {isAdmin && <Link href="/admin" onClick={() => setProfileMenuOpen(false)} className="flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-semibold text-amber-400 hover:bg-amber-400/10"><BarChart3 size={18} />{t("nav.admin", "Yönetim Merkezi")}</Link>}
                     {profileNavItems.map((item) => (
                       <Link
                         key={item.key}
@@ -333,7 +337,7 @@ export function TopNav({ user, isAdmin = false }: TopNavProps) {
                         <div className="w-9 h-9 rounded-xl bg-white/5 flex items-center justify-center group-hover:bg-amber-400/20 transition-colors">
                           <item.icon size={20} className="text-amber-400" />
                         </div>
-                        <span className="font-bold">{item.label}</span>
+                        <span className="font-bold">{t(item.translationKey || "", item.label)}</span>
                       </Link>
                     ))}
                     <div className="h-[1px] bg-white/5 my-2 mx-3" />
@@ -342,15 +346,15 @@ export function TopNav({ user, isAdmin = false }: TopNavProps) {
                         <div className="w-9 h-9 rounded-xl bg-rose-500/5 flex items-center justify-center group-hover:bg-rose-500/20 transition-colors">
                           <LogOut size={20} />
                         </div>
-                        <span className="font-bold">Oturumu Kapat</span>
+                        <span className="font-bold">{t("nav.logout", "Oturumu Kapat")}</span>
                       </button>
                     </form>
                   </>
                 ) : (
                   <>
                     <div className="px-5 py-4 border-b border-white/5 mb-2 bg-white/5">
-                      <p className="text-[10px] text-amber-400 font-black uppercase tracking-[0.2em] mb-1">Ziyaretçi</p>
-                      <p className="text-sm text-white font-black truncate">Giriş Yapılmadı</p>
+                      <p className="text-[10px] text-amber-400 font-black uppercase tracking-[0.2em] mb-1">{t("nav.guest", "Ziyaretçi")}</p>
+                      <p className="text-sm text-white font-black truncate">{t("nav.notLoggedIn", "Giriş Yapılmadı")}</p>
                     </div>
                     {guestNavItems.map((item) => (
                       <Link
@@ -362,7 +366,7 @@ export function TopNav({ user, isAdmin = false }: TopNavProps) {
                         <div className="w-9 h-9 rounded-xl bg-white/5 flex items-center justify-center group-hover:bg-amber-400/20 transition-colors">
                           <item.icon size={20} className="text-amber-400" />
                         </div>
-                        <span className={item.key === "register" ? "font-black" : "font-bold"}>{item.label}</span>
+                        <span className={item.key === "register" ? "font-black" : "font-bold"}>{t(item.translationKey || "", item.label)}</span>
                       </Link>
                     ))}
                   </>

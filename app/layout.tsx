@@ -77,33 +77,40 @@ export const metadata: Metadata = {
 };
 
 import { Toaster } from "sonner";
+import { getServerLocale } from "@/lib/i18n/server";
+import { I18nProvider } from "@/lib/i18n/i18n-context";
 
 export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const session = await auth();
+  const [session, locale] = await Promise.all([
+    auth(),
+    getServerLocale(),
+  ]);
 
   return (
     <html
-      lang="tr"
+      lang={locale}
       className={cn("dark", hanken.variable, bricolage.variable, jetbrainsMono.variable)}
       suppressHydrationWarning
     >
       <body className={cn("font-hanken bg-background text-foreground overflow-x-hidden")} suppressHydrationWarning>
-        <div className="flex flex-col min-h-screen max-w-[1920px] mx-auto shadow-2xl shadow-black/50 mobile-app-shell">
-          <TopNav user={session?.user} isAdmin={isAdminId(session?.user?.id)} />
-          {process.env.ANALYTICS_ENABLED === "true" && <Pageview />}
-          <MobileHeader />
-          <main className="flex-1 pt-[calc(3.5rem+env(safe-area-inset-top))] sm:pt-0 pb-28 md:pb-0 relative z-0">
-            <ErrorBoundary>
-              {children}
-            </ErrorBoundary>
-          </main>
-          <MobileDock user={session?.user} isAdmin={isAdminId(session?.user?.id)} />
-          <Toaster theme="dark" position="bottom-right" richColors />
-        </div>
+        <I18nProvider initialLocale={locale}>
+          <div className="flex flex-col min-h-screen max-w-[1920px] mx-auto shadow-2xl shadow-black/50 mobile-app-shell">
+            <TopNav user={session?.user} isAdmin={isAdminId(session?.user?.id)} />
+            {process.env.ANALYTICS_ENABLED === "true" && <Pageview />}
+            <MobileHeader />
+            <main className="flex-1 pt-[calc(3.5rem+env(safe-area-inset-top))] sm:pt-0 pb-28 md:pb-0 relative z-0">
+              <ErrorBoundary>
+                {children}
+              </ErrorBoundary>
+            </main>
+            <MobileDock user={session?.user} isAdmin={isAdminId(session?.user?.id)} />
+            <Toaster theme="dark" position="bottom-right" richColors />
+          </div>
+        </I18nProvider>
       </body>
     </html>
   );

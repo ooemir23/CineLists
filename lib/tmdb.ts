@@ -100,11 +100,15 @@ export const tmdb = {
 
         const url = new URL(`${TMDB_BASE_URL}${endpoint}`);
         url.searchParams.append("api_key", apiKey);
-        url.searchParams.append("language", "tr-TR");
+
+        const lang = params?.language || "tr-TR";
+        url.searchParams.set("language", lang);
 
         if (params) {
             Object.entries(params).forEach(([key, value]) => {
-                url.searchParams.append(key, value);
+                if (key !== "language") {
+                    url.searchParams.append(key, value);
+                }
             });
         }
 

@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { Compass, Home, List, LogOut, Search, User, ShieldCheck } from "lucide-react";
 import { handleSignOut } from "@/lib/auth-actions";
 import { cn } from "@/lib/utils";
+import { useTranslation } from "@/lib/i18n/i18n-context";
 import {
   guestNavItems,
   libraryNavItems,
@@ -24,6 +25,7 @@ export function MobileDock({ user, isAdmin = false }: MobileDockProps) {
   const pathname = usePathname();
   const [menuOpen, setMenuOpen] = React.useState(false);
   const [profileMenuOpen, setProfileMenuOpen] = React.useState(false);
+  const { t } = useTranslation();
 
   const getActiveView = () => {
     if (pathname.startsWith("/messages")) return "messages";
@@ -60,19 +62,18 @@ export function MobileDock({ user, isAdmin = false }: MobileDockProps) {
               setMenuOpen((value) => !value);
               setProfileMenuOpen(false);
             }}
-            aria-label="Ekranım"
+            aria-label="Listeler"
           >
             <List size={20} strokeWidth={2.5} />
-            <span className="font-hanken text-[9px] font-bold uppercase tracking-wide">Ekranım</span>
+            <span className="font-hanken text-[9px] font-bold uppercase tracking-wide">{t("nav.watchlist", "Listeler")}</span>
           </button>
 
           {menuOpen && (
             <div className="absolute bottom-[calc(100%+0.75rem)] left-0 z-50 flex w-64 flex-col overflow-hidden rounded-[1.75rem] border border-amber-400/20 bg-[#0b1220]/95 py-3 shadow-[0_25px_60px_rgba(0,0,0,0.95)] backdrop-blur-3xl animate-in slide-in-from-bottom-4 zoom-in-95 duration-200 ring-1 ring-white/10">
               <div className="px-4 py-2 mb-1 flex items-center justify-between border-b border-white/5">
                 <span className="font-hanken text-[10px] font-black text-amber-400 uppercase tracking-widest">
-                  Kütüphanem
+                  {t("nav.watchlist", "Listeler")}
                 </span>
-                <span className="text-[10px] text-neutral-500 font-bold">Listeler</span>
               </div>
               {libraryNavItems.map((item) => (
                 <Link
@@ -84,7 +85,7 @@ export function MobileDock({ user, isAdmin = false }: MobileDockProps) {
                   <div className={cn("flex h-8 w-8 items-center justify-center rounded-xl transition-transform active:scale-95", item.iconBgClass, item.iconTextClass)}>
                     <item.icon size={18} strokeWidth={2.5} />
                   </div>
-                  <span className="font-bold tracking-tight">{item.label}</span>
+                  <span className="font-bold tracking-tight">{t(item.translationKey || "", item.label)}</span>
                 </Link>
               ))}
             </div>
@@ -99,7 +100,7 @@ export function MobileDock({ user, isAdmin = false }: MobileDockProps) {
             onClick={closeMenus}
           >
             <Home size={20} strokeWidth={activeView === "home" ? 2.5 : 2} />
-            <span className="font-hanken text-[9px] font-bold uppercase tracking-wide">Keşfet</span>
+            <span className="font-hanken text-[9px] font-bold uppercase tracking-wide">{t("nav.explore", "Keşfet")}</span>
           </Link>
 
           <div className="relative flex h-11 w-11 items-center justify-center">
@@ -107,7 +108,7 @@ export function MobileDock({ user, isAdmin = false }: MobileDockProps) {
               href="/search"
               className="absolute -top-5 z-[210] flex h-14 w-14 items-center justify-center rounded-[1.35rem] border-[5px] border-[#020617] bg-primary text-slate-950 shadow-[0_12px_32px_rgba(244,193,78,0.34)] transition-all hover:scale-105 active:scale-90"
               onClick={closeMenus}
-              aria-label="Ara"
+              aria-label={t("common.search", "Ara")}
             >
               <Search size={24} strokeWidth={3} />
             </Link>
@@ -122,7 +123,7 @@ export function MobileDock({ user, isAdmin = false }: MobileDockProps) {
             onClick={closeMenus}
           >
             <Compass size={20} strokeWidth={activeView === "feed" ? 2.5 : 2} />
-            <span className="font-hanken text-center text-[9px] font-bold uppercase tracking-wide">Akış</span>
+            <span className="font-hanken text-center text-[9px] font-bold uppercase tracking-wide">{t("nav.feed", "Akış")}</span>
           </Link>
 
           <button
@@ -134,7 +135,7 @@ export function MobileDock({ user, isAdmin = false }: MobileDockProps) {
               setProfileMenuOpen((value) => !value);
               setMenuOpen(false);
             }}
-            aria-label="Profilim"
+            aria-label={t("nav.profile", "Profil")}
           >
             {user?.image ? (
               <div
@@ -148,7 +149,7 @@ export function MobileDock({ user, isAdmin = false }: MobileDockProps) {
             ) : (
               <User size={20} strokeWidth={profileMenuOpen ? 2.5 : 2} />
             )}
-            <span className="font-hanken text-[9px] font-bold uppercase tracking-wide">Profil</span>
+            <span className="font-hanken text-[9px] font-bold uppercase tracking-wide">{t("nav.profile", "Profil")}</span>
           </button>
 
           {profileMenuOpen && (
@@ -157,11 +158,11 @@ export function MobileDock({ user, isAdmin = false }: MobileDockProps) {
                 <>
                   <div className="px-4 py-2 mb-1 flex items-center justify-between border-b border-white/5">
                     <span className="font-hanken text-[10px] font-black text-amber-400 uppercase tracking-widest">
-                      Hesabım
+                      {t("nav.account", "Hesabım")}
                     </span>
                     <span className="text-[10px] text-neutral-400 font-bold truncate max-w-[100px]">{user.name || "Kullanıcı"}</span>
                   </div>
-                  {isAdmin && <Link href="/admin" onClick={closeMenus} className="flex items-center gap-3 px-4 py-2.5 text-sm font-bold text-amber-400"><ShieldCheck size={18} />Yönetim Merkezi</Link>}
+                  {isAdmin && <Link href="/admin" onClick={closeMenus} className="flex items-center gap-3 px-4 py-2.5 text-sm font-bold text-amber-400"><ShieldCheck size={18} />{t("nav.admin", "Yönetim Merkezi")}</Link>}
                   {profileNavItems.map((item) => (
                     <Link
                       key={item.key}
@@ -172,7 +173,7 @@ export function MobileDock({ user, isAdmin = false }: MobileDockProps) {
                       <div className={cn("flex h-8 w-8 items-center justify-center rounded-xl", item.iconBgClass, item.iconTextClass)}>
                         <item.icon size={18} strokeWidth={2.5} />
                       </div>
-                      <span className="font-bold tracking-tight">{item.label}</span>
+                      <span className="font-bold tracking-tight">{t(item.translationKey || "", item.label)}</span>
                     </Link>
                   ))}
                   <div className="mx-4 my-2 h-px bg-white/5" />
@@ -184,7 +185,7 @@ export function MobileDock({ user, isAdmin = false }: MobileDockProps) {
                       <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-rose-500/10 text-rose-400">
                         <LogOut size={18} strokeWidth={2.5} />
                       </div>
-                      <span className="font-bold uppercase tracking-wider text-xs">Çıkış Yap</span>
+                      <span className="font-bold uppercase tracking-wider text-xs">{t("nav.logout", "Çıkış Yap")}</span>
                     </button>
                   </form>
                 </>
@@ -203,7 +204,7 @@ export function MobileDock({ user, isAdmin = false }: MobileDockProps) {
                       <item.icon size={18} strokeWidth={2.5} />
                     </div>
                     <span className={item.key === "register" ? "font-bold uppercase tracking-wide" : "font-bold"}>
-                      {item.label}
+                      {t(item.translationKey || "", item.label)}
                     </span>
                   </Link>
                 ))

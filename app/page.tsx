@@ -1,3 +1,5 @@
+import { Suspense } from "react";
+import { auth } from "@/auth";
 import { tmdb } from "@/lib/tmdb";
 import { MediaRow } from "@/components/media/media-row";
 import { PersonalizedRecommendations } from "@/components/home/personalized-recommendations";
@@ -26,7 +28,18 @@ export default async function Home({ searchParams }: HomeProps) {
   const params = await searchParams;
   const { type = "", year, rating, provider, genre, q } = params;
   const isFiltering = year || rating || provider || genre || type || q;
-  let trendingMovies, trendingTV, popularMovies, upcomingMovies, filterResults, personalizedMovies: any;
+  const session = await auth();
+  let filterResults: any;
+  const personalizedPromise = !isFiltering && session?.user?.id
+    ? getPersonalizedRecommendations(session.user.id).catch(() => null)
+    : Promise.resolve(null);
+
+  async function Recommendations() {
+    const personalized = await personalizedPromise;
+    const results = personalized?.results?.length ? personalized.results
+      : (await tmdb.getTrendingMovies())?.results?.slice(0, 12) || [];
+    return <PersonalizedRecommendations results={results} reasons={personalized?.reasons || { favorites: [], organic: [], platforms: [] }} />;
+  }
 
   if (isFiltering) {
     // If there's a search query, use search API
@@ -104,32 +117,7 @@ export default async function Home({ searchParams }: HomeProps) {
         };
       }
     }
-  } else {
-    const { auth } = await import("@/auth");
-    const session = await auth();
-
-    let personalizedPromise: Promise<any> = Promise.resolve(null);
-    if (session?.user?.id) {
-      personalizedPromise = getPersonalizedRecommendations(session.user.id);
-    }
-
-    [trendingMovies, trendingTV, popularMovies, upcomingMovies, personalizedMovies] = await Promise.all([
-      tmdb.getTrendingMovies(),
-      tmdb.getTrendingTV(),
-      tmdb.getPopular("movie"),
-      tmdb.getUpcomingMovies(),
-      personalizedPromise
-    ]);
   }
-
-  const personalizedSectionResults = !isFiltering
-    ? (personalizedMovies?.results?.length ? personalizedMovies.results : trendingMovies?.results?.slice(0, 12) || [])
-    : [];
-  const personalizedSectionReasons = personalizedMovies?.reasons || {
-    favorites: [],
-    organic: [],
-    platforms: [],
-  };
 
   return (
     <HomeViewModeProvider>
@@ -138,17 +126,13 @@ export default async function Home({ searchParams }: HomeProps) {
         {/* Primary Top Section: Hero Slider & Friends Activity */}
         <div className="max-w-[1600px] mx-auto px-3 sm:px-6 md:px-8 lg:px-12 pt-3 md:pt-16">
           {!isFiltering && (
-            <HomeTopSection
-              personalizedResults={personalizedMovies?.results}
-              initialTrendingMovies={trendingMovies}
-              initialUpcomingMovies={upcomingMovies}
-              initialTrendingTV={trendingTV}
-              initialPopularMovies={popularMovies}
-            />
+            <Suspense fallback={<div className="h-[380px] lg:h-[600px] rounded-3xl bg-white/5 motion-safe:animate-pulse" role="status" aria-label="İçerikler yükleniyor" />}>
+              <HomeTopSection personalizedPromise={personalizedPromise} />
+            </Suspense>
           )}
         </div>
 
-        {!isFiltering && <HomeDiscoverySection />}
+        {!isFiltering && <HomeDiscoverySection userKey={session?.user?.id || "anonymous"} />}
 
         {/* Main Content Area */}
         <div className="max-w-[1600px] mx-auto px-3 sm:px-6 md:px-8 lg:px-12 mt-3 md:mt-4 space-y-2 md:space-y-3">
@@ -163,12 +147,11 @@ export default async function Home({ searchParams }: HomeProps) {
           )}
         </div>
 
-        {!isFiltering && personalizedSectionResults.length > 0 && (
+        {!isFiltering && (
           <div className="max-w-[1600px] mx-auto px-3 sm:px-6 md:px-8 lg:px-12 mt-4 md:mt-6">
-            <PersonalizedRecommendations
-              results={personalizedSectionResults}
-              reasons={personalizedSectionReasons}
-            />
+            <Suspense fallback={<div className="h-48 rounded-2xl bg-white/5 motion-safe:animate-pulse" />}>
+              <Recommendations />
+            </Suspense>
           </div>
         )}
       </div>
