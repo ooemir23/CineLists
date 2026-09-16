@@ -8,99 +8,135 @@ import { Calendar, Clock, Star, Play, Tv } from "lucide-react";
 type Period = "day" | "week" | "month";
 type MediaType = "movie" | "tv";
 
-export function DiscoveryEngine({ period, type, children }: {
-    period: Period;
-    type: MediaType;
-    children: React.ReactNode;
+export function DiscoveryEngine({
+  period,
+  type,
+  children,
+}: {
+  period: Period;
+  type: MediaType;
+  children: React.ReactNode;
 }) {
-    const router = useRouter();
-    const searchParams = useSearchParams();
-    const [pending, startTransition] = useTransition();
-    function select(nextPeriod: Period, nextType: MediaType) {
-        const params = new URLSearchParams(searchParams.toString());
-        params.set("discoveryPeriod", nextPeriod);
-        params.set("discoveryType", nextType);
-        startTransition(() => router.push(`/search?${params}`, { scroll: false }));
-    }
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const [pending, startTransition] = useTransition();
+  function select(nextPeriod: Period, nextType: MediaType) {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("discoveryPeriod", nextPeriod);
+    params.set("discoveryType", nextType);
+    startTransition(() => router.push(`/search?${params}`, { scroll: false }));
+  }
 
-    const periods = [
-        { id: "day", label: "Günün", icon: Clock, color: "from-amber-400 to-orange-500" },
-        { id: "week", label: "Haftanın", icon: Calendar, color: "from-primary to-indigo-600" },
-        { id: "month", label: "Ayın", icon: Star, color: "from-blue-400 to-blue-600" },
-    ];
+  const periods = [
+    {
+      id: "day",
+      label: "Günün",
+      icon: Clock,
+      color: "from-amber-400 to-orange-500",
+    },
+    {
+      id: "week",
+      label: "Haftanın",
+      icon: Calendar,
+      color: "from-primary to-indigo-600",
+    },
+    {
+      id: "month",
+      label: "Ayın",
+      icon: Star,
+      color: "from-blue-400 to-blue-600",
+    },
+  ];
 
-    const types = [
-        { id: "movie", label: "Filmler", icon: Play },
-        { id: "tv", label: "Diziler", icon: Tv },
-    ];
+  const types = [
+    { id: "movie", label: "Filmler", icon: Play },
+    { id: "tv", label: "Diziler", icon: Tv },
+  ];
 
-    return (
-        <div className="flex flex-col gap-3">
-            {/* Dynamic Header & Switchers (Responsive, No Mobile Scroll) */}
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 py-1">
-                {/* Period Pills */}
-                <div className="grid grid-cols-3 sm:flex items-center gap-1 bg-slate-900/80 p-1 rounded-xl border border-white/10 w-full sm:w-auto">
-                    {periods.map((p) => {
-                        const Icon = p.icon;
-                        const isActive = period === p.id;
-                        return (
-                            <button
-                                key={p.id}
-                                onClick={() => select(p.id as Period, type)}
-                                className={cn(
-                                    "flex items-center justify-center gap-1.5 px-2.5 sm:px-4 py-2 rounded-lg text-xs font-black uppercase tracking-wider transition-all relative overflow-hidden group",
-                                    isActive ? "text-white" : "text-neutral-400 hover:text-white"
-                                )}
-                            >
-                                {isActive && (
-                                    <div
-                                        className={cn("absolute inset-0 bg-gradient-to-r shadow-lg rounded-lg", p.color)}
-                                    />
-                                )}
-                                <Icon className={cn("w-3.5 h-3.5 relative z-10 transition-transform group-hover:scale-110", isActive && "text-white")} />
-                                <span className="relative z-10">{p.label}</span>
-                            </button>
-                        );
-                    })}
-                </div>
-
-                {/* Type Switcher */}
-                <div className="grid grid-cols-2 sm:flex items-center gap-1 bg-slate-900/80 p-1 rounded-xl border border-white/10 w-full sm:w-auto">
-                    {types.map((t) => {
-                        const Icon = t.icon;
-                        const isActive = type === t.id;
-                        return (
-                            <button
-                                key={t.id}
-                                onClick={() => select(period, t.id as MediaType)}
-                                className={cn(
-                                    "flex items-center justify-center gap-1.5 px-3 sm:px-4 py-2 rounded-lg text-xs font-black uppercase tracking-wider transition-all relative overflow-hidden group",
-                                    isActive ? "text-white" : "text-neutral-400 hover:text-white"
-                                )}
-                            >
-                                {isActive && (
-                                    <div
-                                        className="absolute inset-0 bg-white/15 border border-white/10 shadow-lg rounded-lg"
-                                    />
-                                )}
-                                <Icon className={cn("w-3.5 h-3.5 relative z-10 transition-colors", isActive ? "text-amber-400" : "text-neutral-500 group-hover:text-neutral-300")} />
-                                <span className="relative z-10">{t.label}</span>
-                            </button>
-                        );
-                    })}
-                </div>
-            </div>
-
-            {/* Content Area with Animation */}
-            <div className="relative min-h-[300px]" aria-busy={pending}>
-                {pending && <p role="status" className="text-sm text-amber-400 py-2">Yükleniyor…</p>}
-                <div
-                    key={period + type}
-                    className="animate-in fade-in slide-in-from-bottom-2 duration-400"
-                >
-                    {children}
-                </div>
-            </div>
+  return (
+    <div className="flex flex-col gap-3">
+      {/* Dynamic Header & Switchers (Responsive, No Mobile Scroll) */}
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 py-1">
+        {/* Period Pills */}
+        <div className="grid grid-cols-3 sm:flex items-center gap-1 bg-slate-900/80 p-1 rounded-xl border border-white/10 w-full sm:w-auto">
+          {periods.map((p) => {
+            const Icon = p.icon;
+            const isActive = period === p.id;
+            return (
+              <button
+                key={p.id}
+                onClick={() => select(p.id as Period, type)}
+                className={cn(
+                  "flex items-center justify-center gap-1.5 px-2.5 sm:px-4 py-2 rounded-lg text-xs font-black uppercase tracking-wider transition-all relative overflow-hidden group",
+                  isActive ? "text-white" : "text-neutral-400 hover:text-white",
+                )}
+              >
+                {isActive && (
+                  <div
+                    className={cn(
+                      "absolute inset-0 bg-gradient-to-r shadow-lg rounded-lg",
+                      p.color,
+                    )}
+                  />
+                )}
+                <Icon
+                  className={cn(
+                    "w-3.5 h-3.5 relative z-10 transition-transform group-hover:scale-110",
+                    isActive && "text-white",
+                  )}
+                />
+                <span className="relative z-10">{p.label}</span>
+              </button>
+            );
+          })}
         </div>
-    );
+
+        {/* Type Switcher */}
+        <div className="grid grid-cols-2 sm:flex items-center gap-1 bg-slate-900/80 p-1 rounded-xl border border-white/10 w-full sm:w-auto">
+          {types.map((t) => {
+            const Icon = t.icon;
+            const isActive = type === t.id;
+            return (
+              <button
+                key={t.id}
+                onClick={() => select(period, t.id as MediaType)}
+                className={cn(
+                  "flex items-center justify-center gap-1.5 px-3 sm:px-4 py-2 rounded-lg text-xs font-black uppercase tracking-wider transition-all relative overflow-hidden group",
+                  isActive ? "text-white" : "text-neutral-400 hover:text-white",
+                )}
+              >
+                {isActive && (
+                  <div className="absolute inset-0 bg-white/15 border border-white/10 shadow-lg rounded-lg" />
+                )}
+                <Icon
+                  className={cn(
+                    "w-3.5 h-3.5 relative z-10 transition-colors",
+                    isActive
+                      ? "text-amber-400"
+                      : "text-neutral-500 group-hover:text-neutral-300",
+                  )}
+                />
+                <span className="relative z-10">{t.label}</span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Content Area with Animation */}
+      <div className="relative min-h-[300px]" aria-busy={pending}>
+        {pending && (
+          <p role="status" className="text-sm text-amber-400 py-2">
+            Yükleniyor…
+          </p>
+        )}
+        <div
+          key={period + type}
+          className="animate-in fade-in slide-in-from-bottom-2 duration-400"
+        >
+          {children}
+        </div>
+      </div>
+    </div>
+  );
 }

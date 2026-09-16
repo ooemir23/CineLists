@@ -24,21 +24,29 @@ type HomeProps = {
 };
 
 export default async function Home({ searchParams }: HomeProps) {
-
   const params = await searchParams;
   const { type = "", year, rating, provider, genre, q } = params;
   const isFiltering = year || rating || provider || genre || type || q;
   const session = await auth();
   let filterResults: any;
-  const personalizedPromise = !isFiltering && session?.user?.id
-    ? getPersonalizedRecommendations(session.user.id).catch(() => null)
-    : Promise.resolve(null);
+  const personalizedPromise =
+    !isFiltering && session?.user?.id
+      ? getPersonalizedRecommendations(session.user.id).catch(() => null)
+      : Promise.resolve(null);
 
   async function Recommendations() {
     const personalized = await personalizedPromise;
-    const results = personalized?.results?.length ? personalized.results
+    const results = personalized?.results?.length
+      ? personalized.results
       : (await tmdb.getTrendingMovies())?.results?.slice(0, 12) || [];
-    return <PersonalizedRecommendations results={results} reasons={personalized?.reasons || { favorites: [], organic: [], platforms: [] }} />;
+    return (
+      <PersonalizedRecommendations
+        results={results}
+        reasons={
+          personalized?.reasons || { favorites: [], organic: [], platforms: [] }
+        }
+      />
+    );
   }
 
   if (isFiltering) {
@@ -48,7 +56,7 @@ export default async function Home({ searchParams }: HomeProps) {
       // If type is specified, filter by type; otherwise show all
       const allResults = type
         ? (data.results || []).filter((item: any) => item.media_type === type)
-        : (data.results || []);
+        : data.results || [];
 
       filterResults = {
         results: allResults,
@@ -90,18 +98,23 @@ export default async function Home({ searchParams }: HomeProps) {
         // Combine and sort by popularity
         filterResults = {
           results: [
-            ...movieResults.results.map((m: any) => ({ ...m, media_type: "movie" })),
-            ...tvResults.results.map((t: any) => ({ ...t, media_type: "tv" }))
-          ].sort((a, b) =>
-            (b.popularity || 0) - (a.popularity || 0)
+            ...movieResults.results.map((m: any) => ({
+              ...m,
+              media_type: "movie",
+            })),
+            ...tvResults.results.map((t: any) => ({ ...t, media_type: "tv" })),
+          ].sort((a, b) => (b.popularity || 0) - (a.popularity || 0)),
+          total_pages: Math.max(
+            movieResults.total_pages,
+            tvResults.total_pages,
           ),
-          total_pages: Math.max(movieResults.total_pages, tvResults.total_pages),
           total_results: movieResults.total_results + tvResults.total_results,
         };
       } else {
         // Single type search
         if (year) {
-          const yearKey = type === "movie" ? "primary_release_year" : "first_air_date_year";
+          const yearKey =
+            type === "movie" ? "primary_release_year" : "first_air_date_year";
           params[yearKey] = year;
         }
         if (rating) params["vote_average.gte"] = rating;
@@ -113,7 +126,10 @@ export default async function Home({ searchParams }: HomeProps) {
         const data = await tmdb.discover(type as "movie" | "tv", params);
         filterResults = {
           ...data,
-          results: data.results.map((item: any) => ({ ...item, media_type: type }))
+          results: data.results.map((item: any) => ({
+            ...item,
+            media_type: type,
+          })),
         };
       }
     }
@@ -122,22 +138,34 @@ export default async function Home({ searchParams }: HomeProps) {
   return (
     <HomeViewModeProvider>
       <div className="w-full overflow-x-hidden pb-24 md:pb-0 bg-background">
-
         {/* Primary Top Section: Hero Slider & Friends Activity */}
         <div className="max-w-[1600px] mx-auto px-3 sm:px-6 md:px-8 lg:px-12 pt-3 md:pt-16">
           {!isFiltering && (
-            <Suspense fallback={<div className="h-[380px] lg:h-[600px] rounded-3xl bg-white/5 motion-safe:animate-pulse" role="status" aria-label="İçerikler yükleniyor" />}>
+            <Suspense
+              fallback={
+                <div
+                  className="h-[380px] lg:h-[600px] rounded-3xl bg-white/5 motion-safe:animate-pulse"
+                  role="status"
+                  aria-label="İçerikler yükleniyor"
+                />
+              }
+            >
               <HomeTopSection personalizedPromise={personalizedPromise} />
             </Suspense>
           )}
         </div>
 
-        {!isFiltering && <HomeDiscoverySection userKey={session?.user?.id || "anonymous"} />}
+        {!isFiltering && (
+          <HomeDiscoverySection userKey={session?.user?.id || "anonymous"} />
+        )}
 
         {/* Main Content Area */}
         <div className="max-w-[1600px] mx-auto px-3 sm:px-6 md:px-8 lg:px-12 mt-3 md:mt-4 space-y-2 md:space-y-3">
           {isFiltering && (
-            <div id="search-results" className="bg-white/5 rounded-2xl p-4 md:p-5 border border-white/10 scroll-mt-24">
+            <div
+              id="search-results"
+              className="bg-white/5 rounded-2xl p-4 md:p-5 border border-white/10 scroll-mt-24"
+            >
               <MediaRow
                 title={q ? `"${q}" için Arama Sonuçları` : "Arama Sonuçları"}
                 items={(filterResults?.results || []).slice(0, 20)}
@@ -149,7 +177,11 @@ export default async function Home({ searchParams }: HomeProps) {
 
         {!isFiltering && (
           <div className="max-w-[1600px] mx-auto px-3 sm:px-6 md:px-8 lg:px-12 mt-4 md:mt-6">
-            <Suspense fallback={<div className="h-48 rounded-2xl bg-white/5 motion-safe:animate-pulse" />}>
+            <Suspense
+              fallback={
+                <div className="h-48 rounded-2xl bg-white/5 motion-safe:animate-pulse" />
+              }
+            >
               <Recommendations />
             </Suspense>
           </div>

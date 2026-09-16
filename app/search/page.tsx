@@ -1,7 +1,10 @@
 import { tmdb } from "@/lib/tmdb";
 import { Film } from "lucide-react";
 import { MediaFilter } from "@/components/home/media-filter";
-import { getUserRatingsBulk, getCommunityRatingsBulk } from "@/lib/rating-actions";
+import {
+  getUserRatingsBulk,
+  getCommunityRatingsBulk,
+} from "@/lib/rating-actions";
 import { getMediaMetadataBulk } from "@/lib/activity-actions";
 import { SearchResultsClient } from "@/components/search/search-results-client";
 import { MediaRow } from "@/components/media/media-row";
@@ -44,7 +47,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
       const data = await tmdb.searchMulti(query);
       results = type
         ? (data.results || []).filter((item: any) => item.media_type === type)
-        : (data.results || []);
+        : data.results || [];
     } else {
       if (!type) {
         if (year) apiParams["primary_release_year"] = year;
@@ -67,11 +70,12 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
 
         results = [
           ...movieData.results.map((m: any) => ({ ...m, media_type: "movie" })),
-          ...tvData.results.map((t: any) => ({ ...t, media_type: "tv" }))
+          ...tvData.results.map((t: any) => ({ ...t, media_type: "tv" })),
         ].sort((a, b) => (b.popularity || 0) - (a.popularity || 0));
       } else {
         if (year) {
-          const yearKey = type === "movie" ? "primary_release_year" : "first_air_date_year";
+          const yearKey =
+            type === "movie" ? "primary_release_year" : "first_air_date_year";
           apiParams[yearKey] = year;
         }
         if (rating) apiParams["vote_average.gte"] = rating;
@@ -82,29 +86,45 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
         if (genre) apiParams["with_genres"] = genre;
         apiParams["sort_by"] = "popularity.desc";
         const data = await tmdb.discover(type as "movie" | "tv", apiParams);
-        results = (data.results || []).map((item: any) => ({ ...item, media_type: type }));
+        results = (data.results || []).map((item: any) => ({
+          ...item,
+          media_type: type,
+        }));
       }
     }
   }
 
-  const period = params.discoveryPeriod === "week" || params.discoveryPeriod === "month"
-    ? params.discoveryPeriod : "day";
+  const period =
+    params.discoveryPeriod === "week" || params.discoveryPeriod === "month"
+      ? params.discoveryPeriod
+      : "day";
   const discoveryType = params.discoveryType === "tv" ? "tv" : "movie";
   const trendingData = !isFiltering
-    ? await (period === "month" ? tmdb.getPopular(discoveryType) : tmdb.getTrending(discoveryType, period))
+    ? await (period === "month"
+        ? tmdb.getPopular(discoveryType)
+        : tmdb.getTrending(discoveryType, period))
     : null;
 
   // Common metadata pre-fetching
-  const people = results.filter((item: any) => (item.media_type || type) === "person");
-  const mediaItems = results.filter((item: any) => (item.media_type || item.type || type) !== "person");
+  const people = results.filter(
+    (item: any) => (item.media_type || type) === "person",
+  );
+  const mediaItems = results.filter(
+    (item: any) => (item.media_type || item.type || type) !== "person",
+  );
 
   const [userRatingsMap, communityRatingsMap, metadataMap] = await Promise.all([
-    getUserRatingsBulk(mediaItems.map(m => m.id)),
-    getCommunityRatingsBulk(mediaItems.map(m => m.id)),
-    getMediaMetadataBulk(mediaItems.map(m => ({
-      id: m.id,
-      type: (m.media_type === "tv" || m.media_type === "movie") ? m.media_type : (type as "movie" | "tv")
-    })))
+    getUserRatingsBulk(mediaItems.map((m) => m.id)),
+    getCommunityRatingsBulk(mediaItems.map((m) => m.id)),
+    getMediaMetadataBulk(
+      mediaItems.map((m) => ({
+        id: m.id,
+        type:
+          m.media_type === "tv" || m.media_type === "movie"
+            ? m.media_type
+            : (type as "movie" | "tv"),
+      })),
+    ),
   ]);
 
   return (
@@ -116,15 +136,23 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
       <div className="max-w-7xl mx-auto px-3.5 sm:px-6">
         {!isFiltering ? (
           <DiscoveryEngine period={period} type={discoveryType}>
-            <MediaRow title="" items={(trendingData?.results || []).slice(0, 15)} type={discoveryType} />
+            <MediaRow
+              title=""
+              items={(trendingData?.results || []).slice(0, 15)}
+              type={discoveryType}
+            />
           </DiscoveryEngine>
         ) : results.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-32 text-center">
             <div className="p-8 bg-white/5 rounded-full mb-6 border border-white/10">
               <Film className="w-16 h-16 text-neutral-600" />
             </div>
-            <h2 className="text-2xl font-bold text-white mb-3">Sonuç Bulunamadı</h2>
-            <p className="text-neutral-400 max-w-md">Aradığınız kriterlere uygun içerik bulunamadı.</p>
+            <h2 className="text-2xl font-bold text-white mb-3">
+              Sonuç Bulunamadı
+            </h2>
+            <p className="text-neutral-400 max-w-md">
+              Aradığınız kriterlere uygun içerik bulunamadı.
+            </p>
           </div>
         ) : (
           <SearchResultsClient

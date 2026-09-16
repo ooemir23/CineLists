@@ -1,6 +1,6 @@
 "use client";
 
-import Image from "next/image";
+import { TmdbImage as Image } from "@/components/ui/tmdb-image";
 import Link from "next/link";
 import { Star, Send, Globe, X, User, Clock, Tv } from "lucide-react";
 import { cn } from "@/lib/utils";
