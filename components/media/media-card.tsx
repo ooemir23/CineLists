@@ -101,6 +101,32 @@ export function MediaCard({
     } | null>(null);
     const cardRef = useRef<HTMLAnchorElement | null>(null);
 
+    const [providers, setProviders] = useState(watchProviders);
+
+    useEffect(() => {
+        if (watchProviders !== undefined) {
+            setProviders(watchProviders);
+            return;
+        }
+        if (type !== "movie" && type !== "tv") return;
+
+        let isMounted = true;
+        fetch(`/api/tmdb/providers-batch?items=${type}:${id}&country=${countryCode}`)
+            .then((res) => res.json())
+            .then((data) => {
+                if (!isMounted) return;
+                const p = data?.providers?.[`${type}:${id}`];
+                setProviders(p !== undefined ? p : null);
+            })
+            .catch(() => {
+                if (isMounted) setProviders(null);
+            });
+
+        return () => {
+            isMounted = false;
+        };
+    }, [id, type, countryCode, watchProviders]);
+
     const updatePreviewPosition = () => {
         if (!cardRef.current || typeof window === "undefined") return;
 
@@ -208,12 +234,12 @@ export function MediaCard({
                 )}
 
                 {type !== "person" && (
-                    <div className="flex items-end justify-between w-full px-1.5 md:px-2 mb-1 z-30 relative pointer-events-none overflow-visible">
+                    <div className="flex items-end justify-between w-full px-1.5 md:px-2 mb-1 z-30 relative pointer-events-none overflow-visible min-h-[22px]">
                         <div className="flex items-center z-30">
-                            {watchProviders?.flatrate && watchProviders.flatrate.length > 0 ? (
+                            {providers?.flatrate && providers.flatrate.length > 0 ? (
                                 <div className="flex -space-x-1.5 pointer-events-auto">
-                                    {watchProviders.flatrate.slice(0, 3).map((provider) => (
-                                        <div key={provider.provider_id} className="w-5 h-5 md:w-6 md:h-6 rounded-full overflow-hidden border-2 border-[#1e293b] shadow-md relative" title={provider.provider_name}>
+                                    {providers.flatrate.slice(0, 3).map((provider) => (
+                                        <div key={provider.provider_id} className="w-5 h-5 md:w-6 md:h-6 rounded-full overflow-hidden border-2 border-[#1e293b] shadow-md relative bg-slate-900" title={provider.provider_name}>
                                             <img
                                                 src={`https://image.tmdb.org/t/p/w92${provider.logo_path}`}
                                                 alt={provider.provider_name}
@@ -222,7 +248,7 @@ export function MediaCard({
                                         </div>
                                     ))}
                                 </div>
-                            ) : watchProviders === null ? (
+                            ) : providers === null ? (
                                 <div 
                                     className="flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-black/85 border border-white/10 text-neutral-400 shadow-md relative pointer-events-auto backdrop-blur-sm"
                                     title={`${getCountryName(countryCode)}'de yayınlanan herhangi bir dijital platformda bulunmuyor`}
@@ -343,6 +369,23 @@ export function MediaCard({
                                         </span>
                                     </>
                                 )}
+                                {providers?.flatrate && providers.flatrate.length > 0 && (
+                                    <div className="flex items-center -space-x-1 shrink-0 ml-1" title={providers.flatrate.map(p => p.provider_name).join(", ")}>
+                                        {providers.flatrate.slice(0, 2).map((provider) => (
+                                            <div
+                                                key={provider.provider_id}
+                                                className="w-3.5 h-3.5 md:w-4 md:h-4 rounded-full overflow-hidden border border-white/20 shadow-sm relative bg-slate-900"
+                                                title={provider.provider_name}
+                                            >
+                                                <img
+                                                    src={`https://image.tmdb.org/t/p/w92${provider.logo_path}`}
+                                                    alt={provider.provider_name}
+                                                    className="w-full h-full object-cover"
+                                                />
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
                             </div>
 
                             <div className={cn("flex items-center flex-1 justify-end min-w-0", compact ? "gap-0.5" : "gap-1 md:gap-2")}>
@@ -420,9 +463,9 @@ export function MediaCard({
                                         </span>
                                     )}
                                 </div>
-                                {watchProviders?.flatrate && (
+                                {providers?.flatrate && (
                                     <div className="flex gap-1 shrink-0">
-                                        {watchProviders.flatrate.slice(0, 3).map((provider) => (
+                                        {providers.flatrate.slice(0, 3).map((provider) => (
                                             <div key={provider.provider_id} className="w-5 h-5 rounded-md overflow-hidden border border-white/10 shadow-lg">
                                                 <img
                                                     src={`https://image.tmdb.org/t/p/w92${provider.logo_path}`}

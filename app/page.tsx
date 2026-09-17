@@ -14,6 +14,7 @@ import {
 } from "@/components/portal/portal-right-rail";
 import { MediaCard } from "@/components/media/media-card";
 import { getHomeFeedActivities } from "@/lib/feed-actions";
+import { cachedGetWatchProviders } from "@/lib/watch-provider-cache";
 import { Film, Filter, X } from "lucide-react";
 import Link from "next/link";
 
@@ -136,7 +137,23 @@ export default async function Home({ searchParams }: HomeProps) {
       ? "Popüler Diziler"
       : "Filtrelenmiş Sonuçlar";
 
-    const items = filterResults?.results || [];
+    const rawItems = filterResults?.results || [];
+    const items = await Promise.all(
+      rawItems.slice(0, 36).map(async (item: any) => {
+        const itemType = (item.media_type || type || "movie") as "movie" | "tv";
+        try {
+          const providerData = await cachedGetWatchProviders(itemType, item.id.toString());
+          const trProviders = providerData?.results?.TR?.flatrate;
+          return {
+            ...item,
+            media_type: itemType,
+            watch_providers: trProviders?.length ? { flatrate: trProviders.slice(0, 5) } : null,
+          };
+        } catch {
+          return { ...item, media_type: itemType, watch_providers: null };
+        }
+      })
+    );
 
     return (
       <div className="w-full px-3 sm:px-6 py-6 max-w-[1600px] mx-auto space-y-6">
@@ -175,6 +192,7 @@ export default async function Home({ searchParams }: HomeProps) {
                 voteAverage={item.vote_average || 0}
                 type={item.media_type || "movie"}
                 releaseDate={item.release_date || item.first_air_date}
+                watchProviders={item.watch_providers}
               />
             ))}
           </div>
@@ -242,38 +260,84 @@ export default async function Home({ searchParams }: HomeProps) {
     })),
   ].filter((item) => Boolean(item.backdrop_path));
 
-  // 2. News / Media Grid (Left 6 visual cards + Right 8 compact list items)
-  const featuredGridItems: MediaGridItem[] = (
+  // 2. News / Media Grid (Left 6 visual cards + Right 6 compact list items)
+  const rawFeatured = (
     nowPlayingMovies?.results?.length
       ? nowPlayingMovies.results
       : trendingMovies?.results || []
-  )
-    .slice(0, 6)
-    .map((item: any) => ({
-      id: item.id,
-      title: item.title || item.name || "",
-      backdrop_path: item.backdrop_path,
-      poster_path: item.poster_path,
-      vote_average: item.vote_average || 0,
-      release_date: item.release_date,
-      media_type: "movie" as const,
-    }));
+  ).slice(0, 6);
 
-  const compactNewsItems: MediaGridItem[] = (
+  const rawCompact = (
     upcomingMovies?.results?.length
       ? upcomingMovies.results
       : trendingTV?.results || []
-  )
-    .slice(0, 8)
-    .map((item: any) => ({
-      id: item.id,
-      title: item.title || item.name || "",
-      backdrop_path: item.backdrop_path,
-      poster_path: item.poster_path,
-      vote_average: item.vote_average || 0,
-      release_date: item.release_date || item.first_air_date,
-      media_type: (item.title ? "movie" : "tv") as "movie" | "tv",
-    }));
+  ).slice(0, 6);
+
+  const [featuredGridItems, compactNewsItems]: [MediaGridItem[], MediaGridItem[]] = await Promise.all([
+    Promise.all(
+      rawFeatured.map(async (item: any) => {
+        const type = (item.title ? "movie" : "tv") as "movie" | "tv";
+        const providersData = await cachedGetWatchProviders(type, item.id.toString()).catch(() => null);
+        const trData = providersData?.results?.TR;
+        const flatrate = (trData?.flatrate || []).map((p: any) => ({
+          provider_id: p.provider_id,
+          provider_name: p.provider_name,
+          logo_path: p.logo_path,
+        }));
+        const rentBuy = [...(trData?.rent || []), ...(trData?.buy || [])].map((p: any) => ({
+          provider_id: p.provider_id,
+          provider_name: p.provider_name,
+          logo_path: p.logo_path,
+        }));
+
+        const releaseTime = item.release_date ? new Date(item.release_date).getTime() : 0;
+        const now = Date.now();
+        const isTheatrical =
+          type === "movie" &&
+          (nowPlayingMovies?.results?.some((m: any) => m.id === item.id) ||
+            (releaseTime > 0 && Math.abs(now - releaseTime) < 120 * 86400 * 1000));
+
+        return {
+          id: item.id,
+          title: item.title || item.name || "",
+          overview: item.overview || "",
+          backdrop_path: item.backdrop_path,
+          poster_path: item.poster_path,
+          vote_average: item.vote_average || 0,
+          release_date: item.release_date,
+          media_type: type,
+          providers: flatrate,
+          rentBuyProviders: rentBuy.slice(0, 2),
+          inCinemas: flatrate.length === 0 && Boolean(isTheatrical),
+        };
+      })
+    ),
+    Promise.all(
+      rawCompact.map(async (item: any) => {
+        const type = (item.title ? "movie" : "tv") as "movie" | "tv";
+        const providersData = await cachedGetWatchProviders(type, item.id.toString()).catch(() => null);
+        const trData = providersData?.results?.TR;
+        const flatrate = (trData?.flatrate || []).map((p: any) => ({
+          provider_id: p.provider_id,
+          provider_name: p.provider_name,
+          logo_path: p.logo_path,
+        }));
+
+        return {
+          id: item.id,
+          title: item.title || item.name || "",
+          overview: item.overview || "",
+          backdrop_path: item.backdrop_path,
+          poster_path: item.poster_path,
+          vote_average: item.vote_average || 0,
+          release_date: item.release_date || item.first_air_date,
+          media_type: type,
+          providers: flatrate,
+          inCinemas: flatrate.length === 0 && type === "movie",
+        };
+      })
+    ),
+  ]);
 
   // 3. Two-Panels Data
   const popMovies = popularMovies?.results || [];

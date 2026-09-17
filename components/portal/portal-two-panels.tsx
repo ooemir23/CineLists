@@ -57,19 +57,19 @@ export function PortalTwoPanels({
                 />
               ) : null}
               <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/40 to-transparent" />
-              <div className="absolute bottom-0 left-0 right-0 p-3.5">
-                <span className="px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider bg-amber-400 text-slate-950 shadow-sm inline-block mb-1.5">
+              <div className="absolute bottom-0 left-0 right-0 p-4">
+                <span className="px-2.5 py-1 rounded text-[11px] font-black uppercase tracking-wider bg-amber-400 text-slate-950 shadow-sm inline-block mb-2">
                   Öne Çıkan Film
                 </span>
-                <strong className="block text-sm font-bold text-white group-hover:text-amber-400 transition-colors line-clamp-1">
+                <strong className="block text-base sm:text-lg font-black text-white group-hover:text-amber-400 transition-colors line-clamp-1">
                   {movieFeature.title}
                 </strong>
-                <div className="mt-1 flex items-center gap-3 text-[11px] text-neutral-400 font-medium">
+                <div className="mt-1.5 flex items-center gap-3 text-xs sm:text-sm text-neutral-300 font-semibold">
                   {movieFeature.release_date && (
                     <span>{movieFeature.release_date.split("-")[0]}</span>
                   )}
                   {movieFeature.vote_average > 0 && (
-                    <span className="text-amber-400 font-bold flex items-center gap-0.5">
+                    <span className="text-amber-400 font-bold flex items-center gap-1">
                       ★ {movieFeature.vote_average.toFixed(1)}
                     </span>
                   )}
@@ -79,17 +79,17 @@ export function PortalTwoPanels({
           </div>
 
           {/* List items below feature */}
-          <div className="mt-3 divide-y divide-white/5">
+          <div className="mt-3.5 divide-y divide-white/5">
             {movieList.slice(0, 3).map((item) => (
               <Link
                 key={item.id}
                 href={`/movie/${item.id}`}
-                className="group flex items-center justify-between py-2.5 px-2 rounded-lg hover:bg-white/5 transition-colors"
+                className="group flex items-center justify-between py-3 px-2.5 rounded-xl hover:bg-white/5 transition-colors"
               >
-                <strong className="text-xs font-semibold text-neutral-300 group-hover:text-amber-400 transition-colors line-clamp-1 flex-1 pr-2">
+                <strong className="text-sm font-bold text-neutral-200 group-hover:text-amber-400 transition-colors line-clamp-1 flex-1 pr-3">
                   {item.title}
                 </strong>
-                <span className="text-[11px] font-bold text-neutral-400 shrink-0">
+                <span className="text-xs font-bold text-neutral-300 shrink-0">
                   {item.vote_average > 0 ? `★ ${item.vote_average.toFixed(1)}` : ""}
                 </span>
               </Link>
@@ -131,19 +131,19 @@ export function PortalTwoPanels({
                 />
               ) : null}
               <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/40 to-transparent" />
-              <div className="absolute bottom-0 left-0 right-0 p-3.5">
-                <span className="px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider bg-sky-500 text-slate-950 shadow-sm inline-block mb-1.5">
+              <div className="absolute bottom-0 left-0 right-0 p-4">
+                <span className="px-2.5 py-1 rounded text-[11px] font-black uppercase tracking-wider bg-sky-500 text-slate-950 shadow-sm inline-block mb-2">
                   Popüler Dizi
                 </span>
-                <strong className="block text-sm font-bold text-white group-hover:text-sky-400 transition-colors line-clamp-1">
+                <strong className="block text-base sm:text-lg font-black text-white group-hover:text-sky-400 transition-colors line-clamp-1">
                   {tvFeature.title}
                 </strong>
-                <div className="mt-1 flex items-center gap-3 text-[11px] text-neutral-400 font-medium">
+                <div className="mt-1.5 flex items-center gap-3 text-xs sm:text-sm text-neutral-300 font-semibold">
                   {tvFeature.first_air_date && (
                     <span>{tvFeature.first_air_date.split("-")[0]}</span>
                   )}
                   {tvFeature.vote_average > 0 && (
-                    <span className="text-amber-400 font-bold flex items-center gap-0.5">
+                    <span className="text-amber-400 font-bold flex items-center gap-1">
                       ★ {tvFeature.vote_average.toFixed(1)}
                     </span>
                   )}
@@ -153,17 +153,17 @@ export function PortalTwoPanels({
           </div>
 
           {/* List items below feature */}
-          <div className="mt-3 divide-y divide-white/5">
+          <div className="mt-3.5 divide-y divide-white/5">
             {tvList.slice(0, 3).map((item) => (
               <Link
                 key={item.id}
                 href={`/tv/${item.id}`}
-                className="group flex items-center justify-between py-2.5 px-2 rounded-lg hover:bg-white/5 transition-colors"
+                className="group flex items-center justify-between py-3 px-2.5 rounded-xl hover:bg-white/5 transition-colors"
               >
-                <strong className="text-xs font-semibold text-neutral-300 group-hover:text-sky-400 transition-colors line-clamp-1 flex-1 pr-2">
+                <strong className="text-sm font-bold text-neutral-200 group-hover:text-sky-400 transition-colors line-clamp-1 flex-1 pr-3">
                   {item.title}
                 </strong>
-                <span className="text-[11px] font-bold text-neutral-400 shrink-0">
+                <span className="text-xs font-bold text-neutral-300 shrink-0">
                   {item.vote_average > 0 ? `★ ${item.vote_average.toFixed(1)}` : ""}
                 </span>
               </Link>

@@ -132,44 +132,44 @@ export function PortalHomeFeed({ activities = [], user }: PortalHomeFeedProps) {
                   </div>
 
                   {/* Media card content */}
-                  <Link href={mediaUrl} className="flex gap-3 group/media">
-                    <div className="relative w-12 h-16 rounded-lg overflow-hidden bg-slate-800 border border-white/10 shrink-0 shadow">
+                  <Link href={mediaUrl} className="flex gap-3.5 group/media">
+                    <div className="relative w-14 sm:w-16 h-20 sm:h-22 rounded-xl overflow-hidden bg-slate-800 border border-white/10 shrink-0 shadow-md">
                       {posterUrl ? (
                         <Image
                           src={posterUrl}
                           alt={activity.media.title}
                           fill
-                          sizes="48px"
+                          sizes="64px"
                           className="object-cover group-hover/media:scale-105 transition-transform duration-300"
                           unoptimized
                         />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center text-neutral-500 bg-white/5">
                           {mediaType === "tv" ? (
-                            <Tv className="w-4 h-4" />
+                            <Tv className="w-5 h-5" />
                           ) : (
-                            <Film className="w-4 h-4" />
+                            <Film className="w-5 h-5" />
                           )}
                         </div>
                       )}
                     </div>
 
                     <div className="min-w-0 flex-1 flex flex-col justify-center">
-                      <h4 className="text-xs sm:text-sm font-bold text-white group-hover/media:text-amber-400 transition-colors line-clamp-1 leading-tight">
+                      <h4 className="text-sm sm:text-base font-extrabold text-white group-hover/media:text-amber-400 transition-colors line-clamp-1 leading-snug">
                         {activity.media.title}
                       </h4>
 
                       {activity.episode && (
-                        <span className="text-[10px] text-sky-400 font-semibold mt-0.5 truncate">
+                        <span className="text-xs text-sky-400 font-semibold mt-1 truncate">
                           S{activity.episode.seasonNumber} B{activity.episode.episodeNumber}:{" "}
                           {activity.episode.title}
                         </span>
                       )}
 
                       {activity.rating && (
-                        <div className="mt-1 flex items-center gap-1">
-                          <span className="inline-flex items-center gap-0.5 text-[11px] font-black text-amber-400 bg-amber-400/10 px-1.5 py-0.5 rounded border border-amber-400/20">
-                            <Star className="w-2.5 h-2.5 fill-amber-400 text-amber-400" />
+                        <div className="mt-1.5 flex items-center gap-1">
+                          <span className="inline-flex items-center gap-1 text-xs font-black text-amber-400 bg-amber-400/10 px-2 py-0.5 rounded-md border border-amber-400/20">
+                            <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
                             {activity.rating.toFixed(1)}
                           </span>
                         </div>
@@ -179,7 +179,7 @@ export function PortalHomeFeed({ activities = [], user }: PortalHomeFeedProps) {
 
                   {/* Review excerpt if available */}
                   {hasReview && (
-                    <div className="mt-2.5 p-2 rounded-lg bg-white/[0.03] border-l-2 border-amber-400/80 text-[11px] text-neutral-300 italic line-clamp-2 leading-relaxed">
+                    <div className="mt-3 p-2.5 rounded-lg bg-white/[0.04] border-l-2 border-amber-400 text-xs sm:text-[13px] text-neutral-300 italic line-clamp-2 leading-relaxed">
                       &ldquo;{activity.review}&rdquo;
                     </div>
                   )}
