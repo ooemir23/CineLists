@@ -4,7 +4,6 @@ import { auth } from "@/auth";
 import "./globals.css";
 // import { Sidebar } from "@/components/layout/sidebar";
 import { TopNav } from "@/components/layout/top-nav";
-import { MobileHeader } from "@/components/layout/mobile-header";
 import { MobileDock } from "@/components/layout/mobile-dock";
 import { cn } from "@/lib/utils";
 import { ErrorBoundary } from "@/components/ui/error-boundary";
@@ -106,7 +105,7 @@ export default async function RootLayout({
 
             {/* Main Portal View (Topbar + Page Content) */}
             <div className="flex-1 flex flex-col min-w-0 min-h-screen">
-              <PortalTopbar user={session?.user} />
+              <PortalTopbar user={session?.user} isAdmin={isAdminId(session?.user?.id)} />
               {process.env.ANALYTICS_ENABLED === "true" && <Pageview />}
               <main className="flex-1 pb-24 md:pb-12 relative z-0">
                 <ErrorBoundary>

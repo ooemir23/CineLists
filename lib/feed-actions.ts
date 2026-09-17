@@ -220,3 +220,65 @@ export async function getFriendsActivity(): Promise<FeedActivity[]> {
 
     return cachedGetFriendsActivityForUser(session.user.id);
 }
+
+export async function getHomeFeedActivities(userId?: string): Promise<FeedActivity[]> {
+    try {
+        let activities: FeedActivity[] = [];
+
+        if (userId) {
+            activities = await cachedGetFriendsActivityForUser(userId).catch(() => []);
+        }
+
+        // Backfill with recent community activities if fewer than 6
+        if (activities.length < 6) {
+            const existingIds = new Set(activities.map(a => a.id));
+            const community = await prisma.activity.findMany({
+                where: {
+                    id: { notIn: Array.from(existingIds) },
+                    OR: [
+                        { type: "REVIEWED" },
+                        { review: { not: null } },
+                        { rating: { not: null } },
+                        { type: "WATCHED" },
+                    ]
+                },
+                include: {
+                    user: { select: { id: true, name: true, image: true } },
+                    media: true,
+                    episode: { select: { id: true, seasonNumber: true, episodeNumber: true, title: true } },
+                    recommendedBy: { select: { id: true, name: true } },
+                    _count: { select: { comments: true } }
+                },
+                orderBy: { createdAt: "desc" },
+                take: 6 - activities.length,
+            }).catch(() => []);
+
+            const mappedCommunity: FeedActivity[] = community.map(a => ({
+                id: a.id,
+                type: a.type as FeedActivity["type"],
+                createdAt: a.createdAt,
+                rating: a.rating,
+                review: a.review,
+                votes: a.votes,
+                user: a.user,
+                media: a.media as unknown as FeedActivity["media"],
+                episode: a.episode ? {
+                    id: a.episode.id,
+                    seasonNumber: a.episode.seasonNumber,
+                    episodeNumber: a.episode.episodeNumber,
+                    title: a.episode.title || "",
+                } : null,
+                recommendedBy: a.recommendedBy,
+                _count: a._count,
+            }));
+
+            activities = [...activities, ...mappedCommunity];
+        }
+
+        return activities.slice(0, 6);
+    } catch (error) {
+        console.warn("[FeedActions] Error in getHomeFeedActivities:", error);
+        return [];
+    }
+}
+

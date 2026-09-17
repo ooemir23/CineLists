@@ -3,6 +3,7 @@ import { auth } from "@/auth";
 import { tmdb } from "@/lib/tmdb";
 import { PortalHero, PortalHeroItem } from "@/components/portal/portal-hero";
 import { PortalNewsGrid, MediaGridItem } from "@/components/portal/portal-news-grid";
+import { PortalHomeFeed } from "@/components/portal/portal-home-feed";
 import { PortalTwoPanels } from "@/components/portal/portal-two-panels";
 import { PortalCommunityPulse } from "@/components/portal/portal-community-pulse";
 import { PortalHubStrip } from "@/components/portal/portal-hub-strip";
@@ -12,6 +13,7 @@ import {
   ReviewRecommendationItem,
 } from "@/components/portal/portal-right-rail";
 import { MediaCard } from "@/components/media/media-card";
+import { getHomeFeedActivities } from "@/lib/feed-actions";
 import { Film, Filter, X } from "lucide-react";
 import Link from "next/link";
 
@@ -205,6 +207,7 @@ export default async function Home({ searchParams }: HomeProps) {
     upcomingMovies,
     topRatedMovies,
     popularMovies,
+    feedActivities,
   ] = await Promise.all([
     tmdb.getTrendingMovies().catch(() => ({ results: [] })),
     tmdb.getTrendingTV().catch(() => ({ results: [] })),
@@ -212,6 +215,7 @@ export default async function Home({ searchParams }: HomeProps) {
     tmdb.getUpcomingMovies().catch(() => ({ results: [] })),
     tmdb.getTopRated("movie").catch(() => ({ results: [] })),
     tmdb.getPopular("movie").catch(() => ({ results: [] })),
+    getHomeFeedActivities(session?.user?.id).catch(() => []),
   ]);
 
   // 1. Hero Items (Merlin'in Kazanı large featured slider)
@@ -383,6 +387,12 @@ export default async function Home({ searchParams }: HomeProps) {
             viewAllHref="/?type=movie"
             featuredItems={featuredGridItems}
             compactItems={compactNewsItems}
+          />
+
+          {/* Canlı Akış & Topluluk / Arkadaş Aktiviteleri */}
+          <PortalHomeFeed
+            activities={feedActivities}
+            user={session?.user}
           />
 
           {/* İkili Panel (Sinema / TV Dünyası) */}

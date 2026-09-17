@@ -20,6 +20,31 @@ export type PortalHeroItem = {
 
 export function PortalHero({ items }: { items: PortalHeroItem[] }) {
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [touchStart, setTouchStart] = useState<number | null>(null);
+  const [touchEnd, setTouchEnd] = useState<number | null>(null);
+
+  const minSwipeDistance = 45;
+
+  const onTouchStart = (e: React.TouchEvent) => {
+    setTouchEnd(null);
+    setTouchStart(e.targetTouches[0].clientX);
+  };
+
+  const onTouchMove = (e: React.TouchEvent) => {
+    setTouchEnd(e.targetTouches[0].clientX);
+  };
+
+  const onTouchEnd = () => {
+    if (!touchStart || !touchEnd) return;
+    const distance = touchStart - touchEnd;
+    const isLeftSwipe = distance > minSwipeDistance;
+    const isRightSwipe = distance < -minSwipeDistance;
+    if (isLeftSwipe) {
+      setCurrentIndex((prev) => (prev + 1) % items.length);
+    } else if (isRightSwipe) {
+      setCurrentIndex((prev) => (prev === 0 ? items.length - 1 : prev - 1));
+    }
+  };
 
   useEffect(() => {
     if (items.length <= 1) return;
@@ -49,9 +74,14 @@ export function PortalHero({ items }: { items: PortalHeroItem[] }) {
   };
 
   return (
-    <section className="relative w-full rounded-2xl md:rounded-3xl overflow-hidden border border-white/10 bg-slate-900 group shadow-2xl">
+    <section
+      onTouchStart={onTouchStart}
+      onTouchMove={onTouchMove}
+      onTouchEnd={onTouchEnd}
+      className="relative w-full rounded-2xl md:rounded-3xl overflow-hidden border border-white/10 bg-slate-900 group shadow-2xl touch-pan-y select-none"
+    >
       {/* 16:9 Backdrop Image */}
-      <div className="relative aspect-[16/9] sm:aspect-[21/9] lg:aspect-[16/8] w-full min-h-[340px] md:min-h-[420px]">
+      <div className="relative aspect-[4/3] sm:aspect-[21/9] lg:aspect-[16/8] w-full min-h-[320px] md:min-h-[420px]">
         {current.backdrop_path ? (
           <Image
             src={backdropUrl}
@@ -157,13 +187,13 @@ export function PortalHero({ items }: { items: PortalHeroItem[] }) {
 
         {/* Carousel Indicators / Dots */}
         {items.length > 1 && (
-          <div className="absolute bottom-3 right-5 z-20 hidden md:flex items-center gap-1.5">
+          <div className="absolute bottom-3 right-4 sm:right-5 z-20 flex items-center gap-1.5">
             {items.map((_, idx) => (
               <button
                 key={idx}
                 onClick={() => setCurrentIndex(idx)}
                 className={`h-1.5 rounded-full transition-all ${
-                  idx === currentIndex ? "w-6 bg-amber-400" : "w-1.5 bg-white/30 hover:bg-white/60"
+                  idx === currentIndex ? "w-5 sm:w-6 bg-amber-400" : "w-1.5 bg-white/30 hover:bg-white/60"
                 }`}
                 aria-label={`Slayt ${idx + 1}`}
               />

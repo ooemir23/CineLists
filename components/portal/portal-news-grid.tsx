@@ -46,8 +46,8 @@ export function PortalNewsGrid({
 
       {/* 2-Column News Layout (Left: Grid of Cards, Right: Compact Side List) */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
-        {/* Left: Featured Cards (6 items) */}
-        <div className="lg:col-span-8 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3.5">
+        {/* Left: Featured Cards (Mobile swipeable carousel / Desktop 3-column grid) */}
+        <div className="lg:col-span-8 flex sm:grid overflow-x-auto sm:overflow-visible snap-x snap-mandatory gap-3.5 pb-2.5 sm:pb-0 scrollbar-hide -mx-1 px-1 sm:mx-0 sm:px-0 sm:grid-cols-2 md:grid-cols-3">
           {featuredItems.slice(0, 6).map((item, idx) => {
             const year = (item.release_date || item.first_air_date || "").split("-")[0];
             const type = item.media_type || "movie";
@@ -59,7 +59,7 @@ export function PortalNewsGrid({
             return (
               <article
                 key={item.id}
-                className="group flex flex-col rounded-xl overflow-hidden bg-slate-900/80 border border-white/5 hover:border-amber-400/30 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-black/40"
+                className="group flex flex-col w-[76vw] sm:w-auto shrink-0 snap-start rounded-xl overflow-hidden bg-slate-900/80 border border-white/5 hover:border-amber-400/30 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-black/40"
               >
                 {/* Visual Thumbnail with Badge */}
                 <Link
