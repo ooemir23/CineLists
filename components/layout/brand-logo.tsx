@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Film } from "lucide-react";
+import Image from "next/image";
 import type { MouseEventHandler } from "react";
 
 type BrandLogoProps = {
@@ -9,42 +9,58 @@ type BrandLogoProps = {
   size?: "sm" | "md" | "lg";
   className?: string;
   onClick?: MouseEventHandler<HTMLAnchorElement>;
+  showText?: boolean;
 };
 
 const sizeMap = {
   sm: {
     icon: "w-8 h-8",
-    iconSize: 18,
+    imgSize: 32,
     text: "text-lg",
   },
   md: {
     icon: "w-10 h-10",
-    iconSize: 24,
+    imgSize: 40,
     text: "text-2xl",
   },
   lg: {
-    icon: "w-12 h-12",
-    iconSize: 28,
+    icon: "w-14 h-14",
+    imgSize: 56,
     text: "text-4xl",
   },
 } as const;
 
-export function BrandLogo({ href = "/", size = "md", className = "", onClick }: BrandLogoProps) {
+export function BrandLogo({
+  href = "/",
+  size = "md",
+  className = "",
+  onClick,
+  showText = true,
+}: BrandLogoProps) {
   const cfg = sizeMap[size];
 
   return (
     <Link
       href={href}
-      className={`inline-flex items-center gap-2 font-black text-white group transition-transform hover:scale-105 cursor-pointer ${className}`}
+      className={`inline-flex items-center gap-2.5 font-black text-white group transition-transform hover:scale-105 cursor-pointer ${className}`}
       onClick={onClick}
     >
-      <div className={`${cfg.icon} bg-amber-400 rounded-xl flex items-center justify-center rotate-3 group-hover:rotate-0 transition-transform shadow-[0_8px_20px_rgba(251,191,36,0.25)]`}>
-        <Film size={cfg.iconSize} className="text-slate-950" />
+      <div className={`${cfg.icon} relative flex items-center justify-center shrink-0 drop-shadow-[0_4px_16px_rgba(251,191,36,0.3)] group-hover:scale-105 transition-transform duration-200`}>
+        <Image
+          src="/logo.png"
+          alt="CineLists"
+          width={cfg.imgSize}
+          height={cfg.imgSize}
+          priority
+          className="w-full h-full object-contain"
+        />
       </div>
-      <span className={`tracking-tighter italic leading-none ${cfg.text}`}>
-        <span className="text-amber-400">cine</span>
-        <span className="text-white">lists</span>
-      </span>
+      {showText && (
+        <span className={`tracking-tighter italic leading-none ${cfg.text}`}>
+          <span className="text-amber-400">cine</span>
+          <span className="text-white">lists</span>
+        </span>
+      )}
     </Link>
   );
 }

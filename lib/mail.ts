@@ -38,11 +38,9 @@ export const sendPasswordResetEmail = async (email: string, token: string) => {
                         
                         <!-- Logo -->
                         <div style="margin-bottom: 30px;">
-                            <div style="background-color: #fbbf24; width: 60px; height: 60px; border-radius: 18px; margin: 0 auto; display: flex; align-items: center; justify-content: center; line-height: 60px; font-size: 30px;">
-                                🎬
-                            </div>
+                            <img src="${domain}/icon-192.png" width="60" height="60" alt="CineLists" style="width: 60px; height: 60px; border-radius: 16px; margin: 0 auto; display: block; border: 1px solid rgba(255, 255, 255, 0.1);" />
                             <h1 style="color: #ffffff; font-size: 28px; font-weight: 900; letter-spacing: -1px; margin-top: 15px; text-transform: uppercase; font-style: italic;">
-                                CineLists
+                                <span style="color: #fbbf24;">cine</span>lists
                             </h1>
                         </div>
 

@@ -499,8 +499,15 @@ export function PortalTopbar({ user, isAdmin = false }: PortalTopbarProps) {
                   <Menu className="w-5 h-5" />
                 </button>
                 <Link href="/" className="flex items-center gap-2 group">
-                  <div className="w-8 h-8 rounded-lg bg-amber-400 flex items-center justify-center font-black text-slate-950 shadow-md shadow-amber-400/20">
-                    <Film className="w-4 h-4" />
+                  <div className="w-8 h-8 relative flex items-center justify-center shrink-0 drop-shadow-[0_2px_10px_rgba(251,191,36,0.3)] group-hover:scale-105 transition-transform">
+                    <Image
+                      src="/logo.png"
+                      alt="CineLists"
+                      width={32}
+                      height={32}
+                      priority
+                      className="w-full h-full object-contain"
+                    />
                   </div>
                   <span className="font-black text-white text-base tracking-tight">
                     <span className="text-amber-400">CINE</span>LISTS

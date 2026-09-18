@@ -58,8 +58,15 @@ export function PortalSidebar({ user }: PortalSidebarProps) {
       {/* Brand Header */}
       <div className="h-20 flex items-center px-6 border-b border-white/10 shrink-0">
         <Link href="/" className="flex items-center gap-3 group">
-          <div className="w-10 h-10 rounded-xl bg-amber-400 flex items-center justify-center font-black text-slate-950 text-xl shadow-[0_0_20px_rgba(251,191,36,0.3)] group-hover:scale-105 transition-transform">
-            <Film className="w-5 h-5" />
+          <div className="w-10 h-10 relative flex items-center justify-center shrink-0 drop-shadow-[0_4px_16px_rgba(251,191,36,0.35)] group-hover:scale-105 transition-transform">
+            <Image
+              src="/logo.png"
+              alt="CineLists"
+              width={40}
+              height={40}
+              priority
+              className="w-full h-full object-contain"
+            />
           </div>
           <div>
             <div className="flex items-center text-lg font-black tracking-tight text-white leading-none">

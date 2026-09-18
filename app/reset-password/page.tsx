@@ -1,6 +1,7 @@
 import { Film, Lock, ArrowRight, ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { PosterBackground } from "@/components/auth/poster-background";
+import { BrandLogo } from "@/components/layout/brand-logo";
 import { resetPassword } from "@/lib/auth-actions";
 
 type ResetPasswordPageProps = {
@@ -40,12 +41,9 @@ export default async function ResetPasswordPage({ searchParams }: ResetPasswordP
             <div className="w-full max-w-md relative z-20 animate-in fade-in zoom-in-95 duration-500 py-4 sm:py-8">
                 {/* Logo & Header */}
                 <div className="text-center mb-8">
-                    <Link href="/" className="inline-flex items-center gap-2 mb-6 group">
-                        <div className="bg-amber-400 p-2.5 rounded-2xl shadow-lg shadow-amber-400/20 group-hover:scale-110 transition-transform duration-300">
-                            <Film className="w-8 h-8 text-slate-950" strokeWidth={2.5} />
-                        </div>
-                        <span className="text-3xl font-black text-white tracking-tighter uppercase italic">CineLists</span>
-                    </Link>
+                    <div className="flex justify-center mb-6">
+                        <BrandLogo href="/" size="lg" />
+                    </div>
                     <h1 className="text-3xl font-black text-white tracking-tight uppercase mb-2">Yeni Şifre Oluştur</h1>
                     <p className="text-neutral-400 font-medium">Lütfen hesabın için yeni ve güvenli bir şifre belirle.</p>
                 </div>

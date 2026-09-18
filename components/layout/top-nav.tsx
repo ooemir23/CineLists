@@ -18,6 +18,7 @@ import {
   Users,
   Eye,
 } from "lucide-react";import { NotificationBell } from "./notification-bell";
+import { BrandLogo } from "./brand-logo";
 import { LanguageSelector } from "./language-selector";
 import { useTranslation } from "@/lib/i18n/i18n-context";
 import { handleSignOut } from "@/lib/auth-actions";
@@ -84,24 +85,16 @@ export function TopNav({ user, isAdmin = false }: TopNavProps) {
 
           {/* Logo Section */}
           <div className="flex-1 flex justify-start z-[1001]">
-            <Link
+            <BrandLogo
               href="/"
-              className="flex items-center gap-2 font-black text-2xl text-white group transition-transform hover:scale-105 cursor-pointer"
+              size="md"
               onClick={(e) => {
                 if (pathname === "/") {
                   e.preventDefault();
                   window.scrollTo({ top: 0, behavior: "smooth" });
                 }
               }}
-            >
-              <div className="w-10 h-10 bg-amber-400 rounded-xl flex items-center justify-center rotate-3 group-hover:rotate-0 transition-transform shadow-[0_8px_20px_rgba(251,191,36,0.25)]">
-                <Film size={24} className="text-slate-950" />
-              </div>
-              <span className="tracking-tighter italic">
-                <span className="text-amber-400">cine</span>
-                <span className="text-white">lists</span>
-              </span>
-            </Link>
+            />
           </div>
 
           {/* Navigation Middle Group */}
