@@ -41,7 +41,7 @@ const inFlightRequests = new Map<string, Promise<any>>();
 const MAX_CACHE_SIZE = 1500;
 
 // ── Rate Limiter & Concurrency Queue (Prevents TMDB 429 Too Many Requests) ──
-const MAX_CONCURRENT_REQUESTS = 4;
+const MAX_CONCURRENT_REQUESTS = 25;
 let activeRequests = 0;
 const requestQueue: Array<() => void> = [];
 
@@ -231,8 +231,8 @@ export const tmdb = {
         });
     },
 
-    async getDetails(type: "movie" | "tv", id: string) {
-        return this.fetch(`/${type}/${id}`);
+    async getDetails(type: "movie" | "tv", id: string, params: Record<string, string> = {}) {
+        return this.fetch(`/${type}/${id}`, { params });
     },
 
     async getCredits(type: "movie" | "tv", id: string) {

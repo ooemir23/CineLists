@@ -32,7 +32,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (!isValidMediaRoute(type, id)) return {};
 
   const data = await tmdb
-    .getDetails(type as "movie" | "tv", id)
+    .getDetails(type as "movie" | "tv", id, {
+      append_to_response: "credits,videos,watch/providers",
+    })
     .catch(() => null);
   if (!data) return { title: "İçerik Bulunamadı" };
   const title = data.title || data.name;
@@ -79,79 +81,82 @@ export default async function DetailsPage(props: Props) {
   };
 
   const data = await tmdb
-    .getDetails(type as "movie" | "tv", id)
+    .getDetails(type as "movie" | "tv", id, {
+      append_to_response: "credits,videos,watch/providers",
+    })
     .catch(() => null);
   if (!data) notFound();
   const userCountry = detectUserCountry(await headers());
   // These requests stream into their own slots; the title/overview/afiş do not wait for them.
   const extras = (async () => {
-    const [
-      credits,
-      videos,
-      inWatchlist,
-      watchStatus,
-      watchedEpisodes,
-      providersData,
-      userRating,
-      friendsRatings,
-      activeRecommendation,
-      dbMedia,
-    ] = await Promise.all([
-      tmdb.getCredits(type as "movie" | "tv", id).catch(() => null),
-      tmdb.getVideos(type as "movie" | "tv", id).catch(() => null),
-      safe(getToWatchStatus(mediaId), false),
-      safe(getWatchStatus(mediaId), null),
-      type === "tv"
-        ? safe(getWatchedEpisodes(mediaId), [])
-        : Promise.resolve([]),
-      tmdb.getWatchProviders(type as "movie" | "tv", id).catch(() => null),
-      safe(
-        (async () => {
-          const { getUserRating } = await import("@/lib/rating-actions");
-          return getUserRating(mediaId, type as "movie" | "tv");
-        })(),
-        null,
-      ),
-      safe(
-        (async () => {
-          const { getFriendsRatings } = await import("@/lib/rating-actions");
-          return getFriendsRatings(mediaId, type as "movie" | "tv");
-        })(),
-        [],
-      ),
-      safe(getReceivedRecommendation(mediaId), null),
-      safe(
-        (async () => {
-          try {
-            return await prisma.mediaItem.findUnique({
-              where: { tmdbId: mediaId },
-              include: {
-                activities: {
-                  where: {
-                    OR: [
-                      { type: "REVIEWED" },
-                      { review: { not: null } },
-                      { comments: { some: {} } },
-                    ],
-                  },
-                  include: {
-                    user: true,
-                    comments: {
-                      include: { user: true },
-                      orderBy: { createdAt: "asc" },
-                    },
-                  },
-                  orderBy: { createdAt: "desc" },
-                },
+    const credits = data.credits || null;
+    const videos = data.videos || null;
+    const providersData = data["watch/providers"] || null;
+
+    let inWatchlist = false;
+    let watchStatus = null;
+    let watchedEpisodes: any[] = [];
+    let userRating = null;
+    let friendsRatings: any[] = [];
+    let activeRecommendation = null;
+
+    if (isAuthenticated) {
+      [
+        inWatchlist,
+        watchStatus,
+        watchedEpisodes,
+        userRating,
+        friendsRatings,
+        activeRecommendation,
+      ] = await Promise.all([
+        safe(getToWatchStatus(mediaId), false),
+        safe(getWatchStatus(mediaId), null),
+        type === "tv"
+          ? safe(getWatchedEpisodes(mediaId), [])
+          : Promise.resolve([]),
+        safe(
+          (async () => {
+            const { getUserRating } = await import("@/lib/rating-actions");
+            return getUserRating(mediaId, type as "movie" | "tv");
+          })(),
+          null,
+        ),
+        safe(
+          (async () => {
+            const { getFriendsRatings } = await import("@/lib/rating-actions");
+            return getFriendsRatings(mediaId, type as "movie" | "tv");
+          })(),
+          [],
+        ),
+        safe(getReceivedRecommendation(mediaId), null),
+      ]);
+    }
+
+    const dbMedia = await safe(
+      prisma.mediaItem.findUnique({
+        where: { tmdbId: mediaId },
+        include: {
+          activities: {
+            where: {
+              OR: [
+                { type: "REVIEWED" },
+                { review: { not: null } },
+                { comments: { some: {} } },
+              ],
+            },
+            include: {
+              user: true,
+              comments: {
+                include: { user: true },
+                orderBy: { createdAt: "asc" },
               },
-            });
-          } catch {
-            return null;
-          }
-        })(),
-        null,
-      ),
-    ]);
+            },
+            orderBy: { createdAt: "desc" },
+          },
+        },
+      }),
+      null,
+    );
     const comments =
       dbMedia?.activities.map((a: any) => ({
         id: a.id,

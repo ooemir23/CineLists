@@ -80,6 +80,7 @@ import { PortalTopbar } from "@/components/portal/portal-topbar";
 import { Toaster } from "sonner";
 import { getServerLocale } from "@/lib/i18n/server";
 import { I18nProvider } from "@/lib/i18n/i18n-context";
+import { RouteProgressBar } from "@/components/ui/route-progress-bar";
 
 export default async function RootLayout({
   children,
@@ -98,6 +99,7 @@ export default async function RootLayout({
       suppressHydrationWarning
     >
       <body className={cn("font-hanken bg-background text-foreground overflow-x-hidden")} suppressHydrationWarning>
+        <RouteProgressBar />
         <I18nProvider initialLocale={locale}>
           <div className="flex min-h-screen bg-slate-950 text-foreground">
             {/* Left Portal Sidebar (Desktop xl+) */}
