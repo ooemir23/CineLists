@@ -2,10 +2,12 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import { X, Tv, ExternalLink } from "lucide-react";
+import { X, Tv, Film, ExternalLink } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
-import { getCountryName } from "@/lib/country";
+import { getCountryName, getCountryLocative } from "@/lib/country";
+import type { TheatricalStatus } from "@/lib/theatrical";
+import { useTranslation } from "@/lib/i18n/i18n-context";
 
 type Provider = {
     provider_id: number;
@@ -24,9 +26,18 @@ type WatchProvidersProps = {
     isGuest?: boolean;
     countryCode?: string;
     mediaTitle?: string;
+    theatricalStatus?: TheatricalStatus | null;
 };
 
-export function WatchProviders({ providers, isGlobal, isGuest, countryCode = "TR", mediaTitle: _mediaTitle }: WatchProvidersProps) {
+export function WatchProviders({
+    providers,
+    isGlobal,
+    isGuest,
+    countryCode = "TR",
+    mediaTitle,
+    theatricalStatus
+}: WatchProvidersProps) {
+    const { locale } = useTranslation();
     const [isOpen, setIsOpen] = useState(false);
 
     const allProviders = [
@@ -64,13 +75,19 @@ export function WatchProviders({ providers, isGlobal, isGuest, countryCode = "TR
     };
 
     const hasProviders = uniqueProviders.length > 0;
-    const showRed = isGlobal || !hasProviders;
+    const isTheatrical = !hasProviders && !!theatricalStatus?.isInTheaters;
+    const showRed = (isGlobal || !hasProviders) && !isTheatrical;
     const activeCountryCode = (countryCode || "TR").toUpperCase();
-    const countryName = getCountryName(activeCountryCode);
+    const countryName = getCountryName(activeCountryCode, locale);
+    const countryLocative = getCountryLocative(activeCountryCode);
 
     const handleTriggerClick = (_e: React.MouseEvent) => {
         if (isGuest) return; // Guest handle by Link inside
         
+        if (isTheatrical) {
+            return;
+        }
+
         if (uniqueProviders.length === 1) {
             window.open(getProviderUrl(uniqueProviders[0].provider_name), "_blank");
         } else {
@@ -83,18 +100,37 @@ export function WatchProviders({ providers, isGlobal, isGuest, countryCode = "TR
             {/* ── Trigger ── */}
             <button
                 onClick={handleTriggerClick}
-                title={hasProviders ? "İzleme Seçenekleri" : `${countryName}'de yayınlanan herhangi bir platformda bulunmuyor`}
+                title={
+                    hasProviders
+                        ? (locale === "en" ? `Streaming Options in ${countryName}` : `${countryName}'deki İzleme Seçenekleri`)
+                        : isTheatrical
+                            ? (theatricalStatus?.isUpcoming
+                                ? (locale === "en" ? `Coming Soon to Theatres in ${countryName}` : `${countryLocative} Yakında Sinemalarda`)
+                                : (locale === "en" ? `Now Playing in Theatres in ${countryName}` : `${countryLocative} Sinemalarda Gösterimde`))
+                            : (locale === "en" ? `Not available on any streaming platform in ${countryName}` : `${countryLocative} yayınlanan herhangi bir platformda bulunmuyor`)
+                }
                 className={cn(
                     "relative flex items-center justify-center gap-2 px-3 py-2 rounded-2xl transition-all group overflow-hidden border w-full",
-                    showRed 
-                        ? "bg-rose-500/10 border-rose-500/20 hover:bg-rose-500/20 hover:border-rose-500/30" 
-                        : "bg-white/[0.06] border-white/10 hover:bg-white/[0.10] hover:border-white/20"
+                    isTheatrical
+                        ? "bg-amber-500/15 border-amber-500/35 text-amber-400 shadow-[0_0_12px_rgba(251,191,36,0.12)] cursor-default select-none"
+                        : showRed 
+                            ? "bg-rose-500/10 border-rose-500/20 hover:bg-rose-500/20 hover:border-rose-500/30" 
+                            : "bg-white/[0.06] border-white/10 hover:bg-white/[0.10] hover:border-white/20"
                 )}
             >
                 {isGuest ? (
                     <div className="flex items-center gap-2 blur-sm select-none pointer-events-none">
-                        <Tv className={cn("w-4 h-4", showRed ? "text-rose-400/30" : "text-white/30")} />
-                        <span className={cn("text-xs font-black uppercase tracking-wider", showRed ? "text-rose-400/30" : "text-white/30")}>Platform</span>
+                        {isTheatrical ? (
+                            <Film className="w-4 h-4 text-amber-400/30" />
+                        ) : (
+                            <Tv className={cn("w-4 h-4", showRed ? "text-rose-400/30" : "text-white/30")} />
+                        )}
+                        <span className={cn(
+                            "text-xs font-black uppercase tracking-wider",
+                            isTheatrical ? "text-amber-400/30" : showRed ? "text-rose-400/30" : "text-white/30"
+                        )}>
+                            {isTheatrical ? (locale === "en" ? "Cinema" : "Sinema") : "Platform"}
+                        </span>
                     </div>
                 ) : (
                     <div className="flex items-center justify-center gap-2 w-full">
@@ -133,10 +169,21 @@ export function WatchProviders({ providers, isGlobal, isGuest, countryCode = "TR
                                     showRed ? "text-rose-400/40 group-hover:text-rose-400/60" : "text-white/25 group-hover:text-white/50"
                                 )} />
                             </>
+                        ) : isTheatrical ? (
+                            <div className="flex items-center justify-center gap-1.5 text-amber-400 font-bold">
+                                <Film className="w-3.5 h-3.5 shrink-0 text-amber-400" />
+                                <span className="text-[10px] font-black uppercase tracking-tight">
+                                    {theatricalStatus?.isUpcoming
+                                        ? (locale === "en" ? "Coming to Theatres" : "Yakında Sinemalarda")
+                                        : (locale === "en" ? "In Theatres" : "Sinemalarda")}
+                                </span>
+                            </div>
                         ) : (
                             <div className="flex items-center justify-center gap-1.5 text-rose-400/80">
                                 <Tv className="w-3.5 h-3.5 shrink-0" />
-                                <span className="text-[10px] font-black uppercase tracking-tight">{activeCountryCode}&apos;de Yayın Yok</span>
+                                <span className="text-[10px] font-black uppercase tracking-tight">
+                                    {locale === "en" ? `Not in ${countryName}` : `${countryLocative} Yayın Yok`}
+                                </span>
                             </div>
                         )}
                     </div>
@@ -171,8 +218,12 @@ export function WatchProviders({ providers, isGlobal, isGuest, countryCode = "TR
                                     <Tv className="w-6 h-6 text-primary" />
                                 </div>
                                 <div>
-                                    <h2 className="text-xl font-black text-white">İzleme Seçenekleri</h2>
-                                    <p className="text-sm font-bold text-neutral-500">Platforma gitmek için logoya tıklayınız</p>
+                                    <h2 className="text-xl font-black text-white">
+                                        {locale === "en" ? `Streaming Options (${countryName})` : `${countryName}'deki İzleme Seçenekleri`}
+                                    </h2>
+                                    <p className="text-sm font-bold text-neutral-500">
+                                        {locale === "en" ? "Click a logo to visit the platform" : "Platforma gitmek için logoya tıklayınız"}
+                                    </p>
                                 </div>
                             </div>
                             <button
@@ -188,13 +239,19 @@ export function WatchProviders({ providers, isGlobal, isGuest, countryCode = "TR
                             {isGlobal && (
                                 <div className="bg-yellow-500/10 border border-yellow-500/20 p-4 rounded-2xl flex items-center gap-3">
                                     <div className="w-2 h-2 rounded-full bg-yellow-500 animate-pulse" />
-                                    <p className="text-xs font-bold text-yellow-500/80">Türkiye&rsquo;de bulunamadı. Diğer ülkelerdeki seçenekler gösteriliyor.</p>
+                                    <p className="text-xs font-bold text-yellow-500/80">
+                                        {locale === "en"
+                                            ? `Not found in ${countryName}. Showing other options.`
+                                            : `${countryLocative} bulunamadı. Diğer seçenekler gösteriliyor.`}
+                                    </p>
                                 </div>
                             )}
 
                             {providers?.flatrate && providers.flatrate.length > 0 && (
                                 <div className="space-y-4">
-                                    <h4 className="text-[10px] font-black text-neutral-500 uppercase tracking-[0.2em] px-1">Abonelik İle İzle</h4>
+                                    <h4 className="text-[10px] font-black text-neutral-500 uppercase tracking-[0.2em] px-1">
+                                        {locale === "en" ? "Stream with Subscription" : "Abonelik İle İzle"}
+                                    </h4>
                                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                                         {providers.flatrate.map((p) => (
                                             <a
@@ -209,7 +266,9 @@ export function WatchProviders({ providers, isGlobal, isGuest, countryCode = "TR
                                                 </div>
                                                 <div className="flex flex-col">
                                                     <span className="text-xs font-bold text-white leading-tight group-hover:text-primary transition-colors">{p.provider_name}</span>
-                                                    <span className="text-[8px] font-black text-neutral-500 flex items-center gap-0.5 mt-0.5 group-hover:text-neutral-400">GİT <ExternalLink className="w-2 h-2" /></span>
+                                                    <span className="text-[8px] font-black text-neutral-500 flex items-center gap-0.5 mt-0.5 group-hover:text-neutral-400">
+                                                        {locale === "en" ? "GO" : "GİT"} <ExternalLink className="w-2 h-2" />
+                                                    </span>
                                                 </div>
                                             </a>
                                         ))}
@@ -219,7 +278,9 @@ export function WatchProviders({ providers, isGlobal, isGuest, countryCode = "TR
 
                             {(providers?.buy || providers?.rent) && (
                                 <div className="space-y-4">
-                                    <h4 className="text-[10px] font-black text-neutral-500 uppercase tracking-[0.2em] px-1">Satın Al veya Kirala</h4>
+                                    <h4 className="text-[10px] font-black text-neutral-500 uppercase tracking-[0.2em] px-1">
+                                        {locale === "en" ? "Buy or Rent" : "Satın Al veya Kirala"}
+                                    </h4>
                                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                                         {[...(providers?.buy || []), ...(providers?.rent || [])].reduce((acc: Provider[], curr) => {
                                             if (!acc.find(p => p.provider_id === curr.provider_id)) acc.push(curr);
@@ -237,7 +298,9 @@ export function WatchProviders({ providers, isGlobal, isGuest, countryCode = "TR
                                                 </div>
                                                 <div className="flex flex-col">
                                                     <span className="text-xs font-bold text-neutral-400 group-hover:text-white transition-colors leading-tight">{p.provider_name}</span>
-                                                    <span className="text-[8px] font-black text-neutral-600 flex items-center gap-0.5 mt-0.5 group-hover:text-neutral-400">GİT <ExternalLink className="w-2 h-2" /></span>
+                                                    <span className="text-[8px] font-black text-neutral-600 flex items-center gap-0.5 mt-0.5 group-hover:text-neutral-400">
+                                                        {locale === "en" ? "GO" : "GİT"} <ExternalLink className="w-2 h-2" />
+                                                    </span>
                                                 </div>
                                             </a>
                                         ))}

@@ -43,6 +43,7 @@ export type FeedActivity = {
         fromEpisode: number;
         toEpisode: number;
         count: number;
+        episodeList?: Array<{ number: number; title: string }>;
     } | null;
     _count: {
         comments: number;
@@ -136,74 +137,103 @@ async function getFriendsActivityForUser(userId: string): Promise<FeedActivity[]
         const allActivities = [...mappedActivities, ...mappedComments, ...mappedWatchlist]
             .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
-        // 3. Group consecutive episode watches (only for activities)
-        const groupedActivities: FeedActivity[] = [];
-        const processed = new Set<string>();
-
-        for (let i = 0; i < allActivities.length; i++) {
-            const activity = allActivities[i];
-
-            if (processed.has(activity.id)) continue;
-
-            // Grouping logic only for WATCHED activities
-            if (activity.type !== "WATCHED" || !activity.episode) {
-                groupedActivities.push(activity);
-                processed.add(activity.id);
-                continue;
-            }
-
-            const relatedEpisodes = [activity];
-            processed.add(activity.id);
-
-            const timeWindow = 10 * 60 * 1000; // Expanded to 10 minutes for grouping
-            const activityTime = new Date(activity.createdAt).getTime();
-
-            for (let j = i + 1; j < allActivities.length; j++) {
-                const nextActivity = allActivities[j];
-
-                if (processed.has(nextActivity.id) || nextActivity.type !== "WATCHED" || !nextActivity.episode) continue;
-
-                const nextTime = new Date(nextActivity.createdAt).getTime();
-                const timeDiff = Math.abs(activityTime - nextTime);
-
-                if (
-                    nextActivity.user.id === activity.user.id &&
-                    nextActivity.media.id === activity.media.id &&
-                    nextActivity.episode.seasonNumber === activity.episode.seasonNumber &&
-                    timeDiff <= timeWindow
-                ) {
-                    relatedEpisodes.push(nextActivity);
-                    processed.add(nextActivity.id);
-                }
-            }
-
-            if (relatedEpisodes.length > 1) {
-                const episodeNumbers = relatedEpisodes
-                    .map(a => a.episode!.episodeNumber)
-                    .sort((a, b) => a - b);
-
-                const minEpisode = Math.min(...episodeNumbers);
-                const maxEpisode = Math.max(...episodeNumbers);
-
-                groupedActivities.push({
-                    ...activity,
-                    episodeRange: {
-                        seasonNumber: activity.episode.seasonNumber,
-                        fromEpisode: minEpisode,
-                        toEpisode: maxEpisode,
-                        count: relatedEpisodes.length
-                    }
-                });
-            } else {
-                groupedActivities.push(activity);
-            }
-        }
-
-        return groupedActivities.slice(0, 30);
+        return groupFeedActivities(allActivities).slice(0, 30);
     } catch (error) {
         console.warn("[FeedActions] Friends activity skipped in dev:", error);
         return [];
     }
+}
+
+/**
+ * Groups consecutive episodes watched by the same user for the same show
+ * into a single consolidated binge-watch activity.
+ */
+function groupFeedActivities(activities: FeedActivity[]): FeedActivity[] {
+    const grouped: FeedActivity[] = [];
+    const processed = new Set<string>();
+
+    for (let i = 0; i < activities.length; i++) {
+        const activity = activities[i];
+
+        if (processed.has(activity.id)) continue;
+
+        // Only group WATCHED activities with episode details
+        if (activity.type !== "WATCHED" || !activity.episode) {
+            grouped.push(activity);
+            processed.add(activity.id);
+            continue;
+        }
+
+        const relatedActivities: FeedActivity[] = [activity];
+        processed.add(activity.id);
+
+        // Group episodes watched within 24 hours of each other
+        const timeWindow = 24 * 60 * 60 * 1000;
+        const activityTime = new Date(activity.createdAt).getTime();
+
+        for (let j = i + 1; j < activities.length; j++) {
+            const nextActivity = activities[j];
+
+            if (
+                processed.has(nextActivity.id) ||
+                nextActivity.type !== "WATCHED" ||
+                !nextActivity.episode
+            ) {
+                continue;
+            }
+
+            const nextTime = new Date(nextActivity.createdAt).getTime();
+            const timeDiff = Math.abs(activityTime - nextTime);
+
+            if (
+                nextActivity.user.id === activity.user.id &&
+                nextActivity.media.id === activity.media.id &&
+                nextActivity.episode.seasonNumber === activity.episode.seasonNumber &&
+                timeDiff <= timeWindow
+            ) {
+                relatedActivities.push(nextActivity);
+                processed.add(nextActivity.id);
+            }
+        }
+
+        if (relatedActivities.length > 1) {
+            // Sort by episode number ascending
+            const sorted = [...relatedActivities].sort(
+                (a, b) => (a.episode?.episodeNumber || 0) - (b.episode?.episodeNumber || 0)
+            );
+
+            const episodeNumbers = sorted.map((a) => a.episode!.episodeNumber);
+            const minEpisode = Math.min(...episodeNumbers);
+            const maxEpisode = Math.max(...episodeNumbers);
+
+            // Latest timestamp for the activity card
+            const latestActivity = relatedActivities.reduce((latest, curr) =>
+                new Date(curr.createdAt).getTime() > new Date(latest.createdAt).getTime()
+                    ? curr
+                    : latest,
+                activity
+            );
+
+            grouped.push({
+                ...latestActivity,
+                episode: latestActivity.episode,
+                episodeRange: {
+                    seasonNumber: activity.episode.seasonNumber,
+                    fromEpisode: minEpisode,
+                    toEpisode: maxEpisode,
+                    count: relatedActivities.length,
+                    episodeList: sorted.map((a) => ({
+                        number: a.episode!.episodeNumber,
+                        title: a.episode!.title || `Bölüm ${a.episode!.episodeNumber}`,
+                    })),
+                },
+            });
+        } else {
+            grouped.push(activity);
+        }
+    }
+
+    return grouped;
 }
 
 const cachedGetFriendsActivityForUser = unstable_cache(
@@ -229,9 +259,10 @@ export async function getHomeFeedActivities(userId?: string): Promise<FeedActivi
             activities = await cachedGetFriendsActivityForUser(userId).catch(() => []);
         }
 
-        // Backfill with recent community activities if fewer than 6
+        // Backfill with recent community activities if fewer than 6 grouped items
         if (activities.length < 6) {
-            const existingIds = new Set(activities.map(a => a.id));
+            const existingIds = new Set(activities.map((a) => a.id));
+            // Fetch more raw items to ensure we get at least 6 distinct groups after episode merging
             const community = await prisma.activity.findMany({
                 where: {
                     id: { notIn: Array.from(existingIds) },
@@ -240,20 +271,27 @@ export async function getHomeFeedActivities(userId?: string): Promise<FeedActivi
                         { review: { not: null } },
                         { rating: { not: null } },
                         { type: "WATCHED" },
-                    ]
+                    ],
                 },
                 include: {
                     user: { select: { id: true, name: true, image: true } },
                     media: true,
-                    episode: { select: { id: true, seasonNumber: true, episodeNumber: true, title: true } },
+                    episode: {
+                        select: {
+                            id: true,
+                            seasonNumber: true,
+                            episodeNumber: true,
+                            title: true,
+                        },
+                    },
                     recommendedBy: { select: { id: true, name: true } },
-                    _count: { select: { comments: true } }
+                    _count: { select: { comments: true } },
                 },
                 orderBy: { createdAt: "desc" },
-                take: 6 - activities.length,
+                take: 40,
             }).catch(() => []);
 
-            const mappedCommunity: FeedActivity[] = community.map(a => ({
+            const mappedCommunity: FeedActivity[] = community.map((a) => ({
                 id: a.id,
                 type: a.type as FeedActivity["type"],
                 createdAt: a.createdAt,
@@ -262,20 +300,24 @@ export async function getHomeFeedActivities(userId?: string): Promise<FeedActivi
                 votes: a.votes,
                 user: a.user,
                 media: a.media as unknown as FeedActivity["media"],
-                episode: a.episode ? {
-                    id: a.episode.id,
-                    seasonNumber: a.episode.seasonNumber,
-                    episodeNumber: a.episode.episodeNumber,
-                    title: a.episode.title || "",
-                } : null,
+                episode: a.episode
+                    ? {
+                        id: a.episode.id,
+                        seasonNumber: a.episode.seasonNumber,
+                        episodeNumber: a.episode.episodeNumber,
+                        title: a.episode.title || "",
+                    }
+                    : null,
                 recommendedBy: a.recommendedBy,
                 _count: a._count,
             }));
 
-            activities = [...activities, ...mappedCommunity];
+            // Group community activities so consecutive episodes of the same show collapse into one card
+            const groupedCommunity = groupFeedActivities(mappedCommunity);
+            activities = [...activities, ...groupedCommunity];
         }
 
-        return activities.slice(0, 6);
+        return groupFeedActivities(activities).slice(0, 6);
     } catch (error) {
         console.warn("[FeedActions] Error in getHomeFeedActivities:", error);
         return [];

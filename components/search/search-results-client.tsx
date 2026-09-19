@@ -11,6 +11,7 @@ type SearchResultsClientProps = {
     communityRatingsMap: Record<number, { average: number; count: number }>;
     metadataMap: Record<number, any>;
     type: string;
+    countryCode?: string;
 };
 
 export function SearchResultsClient({
@@ -19,7 +20,8 @@ export function SearchResultsClient({
     userRatingsMap,
     communityRatingsMap,
     metadataMap,
-    type
+    type,
+    countryCode = "TR"
 }: SearchResultsClientProps) {
     const [activeTab, setActiveTab] = useState<"content" | "artists">("content");
 
@@ -102,6 +104,7 @@ export function SearchResultsClient({
                                     runtime={metadataMap[item.id]?.runtime || undefined}
                                     type={(item.media_type || type) as "movie" | "tv"}
                                     fullWidth={true}
+                                    countryCode={countryCode}
                                 />
                             ))}
                         </div>

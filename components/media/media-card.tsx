@@ -9,7 +9,8 @@ import { RecommendModal } from "./recommend-modal";
 import { useState, useEffect, useRef } from "react";
 import { getFriendsRatings } from "@/lib/rating-actions";
 import { createPortal } from "react-dom";
-import { getCountryName, getCountryBadgeLabel } from "@/lib/country";
+import { getCountryName, getCountryBadgeLabel, getCountryLocative, getClientUserCountry } from "@/lib/country";
+import { useTranslation } from "@/lib/i18n/i18n-context";
 
 type MediaCardProps = {
     id: number;
@@ -79,8 +80,13 @@ export function MediaCard({
     genres,
     statusLabel,
     statusType,
-    countryCode = "TR"
+    countryCode,
 }: MediaCardProps) {
+    const { locale } = useTranslation();
+    const activeCountry = (countryCode || getClientUserCountry()).toUpperCase();
+    const countryName = getCountryName(activeCountry, locale);
+    const countryLocative = getCountryLocative(activeCountry);
+
     type FriendRating = {
         userId: string;
         userName: string | null;
@@ -111,7 +117,7 @@ export function MediaCard({
         if (type !== "movie" && type !== "tv") return;
 
         let isMounted = true;
-        fetch(`/api/tmdb/providers-batch?items=${type}:${id}&country=${countryCode}`)
+        fetch(`/api/tmdb/providers-batch?items=${type}:${id}&country=${activeCountry}`)
             .then((res) => res.json())
             .then((data) => {
                 if (!isMounted) return;
@@ -125,7 +131,7 @@ export function MediaCard({
         return () => {
             isMounted = false;
         };
-    }, [id, type, countryCode, watchProviders]);
+    }, [id, type, activeCountry, watchProviders]);
 
     const updatePreviewPosition = () => {
         if (!cardRef.current || typeof window === "undefined") return;
@@ -251,11 +257,11 @@ export function MediaCard({
                             ) : providers === null ? (
                                 <div 
                                     className="flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-black/85 border border-white/10 text-neutral-400 shadow-md relative pointer-events-auto backdrop-blur-sm"
-                                    title={`${getCountryName(countryCode)}'de yayınlanan herhangi bir dijital platformda bulunmuyor`}
+                                    title={locale === "en" ? `Not available on any streaming platform in ${countryName}` : `${countryLocative} yayınlanan herhangi bir dijital platformda bulunmuyor`}
                                 >
                                     <Tv className="w-2.5 h-2.5 md:w-3 md:h-3 text-neutral-400 shrink-0" />
-                                    <span className="text-[7px] md:text-[8px] font-black uppercase tracking-wider text-neutral-300">
-                                        {getCountryBadgeLabel(countryCode)}
+                                    <span className="text-[8px] md:text-[10px] font-black uppercase tracking-wider text-neutral-300">
+                                        {getCountryBadgeLabel(activeCountry, locale)}
                                     </span>
                                 </div>
                             ) : null}
@@ -267,7 +273,7 @@ export function MediaCard({
                                     <span
                                         key={genre}
                                         className={cn(
-                                            "px-1.5 py-0.5 md:px-2 md:py-1 text-[8px] md:text-[9px] font-black text-amber-400 uppercase tracking-wider",
+                                            "px-1.5 py-0.5 md:px-2 md:py-1 text-[9px] md:text-[10px] font-black text-amber-400 uppercase tracking-wider",
                                             index > 0 && "border-l border-amber-400/30"
                                         )}
                                     >
@@ -294,14 +300,14 @@ export function MediaCard({
                 )}>
                     {friend && (
                         <div className="absolute top-1.5 left-1.5 md:top-2 md:left-2 z-20 flex items-center gap-1 px-1.5 py-0.5 md:px-2 md:py-1 rounded-full bg-black/60 backdrop-blur-md border border-white/10 max-w-[calc(100%-12px)]">
-                            <div className="w-3 h-3 md:w-4 md:h-4 rounded-full overflow-hidden border border-amber-400/50 shrink-0">
+                            <div className="w-3.5 h-3.5 md:w-4 md:h-4 rounded-full overflow-hidden border border-amber-400/50 shrink-0">
                                 <img
                                     src={friend.image || `https://ui-avatars.com/api/?name=${friend.name || "U"}&background=fbbf24&color=000`}
                                     alt={friend.name || "User"}
                                     className="w-full h-full object-cover"
                                 />
                             </div>
-                            <span className="text-[8px] md:text-[9px] font-black text-white truncate uppercase tracking-tighter">
+                            <span className="text-[9px] md:text-[10px] font-black text-white truncate uppercase tracking-tighter">
                                 {friend.name?.split(" ")[0]} {friend.type === "WATCHED" ? "izledi" : friend.type === "RATED" ? "puanladı" : "ekledi"}
                             </span>
                         </div>
@@ -350,21 +356,21 @@ export function MediaCard({
                         <div className="flex items-center justify-between gap-1 overflow-hidden">
                             <div className="flex items-center gap-1.5 shrink-0">
                                 <span className={cn(
-                                    "font-black uppercase tracking-[0.1em]",
-                                    compact ? "text-[7px]" : "text-[7px] min-[390px]:text-[8px] md:text-[9px]",
+                                    "font-black uppercase tracking-[0.08em]",
+                                    compact ? "text-[8px]" : "text-[9px] min-[390px]:text-[10px] md:text-xs",
                                     type === "movie" ? "text-amber-500" : "text-blue-500"
                                 )}>
                                     {type === "movie" ? "Film" : "Dizi"}
                                 </span>
                                 {(releaseDate || runtime) && (
                                     <>
-                                        <span className="text-neutral-600 font-black text-[8px]">•</span>
+                                        <span className="text-neutral-600 font-black text-[9px]">•</span>
                                         <span className={cn(
-                                            "font-bold text-neutral-500 flex items-center gap-1 uppercase tracking-wider",
-                                            compact ? "text-[7px]" : "text-[7px] min-[390px]:text-[8px] md:text-[9px]"
+                                            "font-bold text-neutral-400 flex items-center gap-1 uppercase tracking-wider",
+                                            compact ? "text-[8px]" : "text-[9px] min-[390px]:text-[10px] md:text-xs"
                                         )}>
                                             {releaseDate && new Date(releaseDate).getFullYear()}
-                                            {releaseDate && runtime && <span className="text-neutral-600 font-black text-[8px] mx-0.5">•</span>}
+                                            {releaseDate && runtime && <span className="text-neutral-600 font-black text-[9px] mx-0.5">•</span>}
                                             {runtime && formatRuntime(runtime)}
                                         </span>
                                     </>
@@ -389,23 +395,23 @@ export function MediaCard({
                             </div>
 
                             <div className={cn("flex items-center flex-1 justify-end min-w-0", compact ? "gap-0.5" : "gap-1 md:gap-2")}>
-                                <div className="flex items-center gap-0.5 bg-white/5 px-1 py-0.5 rounded-md border border-white/5 shrink-0" title="Dünya Geneli Puanı (TMDB)">
-                                    <Globe className="w-2 md:w-2.5 h-2 md:h-2.5 text-blue-400" />
-                                    <span className="text-[8px] min-[390px]:text-[9px] md:text-[10px] font-black text-white">{voteAverage?.toFixed(1) || "0"}</span>
+                                <div className="flex items-center gap-0.5 bg-white/5 px-1.5 py-0.5 rounded-md border border-white/5 shrink-0" title="Dünya Geneli Puanı (TMDB)">
+                                    <Globe className="w-2.5 md:w-3 h-2.5 md:h-3 text-blue-400" />
+                                    <span className="text-[9px] min-[390px]:text-[10px] md:text-xs font-black text-white">{voteAverage?.toFixed(1) || "0"}</span>
                                 </div>
 
                                 <button
                                     onClick={handleFriendsRatingsClick}
                                     className={cn(
-                                        "flex items-center gap-0.5 px-1 md:px-1.5 py-0.5 rounded-md border transition-all shrink-0 hover:scale-110 active:scale-95 touch-target-sm",
+                                        "flex items-center gap-0.5 px-1.5 py-0.5 rounded-md border transition-all shrink-0 hover:scale-110 active:scale-95 touch-target-sm",
                                         userRating !== null && userRating !== undefined
                                             ? "bg-primary/20 border-primary/30 text-primary"
                                             : "bg-white/5 border-white/5 text-neutral-500"
                                     )}
                                     title="Senin puanın ve arkadaş puanları"
                                 >
-                                    <Star className={cn("w-2 md:w-2.5 h-2 md:h-2.5", userRating !== null && userRating !== undefined ? "fill-current" : "text-neutral-500")} />
-                                    <span className="text-[8px] min-[390px]:text-[9px] md:text-[10px] font-black">
+                                    <Star className={cn("w-2.5 md:w-3 h-2.5 md:h-3", userRating !== null && userRating !== undefined ? "fill-current" : "text-neutral-500")} />
+                                    <span className="text-[9px] min-[390px]:text-[10px] md:text-xs font-black">
                                         {userRating !== null && userRating !== undefined ? userRating.toFixed(1) : "-"}
                                     </span>
                                 </button>
@@ -415,12 +421,12 @@ export function MediaCard({
 
                     <div className={cn(
                         "font-black text-white transition-colors tracking-tight group-hover:text-primary leading-tight",
-                        type === "person" ? "text-[9px] md:text-xs" : compact ? "text-[10px] md:text-xs" : "text-[11px] min-[390px]:text-xs md:text-base"
+                        type === "person" ? "text-xs md:text-sm" : compact ? "text-xs md:text-sm" : "text-xs min-[390px]:text-[13px] md:text-base"
                     )}>
                         <AutoScrollText text={title} />
                     </div>
                     {originalTitle && originalTitle !== title && type !== "person" && (
-                        <p className="text-[8px] md:text-[10px] font-bold text-neutral-500 uppercase tracking-tight truncate opacity-80 mt-[-2px]">
+                        <p className="text-[9px] md:text-xs font-bold text-neutral-500 uppercase tracking-tight truncate opacity-80 mt-[-2px]">
                             {originalTitle}
                         </p>
                     )}
@@ -478,7 +484,7 @@ export function MediaCard({
                                 )}
                             </div>
 
-                            <p className="text-[11px] text-white font-medium leading-relaxed line-clamp-6 italic">
+                            <p className="text-xs sm:text-[13px] text-white font-medium leading-relaxed line-clamp-6 italic">
                                 &quot;{overview}&quot;
                             </p>
                         </div>
@@ -511,7 +517,7 @@ export function MediaCard({
                                     </div>
                                     <div>
                                         <h3 className="text-lg font-black text-white uppercase tracking-tight">Arkadaş Puanları</h3>
-                                        <p className="text-[10px] text-neutral-500 font-bold uppercase tracking-wider">{title}</p>
+                                        <p className="text-xs text-neutral-400 font-bold uppercase tracking-wider">{title}</p>
                                     </div>
                                 </div>
                                 <button

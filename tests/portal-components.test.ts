@@ -3,8 +3,33 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { PortalHero } from "@/components/portal/portal-hero";
 import { PortalNewsGrid } from "@/components/portal/portal-news-grid";
 import { PortalCommunityPulse } from "@/components/portal/portal-community-pulse";
+import { PortalHomeFeed } from "@/components/portal/portal-home-feed";
 import { PortalRightRail } from "@/components/portal/portal-right-rail";
 import { PortalHubStrip } from "@/components/portal/portal-hub-strip";
+
+jest.mock("@/auth", () => ({
+  auth: jest.fn(),
+}));
+
+jest.mock("@/lib/comment-actions", () => ({
+  addActivityComment: jest.fn(),
+  getActivityComments: jest.fn().mockResolvedValue([]),
+}));
+
+jest.mock("@/lib/activity-actions", () => ({
+  voteActivity: jest.fn(),
+}));
+
+jest.mock("@/lib/actions", () => ({
+  toggleToWatch: jest.fn(),
+}));
+
+jest.mock("sonner", () => ({
+  toast: {
+    success: jest.fn(),
+    error: jest.fn(),
+  },
+}));
 
 describe("Merlin-inspired Portal Components", () => {
   test("PortalHero renders featured item title, badge, and ratings", () => {
@@ -62,11 +87,47 @@ describe("Merlin-inspired Portal Components", () => {
     );
 
     expect(html).toContain("Vizyondakiler");
+    expect(html).toContain("Yakında");
     expect(html).toContain("Oppenheimer");
-    expect(html).toContain("Gladiator II");
     expect(html).toContain("Yeni");
     expect(html).toContain("href=\"/movie/201\"");
-    expect(html).toContain("href=\"/movie/202\"");
+  });
+
+  test("PortalHomeFeed renders live feed and stacked binge deck in vertical layout", () => {
+    const html = renderToStaticMarkup(
+      React.createElement(PortalHomeFeed, {
+        layout: "vertical",
+        activities: [
+          {
+            id: "act-1",
+            type: "WATCHED",
+            createdAt: new Date("2024-01-01"),
+            user: { id: "user-1", name: "Mehmet", image: null },
+            media: { id: 401, tmdbId: 401, title: "Breaking Bad", posterPath: "/bb.jpg", type: "TV" },
+            episodeRange: {
+              seasonNumber: 1,
+              fromEpisode: 1,
+              toEpisode: 4,
+              count: 4,
+              episodeList: [
+                { number: 1, title: "Pilot" },
+                { number: 2, title: "Cat's in the Bag..." },
+                { number: 3, title: "...And the Bag's in the River" },
+                { number: 4, title: "Cancer Man" },
+              ],
+            },
+          },
+        ],
+      })
+    );
+
+    expect(html).toContain("Canlı Sosyal Akış");
+    expect(html).toContain("Canlı");
+    expect(html).toContain("Mehmet");
+    expect(html).toContain("Breaking Bad");
+    expect(html).toContain("4 Bölüm");
+    expect(html).toContain("S1 • B1 - B4");
+    expect(html).toContain("Tüm Akışı İncele");
   });
 
   test("PortalCommunityPulse renders live stats and reader reactions", () => {

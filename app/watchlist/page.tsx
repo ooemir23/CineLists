@@ -39,7 +39,7 @@ export default async function WatchlistPage() {
         <div className="max-w-[1600px] mx-auto px-3 sm:px-6 md:px-8 lg:px-12 py-4 sm:py-10">
             <div className="flex items-center gap-2.5 mb-6 sm:mb-10">
                 <span className="w-8 h-8 md:w-10 md:h-10 flex items-center justify-center rounded-xl md:rounded-2xl bg-primary text-slate-950 font-black text-xl md:text-2xl shadow-lg shadow-primary/20">+</span>
-                <h1 className="text-2xl sm:text-3xl md:text-5xl font-black text-white tracking-tight">Takip Ettiklerim</h1>
+                <h1 className="text-2xl sm:text-3xl md:text-5xl font-black text-white tracking-tight">İzlenecekler</h1>
             </div>
             <WatchlistSearchBarWrapper watchlist={watchlist} />
         </div>

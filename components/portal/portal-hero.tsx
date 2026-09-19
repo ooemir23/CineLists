@@ -125,16 +125,16 @@ export function PortalHero({ items }: { items: PortalHeroItem[] }) {
         <div className="absolute bottom-0 left-0 right-0 p-5 md:p-8 lg:p-10 z-10 flex flex-col justify-end max-w-3xl">
           {/* Badge & Tags Row */}
           <div className="flex flex-wrap items-center gap-2 mb-2 md:mb-3">
-            <span className="px-2.5 py-0.5 rounded-md text-[11px] font-black uppercase tracking-wider bg-amber-400 text-slate-950 shadow-sm shadow-amber-400/30">
+            <span className="px-2.5 py-0.5 rounded-md text-xs font-black uppercase tracking-wider bg-amber-400 text-slate-950 shadow-sm shadow-amber-400/30">
               Öne Çıkan
             </span>
-            <span className="px-2.5 py-0.5 rounded-md text-[11px] font-bold uppercase tracking-wider bg-white/10 text-neutral-300 border border-white/10">
+            <span className="px-2.5 py-0.5 rounded-md text-xs font-bold uppercase tracking-wider bg-white/10 text-neutral-300 border border-white/10">
               {current.media_type === "movie" ? "Film" : "Dizi"}
             </span>
             {current.genre_names?.slice(0, 2).map((g) => (
               <span
                 key={g}
-                className="px-2.5 py-0.5 rounded-md text-[11px] font-bold tracking-wider bg-white/5 text-neutral-400 border border-white/5 hidden sm:inline-block"
+                className="px-2.5 py-0.5 rounded-md text-xs font-bold tracking-wider bg-white/5 text-neutral-400 border border-white/5 hidden sm:inline-block"
               >
                 {g}
               </span>
@@ -152,34 +152,34 @@ export function PortalHero({ items }: { items: PortalHeroItem[] }) {
           </Link>
 
           {/* Overview Excerpt */}
-          <p className="mt-2 text-xs sm:text-sm text-neutral-300 line-clamp-2 font-normal max-w-2xl leading-relaxed">
+          <p className="mt-2 text-sm sm:text-base text-neutral-300 line-clamp-2 font-normal max-w-2xl leading-relaxed">
             {current.overview || "Bu yapım hakkında henüz bir Türkçe özet girilmedi."}
           </p>
 
           {/* Meta Row (Year, Rating, Reviews, CTA) */}
-          <div className="mt-4 flex flex-wrap items-center gap-4 text-xs font-semibold text-neutral-400">
+          <div className="mt-4 flex flex-wrap items-center gap-4 text-sm font-semibold text-neutral-400">
             {year && (
               <span className="flex items-center gap-1.5 text-neutral-300">
-                <Calendar className="w-3.5 h-3.5 text-amber-400" />
+                <Calendar className="w-4 h-4 text-amber-400" />
                 {year}
               </span>
             )}
             <span className="flex items-center gap-1.5 text-amber-400 font-bold">
-              <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
+              <Star className="w-4 h-4 fill-amber-400 text-amber-400" />
               {rating} / 10
             </span>
             {current.vote_count ? (
               <span className="flex items-center gap-1.5 text-neutral-400 hidden sm:flex">
-                <MessageSquare className="w-3.5 h-3.5" />
+                <MessageSquare className="w-4 h-4" />
                 {current.vote_count} Oy
               </span>
             ) : null}
 
             <Link
               href={`/${current.media_type}/${current.id}`}
-              className="ml-auto inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-amber-400 hover:bg-amber-500 text-slate-950 font-black text-xs transition-transform active:scale-95 shadow-md shadow-amber-400/20"
+              className="ml-auto inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-amber-400 hover:bg-amber-500 text-slate-950 font-black text-sm transition-transform active:scale-95 shadow-md shadow-amber-400/20"
             >
-              <Play className="w-3.5 h-3.5 fill-current" />
+              <Play className="w-4 h-4 fill-current" />
               İncele
             </Link>
           </div>

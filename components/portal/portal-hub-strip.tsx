@@ -47,10 +47,10 @@ export function PortalHubStrip() {
         </h2>
         <Link
           href="/search"
-          className="text-xs font-bold text-neutral-400 hover:text-amber-400 flex items-center gap-1 transition-colors group"
+          className="text-xs sm:text-sm font-bold text-neutral-400 hover:text-amber-400 flex items-center gap-1 transition-colors group"
         >
           Tüm Platformlar
-          <ArrowRight className="w-3 h-3 group-hover:translate-x-0.5 transition-transform" />
+          <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
         </Link>
       </div>
 
@@ -62,17 +62,17 @@ export function PortalHubStrip() {
             className={`group p-3.5 rounded-xl border bg-gradient-to-br ${hub.gradient} ${hub.border} transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg flex flex-col justify-between min-h-[90px]`}
           >
             <div className="flex items-center justify-between gap-1 mb-2">
-              <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded bg-white/10 text-white">
+              <span className="text-xs font-black uppercase tracking-wider px-2 py-0.5 rounded bg-white/10 text-white">
                 {hub.badge}
               </span>
               <Film className="w-3.5 h-3.5 text-neutral-400 group-hover:text-amber-400 transition-colors" />
             </div>
 
             <div>
-              <strong className="block text-xs sm:text-sm font-bold text-white group-hover:text-amber-400 transition-colors leading-snug">
+              <strong className="block text-sm sm:text-base font-bold text-white group-hover:text-amber-400 transition-colors leading-snug">
                 {hub.name}
               </strong>
-              <small className="block text-[10px] text-neutral-400 mt-0.5 font-medium">
+              <small className="block text-xs text-neutral-400 mt-0.5 font-medium">
                 {hub.count}
               </small>
             </div>

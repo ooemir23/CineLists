@@ -30,6 +30,9 @@ export interface UpcomingEpisode {
     addedAt?: Date;
     mediaType: "movie" | "tv";
     showStatus?: string;
+    isTheatrical?: boolean;
+    daysLeft?: number;
+    daysLeftText?: string;
 }
 
 export interface FriendStats {
@@ -138,21 +141,20 @@ export async function getFavoriteActorsUpcoming(): Promise<UpcomingActorProject[
 /**
  * Get next episodes for watched TV shows + currently watching shows
  */
-export async function getWatchedShowsNextEpisodes(): Promise<UpcomingEpisode[]> {
+export async function getWatchedShowsNextEpisodes(countryCode?: string): Promise<UpcomingEpisode[]> {
     try {
         const session = await auth();
         if (!session?.user?.id) return [];
 
-        // Get watched shows (TV only) + Currently watching shows + Plan to watch shows
+        // Get watching shows (TV + Movies) + Plan to watch shows (TV + Movies) + recent watched shows
         const [watchingShows, planToWatchShows, watchedShows] = await Promise.all([
             prisma.toWatch.findMany({
                 where: {
                     userId: session.user.id,
                     status: "WATCHING",
-                    media: { type: "TV" },
                 },
                 include: { media: true },
-                take: 20,
+                take: 30,
                 orderBy: { addedAt: "desc" },
             }),
             prisma.toWatch.findMany({
@@ -161,7 +163,7 @@ export async function getWatchedShowsNextEpisodes(): Promise<UpcomingEpisode[]> 
                     status: "PLAN_TO_WATCH",
                 },
                 include: { media: true },
-                take: 30,
+                take: 40,
                 orderBy: { addedAt: "desc" },
             }),
             prisma.watched.findMany({
@@ -170,7 +172,7 @@ export async function getWatchedShowsNextEpisodes(): Promise<UpcomingEpisode[]> 
                     media: { type: "TV" },
                 },
                 include: { media: true },
-                take: 15,
+                take: 20,
                 orderBy: { watchedAt: "desc" },
             }),
         ]);
@@ -181,21 +183,20 @@ export async function getWatchedShowsNextEpisodes(): Promise<UpcomingEpisode[]> 
             ...watchedShows.map(w => ({ media: w.media, statusType: undefined, addedAt: w.watchedAt })),
         ];
 
-        // Dedup by media ID and take top 10 most recent shows to keep response fast
-        const uniqueShows = Array.from(new Map(combinedShows.map(s => [s.media.id, s])).values()).slice(0, 6);
+        // Dedup by media ID and take up to 25 items
+        const uniqueShows = Array.from(new Map(combinedShows.map(s => [s.media.id, s])).values()).slice(0, 25);
         if (uniqueShows.length === 0) return [];
 
         const episodes: UpcomingEpisode[] = [];
         const now = new Date();
         const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
-        // Fetch upcoming episode details in parallel
+        // Fetch upcoming episode details and movie release dates in parallel
         await Promise.all(uniqueShows.map(async (item) => {
             if (item.media.type === "TV") {
                 try {
                     const details = await tmdb.getTVShow(item.media.tmdbId.toString()).catch(() => null);
                     const providers = details?.["watch/providers"] || details?.watch_providers;
-
                     const nextEpisode = details?.next_episode_to_air;
                     const showStatus = details?.status;
 
@@ -208,18 +209,22 @@ export async function getWatchedShowsNextEpisodes(): Promise<UpcomingEpisode[]> 
                     if (nextEpisode?.air_date) {
                         const airDate = new Date(nextEpisode.air_date);
                         const startOfAirDate = new Date(airDate.getFullYear(), airDate.getMonth(), airDate.getDate());
+                        const diffDays = Math.round((startOfAirDate.getTime() - startOfToday.getTime()) / (1000 * 60 * 60 * 24));
 
                         // If the episode has already aired in the past, remove/skip from calendar
-                        if (startOfAirDate.getTime() < startOfToday.getTime()) {
+                        if (diffDays < 0) {
                             return;
                         }
 
-                        const trFlatrate = providers?.results?.TR?.flatrate || providers?.results?.TR?.buy || [];
-                        const platformLogos: { name: string; logoPath: string | null }[] = trFlatrate.map((p: any) => ({
+                        const cCode = (countryCode || "TR").toUpperCase();
+                        const altCode = cCode === "UK" ? "GB" : cCode === "GB" ? "UK" : cCode;
+                        const countryProviders = providers?.results?.[cCode] || providers?.results?.[altCode] || providers?.results?.TR;
+                        const flatrate = countryProviders?.flatrate || countryProviders?.buy || [];
+                        const platformLogos: { name: string; logoPath: string | null }[] = flatrate.map((p: any) => ({
                             name: p.provider_name,
                             logoPath: p.logo_path || null,
                         }));
-                        let platforms: string[] = trFlatrate.map((p: any) => p.provider_name as string);
+                        let platforms: string[] = flatrate.map((p: any) => p.provider_name as string);
 
                         if (platforms.length === 0 && details?.networks && Array.isArray(details.networks)) {
                             platforms = details.networks.map((n: any) => n.name);
@@ -245,6 +250,9 @@ export async function getWatchedShowsNextEpisodes(): Promise<UpcomingEpisode[]> 
                             addedAt: item.addedAt,
                             mediaType: "tv",
                             showStatus: showStatus || undefined,
+                            isTheatrical: false,
+                            daysLeft: diffDays,
+                            daysLeftText: diffDays === 0 ? "Bugün" : diffDays === 1 ? "Yarın" : `${diffDays} gün sonra`,
                         });
                     }
                 } catch (error) {
@@ -252,44 +260,54 @@ export async function getWatchedShowsNextEpisodes(): Promise<UpcomingEpisode[]> 
                 }
             } else if (item.media.type === "MOVIE") {
                 try {
-                    let releaseDateStr = item.media.releaseDate ? item.media.releaseDate.toISOString().split("T")[0] : null;
-                    let moviePoster = item.media.posterPath;
-                    let movieTitle = item.media.title;
-                    let movieRating = item.media.voteAverage || 0;
+                    const movieDetails = await tmdb.getDetails("movie", item.media.tmdbId.toString(), {
+                        append_to_response: "release_dates,watch/providers",
+                    }).catch(() => null);
 
-                    if (!releaseDateStr) {
-                        const movieDetails = await tmdb.getDetails("movie", item.media.tmdbId.toString()).catch(() => null);
-                        releaseDateStr = movieDetails?.release_date || null;
-                        moviePoster = moviePoster || movieDetails?.poster_path || null;
-                        movieTitle = movieTitle || movieDetails?.title || movieDetails?.name;
-                        movieRating = movieRating || movieDetails?.vote_average || 0;
+                    let releaseDateStr = movieDetails?.release_date || (item.media.releaseDate ? item.media.releaseDate.toISOString().split("T")[0] : null);
+
+                    // Check country-specific theatrical release date
+                    const cCode = (countryCode || "TR").toUpperCase();
+                    const altCode = cCode === "UK" ? "GB" : cCode === "GB" ? "UK" : cCode;
+                    const countryReleaseObj = movieDetails?.release_dates?.results?.find(
+                        (r: any) => r.iso_3166_1 === cCode || r.iso_3166_1 === altCode
+                    );
+                    if (countryReleaseObj?.release_dates?.length) {
+                        const theatricalEntry = countryReleaseObj.release_dates.find(
+                            (rd: any) => rd.type === 3 || rd.type === 2 || rd.type === 1
+                        ) || countryReleaseObj.release_dates[0];
+                        if (theatricalEntry?.release_date) {
+                            releaseDateStr = theatricalEntry.release_date.split("T")[0];
+                        }
                     }
 
                     if (releaseDateStr) {
                         const relDate = new Date(releaseDateStr);
                         const startOfRelDate = new Date(relDate.getFullYear(), relDate.getMonth(), relDate.getDate());
+                        const diffDays = Math.round((startOfRelDate.getTime() - startOfToday.getTime()) / (1000 * 60 * 60 * 24));
 
-                        // If the movie has already released in the past, skip it
-                        if (startOfRelDate.getTime() < startOfToday.getTime()) {
-                            return;
+                        // If today or in future (up to 90 days)
+                        if (diffDays >= 0) {
+                            episodes.push({
+                                showId: item.media.tmdbId,
+                                showTitle: item.media.title || movieDetails?.title || "Film",
+                                nextEpisodeDate: releaseDateStr,
+                                nextEpisodeTitle: "Sinema Vizyonu",
+                                nextEpisodeSeason: null,
+                                nextEpisodeNumber: null,
+                                platforms: ["Sinemalarda"],
+                                platformLogos: [],
+                                posterPath: item.media.posterPath || movieDetails?.poster_path || null,
+                                voteAverage: item.media.voteAverage || movieDetails?.vote_average || 0,
+                                statusType: item.statusType,
+                                addedAt: item.addedAt,
+                                mediaType: "movie",
+                                showStatus: "Theatrical",
+                                isTheatrical: true,
+                                daysLeft: diffDays,
+                                daysLeftText: diffDays === 0 ? "Bugün Vizyonda" : diffDays === 1 ? "Yarın Vizyonda" : `${diffDays} gün sonra vizyonda`,
+                            });
                         }
-
-                        episodes.push({
-                            showId: item.media.tmdbId,
-                            showTitle: movieTitle,
-                            nextEpisodeDate: releaseDateStr,
-                            nextEpisodeTitle: null,
-                            nextEpisodeSeason: null,
-                            nextEpisodeNumber: null,
-                            platforms: [],
-                            platformLogos: [],
-                            posterPath: moviePoster,
-                            voteAverage: movieRating,
-                            statusType: item.statusType,
-                            addedAt: item.addedAt,
-                            mediaType: "movie",
-                            showStatus: undefined,
-                        });
                     }
                 } catch (error) {
                     console.error(`Error fetching movie details for ${item.media.tmdbId}:`, error);
@@ -299,12 +317,12 @@ export async function getWatchedShowsNextEpisodes(): Promise<UpcomingEpisode[]> 
 
         // Sort chronologically (closest upcoming date first)
         const sorted = episodes.sort((a, b) => {
-            if (!a.nextEpisodeDate || !b.nextEpisodeDate) return 0;
-            return new Date(a.nextEpisodeDate).getTime() - new Date(b.nextEpisodeDate).getTime();
+            const daysA = a.daysLeft ?? 9999;
+            const daysB = b.daysLeft ?? 9999;
+            return daysA - daysB;
         });
 
-        // Take top 20 items with upcoming dates
-        return sorted.slice(0, 20);
+        return sorted.slice(0, 30);
     } catch (error) {
         console.warn("[HeroPersonalization] Next episodes skipped in dev:", error);
         return [];

@@ -83,7 +83,7 @@ export function UpcomingEpisodesCarousel({ episodes }: UpcomingEpisodesCarouselP
         return "Tarih Bekleniyor";
     };
 
-    const formatDaysLeft = (dateStr: string | null) => {
+    const formatDaysLeft = (dateStr: string | null, isMovie?: boolean) => {
         if (!dateStr) return null;
         const today = new Date();
         const target = new Date(dateStr);
@@ -91,15 +91,15 @@ export function UpcomingEpisodesCarousel({ episodes }: UpcomingEpisodesCarouselP
         const startOfTarget = new Date(target.getFullYear(), target.getMonth(), target.getDate());
         const diffMs = startOfTarget.getTime() - startOfToday.getTime();
         const days = Math.round(diffMs / (1000 * 60 * 60 * 24));
-        if (days <= 0) return "Bugün";
-        if (days === 1) return "Yarın";
-        return `${days} gün sonra`;
+        if (days <= 0) return isMovie ? "Bugün Vizyonda" : "Bugün";
+        if (days === 1) return isMovie ? "Yarın Vizyonda" : "Yarın";
+        return isMovie ? `${days} gün sonra vizyonda` : `${days} gün sonra`;
     };
 
     const formatEpisodeInfo = (episode: UpcomingEpisode) => {
-        if (episode.mediaType === "movie") return "Film · Vizyon";
+        if (episode.mediaType === "movie" || episode.isTheatrical) return "Film · Sinema Vizyonu";
         if (episode.nextEpisodeSeason && episode.nextEpisodeNumber) {
-            return `${episode.nextEpisodeSeason}. Sezon ${episode.nextEpisodeNumber}. Bölüm`;
+            return `${episode.nextEpisodeSeason}. Sezon ${episode.nextEpisodeNumber}. Bölüm${episode.nextEpisodeTitle ? ` · ${episode.nextEpisodeTitle}` : ""}`;
         }
         if (episode.nextEpisodeSeason) {
             return `${episode.nextEpisodeSeason}. Sezon`;
@@ -111,9 +111,9 @@ export function UpcomingEpisodesCarousel({ episodes }: UpcomingEpisodesCarouselP
         <div className="flex w-full min-w-0 flex-col gap-3 md:flex-row md:items-center md:gap-8">
             <div className="flex flex-col gap-3 md:flex-shrink-0 md:justify-center">
                 <div className="flex items-center gap-2">
-                    <Link href="/upcoming-episodes" className="group flex shrink-0 items-center gap-2 px-1">
-                        <Calendar size={18} className="text-blue-400 group-hover:text-blue-300 transition-colors" />
-                        <span className="text-base font-black text-white whitespace-nowrap group-hover:text-blue-200 transition-colors">Takvim</span>
+                    <Link href="/calendar" className="group flex shrink-0 items-center gap-2 px-1">
+                        <Calendar size={18} className="text-amber-400 group-hover:text-amber-300 transition-colors" />
+                        <span className="text-base font-black text-white whitespace-nowrap group-hover:text-amber-200 transition-colors">Takvim</span>
                     </Link>
                     <div className="grid min-w-0 flex-1 grid-cols-3 gap-1 rounded-full border border-white/5 bg-white/5 p-1 shadow-inner md:flex md:flex-col md:rounded-none md:border-none md:bg-transparent md:p-0 md:shadow-none">
                     {[
@@ -236,7 +236,7 @@ export function UpcomingEpisodesCarousel({ episodes }: UpcomingEpisodesCarouselP
                                                 <div className="flex items-center gap-1 text-xs text-neutral-200">
                                                     <Clock3 className="w-3 h-3 text-blue-300" />
                                                     <span className="font-bold text-blue-200">
-                                                        {isMounted ? (formatDaysLeft(episode.nextEpisodeDate) || "Yakında") : ""}
+                                                        {isMounted ? (formatDaysLeft(episode.nextEpisodeDate, episode.mediaType === "movie" || episode.isTheatrical) || "Yakında") : ""}
                                                     </span>
                                                 </div>
                                             </div>

@@ -5,6 +5,9 @@ import { Calendar, Tv, Star } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 
+import { getServerCountry } from "@/lib/country";
+import { UpcomingEpisode } from "@/lib/hero-personalization-actions";
+
 const formatFullDate = (dateStr: string | null) => {
     if (!dateStr) return "Tarih bilinmiyor";
     const date = new Date(dateStr);
@@ -15,7 +18,7 @@ const formatFullDate = (dateStr: string | null) => {
     });
 };
 
-const formatDaysLeft = (dateStr: string | null) => {
+const formatDaysLeft = (dateStr: string | null, isMovie?: boolean) => {
     if (!dateStr) return null;
     const today = new Date();
     const target = new Date(dateStr);
@@ -23,14 +26,17 @@ const formatDaysLeft = (dateStr: string | null) => {
     const startOfTarget = new Date(target.getFullYear(), target.getMonth(), target.getDate());
     const diffMs = startOfTarget.getTime() - startOfToday.getTime();
     const days = Math.round(diffMs / (1000 * 60 * 60 * 24));
-    if (days <= 0) return "Bugün";
-    if (days === 1) return "Yarın";
-    return `${days} gün sonra`;
+    if (days <= 0) return isMovie ? "Bugün Vizyonda" : "Bugün";
+    if (days === 1) return isMovie ? "Yarın Vizyonda" : "Yarın";
+    return isMovie ? `${days} gün sonra vizyonda` : `${days} gün sonra`;
 };
 
-const formatEpisodeInfo = (season?: number | null, episode?: number | null) => {
-    if (season && episode) return `${season}. Sezon ${episode}. Bölüm`;
-    if (season) return `${season}. Sezon`;
+const formatEpisodeInfo = (episode: UpcomingEpisode) => {
+    if (episode.mediaType === "movie" || episode.isTheatrical) return "Film · Sinema Vizyonu";
+    if (episode.nextEpisodeSeason && episode.nextEpisodeNumber) {
+        return `${episode.nextEpisodeSeason}. Sezon ${episode.nextEpisodeNumber}. Bölüm${episode.nextEpisodeTitle ? ` · ${episode.nextEpisodeTitle}` : ""}`;
+    }
+    if (episode.nextEpisodeSeason) return `${episode.nextEpisodeSeason}. Sezon`;
     return "Yeni Bölüm";
 };
 
@@ -38,8 +44,10 @@ export default async function UpcomingEpisodesPage() {
     const session = await auth();
     if (!session?.user?.id) redirect("/login");
 
+    const userCountry = await getServerCountry();
+
     const [upcomingEpisodes, favoriteActorProjects] = await Promise.all([
-        getWatchedShowsNextEpisodes(),
+        getWatchedShowsNextEpisodes(userCountry),
         getFavoriteActorsUpcoming(),
     ]);
 
@@ -71,7 +79,7 @@ export default async function UpcomingEpisodesPage() {
                         {upcomingEpisodes.map((episode) => (
                             <Link
                                 key={`${episode.showId}-${episode.nextEpisodeDate ?? "none"}`}
-                                href={`/tv/${episode.showId}`}
+                                href={`/${episode.mediaType === "movie" || episode.isTheatrical ? "movie" : "tv"}/${episode.showId}`}
                                 className="group bg-[#131b2c]/70 border border-white/10 rounded-2xl p-4 flex gap-4 hover:border-blue-400/40 transition-all"
                             >
                                 <div className="relative w-20 h-28 rounded-xl overflow-hidden bg-neutral-900 shrink-0">
@@ -96,11 +104,11 @@ export default async function UpcomingEpisodesPage() {
                                                 {episode.showTitle}
                                             </h3>
                                             <p className="text-[11px] text-blue-200/80 mt-1">
-                                                {formatEpisodeInfo(episode.nextEpisodeSeason, episode.nextEpisodeNumber)}
+                                                {formatEpisodeInfo(episode)}
                                             </p>
                                         </div>
                                         <div className="text-[10px] text-neutral-400 whitespace-nowrap">
-                                            {formatDaysLeft(episode.nextEpisodeDate) || "Tarih yok"}
+                                            {formatDaysLeft(episode.nextEpisodeDate, episode.mediaType === "movie" || episode.isTheatrical) || "Tarih yok"}
                                         </div>
                                     </div>
 

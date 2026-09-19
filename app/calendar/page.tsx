@@ -1,174 +1,144 @@
 import { auth } from "@/auth";
-import { redirect } from "next/navigation";
 import { tmdb } from "@/lib/tmdb";
-import { Calendar, Film, Tv, Star } from "lucide-react";
-import Image from "next/image";
+import { Calendar, ChevronLeft, Sparkles } from "lucide-react";
 import Link from "next/link";
+import { getWatchedShowsNextEpisodes } from "@/lib/hero-personalization-actions";
+import { getServerLocale } from "@/lib/i18n/server";
+import { getServerCountry, getCountryName } from "@/lib/country";
+import { CalendarView } from "@/components/calendar/calendar-view";
+
+export const revalidate = 300; // 5 minutes cache
 
 export default async function CalendarPage() {
   const session = await auth();
-  if (!session?.user?.id) redirect("/login");
+  const locale = await getServerLocale();
+  const userCountry = await getServerCountry();
+  const tmdbLang = locale === "en" ? "en-US" : "tr-TR";
+  const todayStr = new Date().toISOString().split("T")[0];
 
-  // Yakında çıkacak filmler ve diziler
-  const [upcomingMovies, upcomingTV, nowPlayingMovies] = await Promise.all([
-    tmdb.discover("movie", {
-      sort_by: "popularity.desc",
-      "primary_release_date.gte": new Date().toISOString().split("T")[0],
-      "vote_count.gte": "10",
-    }),
-    tmdb.discover("tv", {
-      sort_by: "popularity.desc",
-      "first_air_date.gte": new Date().toISOString().split("T")[0],
-      "vote_count.gte": "10",
-    }),
-    tmdb.discover("movie", {
-      sort_by: "primary_release_date.desc",
-      "primary_release_date.lte": new Date().toISOString().split("T")[0],
-      "vote_count.gte": "50",
-    }),
-  ]);
+  const [upcomingMoviesData, upcomingTVData, nowPlayingData, upcomingEpisodes] =
+    await Promise.all([
+      tmdb
+        .discover("movie", {
+          sort_by: "popularity.desc",
+          "primary_release_date.gte": todayStr,
+          region: userCountry,
+          language: tmdbLang,
+          "vote_count.gte": "5",
+        })
+        .catch(() => ({ results: [] })),
+      tmdb
+        .discover("tv", {
+          sort_by: "popularity.desc",
+          "first_air_date.gte": todayStr,
+          language: tmdbLang,
+          "vote_count.gte": "5",
+        })
+        .catch(() => ({ results: [] })),
+      tmdb
+        .discover("movie", {
+          sort_by: "primary_release_date.desc",
+          "primary_release_date.lte": todayStr,
+          region: userCountry,
+          language: tmdbLang,
+          "vote_count.gte": "20",
+        })
+        .catch(() => ({ results: [] })),
+      session?.user?.id
+        ? getWatchedShowsNextEpisodes(userCountry).catch(() => [])
+        : Promise.resolve([]),
+    ]);
 
-  const upcomingAll = [
-    ...upcomingMovies.results.map((m: any) => ({ ...m, media_type: "movie" })),
-    ...upcomingTV.results.map((t: any) => ({ ...t, media_type: "tv" })),
-  ].sort((a: any, b: any) => (b.popularity || 0) - (a.popularity || 0));
+  const upcomingMovies = (upcomingMoviesData?.results || []).slice(0, 24).map((m: any) => ({
+    id: m.id,
+    title: m.title || m.name || "",
+    poster_path: m.poster_path,
+    backdrop_path: m.backdrop_path,
+    release_date: m.release_date,
+    vote_average: m.vote_average || 0,
+    media_type: "movie" as const,
+    overview: m.overview,
+  }));
+
+  const upcomingTV = (upcomingTVData?.results || []).slice(0, 24).map((t: any) => ({
+    id: t.id,
+    title: t.name || t.title || "",
+    poster_path: t.poster_path,
+    backdrop_path: t.backdrop_path,
+    first_air_date: t.first_air_date,
+    vote_average: t.vote_average || 0,
+    media_type: "tv" as const,
+    overview: t.overview,
+  }));
+
+  const nowPlayingMovies = (nowPlayingData?.results || []).slice(0, 18).map((m: any) => ({
+    id: m.id,
+    title: m.title || m.name || "",
+    poster_path: m.poster_path,
+    backdrop_path: m.backdrop_path,
+    release_date: m.release_date,
+    vote_average: m.vote_average || 0,
+    media_type: "movie" as const,
+    overview: m.overview,
+    isNowPlaying: true,
+  }));
+
+  const countryName = getCountryName(userCountry, locale);
 
   return (
-    <div className="max-w-[1600px] mx-auto px-3 sm:px-6 md:px-8 lg:px-12 py-4 sm:py-10">
-      {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-end gap-2 md:gap-4 mb-6 sm:mb-10">
-        <div className="flex items-center gap-2.5">
-          <Calendar className="w-8 h-8 md:w-10 md:h-10 text-primary" />
-          <h1 className="text-2xl sm:text-3xl md:text-4xl font-black text-white tracking-tight">
-            Yakında & Yeni Çıkanlar
-          </h1>
-        </div>
-        <p className="text-neutral-500 text-xs md:text-sm font-medium pb-1">
-          Yakında çıkacak ve vizyondaki içerikleri keşfet.
-        </p>
+    <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-6 min-h-screen">
+      {/* Top Breadcrumb / Back Link */}
+      <div className="flex items-center justify-between gap-2">
+        <Link
+          href="/"
+          className="inline-flex items-center gap-1.5 text-xs font-bold text-neutral-400 hover:text-white transition-colors"
+        >
+          <ChevronLeft className="w-4 h-4" />
+          {locale === "en" ? "Back to Home" : "Ana Sayfaya Dön"}
+        </Link>
+        <span className="text-xs font-bold text-neutral-400">
+          📍 {countryName} ({userCountry})
+        </span>
       </div>
 
-      {/* Upcoming Section */}
-      <section className="mb-12">
-        <h2 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
-          <span className="text-2xl">🚀</span> Yakında Gelecekler
-        </h2>
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-          {upcomingAll.slice(0, 18).map((item: any) => (
-            <Link
-              key={item.id}
-              href={`/${item.media_type === "movie" ? "movie" : "tv"}/${item.id}`}
-              className="group"
-            >
-              <div className="relative aspect-[2/3] rounded-xl overflow-hidden bg-neutral-800 mb-2">
-                {item.poster_path ? (
-                  <Image
-                    src={`https://image.tmdb.org/t/p/w300${item.poster_path}`}
-                    alt={item.title || item.name}
-                    fill
-                    className="object-cover group-hover:scale-105 transition-transform duration-300"
-                  />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center">
-                    {item.media_type === "movie" ? (
-                      <Film className="w-8 h-8 text-neutral-700" />
-                    ) : (
-                      <Tv className="w-8 h-8 text-neutral-700" />
-                    )}
-                  </div>
-                )}
-                {/* Date Badge */}
-                <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 to-transparent p-2">
-                  <span className="text-[10px] font-bold text-white">
-                    {item.release_date || item.first_air_date
-                      ? new Date(
-                          item.release_date || item.first_air_date
-                        ).toLocaleDateString("tr-TR", {
-                          day: "numeric",
-                          month: "short",
-                        })
-                      : "Tarih belirtilmedi"}
-                  </span>
-                </div>
-                {/* Type Badge */}
-                <div className="absolute top-2 left-2">
-                  <span
-                    className={`text-[9px] font-bold px-1.5 py-0.5 rounded ${
-                      item.media_type === "movie"
-                        ? "bg-blue-500/80 text-white"
-                        : "bg-purple-500/80 text-white"
-                    }`}
-                  >
-                    {item.media_type === "movie" ? "FİLM" : "DİZİ"}
-                  </span>
-                </div>
-              </div>
-              <h3 className="text-xs font-bold text-white truncate group-hover:text-primary transition-colors">
-                {item.title || item.name}
-              </h3>
-              {item.vote_average > 0 && (
-                <div className="flex items-center gap-1 mt-0.5">
-                  <Star size={10} className="text-amber-400 fill-amber-400" />
-                  <span className="text-[10px] text-neutral-400">
-                    {item.vote_average.toFixed(1)}
-                  </span>
-                </div>
-              )}
-            </Link>
-          ))}
-        </div>
-      </section>
-
-      {/* Now Playing Section */}
-      <section>
-        <h2 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
-          <span className="text-2xl">🎬</span> Vizyondakiler
-        </h2>
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-          {nowPlayingMovies.results.slice(0, 12).map((movie: any) => (
-            <Link
-              key={movie.id}
-              href={`/movie/${movie.id}`}
-              className="group"
-            >
-              <div className="relative aspect-[2/3] rounded-xl overflow-hidden bg-neutral-800 mb-2">
-                {movie.poster_path ? (
-                  <Image
-                    src={`https://image.tmdb.org/t/p/w300${movie.poster_path}`}
-                    alt={movie.title}
-                    fill
-                    className="object-cover group-hover:scale-105 transition-transform duration-300"
-                  />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center">
-                    <Film className="w-8 h-8 text-neutral-700" />
-                  </div>
-                )}
-                {movie.vote_average > 0 && (
-                  <div className="absolute top-2 right-2 bg-black/70 backdrop-blur-sm rounded-full px-1.5 py-0.5 flex items-center gap-0.5">
-                    <Star size={8} className="text-amber-400 fill-amber-400" />
-                    <span className="text-[9px] font-bold text-white">
-                      {movie.vote_average.toFixed(1)}
-                    </span>
-                  </div>
-                )}
-              </div>
-              <h3 className="text-xs font-bold text-white truncate group-hover:text-primary transition-colors">
-                {movie.title}
-              </h3>
-              {movie.release_date && (
-                <span className="text-[10px] text-neutral-500">
-                  {new Date(movie.release_date).toLocaleDateString("tr-TR", {
-                    day: "numeric",
-                    month: "long",
-                    year: "numeric",
-                  })}
+      {/* Header Banner */}
+      <div className="relative rounded-2xl sm:rounded-3xl border border-white/10 bg-gradient-to-br from-slate-900 via-slate-900/90 to-amber-950/20 p-5 sm:p-7 backdrop-blur-xl overflow-hidden">
+        <div className="absolute top-0 right-0 w-64 h-64 bg-amber-400/10 blur-3xl rounded-full -mr-20 -mt-20 pointer-events-none" />
+        
+        <div className="relative flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="flex items-start sm:items-center gap-3 sm:gap-4">
+            <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-amber-400/20 border border-amber-400/30 flex items-center justify-center shrink-0 shadow-lg shadow-amber-400/10">
+              <Calendar className="w-6 h-6 sm:w-7 sm:h-7 text-amber-400" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h1 className="text-xl sm:text-2xl md:text-3xl font-black text-white tracking-tight">
+                  {locale === "en" ? "Release Calendar & Coming Soon" : "Yayın Takvimi & Yakında Çıkacaklar"}
+                </h1>
+                <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-400/20 text-amber-300 border border-amber-400/30">
+                  <Sparkles className="w-2.5 h-2.5" />
+                  {locale === "en" ? "Live TMDB" : "Canlı Takvim"}
                 </span>
-              )}
-            </Link>
-          ))}
+              </div>
+              <p className="text-xs sm:text-sm text-neutral-400 font-medium mt-1">
+                {locale === "en"
+                  ? `Discover upcoming theatrical releases and new streaming seasons in ${countryName}.`
+                  : `${countryName} için yakında vizyona girecek filmleri ve platformlara eklenecek yeni sezonları keşfet.`}
+              </p>
+            </div>
+          </div>
         </div>
-      </section>
+      </div>
+
+      {/* Interactive Calendar Content */}
+      <CalendarView
+        upcomingMovies={upcomingMovies}
+        upcomingTV={upcomingTV}
+        nowPlayingMovies={nowPlayingMovies}
+        userUpcomingEpisodes={upcomingEpisodes}
+        locale={locale}
+        userCountry={userCountry}
+      />
     </div>
   );
 }

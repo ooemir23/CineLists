@@ -72,12 +72,24 @@
 }
 
 @layer base {
+  html {
+    font-size: 16px;
+  }
+
+  @media (min-width: 1280px) {
+    html {
+      font-size: 16.5px;
+    }
+  }
+
   body {
     background-color: hsl(var(--background));
     color: hsl(var(--foreground));
     font-feature-settings: "rlig" 1, "calt" 1;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    font-size: 15px;
+    line-height: 1.6;
   }
 
   @media (max-width: 639px) {
@@ -475,7 +487,7 @@ a,
   align-items: center;
   justify-content: center;
   font-weight: 800;
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   padding: 0.2rem 0.55rem;
   border-radius: 0.5rem;
   letter-spacing: -0.02em;

@@ -24,9 +24,10 @@ type MediaRowProps = {
     items: MediaItem[];
     type: "movie" | "tv";
     href?: string;
+    countryCode?: string;
 };
 
-export async function MediaRow({ title, items, type, href }: MediaRowProps) {
+export async function MediaRow({ title, items, type, href, countryCode = "TR" }: MediaRowProps) {
     const tmdbIds = items.map(i => i.id);
     const [userRatingsMap, communityRatingsMap, metadataMap] = await Promise.all([
         getUserRatingsBulk(tmdbIds),
@@ -66,6 +67,7 @@ export async function MediaRow({ title, items, type, href }: MediaRowProps) {
                         releaseDate={item.release_date || item.first_air_date}
                         runtime={item.runtime || metadataMap[item.id]?.runtime || undefined}
                         type={(item.media_type === "tv" || item.media_type === "movie" ? item.media_type : type) as "movie" | "tv"}
+                        countryCode={countryCode}
                     />
                 ))}
             </MediaRowClient>

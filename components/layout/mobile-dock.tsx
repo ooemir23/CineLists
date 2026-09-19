@@ -88,7 +88,7 @@ export function MobileDock({ user, isAdmin = false }: MobileDockProps) {
             onClick={closeMenus}
           >
             <Home size={19} strokeWidth={activeTab === "home" ? 2.5 : 2} />
-            <span className="font-hanken text-[9px] font-bold tracking-tight">
+            <span className="font-hanken text-[11px] font-bold tracking-tight">
               {t("nav.home", "Ana Sayfa")}
             </span>
             {activeTab === "home" && !menuOpen && !profileMenuOpen && (
@@ -108,7 +108,7 @@ export function MobileDock({ user, isAdmin = false }: MobileDockProps) {
             onClick={closeMenus}
           >
             <Compass size={19} strokeWidth={activeTab === "explore" ? 2.5 : 2} />
-            <span className="font-hanken text-[9px] font-bold tracking-tight">
+            <span className="font-hanken text-[11px] font-bold tracking-tight">
               {t("nav.explore", "Keşfet")}
             </span>
             {activeTab === "explore" && !menuOpen && !profileMenuOpen && (
@@ -132,7 +132,7 @@ export function MobileDock({ user, isAdmin = false }: MobileDockProps) {
               aria-label="Listelerim"
             >
               <ListFilter size={19} strokeWidth={menuOpen || activeTab === "library" ? 2.5 : 2} />
-              <span className="font-hanken text-[9px] font-bold tracking-tight">
+              <span className="font-hanken text-[11px] font-bold tracking-tight">
                 {t("nav.watchlist", "Listelerim")}
               </span>
               {(menuOpen || activeTab === "library") && (
@@ -185,7 +185,7 @@ export function MobileDock({ user, isAdmin = false }: MobileDockProps) {
             onClick={closeMenus}
           >
             <Flame size={19} strokeWidth={activeTab === "feed" ? 2.5 : 2} />
-            <span className="font-hanken text-[9px] font-bold tracking-tight">
+            <span className="font-hanken text-[11px] font-bold tracking-tight">
               {t("nav.feed", "Akış")}
             </span>
             {activeTab === "feed" && !menuOpen && !profileMenuOpen && (
@@ -228,7 +228,7 @@ export function MobileDock({ user, isAdmin = false }: MobileDockProps) {
               ) : (
                 <User size={19} strokeWidth={profileMenuOpen || activeTab === "profile" ? 2.5 : 2} />
               )}
-              <span className="font-hanken text-[9px] font-bold tracking-tight">
+              <span className="font-hanken text-[11px] font-bold tracking-tight">
                 {user ? t("nav.profile", "Profil") : t("nav.login", "Giriş")}
               </span>
               {(profileMenuOpen || activeTab === "profile") && (

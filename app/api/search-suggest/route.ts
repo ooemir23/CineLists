@@ -1,4 +1,4 @@
-// API route for TMDB multi search
+// API route for TMDB multi search with bilingual lookup
 import { NextResponse } from "next/server";
 import { tmdb } from "@/lib/tmdb";
 import { searchUsers } from "@/lib/social-actions";
@@ -10,6 +10,8 @@ type TMDBSearchItem = {
   id: number;
   title?: string;
   name?: string;
+  original_title?: string;
+  original_name?: string;
   poster_path?: string | null;
   profile_path?: string | null;
   release_date?: string;
@@ -43,28 +45,57 @@ export async function GET(req: NextRequest) {
     return NextResponse.json([]);
   }
 
+  const locale = req.cookies.get("NEXT_LOCALE")?.value || "tr";
+  const primaryLang = locale === "en" ? "en-US" : "tr-TR";
+  const altLang = locale === "en" ? "tr-TR" : "en-US";
+
   try {
-    const [tmdbData, users]: [
+    const [tmdbPrimary, tmdbAlt, users]: [
+      { results?: TMDBSearchItem[] },
       { results?: TMDBSearchItem[] },
       SearchUser[]
     ] = await Promise.all([
-      tmdb.searchMulti(query),
-      searchUsers(query)
+      tmdb.searchMulti(query, { language: primaryLang }).catch(() => ({ results: [] })),
+      tmdb.searchMulti(query, { language: altLang }).catch(() => ({ results: [] })),
+      searchUsers(query).catch(() => []),
     ]);
 
+    // Merge TMDB results by unique ID, keeping primary localized titles first
+    const itemsMap = new Map<string, TMDBSearchItem>();
+    for (const item of tmdbPrimary.results || []) {
+      if (item.id && item.media_type) {
+        itemsMap.set(`${item.media_type}:${item.id}`, item);
+      }
+    }
+    for (const item of tmdbAlt.results || []) {
+      if (item.id && item.media_type) {
+        const key = `${item.media_type}:${item.id}`;
+        if (!itemsMap.has(key)) {
+          itemsMap.set(key, item);
+        }
+      }
+    }
+
     // Format TMDB results
-    const tmdbResults = ((tmdbData.results || []) as TMDBSearchItem[])
+    const tmdbResults = Array.from(itemsMap.values())
       .filter((item) => ["movie", "tv", "person"].includes(item.media_type || ""))
       .slice(0, 8)
       .map((item) => {
         let department: string | undefined = undefined;
         if (item.media_type === "person" && item.known_for_department) {
-          department = DEPARTMENT_TR_MAP[item.known_for_department] || item.known_for_department;
+          department = locale === "en" ? item.known_for_department : (DEPARTMENT_TR_MAP[item.known_for_department] || item.known_for_department);
         }
+
+        const mainTitle = item.title || item.name || "";
+        const origTitle = item.original_title || item.original_name;
+        const originalName = origTitle && origTitle.toLowerCase() !== mainTitle.toLowerCase()
+          ? origTitle
+          : undefined;
 
         return {
           id: item.id,
-          name: item.title || item.name || "",
+          name: mainTitle,
+          originalName,
           type: item.media_type,
           image: item.poster_path || item.profile_path
             ? `https://image.tmdb.org/t/p/w200${item.poster_path || item.profile_path}`
@@ -78,10 +109,10 @@ export async function GET(req: NextRequest) {
     // Format User results
     const userResults = (users || []).slice(0, 2).map((user) => ({
       id: user.id,
-      name: user.name || "Kullanıcı",
+      name: user.name || (locale === "en" ? "User" : "Kullanıcı"),
       type: "user",
       image: user.image,
-      year: user.followersCount ? `${user.followersCount} Takipçi` : ""
+      year: user.followersCount ? `${user.followersCount} ${locale === "en" ? "Followers" : "Takipçi"}` : "",
     }));
 
     // Combine results (up to 10 items)

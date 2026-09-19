@@ -7,8 +7,13 @@ import { PortalHomeFeed } from "@/components/portal/portal-home-feed";
 import { PortalTwoPanels } from "@/components/portal/portal-two-panels";
 import { PortalCommunityPulse } from "@/components/portal/portal-community-pulse";
 import { PortalHubStrip } from "@/components/portal/portal-hub-strip";
+import { PortalCalendarSection } from "@/components/portal/portal-calendar-section";
 import {
   PortalRightRail,
+  PortalTrendingTopics,
+  PortalRecommendations,
+  PortalWeeklyPoll,
+  PortalFeedbackCard,
   TrendingTopicItem,
   ReviewRecommendationItem,
 } from "@/components/portal/portal-right-rail";
@@ -17,6 +22,7 @@ import { getHomeFeedActivities } from "@/lib/feed-actions";
 import { cachedGetWatchProviders } from "@/lib/watch-provider-cache";
 import { Film, Filter, X } from "lucide-react";
 import Link from "next/link";
+import { getServerCountry } from "@/lib/country";
 
 export const revalidate = 60;
 
@@ -34,6 +40,7 @@ type HomeProps = {
 
 export default async function Home({ searchParams }: HomeProps) {
   const params = await searchParams;
+  const userCountry = await getServerCountry();
   const { type = "", year, rating, provider, genre, q, category } = params;
   const isFiltering = Boolean(year || rating || provider || genre || type || q || category);
   const session = await auth();
@@ -65,17 +72,21 @@ export default async function Home({ searchParams }: HomeProps) {
       };
     } else {
       const discoverParams: Record<string, string> = {
-        watch_region: "TR",
+        watch_region: userCountry,
         sort_by: "popularity.desc",
       };
+
+      if (provider) {
+        discoverParams["with_watch_providers"] = provider.replace(/,/g, "|");
+        discoverParams["watch_region"] = userCountry;
+      } else {
+        discoverParams["watch_region"] = userCountry;
+        discoverParams["with_watch_monetization_types"] = "flatrate|free|ads";
+      }
 
       if (!type) {
         if (year) discoverParams["primary_release_year"] = year;
         if (rating) discoverParams["vote_average.gte"] = rating;
-        if (provider) {
-          discoverParams["with_watch_providers"] = provider;
-          discoverParams["watch_region"] = "TR";
-        }
         if (genre) discoverParams["with_genres"] = genre;
 
         const tvParams = { ...discoverParams };
@@ -107,10 +118,6 @@ export default async function Home({ searchParams }: HomeProps) {
           discoverParams[yearKey] = year;
         }
         if (rating) discoverParams["vote_average.gte"] = rating;
-        if (provider) {
-          discoverParams["with_watch_providers"] = provider;
-          discoverParams["watch_region"] = "TR";
-        }
         if (genre) discoverParams["with_genres"] = genre;
 
         const data = await tmdb.discover(type as "movie" | "tv", discoverParams);
@@ -193,6 +200,7 @@ export default async function Home({ searchParams }: HomeProps) {
                 type={item.media_type || "movie"}
                 releaseDate={item.release_date || item.first_air_date}
                 watchProviders={item.watch_providers}
+                countryCode={userCountry}
               />
             ))}
           </div>
@@ -229,8 +237,8 @@ export default async function Home({ searchParams }: HomeProps) {
   ] = await Promise.all([
     tmdb.getTrendingMovies().catch(() => ({ results: [] })),
     tmdb.getTrendingTV().catch(() => ({ results: [] })),
-    tmdb.getNowPlayingMovies().catch(() => ({ results: [] })),
-    tmdb.getUpcomingMovies().catch(() => ({ results: [] })),
+    tmdb.getNowPlayingMovies({ region: "TR" }).catch(() => ({ results: [] })),
+    tmdb.getUpcomingMovies({ region: "TR" }).catch(() => ({ results: [] })),
     tmdb.getTopRated("movie").catch(() => ({ results: [] })),
     tmdb.getPopular("movie").catch(() => ({ results: [] })),
     getHomeFeedActivities(session?.user?.id).catch(() => []),
@@ -267,9 +275,18 @@ export default async function Home({ searchParams }: HomeProps) {
       : trendingMovies?.results || []
   ).slice(0, 6);
 
+  // Tab 2: Yakında — Sadece gelecekte vizyona girecek ya da yayınlanacak yapımlar (şu an sinemalarda olanlar hariç)
+  const nowPlayingIdSet = new Set((nowPlayingMovies?.results || []).map((m: any) => m.id));
+  const todayStr = new Date().toISOString().split("T")[0];
+
+  const filteredUpcoming = (upcomingMovies?.results || []).filter((m: any) => {
+    const rDate = m.release_date || m.first_air_date;
+    return !nowPlayingIdSet.has(m.id) && (!rDate || rDate >= todayStr);
+  });
+
   const rawCompact = (
-    upcomingMovies?.results?.length
-      ? upcomingMovies.results
+    filteredUpcoming.length > 0
+      ? filteredUpcoming
       : trendingTV?.results || []
   ).slice(0, 6);
 
@@ -309,6 +326,7 @@ export default async function Home({ searchParams }: HomeProps) {
           providers: flatrate,
           rentBuyProviders: rentBuy.slice(0, 2),
           inCinemas: flatrate.length === 0 && Boolean(isTheatrical),
+          isUpcoming: false,
         };
       })
     ),
@@ -333,7 +351,8 @@ export default async function Home({ searchParams }: HomeProps) {
           release_date: item.release_date || item.first_air_date,
           media_type: type,
           providers: flatrate,
-          inCinemas: flatrate.length === 0 && type === "movie",
+          inCinemas: false,
+          isUpcoming: true,
         };
       })
     ),
@@ -432,9 +451,9 @@ export default async function Home({ searchParams }: HomeProps) {
 
   return (
     <div className="w-full px-3 sm:px-6 py-5 max-w-[1600px] mx-auto space-y-6">
-      {/* Merlin'in Kazanı style Two-Column Content Grid */}
+      {/* İki Sütunlu Portal Izgarası: Sol Ana Vitrin (8 Kolon) + Sağ Canlı Akış & Trendler (4 Kolon) */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
-        {/* Main Column (~%72 / 8 cols on desktop) */}
+        {/* Sol / Ana Sütun: Vitrin, Vizyon & Keşif (lg: 8 kolon) */}
         <div className="lg:col-span-8 space-y-6 min-w-0">
           {/* Hero Slider Feature */}
           <Suspense
@@ -445,18 +464,17 @@ export default async function Home({ searchParams }: HomeProps) {
             <PortalHero items={heroList} />
           </Suspense>
 
+          {/* Yayın & Vizyon Takvimi */}
+          <Suspense fallback={null}>
+            <PortalCalendarSection />
+          </Suspense>
+
           {/* Son Vizyondakiler / Haber Izgarası */}
           <PortalNewsGrid
             title="Vizyondakiler & Son Eklenenler"
             viewAllHref="/?type=movie"
             featuredItems={featuredGridItems}
             compactItems={compactNewsItems}
-          />
-
-          {/* Canlı Akış & Topluluk / Arkadaş Aktiviteleri */}
-          <PortalHomeFeed
-            activities={feedActivities}
-            user={session?.user}
           />
 
           {/* İkili Panel (Sinema / TV Dünyası) */}
@@ -478,12 +496,27 @@ export default async function Home({ searchParams }: HomeProps) {
           <PortalHubStrip />
         </div>
 
-        {/* Right Rail (~%28 / 4 cols on desktop) */}
+        {/* Sağ Sütun: Canlı Sosyal Akış, Gündem & Topluluk (lg: 4 kolon) */}
         <div className="lg:col-span-4 space-y-5">
-          <PortalRightRail
-            trendingTopics={trendingTopics}
-            recommendations={recommendations}
+          {/* 1. Canlı Sosyal Akış (Sağ Sütunun En Tepesinde) */}
+          <PortalHomeFeed
+            activities={feedActivities}
+            user={session?.user}
+            layout="vertical"
+            maxItems={6}
           />
+
+          {/* 2. Şu An Konuşulanlar */}
+          <PortalTrendingTopics trendingTopics={trendingTopics} />
+
+          {/* 3. Ne İzleyebiliriz? */}
+          <PortalRecommendations recommendations={recommendations} />
+
+          {/* 4. Haftanın Anketi */}
+          <PortalWeeklyPoll />
+
+          {/* 5. CineLists'i Birlikte Büyütelim */}
+          <PortalFeedbackCard />
         </div>
       </div>
     </div>

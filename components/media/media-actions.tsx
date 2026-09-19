@@ -134,7 +134,10 @@ export function MediaActions({
 
     return (
         <div className="flex flex-col gap-3 w-full">
-            <div className="grid grid-cols-[1fr_1fr_1fr_auto] items-center gap-1.5 sm:gap-2 w-full max-w-xl">
+            <div className={cn(
+                "items-center gap-1.5 sm:gap-2 w-full max-w-xl",
+                type === "tv" ? "grid grid-cols-[1fr_1fr_1fr_auto]" : "grid grid-cols-[1fr_1fr_auto]"
+            )}>
                 {/* Watchlist (Takip Et) Button */}
                 <button
                     onClick={handleToggleWatchlist}
@@ -159,25 +162,27 @@ export function MediaActions({
                     </span>
                 </button>
 
-                {/* Watching (İzliyorum) Button */}
-                <button
-                    onClick={handleMarkWatching}
-                    disabled={isPending || status === "COMPLETED"}
-                    className={cn(
-                        "h-11 px-2 sm:px-3 rounded-2xl flex items-center justify-center gap-1.5 text-xs font-black tracking-tight transition-all active:scale-95 border backdrop-blur-md select-none",
-                        status === "WATCHING"
-                            ? "bg-sky-500/20 text-sky-400 border-sky-500/40 shadow-[0_0_15px_rgba(14,165,233,0.2)]"
-                            : status === "COMPLETED"
-                                ? "bg-white/[0.02] text-neutral-600 border-white/5 cursor-not-allowed"
-                                : "bg-white/5 hover:bg-white/10 text-white/90 border-white/10 hover:border-white/20"
-                    )}
-                    title={status === "WATCHING" ? "İzlemeyi Bırak" : "İzlemeye Başladım"}
-                >
-                    <Eye className={cn("w-4 h-4 stroke-[2.5]", status === "WATCHING" && "animate-pulse")} />
-                    <span className="truncate">
-                        {status === "WATCHING" ? "İzleniyor" : "İzliyorum"}
-                    </span>
-                </button>
+                {/* Watching (İzliyorum) Button - Yalnızca Dizilerde */}
+                {type === "tv" && (
+                    <button
+                        onClick={handleMarkWatching}
+                        disabled={isPending || status === "COMPLETED"}
+                        className={cn(
+                            "h-11 px-2 sm:px-3 rounded-2xl flex items-center justify-center gap-1.5 text-xs font-black tracking-tight transition-all active:scale-95 border backdrop-blur-md select-none",
+                            status === "WATCHING"
+                                ? "bg-sky-500/20 text-sky-400 border-sky-500/40 shadow-[0_0_15px_rgba(14,165,233,0.2)]"
+                                : status === "COMPLETED"
+                                    ? "bg-white/[0.02] text-neutral-600 border-white/5 cursor-not-allowed"
+                                    : "bg-white/5 hover:bg-white/10 text-white/90 border-white/10 hover:border-white/20"
+                        )}
+                        title={status === "WATCHING" ? "İzlemeyi Bırak" : "İzlemeye Başladım"}
+                    >
+                        <Eye className={cn("w-4 h-4 stroke-[2.5]", status === "WATCHING" && "animate-pulse")} />
+                        <span className="truncate">
+                            {status === "WATCHING" ? "İzleniyor" : "İzliyorum"}
+                        </span>
+                    </button>
+                )}
 
                 {/* Watched (İzledim) Button */}
                 <button
@@ -218,10 +223,10 @@ export function MediaActions({
                 <div className="flex items-center px-1">
                     <button
                         onClick={() => setShowDetailsForm(!showDetailsForm)}
-                        className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-400 hover:text-emerald-300 transition-colors py-0.5"
+                        className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-400 hover:text-emerald-300 transition-all py-1 px-3 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/15 border border-emerald-500/20 active:scale-95"
                     >
                         {showDetailsForm ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
-                        <span>{showDetailsForm ? "Puan & İnceleme Formunu Kapat" : "Puan & İnceleme Ekle / Düzenle"}</span>
+                        <span>{showDetailsForm ? "Detay Formunu Gizle" : "Puan & İzleme Detaylarını Düzenle"}</span>
                     </button>
                 </div>
             )}

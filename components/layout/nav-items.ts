@@ -1,5 +1,5 @@
 import type { LucideIcon } from "lucide-react";
-import { Bell, Bookmark, Check, Compass, MessageCircle, User, Eye, Heart, Settings } from "lucide-react";
+import { Bell, Bookmark, Calendar, Check, Compass, MessageCircle, User, Eye, Heart, Settings } from "lucide-react";
 
 export type NavItem = {
   key: string;
@@ -38,6 +38,15 @@ export const libraryNavItems: NavItem[] = [
     icon: Bookmark,
     iconBgClass: "bg-amber-500/10",
     iconTextClass: "text-amber-400",
+  },
+  {
+    key: "calendar",
+    href: "/calendar",
+    label: "Takvim",
+    translationKey: "nav.calendar",
+    icon: Calendar,
+    iconBgClass: "bg-blue-500/10",
+    iconTextClass: "text-blue-400",
   },
 ];
 

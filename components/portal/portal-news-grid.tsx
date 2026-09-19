@@ -56,7 +56,7 @@ export function PortalNewsGrid({
           </h2>
 
           {/* Tab Switcher for Rich Presentation */}
-          <div className="flex items-center p-1 rounded-xl bg-white/5 border border-white/10 text-xs font-bold">
+          <div className="flex items-center p-1 rounded-xl bg-white/5 border border-white/10 text-sm font-bold">
             <button
               onClick={() => setActiveTab("featured")}
               className={cn(
@@ -129,7 +129,12 @@ export function PortalNewsGrid({
                 <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/20 to-transparent" />
 
                 {/* Badge Top Left */}
-                {idx === 0 && activeTab === "featured" ? (
+                {activeTab === "upcoming" ? (
+                  <span className="absolute top-3 left-3 px-2.5 py-1 rounded-md text-xs font-black uppercase tracking-wider bg-sky-400 text-slate-950 shadow-md flex items-center gap-1">
+                    <Calendar className="w-3 h-3" />
+                    Yakında
+                  </span>
+                ) : idx === 0 && activeTab === "featured" ? (
                   <span className="absolute top-3 left-3 px-2.5 py-1 rounded-md text-xs font-black uppercase tracking-wider bg-amber-400 text-slate-950 shadow-md">
                     Yeni
                   </span>
@@ -166,7 +171,7 @@ export function PortalNewsGrid({
 
                   {/* Story Logline / Overview Snippet */}
                   {item.overview && (
-                    <p className="mt-2 text-xs sm:text-[13px] text-neutral-400 line-clamp-2 leading-relaxed font-normal">
+                    <p className="mt-2 text-xs sm:text-sm text-neutral-400 line-clamp-2 leading-relaxed font-normal">
                       {item.overview}
                     </p>
                   )}
@@ -174,9 +179,21 @@ export function PortalNewsGrid({
 
                 {/* Prominent Platform & Streaming Bar */}
                 <div className="pt-3 mt-1 border-t border-white/10 flex items-center justify-between min-h-[32px]">
-                  {item.providers && item.providers.length > 0 ? (
+                  {activeTab === "upcoming" ? (
+                    <div className="flex items-center gap-1.5">
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-bold bg-sky-400/15 text-sky-400 border border-sky-400/30">
+                        <Calendar className="w-3.5 h-3.5 shrink-0" />
+                        {item.release_date || item.first_air_date ? (
+                          <span>
+                            {new Date(item.release_date || item.first_air_date!).toLocaleDateString("tr-TR", { day: "numeric", month: "long" })} • {item.media_type === "tv" ? "Yayında" : "Vizyonda"}
+                          </span>
+                        ) : (
+                          <span>Yakında Vizyonda</span>
+                        )}
+                      </span>
+                    </div>
+                  ) : item.providers && item.providers.length > 0 ? (
                     <div className="flex items-center gap-2 min-w-0" title={item.providers.map((p) => p.provider_name).join(", ")}>
-                      <span className="text-xs text-neutral-400 font-semibold shrink-0">Yayın:</span>
                       <div className="flex items-center -space-x-1.5 shrink-0">
                         {item.providers.slice(0, 3).map((p) => (
                           <div

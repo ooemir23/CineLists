@@ -12,6 +12,7 @@ import {
   Users,
   Activity,
   Award,
+  Calendar,
   Sparkles,
   ChevronDown,
   Layers,
@@ -19,6 +20,8 @@ import {
   LogIn,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { LanguageSelector } from "@/components/layout/language-selector";
+import { useTranslation } from "@/lib/i18n/i18n-context";
 
 type PortalSidebarProps = {
   user?: {
@@ -38,16 +41,17 @@ const PLATFORMS = [
 ];
 
 const GENRES = [
-  { id: "28", name: "Aksiyon" },
-  { id: "35", name: "Komedi" },
-  { id: "18", name: "Dram" },
-  { id: "878", name: "Bilim Kurgu" },
-  { id: "27", name: "Korku" },
-  { id: "16", name: "Animasyon" },
-  { id: "53", name: "Gerilim" },
+  { id: "28", nameTr: "Aksiyon", nameEn: "Action" },
+  { id: "35", nameTr: "Komedi", nameEn: "Comedy" },
+  { id: "18", nameTr: "Dram", nameEn: "Drama" },
+  { id: "878", nameTr: "Bilim Kurgu", nameEn: "Sci-Fi" },
+  { id: "27", nameTr: "Korku", nameEn: "Horror" },
+  { id: "16", nameTr: "Animasyon", nameEn: "Animation" },
+  { id: "53", nameTr: "Gerilim", nameEn: "Thriller" },
 ];
 
 export function PortalSidebar({ user }: PortalSidebarProps) {
+  const { dict, locale } = useTranslation();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const currentProvider = searchParams.get("provider");
@@ -73,7 +77,7 @@ export function PortalSidebar({ user }: PortalSidebarProps) {
               <span className="text-amber-400">CINE</span>LISTS
             </div>
             <p className="text-[10px] font-bold text-neutral-400 tracking-wider uppercase mt-1">
-              Sinema & Dizi Kulübü
+              {locale === "en" ? "Cinema & TV Club" : "Sinema & Dizi Kulübü"}
             </p>
           </div>
         </Link>
@@ -86,114 +90,129 @@ export function PortalSidebar({ user }: PortalSidebarProps) {
           <Link
             href="/"
             className={cn(
-              "flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all",
+              "flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-bold transition-all",
               pathname === "/" && !searchParams.toString()
                 ? "bg-amber-400 text-slate-950 shadow-md shadow-amber-400/20 font-black"
                 : "text-neutral-400 hover:text-white hover:bg-white/5"
             )}
           >
             <Home className="w-4 h-4" />
-            Ana Sayfa
+            {dict.nav.home}
           </Link>
 
           <Link
             href="/search"
             className={cn(
-              "flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all",
+              "flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-bold transition-all",
               pathname === "/search"
                 ? "bg-amber-400 text-slate-950 shadow-md shadow-amber-400/20 font-black"
                 : "text-neutral-400 hover:text-white hover:bg-white/5"
             )}
           >
             <Compass className="w-4 h-4" />
-            Keşfet & Filtrele
+            {dict.nav.explore}
           </Link>
 
           <Link
             href="/?type=movie"
             className={cn(
-              "flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all",
+              "flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-bold transition-all",
               searchParams.get("type") === "movie"
                 ? "bg-amber-400/15 text-amber-400 font-black border border-amber-400/30"
                 : "text-neutral-400 hover:text-white hover:bg-white/5"
             )}
           >
             <Film className="w-4 h-4" />
-            Vizyondaki Filmler
+            {dict.nav.inTheatres}
           </Link>
 
           <Link
             href="/?type=tv"
             className={cn(
-              "flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all",
+              "flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-bold transition-all",
               searchParams.get("type") === "tv"
                 ? "bg-amber-400/15 text-amber-400 font-black border border-amber-400/30"
                 : "text-neutral-400 hover:text-white hover:bg-white/5"
             )}
           >
             <Tv className="w-4 h-4" />
-            Popüler Diziler
+            {dict.nav.tvShows}
           </Link>
 
           <Link
             href="/watchlist"
             className={cn(
-              "flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all",
-              pathname === "/watchlist"
+              "flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-bold transition-all",
+              pathname === "/watchlist" ||
+              pathname === "/watched" ||
+              pathname === "/watching"
                 ? "bg-amber-400 text-slate-950 shadow-md shadow-amber-400/20 font-black"
                 : "text-neutral-400 hover:text-white hover:bg-white/5"
             )}
           >
             <ListFilter className="w-4 h-4" />
-            Listelerim
+            {dict.nav.watchlist}
+          </Link>
+
+          <Link
+            href="/calendar"
+            className={cn(
+              "flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-bold transition-all",
+              pathname === "/calendar" || pathname === "/upcoming-episodes"
+                ? "bg-amber-400 text-slate-950 shadow-md shadow-amber-400/20 font-black"
+                : "text-neutral-400 hover:text-white hover:bg-white/5"
+            )}
+          >
+            <Calendar className="w-4 h-4" />
+            {dict.nav.calendar}
           </Link>
 
           <Link
             href="/feed"
             className={cn(
-              "flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all",
+              "flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-bold transition-all",
               pathname === "/feed"
                 ? "bg-amber-400 text-slate-950 shadow-md shadow-amber-400/20 font-black"
                 : "text-neutral-400 hover:text-white hover:bg-white/5"
             )}
           >
             <Activity className="w-4 h-4" />
-            Sosyal Akış
+            {dict.nav.feed}
           </Link>
 
           <Link
             href="/community"
             className={cn(
-              "flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all",
+              "flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-bold transition-all",
               pathname === "/community"
                 ? "bg-amber-400 text-slate-950 shadow-md shadow-amber-400/20 font-black"
                 : "text-neutral-400 hover:text-white hover:bg-white/5"
             )}
           >
             <Users className="w-4 h-4" />
-            Topluluk & Kulüpler
+            {dict.nav.community}
           </Link>
 
           <Link
             href="/achievements"
             className={cn(
-              "flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all",
+              "flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-bold transition-all",
               pathname === "/achievements"
                 ? "bg-amber-400 text-slate-950 shadow-md shadow-amber-400/20 font-black"
                 : "text-neutral-400 hover:text-white hover:bg-white/5"
             )}
           >
             <Award className="w-4 h-4" />
-            Rozetler & Sıralama
+            {dict.nav.achievements}
           </Link>
         </nav>
 
         {/* Collapsible: Platformlar */}
         <details className="group/details" open>
-          <summary className="flex items-center justify-between px-3 py-2 text-[11px] font-black uppercase tracking-wider text-neutral-400 hover:text-white cursor-pointer list-none">
+          <summary className="flex items-center justify-between px-3 py-2 text-xs font-black uppercase tracking-wider text-neutral-400 hover:text-white cursor-pointer list-none">
             <span className="flex items-center gap-2">
               <Layers className="w-3.5 h-3.5 text-amber-400" />
-              Platformlar
+              {dict.nav.platforms}
             </span>
             <ChevronDown className="w-3.5 h-3.5 group-open/details:rotate-180 transition-transform" />
           </summary>
@@ -205,7 +224,7 @@ export function PortalSidebar({ user }: PortalSidebarProps) {
                   key={p.id}
                   href={`/?provider=${p.id}`}
                   className={cn(
-                    "flex items-center justify-between px-3 py-1.5 rounded-lg text-xs font-semibold transition-all",
+                    "flex items-center justify-between px-3 py-1.5 rounded-lg text-sm font-semibold transition-all",
                     isActive
                       ? "bg-white/10 text-white font-bold"
                       : "text-neutral-400 hover:text-white hover:bg-white/5"
@@ -221,10 +240,10 @@ export function PortalSidebar({ user }: PortalSidebarProps) {
 
         {/* Collapsible: Kategoriler */}
         <details className="group/genres" open>
-          <summary className="flex items-center justify-between px-3 py-2 text-[11px] font-black uppercase tracking-wider text-neutral-400 hover:text-white cursor-pointer list-none">
+          <summary className="flex items-center justify-between px-3 py-2 text-xs font-black uppercase tracking-wider text-neutral-400 hover:text-white cursor-pointer list-none">
             <span className="flex items-center gap-2">
               <Flame className="w-3.5 h-3.5 text-amber-400" />
-              Popüler Türler
+              {dict.nav.popularGenres}
             </span>
             <ChevronDown className="w-3.5 h-3.5 group-open/genres:rotate-180 transition-transform" />
           </summary>
@@ -236,13 +255,13 @@ export function PortalSidebar({ user }: PortalSidebarProps) {
                   key={g.id}
                   href={`/?genre=${g.id}`}
                   className={cn(
-                    "px-2.5 py-1.5 rounded-lg text-[11px] font-semibold text-center transition-all truncate",
+                    "px-2.5 py-1.5 rounded-lg text-xs font-semibold text-center transition-all truncate",
                     isActive
                       ? "bg-amber-400/20 text-amber-400 font-bold border border-amber-400/30"
                       : "text-neutral-400 hover:text-white hover:bg-white/5"
                   )}
                 >
-                  {g.name}
+                  {locale === "en" ? g.nameEn : g.nameTr}
                 </Link>
               );
             })}
@@ -257,20 +276,31 @@ export function PortalSidebar({ user }: PortalSidebarProps) {
               CineLists Plus
             </strong>
           </div>
-          <p className="text-[11px] text-neutral-400 leading-relaxed font-medium">
-            Kişiselleştirilmiş tavsiyeler, özel profil rozetleri ve sınırsız listeler.
+          <p className="text-xs text-neutral-400 leading-relaxed font-medium">
+            {locale === "en"
+              ? "Personalized recommendations, special badges and unlimited watchlists."
+              : "Kişiselleştirilmiş tavsiyeler, özel profil rozetleri ve sınırsız listeler."}
           </p>
           <Link
             href={user ? "/achievements" : "/login"}
             className="mt-3 block text-center py-1.5 px-3 rounded-lg bg-amber-400 hover:bg-amber-500 text-slate-950 font-black text-xs transition-transform active:scale-95 shadow-sm shadow-amber-400/20"
           >
-            {user ? "Rozetlerini Keşfet" : "Hemen Katıl"}
+            {user
+              ? (locale === "en" ? "Explore Badges" : "Rozetlerini Keşfet")
+              : (locale === "en" ? "Join Now" : "Hemen Katıl")}
           </Link>
         </div>
       </div>
 
-      {/* User Footer */}
-      <div className="p-3 border-t border-white/10 shrink-0">
+      {/* User & Language Footer */}
+      <div className="p-3 border-t border-white/10 shrink-0 space-y-2">
+        <div className="flex items-center justify-between px-1">
+          <span className="text-xs text-neutral-400 font-bold">
+            {dict.settings.language}
+          </span>
+          <LanguageSelector variant="dropdown" />
+        </div>
+
         {user ? (
           <Link
             href="/profile"
@@ -291,11 +321,11 @@ export function PortalSidebar({ user }: PortalSidebarProps) {
               )}
             </div>
             <div className="min-w-0 flex-1">
-              <p className="text-xs font-bold text-white truncate group-hover:text-amber-400 transition-colors">
+              <p className="text-sm font-bold text-white truncate group-hover:text-amber-400 transition-colors">
                 {user.name || "Sinefil"}
               </p>
-              <p className="text-[10px] text-neutral-500 truncate">
-                {user.email || "Üye"}
+              <p className="text-xs text-neutral-500 truncate">
+                {user.email || dict.nav.member}
               </p>
             </div>
           </Link>
@@ -305,7 +335,7 @@ export function PortalSidebar({ user }: PortalSidebarProps) {
             className="flex items-center justify-center gap-2 w-full py-2 px-3 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-white font-bold text-xs transition-colors"
           >
             <LogIn className="w-4 h-4 text-amber-400" />
-            Giriş Yap
+            {dict.nav.login}
           </Link>
         )}
       </div>

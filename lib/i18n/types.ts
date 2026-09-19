@@ -34,6 +34,7 @@ export interface Dictionary {
     explore: string;
     movies: string;
     tvShows: string;
+    calendar: string;
     watchlist: string;
     watched: string;
     watching: string;
@@ -52,6 +53,19 @@ export interface Dictionary {
     account: string;
     guest: string;
     notLoggedIn: string;
+    inTheatres: string;
+    topRated: string;
+    achievements: string;
+    platforms: string;
+    popularGenres: string;
+    suggestedResults: string;
+    resultsCount: string;
+    viewAllResults: string;
+    noResultsFound: string;
+    searchHint: string;
+    goToAdvancedSearch: string;
+    person: string;
+    member: string;
   };
   home: {
     heroWatchlist: string;

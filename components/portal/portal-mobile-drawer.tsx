@@ -14,6 +14,7 @@ import {
   Users,
   Activity,
   Award,
+  Calendar,
   Sparkles,
   Layers,
   Flame,
@@ -22,6 +23,8 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { LanguageSelector } from "@/components/layout/language-selector";
+import { useTranslation } from "@/lib/i18n/i18n-context";
 
 type PortalMobileDrawerProps = {
   isOpen: boolean;
@@ -45,13 +48,13 @@ const PLATFORMS = [
 ];
 
 const GENRES = [
-  { id: "28", name: "Aksiyon" },
-  { id: "35", name: "Komedi" },
-  { id: "18", name: "Dram" },
-  { id: "878", name: "Bilim Kurgu" },
-  { id: "27", name: "Korku" },
-  { id: "16", name: "Animasyon" },
-  { id: "53", name: "Gerilim" },
+  { id: "28", nameTr: "Aksiyon", nameEn: "Action" },
+  { id: "35", nameTr: "Komedi", nameEn: "Comedy" },
+  { id: "18", nameTr: "Dram", nameEn: "Drama" },
+  { id: "878", nameTr: "Bilim Kurgu", nameEn: "Sci-Fi" },
+  { id: "27", nameTr: "Korku", nameEn: "Horror" },
+  { id: "16", nameTr: "Animasyon", nameEn: "Animation" },
+  { id: "53", nameTr: "Gerilim", nameEn: "Thriller" },
 ];
 
 export function PortalMobileDrawer({
@@ -60,6 +63,7 @@ export function PortalMobileDrawer({
   user,
   isAdmin = false,
 }: PortalMobileDrawerProps) {
+  const { dict, locale } = useTranslation();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const currentProvider = searchParams.get("provider");
@@ -155,11 +159,11 @@ export function PortalMobileDrawer({
                 )}
               </div>
               <div className="min-w-0 flex-1">
-                <strong className="block text-xs font-bold text-white truncate">
+                <strong className="block text-sm font-bold text-white truncate">
                   {user.name || "Sinefil"}
                 </strong>
-                <span className="text-[10px] text-neutral-400 truncate block">
-                  {user.email || "Üye"}
+                <span className="text-xs text-neutral-400 truncate block">
+                  {user.email || dict.nav.member}
                 </span>
               </div>
               <ChevronRight className="w-4 h-4 text-neutral-500" />
@@ -170,16 +174,16 @@ export function PortalMobileDrawer({
             <Link
               href="/login"
               onClick={onClose}
-              className="flex-1 py-2 rounded-xl text-xs font-bold text-center bg-white/5 hover:bg-white/10 text-white border border-white/10 transition-colors"
+              className="flex-1 py-2 rounded-xl text-sm font-bold text-center bg-white/5 hover:bg-white/10 text-white border border-white/10 transition-colors"
             >
-              Giriş Yap
+              {dict.nav.login}
             </Link>
             <Link
               href="/register"
               onClick={onClose}
-              className="flex-1 py-2 rounded-xl text-xs font-black text-center bg-amber-400 hover:bg-amber-500 text-slate-950 transition-colors shadow-sm shadow-amber-400/20"
+              className="flex-1 py-2 rounded-xl text-sm font-black text-center bg-amber-400 hover:bg-amber-500 text-slate-950 transition-colors shadow-sm shadow-amber-400/20"
             >
-              Üye Ol
+              {dict.nav.register}
             </Link>
           </div>
         )}
@@ -192,131 +196,145 @@ export function PortalMobileDrawer({
               href="/"
               onClick={onClose}
               className={cn(
-                "flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold transition-all",
+                "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-all",
                 pathname === "/" && !searchParams.toString()
                   ? "bg-amber-400 text-slate-950 font-black shadow-sm"
                   : "text-neutral-300 hover:text-white hover:bg-white/5"
               )}
             >
               <Home className="w-4 h-4" />
-              <span>Ana Sayfa</span>
+              <span>{dict.nav.home}</span>
             </Link>
 
             <Link
               href="/search"
               onClick={onClose}
               className={cn(
-                "flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold transition-all",
+                "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-all",
                 pathname === "/search"
                   ? "bg-amber-400 text-slate-950 font-black shadow-sm"
                   : "text-neutral-300 hover:text-white hover:bg-white/5"
               )}
             >
               <Compass className="w-4 h-4" />
-              <span>Keşfet & Filtrele</span>
+              <span>{dict.nav.explore}</span>
             </Link>
 
             <Link
               href="/?type=movie"
               onClick={onClose}
               className={cn(
-                "flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold transition-all",
+                "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-all",
                 searchParams.get("type") === "movie"
                   ? "bg-amber-400/15 text-amber-400 font-black border border-amber-400/30"
                   : "text-neutral-300 hover:text-white hover:bg-white/5"
               )}
             >
               <Film className="w-4 h-4" />
-              <span>Vizyondaki Filmler</span>
+              <span>{dict.nav.inTheatres}</span>
             </Link>
 
             <Link
               href="/?type=tv"
               onClick={onClose}
               className={cn(
-                "flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold transition-all",
+                "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-all",
                 searchParams.get("type") === "tv"
                   ? "bg-amber-400/15 text-amber-400 font-black border border-amber-400/30"
                   : "text-neutral-300 hover:text-white hover:bg-white/5"
               )}
             >
               <Tv className="w-4 h-4" />
-              <span>Popüler Diziler</span>
+              <span>{dict.nav.tvShows}</span>
             </Link>
 
             <Link
               href="/watchlist"
               onClick={onClose}
               className={cn(
-                "flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold transition-all",
+                "flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-bold transition-all",
                 pathname === "/watchlist"
                   ? "bg-amber-400 text-slate-950 font-black shadow-sm"
                   : "text-neutral-300 hover:text-white hover:bg-white/5"
               )}
             >
               <ListFilter className="w-4 h-4" />
-              <span>Listelerim</span>
+              <span>{dict.nav.watchlist}</span>
+            </Link>
+
+            <Link
+              href="/calendar"
+              onClick={onClose}
+              className={cn(
+                "flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-bold transition-all",
+                pathname === "/calendar" || pathname === "/upcoming-episodes"
+                  ? "bg-amber-400 text-slate-950 font-black shadow-sm"
+                  : "text-neutral-300 hover:text-white hover:bg-white/5"
+              )}
+            >
+              <Calendar className="w-4 h-4" />
+              <span>{dict.nav.calendar}</span>
             </Link>
 
             <Link
               href="/feed"
               onClick={onClose}
               className={cn(
-                "flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold transition-all",
+                "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-all",
                 pathname === "/feed"
                   ? "bg-amber-400 text-slate-950 font-black shadow-sm"
                   : "text-neutral-300 hover:text-white hover:bg-white/5"
               )}
             >
               <Activity className="w-4 h-4" />
-              <span>Sosyal Akış</span>
+              <span>{dict.nav.feed}</span>
             </Link>
 
             <Link
               href="/community"
               onClick={onClose}
               className={cn(
-                "flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold transition-all",
+                "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-all",
                 pathname === "/community"
                   ? "bg-amber-400 text-slate-950 font-black shadow-sm"
                   : "text-neutral-300 hover:text-white hover:bg-white/5"
               )}
             >
               <Users className="w-4 h-4" />
-              <span>Topluluk & Kulüpler</span>
+              <span>{dict.nav.community}</span>
             </Link>
 
             <Link
               href="/achievements"
               onClick={onClose}
               className={cn(
-                "flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold transition-all",
+                "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-all",
                 pathname === "/achievements"
                   ? "bg-amber-400 text-slate-950 font-black shadow-sm"
                   : "text-neutral-300 hover:text-white hover:bg-white/5"
               )}
             >
               <Award className="w-4 h-4" />
-              <span>Rozetler & Sıralama</span>
+              <span>{dict.nav.achievements}</span>
             </Link>
 
             {isAdmin && (
               <Link
                 href="/admin"
                 onClick={onClose}
-                className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold text-amber-400 hover:bg-amber-400/10 transition-colors"
+                className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold text-amber-400 hover:bg-amber-400/10 transition-colors"
               >
                 <ShieldCheck className="w-4 h-4" />
-                <span>Yönetim Paneli</span>
+                <span>{dict.nav.admin}</span>
               </Link>
             )}
           </nav>
 
           {/* Platforms Section */}
           <div className="space-y-1.5 pt-2 border-t border-white/5">
-            <div className="px-2 text-[10px] font-black uppercase tracking-wider text-neutral-400 flex items-center gap-1.5">
+            <div className="px-2 text-xs font-black uppercase tracking-wider text-neutral-400 flex items-center gap-1.5">
               <Layers className="w-3.5 h-3.5 text-amber-400" />
-              <span>Dijital Platformlar</span>
+              <span>{dict.nav.platforms}</span>
             </div>
             <div className="grid grid-cols-2 gap-1 pt-1">
               {PLATFORMS.map((p) => {
@@ -327,7 +345,7 @@ export function PortalMobileDrawer({
                     href={`/?provider=${p.id}`}
                     onClick={onClose}
                     className={cn(
-                      "flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all",
+                      "flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-all",
                       isActive
                         ? "bg-white/10 text-white font-bold ring-1 ring-white/20"
                         : "text-neutral-400 hover:text-white hover:bg-white/5"
@@ -343,9 +361,9 @@ export function PortalMobileDrawer({
 
           {/* Popular Genres Section */}
           <div className="space-y-1.5 pt-2 border-t border-white/5">
-            <div className="px-2 text-[10px] font-black uppercase tracking-wider text-neutral-400 flex items-center gap-1.5">
+            <div className="px-2 text-xs font-black uppercase tracking-wider text-neutral-400 flex items-center gap-1.5">
               <Flame className="w-3.5 h-3.5 text-amber-400" />
-              <span>Popüler Türler</span>
+              <span>{dict.nav.popularGenres}</span>
             </div>
             <div className="flex flex-wrap gap-1 pt-1">
               {GENRES.map((g) => {
@@ -356,13 +374,13 @@ export function PortalMobileDrawer({
                     href={`/?genre=${g.id}`}
                     onClick={onClose}
                     className={cn(
-                      "px-2.5 py-1 rounded-lg text-[11px] font-medium transition-all",
+                      "px-2.5 py-1 rounded-lg text-xs font-medium transition-all",
                       isActive
                         ? "bg-amber-400 text-slate-950 font-black"
                         : "bg-white/5 text-neutral-300 hover:bg-white/10 hover:text-white"
                     )}
                   >
-                    {g.name}
+                    {locale === "en" ? g.nameEn : g.nameTr}
                   </Link>
                 );
               })}
@@ -373,25 +391,27 @@ export function PortalMobileDrawer({
           <div className="p-3 rounded-xl bg-gradient-to-br from-amber-400/10 via-amber-500/5 to-transparent border border-amber-400/20">
             <div className="flex items-center gap-1.5 mb-1">
               <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-              <strong className="text-xs font-black text-white">CineLists Plus</strong>
+              <strong className="text-xs sm:text-sm font-black text-white">CineLists Plus</strong>
             </div>
-            <p className="text-[10px] text-neutral-400 leading-normal">
-              Özel profil temaları, sınırsız listeler ve gelişmiş öneriler.
+            <p className="text-xs text-neutral-400 leading-normal">
+              {locale === "en"
+                ? "Special profile themes, unlimited watchlists and advanced recommendations."
+                : "Özel profil temaları, sınırsız listeler ve gelişmiş öneriler."}
             </p>
           </div>
         </div>
 
-        {/* Footer / Settings link */}
-        <div className="p-3 border-t border-white/10 shrink-0 flex items-center justify-between text-xs font-semibold text-neutral-400 bg-slate-900/40">
+        {/* Footer / Settings & Language */}
+        <div className="p-3 border-t border-white/10 shrink-0 flex items-center justify-between text-xs sm:text-sm font-semibold text-neutral-400 bg-slate-900/40">
           <Link
             href="/settings"
             onClick={onClose}
             className="flex items-center gap-2 hover:text-white transition-colors"
           >
             <Settings className="w-4 h-4" />
-            <span>Ayarlar</span>
+            <span>{dict.settings.title}</span>
           </Link>
-          <span className="text-[10px] text-neutral-600 font-mono">v2.0</span>
+          <LanguageSelector variant="dropdown" />
         </div>
       </div>
     </div>

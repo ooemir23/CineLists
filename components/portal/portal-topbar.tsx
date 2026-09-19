@@ -20,9 +20,14 @@ import {
   Loader2,
   ArrowRight,
   ArrowLeft,
+  Check,
+  Bookmark,
+  Eye,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { PortalMobileDrawer } from "./portal-mobile-drawer";
+import { LanguageSelector } from "@/components/layout/language-selector";
+import { useTranslation } from "@/lib/i18n/i18n-context";
 
 type PortalTopbarProps = {
   user?: {
@@ -37,6 +42,7 @@ type PortalTopbarProps = {
 type SuggestionItem = {
   id: number | string;
   name: string;
+  originalName?: string;
   type: "movie" | "tv" | "person" | "user";
   image: string | null;
   year?: string;
@@ -44,17 +50,8 @@ type SuggestionItem = {
   department?: string;
 };
 
-const SECTION_TABS = [
-  { label: "Ana Sayfa", href: "/" },
-  { label: "Keşfet", href: "/search" },
-  { label: "Vizyondakiler", href: "/?type=movie" },
-  { label: "Popüler Diziler", href: "/?type=tv" },
-  { label: "En İyiler", href: "/?category=top_rated" },
-  { label: "Listeler", href: "/watchlist" },
-  { label: "Topluluk", href: "/community" },
-];
-
 export function PortalTopbar({ user, isAdmin = false }: PortalTopbarProps) {
+  const { dict } = useTranslation();
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -227,25 +224,25 @@ export function PortalTopbar({ user, isAdmin = false }: PortalTopbarProps) {
       case "movie":
         return (
           <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-400/15 text-amber-400 border border-amber-400/30">
-            <Film className="w-2.5 h-2.5" /> Film
+            <Film className="w-2.5 h-2.5" /> {dict.media.typeMovie}
           </span>
         );
       case "tv":
         return (
           <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-sky-400/15 text-sky-400 border border-sky-400/30">
-            <Tv className="w-2.5 h-2.5" /> Dizi
+            <Tv className="w-2.5 h-2.5" /> {dict.media.typeTv}
           </span>
         );
       case "person":
         return (
           <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-400/15 text-emerald-400 border border-emerald-400/30">
-            <User className="w-2.5 h-2.5" /> {department || "Kişi"}
+            <User className="w-2.5 h-2.5" /> {department || dict.nav.person}
           </span>
         );
       default:
         return (
           <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-purple-400/15 text-purple-400 border border-purple-400/30">
-            <Users className="w-2.5 h-2.5" /> Üye
+            <Users className="w-2.5 h-2.5" /> {dict.nav.member}
           </span>
         );
     }
@@ -266,15 +263,19 @@ export function PortalTopbar({ user, isAdmin = false }: PortalTopbarProps) {
         {suggestions.length > 0 ? (
           <div className="p-1.5">
             <div className="px-3 py-1.5 text-[11px] font-bold text-neutral-400 uppercase tracking-wider flex items-center justify-between border-b border-white/5 mb-1">
-              <span>Önerilen Sonuçlar</span>
+              <span>{dict.nav.suggestedResults}</span>
               <span className="text-[10px] font-normal text-neutral-500 lowercase">
-                {suggestions.length} sonuç
+                {suggestions.length} {dict.nav.resultsCount}
               </span>
             </div>
 
             <div className="max-h-[320px] overflow-y-auto space-y-0.5 pr-0.5">
               {suggestions.map((item, index) => {
                 const isSelected = selectedIndex === index;
+                const hasDiffOriginal =
+                  item.originalName &&
+                  item.originalName.trim().toLowerCase() !== item.name.trim().toLowerCase();
+
                 return (
                   <button
                     key={`${item.type}-${item.id}`}
@@ -316,13 +317,18 @@ export function PortalTopbar({ user, isAdmin = false }: PortalTopbarProps) {
                     <div className="flex-1 min-w-0">
                       <p
                         className={cn(
-                          "text-xs sm:text-sm font-bold truncate transition-colors",
+                          "text-xs sm:text-sm font-bold truncate transition-colors flex items-baseline gap-1.5",
                           isSelected
                             ? "text-amber-400"
                             : "text-white group-hover:text-amber-400"
                         )}
                       >
-                        {item.name}
+                        <span className="truncate">{item.name}</span>
+                        {hasDiffOriginal && (
+                          <span className="text-[11px] font-normal text-neutral-400 italic truncate shrink-0">
+                            ({item.originalName})
+                          </span>
+                        )}
                       </p>
                       <div className="flex items-center gap-2 mt-1 flex-wrap">
                         {getTypeBadge(item.type, item.department)}
@@ -371,7 +377,7 @@ export function PortalTopbar({ user, isAdmin = false }: PortalTopbarProps) {
               )}
             >
               <span className="truncate">
-                &ldquo;<span className="text-white font-bold">{searchQuery}</span>&rdquo; için tüm sonuçları gör
+                &ldquo;<span className="text-white font-bold">{searchQuery}</span>&rdquo; {dict.nav.viewAllResults}
               </span>
               <span className="text-[10px] font-mono text-neutral-400 bg-white/10 px-1.5 py-0.5 rounded shrink-0 ml-2">
                 Enter ↵
@@ -384,10 +390,10 @@ export function PortalTopbar({ user, isAdmin = false }: PortalTopbarProps) {
               <Search className="w-5 h-5" />
             </div>
             <p className="text-xs font-bold text-neutral-200">
-              &ldquo;{searchQuery}&rdquo; ile ilgili sonuç bulunamadı
+              &ldquo;{searchQuery}&rdquo; {dict.nav.noResultsFound}
             </p>
             <p className="text-[11px] text-neutral-500 mt-1">
-              Yazımı kontrol edebilir veya detaylı arama sayfasını deneyebilirsiniz.
+              {dict.nav.searchHint}
             </p>
             <button
               type="button"
@@ -397,7 +403,7 @@ export function PortalTopbar({ user, isAdmin = false }: PortalTopbarProps) {
               }}
               className="mt-3 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-400/10 hover:bg-amber-400/20 text-amber-400 text-xs font-bold transition-colors"
             >
-              Detaylı Aramaya Git
+              {dict.nav.goToAdvancedSearch}
               <ArrowRight className="w-3.5 h-3.5" />
             </button>
           </div>
@@ -464,7 +470,7 @@ export function PortalTopbar({ user, isAdmin = false }: PortalTopbarProps) {
                   onKeyDown={handleInputKeyDown}
                   autoComplete="off"
                   spellCheck={false}
-                  placeholder="Film, dizi, oyuncu veya üye..."
+                  placeholder={dict.common.searchPlaceholder}
                   className="w-full h-10 pl-10 pr-16 rounded-xl bg-white/[0.08] focus:bg-slate-900 border border-amber-400/60 text-white placeholder-neutral-500 text-xs font-medium focus:outline-none transition-all"
                 />
                 <div className="absolute right-2 flex items-center gap-1">
@@ -546,8 +552,8 @@ export function PortalTopbar({ user, isAdmin = false }: PortalTopbarProps) {
                     onKeyDown={handleInputKeyDown}
                     autoComplete="off"
                     spellCheck={false}
-                    placeholder="Aramak istediğiniz film, dizi, oyuncu veya üye..."
-                    className="w-full h-10 pl-10 pr-24 rounded-xl bg-white/[0.06] hover:bg-white/[0.08] focus:bg-slate-900 border border-white/10 focus:border-amber-400/60 text-white placeholder-neutral-500 text-xs font-medium focus:outline-none transition-all shadow-inner"
+                    placeholder={dict.home.searchMoviesAndShows}
+                    className="w-full h-10 pl-10 pr-24 rounded-xl bg-white/[0.06] hover:bg-white/[0.08] focus:bg-slate-900 border border-white/10 focus:border-amber-400/60 text-white placeholder-neutral-500 text-sm font-medium focus:outline-none transition-all shadow-inner"
                   />
 
                   <div className="absolute right-3 flex items-center gap-1.5">
@@ -574,8 +580,56 @@ export function PortalTopbar({ user, isAdmin = false }: PortalTopbarProps) {
                 {renderSuggestionsDropdown(false)}
               </div>
 
+              {/* İzlenenler / İzlenecekler / İzliyorum Hızlı Liste Sekmeleri (Arama barının sağında) */}
+              <nav
+                aria-label="Hızlı Liste Erişimi"
+                className="hidden lg:flex items-center p-1 rounded-2xl bg-white/[0.04] hover:bg-white/[0.06] border border-white/10 backdrop-blur-xl shadow-sm shrink-0 gap-1 transition-colors"
+              >
+                <Link
+                  href="/watched"
+                  className={cn(
+                    "flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap",
+                    pathname === "/watched"
+                      ? "bg-amber-400 text-slate-950 font-black shadow-md shadow-amber-400/20"
+                      : "text-neutral-300 hover:text-white hover:bg-white/5"
+                  )}
+                >
+                  <Check className="w-3.5 h-3.5" />
+                  <span>{dict.nav.watched}</span>
+                </Link>
+
+                <Link
+                  href="/watchlist"
+                  className={cn(
+                    "flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap",
+                    pathname === "/watchlist"
+                      ? "bg-amber-400 text-slate-950 font-black shadow-md shadow-amber-400/20"
+                      : "text-neutral-300 hover:text-white hover:bg-white/5"
+                  )}
+                >
+                  <Bookmark className="w-3.5 h-3.5" />
+                  <span>{dict.nav.watchlist}</span>
+                </Link>
+
+                <Link
+                  href="/watching"
+                  className={cn(
+                    "flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap",
+                    pathname === "/watching"
+                      ? "bg-sky-500 text-slate-950 font-black shadow-md shadow-sky-500/20"
+                      : "text-neutral-400 hover:text-white hover:bg-white/5"
+                    )}
+                >
+                  <Eye className="w-3.5 h-3.5" />
+                  <span>{dict.nav.watching}</span>
+                </Link>
+              </nav>
+
               {/* Right Actions */}
               <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+                {/* Language Selector */}
+                <LanguageSelector variant="dropdown" />
+
                 {/* Mobile Search Button trigger (Visible only on < md) */}
                 <button
                   type="button"
@@ -627,13 +681,13 @@ export function PortalTopbar({ user, isAdmin = false }: PortalTopbarProps) {
                       href="/login"
                       className="px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-xl text-xs font-bold text-neutral-300 hover:text-white hover:bg-white/5 transition-colors"
                     >
-                      Giriş Yap
+                      {dict.nav.login}
                     </Link>
                     <Link
                       href="/register"
                       className="px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-xl text-xs font-black bg-amber-400 hover:bg-amber-500 text-slate-950 transition-transform active:scale-95 shadow-md shadow-amber-400/20"
                     >
-                      Üye Ol
+                      {dict.nav.register}
                     </Link>
                   </div>
                 )}
@@ -645,7 +699,14 @@ export function PortalTopbar({ user, isAdmin = false }: PortalTopbarProps) {
         {/* Section Tabs Bar (Merlin'in Kazanı style horizontal bar with subtle fade gradient on mobile) */}
         <div className="relative px-3 sm:px-6 py-1.5 border-t border-white/5 bg-slate-950/40 after:content-[''] after:absolute after:right-0 after:top-0 after:bottom-0 after:w-8 after:bg-gradient-to-l after:from-slate-950 after:to-transparent after:pointer-events-none md:after:hidden">
           <div className="flex items-center gap-1.5 max-w-[1600px] mx-auto overflow-x-auto scrollbar-hide">
-            {SECTION_TABS.map((tab) => {
+            {[
+              { label: dict.nav.home, href: "/" },
+              { label: dict.nav.explore, href: "/search" },
+              { label: dict.nav.inTheatres, href: "/?type=movie" },
+              { label: dict.nav.tvShows, href: "/?type=tv" },
+              { label: dict.nav.topRated, href: "/?category=top_rated" },
+              { label: dict.nav.community, href: "/community" },
+            ].map((tab) => {
               const isActive =
                 tab.href === "/"
                   ? pathname === "/" && !searchParams.toString()
@@ -658,7 +719,7 @@ export function PortalTopbar({ user, isAdmin = false }: PortalTopbarProps) {
                   key={tab.label}
                   href={tab.href}
                   className={cn(
-                    "px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition-all shrink-0",
+                    "px-3 py-1.5 rounded-lg text-sm font-bold whitespace-nowrap transition-all shrink-0",
                     isActive
                       ? "bg-amber-400 text-slate-950 font-black shadow-sm"
                       : "text-neutral-400 hover:text-white hover:bg-white/5"

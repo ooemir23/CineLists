@@ -101,7 +101,17 @@ export const tmdb = {
         const url = new URL(`${TMDB_BASE_URL}${endpoint}`);
         url.searchParams.append("api_key", apiKey);
 
-        const lang = params?.language || "tr-TR";
+        let lang = params?.language;
+        if (!lang) {
+            try {
+                const { cookies } = await import("next/headers");
+                const cookieStore = await cookies();
+                const locale = cookieStore.get("NEXT_LOCALE")?.value;
+                lang = locale === "en" ? "en-US" : "tr-TR";
+            } catch {
+                lang = "tr-TR";
+            }
+        }
         url.searchParams.set("language", lang);
 
         if (params) {
@@ -210,23 +220,23 @@ export const tmdb = {
         return this.fetch(`/trending/${type}/${timeWindow}`, { params });
     },
 
-    async searchMulti(query: string) {
+    async searchMulti(query: string, params: Record<string, string> = {}) {
         return this.fetch("/search/multi", {
-            params: { query },
+            params: { query, ...params },
             cache: "no-store",
         });
     },
 
-    async searchMovies(query: string) {
+    async searchMovies(query: string, params: Record<string, string> = {}) {
         return this.fetch("/search/movie", {
-            params: { query },
+            params: { query, ...params },
             cache: "no-store",
         });
     },
 
-    async searchTV(query: string) {
+    async searchTV(query: string, params: Record<string, string> = {}) {
         return this.fetch("/search/tv", {
-            params: { query },
+            params: { query, ...params },
             cache: "no-store",
         });
     },

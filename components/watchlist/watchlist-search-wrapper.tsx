@@ -1,10 +1,9 @@
 "use client";
-import React, { useState, useMemo } from "react";
-import WatchedSearchBar from "@/components/watched/watched-search-bar";
-import { MediaCard } from "@/components/media/media-card";
-import { Calendar, Film } from "@/components/Icons";
-import { cn } from "@/lib/utils";
 
+import React, { useState, useMemo } from "react";
+import { Search, LayoutGrid, Rows, Film, Tv, RotateCcw, X, Calendar } from "lucide-react";
+import { MediaCard } from "@/components/media/media-card";
+import { cn } from "@/lib/utils";
 
 // Dinamik genre listesi (sadece eklenen içeriklerden)
 function getGenres(list: any[], type: string) {
@@ -18,15 +17,12 @@ function getGenres(list: any[], type: string) {
     return Array.from(genresSet).sort();
 }
 
-
 export default function WatchlistSearchBarWrapper({ watchlist }: { watchlist: any[] }) {
     const [searchValue, setSearchValue] = useState("");
     const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
-    const [filterOpen, setFilterOpen] = useState(false);
     const [filterType, setFilterType] = useState<string>("");
     const [filterYear, setFilterYear] = useState<string>("");
     const [filterGenre, setFilterGenre] = useState<string>("");
-    const [filterDate, setFilterDate] = useState<string>("");
 
     // Dinamik genre listesi
     const genreOptions = useMemo(() => getGenres(watchlist, filterType), [watchlist, filterType]);
@@ -47,12 +43,6 @@ export default function WatchlistSearchBarWrapper({ watchlist }: { watchlist: an
                 return new Date(item.addedAt).getFullYear().toString() === filterYear;
             });
         }
-        if (filterDate) {
-            result = result.filter(item => {
-                if (!item.addedAt) return false;
-                return item.addedAt.slice(0, 10) === filterDate;
-            });
-        }
         if (filterGenre) {
             result = result.filter(item => {
                 const genres = item.media.genres || item.media.genre || [];
@@ -62,12 +52,21 @@ export default function WatchlistSearchBarWrapper({ watchlist }: { watchlist: an
             });
         }
         return result;
-    }, [searchValue, watchlist, filterType, filterYear, filterGenre, filterDate]) as any[];
+    }, [searchValue, watchlist, filterType, filterYear, filterGenre]) as any[];
 
     const today = new Date();
     const years = Array.from({ length: 10 }, (_, i) => today.getFullYear() - i);
     const watchingItems = filtered.filter(item => item.status === "WATCHING");
     const planToWatchItems = filtered.filter(item => item.status === "PLAN_TO_WATCH");
+
+    const hasActiveFilters = Boolean(searchValue || filterType || filterYear || filterGenre);
+
+    const clearFilters = () => {
+        setSearchValue("");
+        setFilterType("");
+        setFilterYear("");
+        setFilterGenre("");
+    };
 
     const renderGrid = (items: any[]) => (
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-4 sm:gap-6 mt-4">
@@ -92,9 +91,15 @@ export default function WatchlistSearchBarWrapper({ watchlist }: { watchlist: an
                     <div className="flex-1">
                         <div className="font-bold text-white text-base md:text-lg">{item.media.title}</div>
                         <div className="flex flex-wrap gap-4 text-xs md:text-sm text-neutral-300 mt-1">
-                            <span className="flex items-center gap-1 text-amber-400 font-bold"><Film className="w-4 h-4" />{item.media.type === "MOVIE" ? "Film" : "Dizi"}</span>
+                            <span className="flex items-center gap-1 text-amber-400 font-bold">
+                                <Film className="w-4 h-4" />
+                                {item.media.type === "MOVIE" ? "Film" : "Dizi"}
+                            </span>
                             {item.addedAt && (
-                                <span className="flex items-center gap-1"><Calendar className="w-4 h-4" />{new Date(item.addedAt).toLocaleDateString()}</span>
+                                <span className="flex items-center gap-1">
+                                    <Calendar className="w-4 h-4" />
+                                    {new Date(item.addedAt).toLocaleDateString()}
+                                </span>
                             )}
                             <span className={cn(
                                 "flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-widest border",
@@ -109,57 +114,140 @@ export default function WatchlistSearchBarWrapper({ watchlist }: { watchlist: an
         </div>
     );
 
-
     return (
         <>
-            <WatchedSearchBar
-                searchValue={searchValue}
-                onSearchChange={setSearchValue}
-                viewMode={viewMode}
-                onViewModeChange={setViewMode}
-                onFilterClick={() => setFilterOpen(!filterOpen)}
-            />
-            {filterOpen && (
-                <div className="flex flex-wrap gap-4 bg-slate-800/50 backdrop-blur-md rounded-2xl p-4 mt-4 mb-2 border border-white/5">
-                    <select
-                        value={filterType}
-                        onChange={e => setFilterType(e.target.value)}
-                        className="bg-slate-900 text-white rounded-xl px-4 py-2.5 text-xs font-bold focus:outline-none focus:ring-1 focus:ring-amber-400/40"
-                    >
-                        <option value="">Tüm Türler</option>
-                        <option value="MOVIE">Film</option>
-                        <option value="TV">Dizi</option>
-                    </select>
+            {/* Tek Satır Kompakt Arama & Filtre Toolbar */}
+            <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3 bg-[#1b2334]/70 backdrop-blur-xl rounded-2xl md:rounded-[2rem] px-3.5 sm:px-4 py-2.5 border border-white/10 shadow-xl">
+                {/* Sol / Orta: Kısa Arama Kutusu + Yanında Filtreler */}
+                <div className="flex flex-wrap items-center gap-2 sm:gap-2.5 flex-1 min-w-0">
+                    {/* Kısa Arama Kutusu */}
+                    <div className="flex items-center w-full sm:w-60 md:w-72 bg-white/5 rounded-xl sm:rounded-2xl px-3.5 py-2 border border-white/5 group focus-within:border-amber-400/40 transition-all shrink-0">
+                        <Search size={16} className="text-neutral-500 group-focus-within:text-amber-400 transition-colors mr-2.5 shrink-0" />
+                        <input
+                            type="text"
+                            value={searchValue}
+                            onChange={e => setSearchValue(e.target.value)}
+                            placeholder="İzleneceklerde ara..."
+                            className="bg-transparent outline-none text-white w-full text-xs sm:text-sm font-medium placeholder:text-neutral-500"
+                        />
+                        {searchValue && (
+                            <button
+                                onClick={() => setSearchValue("")}
+                                className="text-neutral-400 hover:text-white p-0.5 rounded-full hover:bg-white/10"
+                                aria-label="Aramayı temizle"
+                            >
+                                <X size={14} />
+                            </button>
+                        )}
+                    </div>
+
+                    {/* Tür Seçimi: Tümü / Film / Dizi */}
+                    <div className="flex bg-white/5 p-1 rounded-xl sm:rounded-2xl border border-white/5 shrink-0 text-xs font-bold">
+                        <button
+                            onClick={() => setFilterType("")}
+                            className={cn(
+                                "px-2.5 py-1.5 rounded-lg sm:rounded-xl transition-all",
+                                !filterType ? "bg-amber-400 text-slate-950 font-black shadow-sm" : "text-neutral-400 hover:text-white"
+                            )}
+                        >
+                            Tümü
+                        </button>
+                        <button
+                            onClick={() => setFilterType(filterType === "MOVIE" ? "" : "MOVIE")}
+                            className={cn(
+                                "px-2.5 py-1.5 rounded-lg sm:rounded-xl transition-all flex items-center gap-1",
+                                filterType === "MOVIE" ? "bg-amber-400 text-slate-950 font-black shadow-sm" : "text-neutral-400 hover:text-white"
+                            )}
+                        >
+                            <Film size={13} />
+                            <span>Film</span>
+                        </button>
+                        <button
+                            onClick={() => setFilterType(filterType === "TV" ? "" : "TV")}
+                            className={cn(
+                                "px-2.5 py-1.5 rounded-lg sm:rounded-xl transition-all flex items-center gap-1",
+                                filterType === "TV" ? "bg-amber-400 text-slate-950 font-black shadow-sm" : "text-neutral-400 hover:text-white"
+                            )}
+                        >
+                            <Tv size={13} />
+                            <span>Dizi</span>
+                        </button>
+                    </div>
+
+                    {/* Yıl Seçimi */}
                     <select
                         value={filterYear}
                         onChange={e => setFilterYear(e.target.value)}
-                        className="bg-slate-900 text-white rounded-xl px-4 py-2.5 text-xs font-bold focus:outline-none focus:ring-1 focus:ring-amber-400/40"
+                        className={cn(
+                            "bg-white/5 text-xs font-bold rounded-xl sm:rounded-2xl px-3 py-2 border border-white/5 outline-none focus:border-amber-400/40 cursor-pointer transition-all shrink-0",
+                            filterYear ? "text-amber-400 border-amber-400/30 bg-amber-400/10" : "text-neutral-300"
+                        )}
                     >
-                        <option value="">Tüm Yıllar</option>
+                        <option value="" className="bg-[#1b2334] text-white">Tüm Yıllar</option>
                         {years.map(y => (
-                            <option key={y} value={y}>{y}</option>
+                            <option key={y} value={y} className="bg-[#1b2334] text-white">{y}</option>
                         ))}
                     </select>
-                    <input
-                        type="date"
-                        value={filterDate}
-                        onChange={e => setFilterDate(e.target.value)}
-                        className="bg-slate-900 text-white rounded-xl px-4 py-2.5 text-xs font-bold focus:outline-none focus:ring-1 focus:ring-amber-400/40"
-                    />
-                    <select
-                        value={filterGenre}
-                        onChange={e => setFilterGenre(e.target.value)}
-                        className="bg-slate-900 text-white rounded-xl px-4 py-2.5 text-xs font-bold focus:outline-none focus:ring-1 focus:ring-amber-400/40"
-                    >
-                        <option value="">Tüm Kategoriler</option>
-                        {genreOptions.map(g => <option key={g} value={g}>{g}</option>)}
-                    </select>
-                    <button
-                        onClick={() => { setFilterType(""); setFilterYear(""); setFilterGenre(""); setFilterDate(""); }}
-                        className="text-xs font-black uppercase tracking-widest text-white bg-red-500/20 hover:bg-red-500/40 border border-red-500/30 rounded-xl px-4 py-2.5 transition-all"
-                    >Temizle</button>
+
+                    {/* Kategori Seçimi */}
+                    {genreOptions.length > 0 && (
+                        <select
+                            value={filterGenre}
+                            onChange={e => setFilterGenre(e.target.value)}
+                            className={cn(
+                                "bg-white/5 text-xs font-bold rounded-xl sm:rounded-2xl px-3 py-2 border border-white/5 outline-none focus:border-amber-400/40 cursor-pointer transition-all shrink-0 max-w-[150px] truncate",
+                                filterGenre ? "text-amber-400 border-amber-400/30 bg-amber-400/10" : "text-neutral-300"
+                            )}
+                        >
+                            <option value="" className="bg-[#1b2334] text-white">Tüm Kategoriler</option>
+                            {genreOptions.map(g => (
+                                <option key={g} value={g} className="bg-[#1b2334] text-white">{g}</option>
+                            ))}
+                        </select>
+                    )}
+
+                    {/* Temizle Butonu */}
+                    {hasActiveFilters && (
+                        <button
+                            onClick={clearFilters}
+                            className="flex items-center gap-1 text-xs font-bold text-rose-400 hover:text-rose-300 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 px-2.5 py-1.5 rounded-xl transition-all shrink-0"
+                            title="Tüm filtreleri sıfırla"
+                        >
+                            <RotateCcw size={12} />
+                            <span>Temizle</span>
+                        </button>
+                    )}
                 </div>
-            )}
+
+                {/* Sağ Taraf: Sonuç Sayısı ve Grid/List Görünüm */}
+                <div className="flex items-center gap-2 justify-end shrink-0">
+                    <span className="text-xs text-neutral-400 font-medium hidden sm:inline mr-1">
+                        {filtered.length} içerik
+                    </span>
+                    <div className="flex bg-white/5 p-1 rounded-xl sm:rounded-2xl border border-white/5">
+                        <button
+                            className={cn(
+                                "p-2 rounded-lg sm:rounded-xl transition-all",
+                                viewMode === "grid" ? "bg-amber-400 text-black shadow-md shadow-amber-400/20" : "text-neutral-400 hover:text-white"
+                            )}
+                            onClick={() => setViewMode("grid")}
+                            aria-label="Grid görünüm"
+                        >
+                            <LayoutGrid size={16} />
+                        </button>
+                        <button
+                            className={cn(
+                                "p-2 rounded-lg sm:rounded-xl transition-all",
+                                viewMode === "list" ? "bg-amber-400 text-black shadow-md shadow-amber-400/20" : "text-neutral-400 hover:text-white"
+                            )}
+                            onClick={() => setViewMode("list")}
+                            aria-label="Liste görünüm"
+                        >
+                            <Rows size={16} />
+                        </button>
+                    </div>
+                </div>
+            </div>
 
             {filtered.length === 0 ? (
                 <div className="text-center text-neutral-500 mt-20 w-full">

@@ -9,6 +9,8 @@ import { getMediaMetadataBulk } from "@/lib/activity-actions";
 import { SearchResultsClient } from "@/components/search/search-results-client";
 import { MediaRow } from "@/components/media/media-row";
 import { DiscoveryEngine } from "@/components/search/discovery-engine";
+import { getServerLocale } from "@/lib/i18n/server";
+import { getServerCountry } from "@/lib/country";
 
 type SearchPageProps = {
   searchParams: Promise<{
@@ -18,6 +20,7 @@ type SearchPageProps = {
     rating?: string;
     provider?: string;
     genre?: string;
+    country?: string;
     discoveryPeriod?: string;
     discoveryType?: string;
   }>;
@@ -25,12 +28,17 @@ type SearchPageProps = {
 
 export default async function SearchPage({ searchParams }: SearchPageProps) {
   const params = await searchParams;
-  const query = params.q || "";
+  const query = params.q?.trim() || "";
   const type = params.type || "";
   const year = params.year;
   const rating = params.rating;
   const provider = params.provider;
   const genre = params.genre;
+  const userCountry = await getServerCountry();
+  const country = params.country || userCountry;
+  const locale = await getServerLocale();
+  const tmdbLang = locale === "en" ? "en-US" : "tr-TR";
+  const altLang = locale === "en" ? "tr-TR" : "en-US";
 
   const isFiltering = !!(query || year || rating || provider || genre || type);
 
@@ -39,29 +47,60 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
   // If there's a search query or filters, fetch results
   if (isFiltering) {
     const apiParams: Record<string, string> = {
-      language: "tr-TR",
-      watch_region: "TR",
+      language: tmdbLang,
+      watch_region: country,
     };
 
     if (query) {
-      const data = await tmdb.searchMulti(query);
-      results = type
-        ? (data.results || []).filter((item: any) => item.media_type === type)
-        : data.results || [];
-    } else {
-      if (!type) {
-        if (year) apiParams["primary_release_year"] = year;
-        if (rating) apiParams["vote_average.gte"] = rating;
-        if (provider) {
-          apiParams["with_watch_providers"] = provider;
-          apiParams["watch_region"] = "TR";
-        }
-        if (genre) apiParams["with_genres"] = genre;
-        apiParams["sort_by"] = "popularity.desc";
+      // Bilingual search: query both current language and alternate language (Turkish <-> English)
+      const [primaryData, altData] = await Promise.all([
+        tmdb.searchMulti(query, { language: tmdbLang }).catch(() => ({ results: [] })),
+        tmdb.searchMulti(query, { language: altLang }).catch(() => ({ results: [] })),
+      ]);
 
+      const itemsMap = new Map<string, any>();
+      for (const item of primaryData.results || []) {
+        if (item.id && item.media_type) {
+          itemsMap.set(`${item.media_type}:${item.id}`, item);
+        }
+      }
+      for (const item of altData.results || []) {
+        if (item.id && item.media_type) {
+          const key = `${item.media_type}:${item.id}`;
+          if (!itemsMap.has(key)) {
+            itemsMap.set(key, item);
+          }
+        }
+      }
+
+      const merged = Array.from(itemsMap.values());
+      results = type
+        ? merged.filter((item: any) => item.media_type === type)
+        : merged;
+    } else {
+      if (year) {
+        apiParams[type === "tv" ? "first_air_date_year" : "primary_release_year"] = year;
+      }
+      if (rating) apiParams["vote_average.gte"] = rating;
+      if (genre) apiParams["with_genres"] = genre;
+      apiParams["sort_by"] = "popularity.desc";
+
+      if (provider) {
+        apiParams["with_watch_providers"] = provider.replace(/,/g, "|");
+        apiParams["watch_region"] = country;
+      } else {
+        // When filtering by region without specific provider, ensure TMDB strictly
+        // returns content available on streaming/digital platforms in that region.
+        apiParams["watch_region"] = country;
+        apiParams["with_watch_monetization_types"] = "flatrate|free|ads";
+      }
+
+      if (!type) {
         const tvParams = { ...apiParams };
-        delete tvParams["primary_release_year"];
-        if (year) tvParams["first_air_date_year"] = year;
+        if (year) {
+          delete tvParams["primary_release_year"];
+          tvParams["first_air_date_year"] = year;
+        }
 
         const [movieData, tvData] = await Promise.all([
           tmdb.discover("movie", apiParams),
@@ -73,18 +112,6 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
           ...tvData.results.map((t: any) => ({ ...t, media_type: "tv" })),
         ].sort((a, b) => (b.popularity || 0) - (a.popularity || 0));
       } else {
-        if (year) {
-          const yearKey =
-            type === "movie" ? "primary_release_year" : "first_air_date_year";
-          apiParams[yearKey] = year;
-        }
-        if (rating) apiParams["vote_average.gte"] = rating;
-        if (provider) {
-          apiParams["with_watch_providers"] = provider;
-          apiParams["watch_region"] = "TR";
-        }
-        if (genre) apiParams["with_genres"] = genre;
-        apiParams["sort_by"] = "popularity.desc";
         const data = await tmdb.discover(type as "movie" | "tv", apiParams);
         results = (data.results || []).map((item: any) => ({
           ...item,
@@ -99,11 +126,31 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
       ? params.discoveryPeriod
       : "day";
   const discoveryType = params.discoveryType === "tv" ? "tv" : "movie";
-  const trendingData = !isFiltering
-    ? await (period === "month"
-        ? tmdb.getPopular(discoveryType)
-        : tmdb.getTrending(discoveryType, period))
-    : null;
+
+  // When not filtering, discover popular items available on platforms in the selected region (e.g. Turkey)
+  let discoveryItems: any[] = [];
+  if (!isFiltering) {
+    const discoverParams: Record<string, string> = {
+      language: tmdbLang,
+      watch_region: country,
+      with_watch_monetization_types: "flatrate|free|ads",
+    };
+
+    if (period === "day") {
+      discoverParams["sort_by"] = "popularity.desc";
+    } else if (period === "week") {
+      discoverParams["sort_by"] = "popularity.desc";
+    } else if (period === "month") {
+      discoverParams["sort_by"] = "vote_average.desc";
+      discoverParams["vote_count.gte"] = "150";
+    }
+
+    const data = await tmdb.discover(discoveryType, discoverParams);
+    discoveryItems = (data.results || []).map((item: any) => ({
+      ...item,
+      media_type: discoveryType,
+    })).slice(0, 20);
+  }
 
   // Common metadata pre-fetching
   const people = results.filter(
@@ -138,8 +185,9 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
           <DiscoveryEngine period={period} type={discoveryType}>
             <MediaRow
               title=""
-              items={(trendingData?.results || []).slice(0, 15)}
+              items={discoveryItems}
               type={discoveryType}
+              countryCode={country}
             />
           </DiscoveryEngine>
         ) : results.length === 0 ? (
@@ -162,6 +210,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
             communityRatingsMap={communityRatingsMap}
             metadataMap={metadataMap}
             type={type}
+            countryCode={country}
           />
         )}
       </div>

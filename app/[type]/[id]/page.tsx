@@ -19,7 +19,8 @@ import { DetailTabs } from "@/components/media/detail-tabs";
 import { Metadata } from "next";
 import { headers } from "next/headers";
 import { BackButton } from "@/components/ui/back-button";
-import { detectUserCountry } from "@/lib/country";
+import { detectUserCountry, getServerCountry } from "@/lib/country";
+import { getTheatricalStatus } from "@/lib/theatrical";
 
 import { ActionNotification } from "@/components/media/action-notification";
 
@@ -82,11 +83,15 @@ export default async function DetailsPage(props: Props) {
 
   const data = await tmdb
     .getDetails(type as "movie" | "tv", id, {
-      append_to_response: "credits,videos,watch/providers",
+      append_to_response:
+        type === "movie"
+          ? "credits,videos,watch/providers,release_dates"
+          : "credits,videos,watch/providers",
     })
     .catch(() => null);
   if (!data) notFound();
-  const userCountry = detectUserCountry(await headers());
+  const userCountry = await getServerCountry();
+  const theatricalStatus = getTheatricalStatus(data, userCountry);
   // These requests stream into their own slots; the title/overview/afiş do not wait for them.
   const extras = (async () => {
     const credits = data.credits || null;
@@ -178,27 +183,21 @@ export default async function DetailsPage(props: Props) {
           })) || [],
       })) || [];
 
-    let activeProviders = providersData?.results?.[userCountry] || null;
-    let isGlobal = false;
-    if (
-      !activeProviders ||
-      (!activeProviders.flatrate && !activeProviders.buy)
-    ) {
-      if (
-        providersData?.results?.TR?.flatrate ||
-        providersData?.results?.TR?.buy
-      ) {
-        activeProviders = providersData.results.TR;
-      } else {
-        const other = Object.entries(providersData?.results || {}).find(
-          ([, v]: [string, any]) => v.flatrate || v.buy,
-        );
-        if (other) {
-          activeProviders = other[1];
-          isGlobal = true;
-        }
-      }
-    }
+    const userCountryProviders =
+      providersData?.results?.[userCountry] ||
+      (userCountry === "UK" ? providersData?.results?.GB : null) ||
+      (userCountry === "GB" ? providersData?.results?.UK : null) ||
+      null;
+
+    const hasLocalProviders = !!(
+      userCountryProviders?.flatrate?.length ||
+      userCountryProviders?.buy?.length ||
+      userCountryProviders?.rent?.length
+    );
+
+    // Kullanıcının bulunduğu ülkedeki platformlar (başka ülkenin platformlarına fallback yapılmaz)
+    const activeProviders = hasLocalProviders ? userCountryProviders : null;
+    const isGlobal = false;
 
     const directors =
       credits?.crew?.filter((c: any) => c.job === "Director").slice(0, 2) || [];
@@ -215,6 +214,7 @@ export default async function DetailsPage(props: Props) {
       activeProviders,
       isGlobal,
       directors,
+      theatricalStatus,
     };
   })();
 
@@ -257,12 +257,19 @@ export default async function DetailsPage(props: Props) {
       cls: "text-sky-400 border-sky-500/20 bg-sky-500/10",
     },
   };
-  const statusInfo = data.status
+  let statusInfo = data.status
     ? (statusMap[data.status] ?? {
         label: data.status,
         cls: "text-white/40 border-white/10 bg-white/5",
       })
     : null;
+
+  if (theatricalStatus.isInTheaters) {
+    statusInfo = {
+      label: theatricalStatus.isUpcoming ? "Yakında Vizyonda" : "Vizyonda",
+      cls: "text-amber-400 border-amber-500/30 bg-amber-500/10 shadow-[0_0_10px_rgba(251,191,36,0.15)]",
+    };
+  }
 
   async function DeferredRating1() {
     const { userRating, friendsRatings } = await extras;
@@ -317,7 +324,7 @@ export default async function DetailsPage(props: Props) {
   }
 
   async function DeferredProviders1() {
-    const { activeProviders, isGlobal } = await extras;
+    const { activeProviders, isGlobal, theatricalStatus } = await extras;
     return (
       <>
         <WatchProviders
@@ -326,13 +333,14 @@ export default async function DetailsPage(props: Props) {
           isGuest={isGuest}
           countryCode={userCountry}
           mediaTitle={title}
+          theatricalStatus={theatricalStatus}
         />
       </>
     );
   }
 
   async function DeferredProviders0() {
-    const { activeProviders, isGlobal } = await extras;
+    const { activeProviders, isGlobal, theatricalStatus } = await extras;
     return (
       <>
         <WatchProviders
@@ -341,6 +349,7 @@ export default async function DetailsPage(props: Props) {
           isGuest={isGuest}
           countryCode={userCountry}
           mediaTitle={title}
+          theatricalStatus={theatricalStatus}
         />
       </>
     );
