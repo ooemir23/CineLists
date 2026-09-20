@@ -32,7 +32,7 @@ export default async function ProfilePage() {
             prisma.user.findUnique({
                 where: { id: session.user.id },
                 include: {
-                    favoritePersons: { take: 8, orderBy: { addedAt: "desc" } },
+                    favoritePersons: { take: 12, orderBy: { addedAt: "desc" } },
                     activities: {
                         take: 30,
                         orderBy: { createdAt: "desc" },
@@ -53,7 +53,7 @@ export default async function ProfilePage() {
             tmdb.getGenres("tv").catch(() => ({ genres: [] })),
             prisma.watched.findMany({
                 where: { userId: session.user.id },
-                take: 6,
+                take: 12,
                 orderBy: { watchedAt: "desc" },
                 include: { media: true },
             }).catch(() => []),
@@ -65,7 +65,7 @@ export default async function ProfilePage() {
             }).catch(() => []),
             prisma.toWatch.findMany({
                 where: { userId: session.user.id },
-                take: 12,
+                take: 100,
                 orderBy: { addedAt: "desc" },
                 include: { media: true },
             }).catch(() => []),
@@ -140,7 +140,63 @@ export default async function ProfilePage() {
         ? ratedItems.reduce((sum: number, w: any) => sum + (w.rating || 0), 0) / ratedItems.length
         : 0;
 
+    // Collect favorite backdrops from favoriteMediaIds or top watched/watchlist
+    const favoriteIds = (user.favoriteMediaIds || []).map(Number).filter(Boolean);
+    let favoriteBackdrops: string[] = [];
 
+    if (favoriteIds.length > 0) {
+        try {
+            const favoriteMediaItems = await prisma.mediaItem.findMany({
+                where: { tmdbId: { in: favoriteIds } },
+                select: { tmdbId: true, backdropPath: true, posterPath: true },
+            });
+
+            favoriteBackdrops = favoriteMediaItems
+                .map(m => m.backdropPath ? `https://image.tmdb.org/t/p/w1280${m.backdropPath}` : null)
+                .filter(Boolean) as string[];
+
+            if (favoriteBackdrops.length < favoriteIds.length) {
+                const missingIds = favoriteIds.filter((id: number) => !favoriteMediaItems.some(m => m.tmdbId === id));
+                const tmdbResults = await Promise.all(
+                    missingIds.slice(0, 4).map(async (id: number) => {
+                        try {
+                            const m = await tmdb.getDetails("movie", String(id));
+                            if (m?.backdrop_path) return `https://image.tmdb.org/t/p/w1280${m.backdrop_path}`;
+                            const s = await tmdb.getDetails("tv", String(id));
+                            if (s?.backdrop_path) return `https://image.tmdb.org/t/p/w1280${s.backdrop_path}`;
+                        } catch {
+                            return null;
+                        }
+                        return null;
+                    })
+                );
+                favoriteBackdrops.push(...(tmdbResults.filter(Boolean) as string[]));
+            }
+        } catch (e) {
+            console.warn("Error resolving favorite backdrops:", e);
+        }
+    }
+
+    // If still empty, check watched
+    if (favoriteBackdrops.length === 0) {
+        const ratedWithBackdrop = allWatched
+            .filter((w: any) => w.media?.backdropPath)
+            .sort((a: any, b: any) => (b.rating || 0) - (a.rating || 0))
+            .slice(0, 4)
+            .map((w: any) => `https://image.tmdb.org/t/p/w1280${w.media.backdropPath}`);
+
+        favoriteBackdrops = ratedWithBackdrop;
+    }
+
+    // If still empty, check watchlist
+    if (favoriteBackdrops.length === 0) {
+        const watchlistWithBackdrop = toWatch
+            .filter((item: any) => item.media?.backdropPath)
+            .slice(0, 4)
+            .map((item: any) => `https://image.tmdb.org/t/p/w1280${item.media.backdropPath}`);
+
+        favoriteBackdrops = watchlistWithBackdrop;
+    }
 
     return (
         <ProfileClientShell
@@ -152,6 +208,7 @@ export default async function ProfilePage() {
             averageRating={averageRating}
             watchedItems={allWatched}
             watchlistItems={toWatch}
+            coverBackdrops={favoriteBackdrops}
         />
     );
 }

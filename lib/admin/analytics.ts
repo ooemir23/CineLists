@@ -10,8 +10,18 @@ export function analyticsOriginAllowed(
   requestUrl: string,
   publicUrl = process.env.AUTH_URL || process.env.NEXTAUTH_URL,
 ) {
+  if (!origin) return false;
   try {
-    return !!origin && origin === new URL(publicUrl || requestUrl).origin;
+    const originUrl = new URL(origin);
+    const targetUrl = new URL(publicUrl || requestUrl);
+    if (originUrl.origin === targetUrl.origin) return true;
+    if (
+      ["localhost", "127.0.0.1"].includes(originUrl.hostname) &&
+      ["localhost", "127.0.0.1"].includes(targetUrl.hostname)
+    ) {
+      return true;
+    }
+    return false;
   } catch {
     return false;
   }

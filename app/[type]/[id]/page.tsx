@@ -104,6 +104,7 @@ export default async function DetailsPage(props: Props) {
     let userRating = null;
     let friendsRatings: any[] = [];
     let activeRecommendation = null;
+    let isFavorite = false;
 
     if (isAuthenticated) {
       [
@@ -113,6 +114,7 @@ export default async function DetailsPage(props: Props) {
         userRating,
         friendsRatings,
         activeRecommendation,
+        isFavorite,
       ] = await Promise.all([
         safe(getToWatchStatus(mediaId), false),
         safe(getWatchStatus(mediaId), null),
@@ -134,6 +136,13 @@ export default async function DetailsPage(props: Props) {
           [],
         ),
         safe(getReceivedRecommendation(mediaId), null),
+        safe(
+          (async () => {
+            const { getIsFavoriteMedia } = await import("@/lib/favorite-media-actions");
+            return getIsFavoriteMedia(mediaId);
+          })(),
+          false,
+        ),
       ]);
     }
 
@@ -210,6 +219,7 @@ export default async function DetailsPage(props: Props) {
       userRating,
       friendsRatings,
       activeRecommendation,
+      isFavorite,
       comments,
       activeProviders,
       isGlobal,
@@ -356,7 +366,7 @@ export default async function DetailsPage(props: Props) {
   }
 
   async function DeferredActions1() {
-    const { inWatchlist, watchStatus, userRating, activeRecommendation } =
+    const { inWatchlist, watchStatus, userRating, activeRecommendation, isFavorite } =
       await extras;
     return (
       <>
@@ -368,6 +378,7 @@ export default async function DetailsPage(props: Props) {
           initialInWatchlist={inWatchlist}
           initialStatus={watchStatus}
           initialRating={userRating}
+          initialIsFavorite={isFavorite}
           initialRecommendation={
             activeRecommendation?.sender
               ? {
@@ -385,7 +396,7 @@ export default async function DetailsPage(props: Props) {
   }
 
   async function DeferredActions0() {
-    const { inWatchlist, watchStatus, userRating, activeRecommendation } =
+    const { inWatchlist, watchStatus, userRating, activeRecommendation, isFavorite } =
       await extras;
     return (
       <>
@@ -397,6 +408,7 @@ export default async function DetailsPage(props: Props) {
           initialInWatchlist={inWatchlist}
           initialStatus={watchStatus}
           initialRating={userRating}
+          initialIsFavorite={isFavorite}
           initialRecommendation={
             activeRecommendation?.sender
               ? {

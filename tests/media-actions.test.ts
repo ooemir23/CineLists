@@ -16,6 +16,11 @@ jest.mock("@/lib/activity-actions", () => ({
   saveWatchDetails: jest.fn(),
 }));
 
+jest.mock("@/lib/favorite-media-actions", () => ({
+  toggleFavoriteMedia: jest.fn(),
+  getIsFavoriteMedia: jest.fn().mockResolvedValue(false),
+}));
+
 jest.mock("@/lib/social-actions", () => ({
   getFriends: jest.fn().mockResolvedValue([]),
 }));

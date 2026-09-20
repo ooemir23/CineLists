@@ -1,11 +1,12 @@
 "use client";
 
 import { useTransition, useState, useRef } from "react";
-import { Plus, Check, Eye, ChevronDown, ChevronUp, Share2 } from "lucide-react";
+import { Plus, Check, Eye, ChevronDown, ChevronUp, Share2, Heart } from "lucide-react";
 import Link from "next/link";
 import { RecommendModal } from "./recommend-modal";
 import { toggleToWatch } from "@/lib/actions";
 import { toggleWatchedStatus, setWatchStatus } from "@/lib/activity-actions";
+import { toggleFavoriteMedia } from "@/lib/favorite-media-actions";
 import { cn } from "@/lib/utils";
 import { WatchDetailsForm } from "./watch-details-form";
 import { toast } from "sonner";
@@ -18,6 +19,7 @@ type MediaActionsProps = {
     initialInWatchlist: boolean;
     initialStatus?: string | null;
     initialRating?: number | null;
+    initialIsFavorite?: boolean;
     initialRecommendation?: {
         id: string;
         name: string;
@@ -36,11 +38,13 @@ export function MediaActions({
     initialStatus,
     initialRating,
     initialRecommendation,
+    initialIsFavorite = false,
     isAuthenticated,
     isGuest,
     variant: _variant = "standard"
 }: MediaActionsProps) {
     const [status, setStatus] = useState<string | null>(initialStatus || null);
+    const [isFavorite, setIsFavorite] = useState(initialIsFavorite);
     const [showDetailsForm, setShowDetailsForm] = useState(false);
     const [isRecommendOpen, setIsRecommendOpen] = useState(false);
     const [guestWarning, setGuestWarning] = useState<string | null>(null);
@@ -51,6 +55,32 @@ export function MediaActions({
     const showAuthWarning = (message: string) => {
         setGuestWarning(message);
         setTimeout(() => setGuestWarning(null), 3000);
+    };
+
+    const handleToggleFavorite = () => {
+        if (isRestrictedUser) {
+            showAuthWarning("Favorilere eklemek için kayıt olmalısın!");
+            return;
+        }
+
+        const oldFav = isFavorite;
+        setIsFavorite(!oldFav);
+
+        startTransition(async () => {
+            const result = await toggleFavoriteMedia(tmdbId, type, title, posterPath);
+            if (result?.error) {
+                setIsFavorite(oldFav);
+                toast.error(result.error);
+            } else {
+                const nextFav = !!result?.isFavorite;
+                setIsFavorite(nextFav);
+                if (nextFav) {
+                    toast.success("Favorilere eklendi! Profil kapağında gösterilecek.");
+                } else {
+                    toast.info("Favorilerden çıkarıldı.");
+                }
+            }
+        });
     };
 
     const handleActionError = (error: string, oldStatus: string | null, revertForm?: boolean) => {
@@ -199,6 +229,24 @@ export function MediaActions({
                     <Check className={cn("w-4 h-4 stroke-[3]", status === "COMPLETED" && "scale-110")} />
                     <span className="truncate">
                         {status === "COMPLETED" ? "İzlendi" : "İzledim"}
+                    </span>
+                </button>
+
+                {/* Favorite (Favorilere Ekle) Button */}
+                <button
+                    onClick={handleToggleFavorite}
+                    disabled={isPending}
+                    className={cn(
+                        "h-11 px-2.5 sm:px-3.5 rounded-2xl flex items-center justify-center gap-1.5 text-xs font-black tracking-tight transition-all active:scale-95 border backdrop-blur-md select-none",
+                        isFavorite
+                            ? "bg-rose-500/20 text-rose-400 border-rose-500/40 shadow-[0_0_15px_rgba(244,63,94,0.2)]"
+                            : "bg-white/5 hover:bg-white/10 text-white/90 border-white/10 hover:border-white/20"
+                    )}
+                    title={isFavorite ? "Favorilerden Çıkar" : "Favorilere Ekle (Profil Kapağında Gösterilir)"}
+                >
+                    <Heart className={cn("w-4 h-4 transition-transform", isFavorite && "fill-rose-500 text-rose-500 scale-110")} />
+                    <span className="truncate hidden sm:inline">
+                        {isFavorite ? "Favorilerde" : "Favori"}
                     </span>
                 </button>
 

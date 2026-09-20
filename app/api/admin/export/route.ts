@@ -47,6 +47,7 @@ export async function GET(request: Request) {
         "Kurulum tamamlandı",
         "Kayıt tarihi (UTC)",
         "Son görülme (UTC)",
+        "Sitede geçirilen süre (dk)",
         "Son bilinen ülke",
       ],
       ...users.map((user) => [
@@ -58,6 +59,7 @@ export async function GET(request: Request) {
         user.hasCompletedOnboarding ? "Evet" : "Hayır",
         user.adminProfile?.registeredAt?.toISOString(),
         user.adminProfile?.lastSeenAt?.toISOString(),
+        user.adminProfile?.totalMinutes || 0,
         user.adminProfile?.country || "Bilinmiyor",
       ]),
     ];

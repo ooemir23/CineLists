@@ -25,8 +25,8 @@ export default async function PublicProfilePage({
     select: {
       id: true, name: true, username: true, image: true, bio: true,
       favoriteGenres: true, platforms: true, isPrivate: true,
-      showActivities: true, showStats: true,
-      favoritePersons: { take: 8, orderBy: { addedAt: "desc" } },
+      showActivities: true, showStats: true, favoriteMediaIds: true,
+      favoritePersons: { take: 12, orderBy: { addedAt: "desc" } },
       activities: {
         take: 30,
         orderBy: { createdAt: "desc" },
@@ -61,7 +61,7 @@ export default async function PublicProfilePage({
     tmdb.getGenres("tv"),
     prisma.watched.findMany({
       where: { userId: resolvedUserId },
-      take: 6,
+      take: 12,
       orderBy: { watchedAt: "desc" },
       include: { media: true },
     }),
@@ -73,7 +73,7 @@ export default async function PublicProfilePage({
     }),
     prisma.toWatch.findMany({
       where: { userId: resolvedUserId },
-      take: 12,
+      take: 100,
       orderBy: { addedAt: "desc" },
       include: { media: true },
     }),
@@ -82,6 +82,65 @@ export default async function PublicProfilePage({
 
   if (!stats) {
     notFound();
+  }
+
+  // Collect favorite backdrops from favoriteMediaIds or top watched/watchlist
+  const favoriteIds = (user.favoriteMediaIds || []).map(Number).filter(Boolean);
+  let favoriteBackdrops: string[] = [];
+
+  if (favoriteIds.length > 0) {
+    try {
+      const favoriteMediaItems = await prisma.mediaItem.findMany({
+        where: { tmdbId: { in: favoriteIds } },
+        select: { tmdbId: true, backdropPath: true, posterPath: true },
+      });
+
+      favoriteBackdrops = favoriteMediaItems
+        .map(m => m.backdropPath ? `https://image.tmdb.org/t/p/w1280${m.backdropPath}` : null)
+        .filter(Boolean) as string[];
+
+      // If some missing from DB, fetch from TMDB
+      if (favoriteBackdrops.length < favoriteIds.length) {
+        const missingIds = favoriteIds.filter((id: number) => !favoriteMediaItems.some(m => m.tmdbId === id));
+        const tmdbResults = await Promise.all(
+          missingIds.slice(0, 4).map(async (id: number) => {
+            try {
+              const m = await tmdb.getDetails("movie", String(id));
+              if (m?.backdrop_path) return `https://image.tmdb.org/t/p/w1280${m.backdrop_path}`;
+              const s = await tmdb.getDetails("tv", String(id));
+              if (s?.backdrop_path) return `https://image.tmdb.org/t/p/w1280${s.backdrop_path}`;
+            } catch {
+              return null;
+            }
+            return null;
+          })
+        );
+        favoriteBackdrops.push(...(tmdbResults.filter(Boolean) as string[]));
+      }
+    } catch (e) {
+      console.warn("Error resolving favorite backdrops:", e);
+    }
+  }
+
+  // If still no backdrops from favoriteMediaIds, use watched items with backdrops
+  if (favoriteBackdrops.length === 0) {
+    const ratedWithBackdrop = allWatched
+      .filter((w: any) => w.media?.backdropPath)
+      .sort((a: any, b: any) => (b.rating || 0) - (a.rating || 0))
+      .slice(0, 4)
+      .map((w: any) => `https://image.tmdb.org/t/p/w1280${w.media.backdropPath}`);
+
+    favoriteBackdrops = ratedWithBackdrop;
+  }
+
+  // If still empty, check watchlist
+  if (favoriteBackdrops.length === 0) {
+    const watchlistWithBackdrop = toWatch
+      .filter((item: any) => item.media?.backdropPath)
+      .slice(0, 4)
+      .map((item: any) => `https://image.tmdb.org/t/p/w1280${item.media.backdropPath}`);
+
+    favoriteBackdrops = watchlistWithBackdrop;
   }
 
   // Merge and unique genres
@@ -123,8 +182,6 @@ export default async function PublicProfilePage({
       ? ratedItems.reduce((sum: number, w: any) => sum + (w.rating || 0), 0) / ratedItems.length
       : 0;
 
-
-
   return (
     <PublicProfileShell
       user={userData as any}
@@ -137,6 +194,7 @@ export default async function PublicProfilePage({
       watchlistItems={toWatch}
       isFollowing={isFollowing}
       currentUserId={session?.user?.id}
+      coverBackdrops={favoriteBackdrops}
     />
   );
 }

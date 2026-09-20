@@ -103,7 +103,7 @@ describe("Merlin-inspired Portal Components", () => {
             type: "WATCHED",
             createdAt: new Date("2024-01-01"),
             user: { id: "user-1", name: "Mehmet", image: null },
-            media: { id: 401, tmdbId: 401, title: "Breaking Bad", posterPath: "/bb.jpg", type: "TV" },
+            media: { id: "401", tmdbId: 401, title: "Breaking Bad", posterPath: "/bb.jpg", backdropPath: null, type: "TV" },
             episodeRange: {
               seasonNumber: 1,
               fromEpisode: 1,
@@ -116,7 +116,7 @@ describe("Merlin-inspired Portal Components", () => {
                 { number: 4, title: "Cancer Man" },
               ],
             },
-          },
+          } as any,
         ],
       })
     );

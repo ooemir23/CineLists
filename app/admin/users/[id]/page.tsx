@@ -6,7 +6,7 @@ import { isAdminId } from "@/lib/admin/policy";
 import { countryLabel } from "@/lib/admin/analytics";
 import { Panel, Metric, Empty, date } from "@/components/admin/ui";
 import { AdminActionButton } from "@/components/admin/action-button";
-import { Film, Tv, MessageSquare, Users } from "lucide-react";
+import { Film, Tv, MessageSquare, Users, Clock } from "lucide-react";
 
 export default async function AdminUserPage({
   params,
@@ -17,9 +17,39 @@ export default async function AdminUserPage({
   const { id } = await params;
   const user = await getUserDetail(id);
   if (!user) notFound();
+
+  const lastSeen = user.adminProfile?.lastSeenAt
+    ? new Date(user.adminProfile.lastSeenAt).getTime()
+    : 0;
+  const diffMins = lastSeen
+    ? Math.round((Date.now() - lastSeen) / 60000)
+    : null;
+  const isOnline = diffMins !== null && diffMins <= 4;
+  const totalMinutes = user.adminProfile?.totalMinutes || 0;
+  const timeFormatted =
+    totalMinutes >= 60
+      ? `${Math.floor(totalMinutes / 60)} sa ${totalMinutes % 60} dk`
+      : totalMinutes > 0
+        ? `${totalMinutes} dk`
+        : "< 1 dk";
+
   const details = [
     ["Kullanıcı kimliği", user.id],
     ["E-posta", user.email || "Belirtilmemiş"],
+    [
+      "Aktiflik durumu",
+      isOnline
+        ? "🟢 Çevrimiçi (Şu an sitede aktif)"
+        : diffMins !== null && diffMins < 60
+          ? `🟡 ${diffMins} dakika önce aktifti`
+          : user.adminProfile?.lastSeenAt
+            ? `Çevrimdışı (${date(user.adminProfile.lastSeenAt)})`
+            : "Hiç görülmedi",
+    ],
+    [
+      "Sitede geçirilen süre",
+      `${totalMinutes} dakika (${timeFormatted})`,
+    ],
     [
       "E-posta doğrulaması",
       user.emailVerified ? date(user.emailVerified) : "Doğrulama kaydı yok",
@@ -61,6 +91,12 @@ export default async function AdminUserPage({
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-3">
+          {isOnline && (
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-3 py-1.5 text-xs font-bold text-emerald-400 shadow-sm">
+              <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
+              Şu an Çevrimiçi
+            </span>
+          )}
           <span
             className={`rounded-lg px-3 py-2 text-xs ${user.isSuspended ? "bg-rose-400/10 text-rose-300" : "bg-emerald-400/10 text-emerald-300"}`}
           >
@@ -68,7 +104,7 @@ export default async function AdminUserPage({
           </span>
           <Link
             href={`/profile/${user.id}`}
-            className="rounded-xl border border-white/10 px-3 py-2 text-xs text-slate-300"
+            className="rounded-xl border border-white/10 px-3 py-2 text-xs text-slate-300 hover:bg-white/5"
           >
             Profili görüntüle
           </Link>
@@ -88,7 +124,7 @@ export default async function AdminUserPage({
           )}
         </div>
       </div>
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
         <Metric
           label="İzlenen yapım"
           value={user._count.watched}
@@ -112,6 +148,18 @@ export default async function AdminUserPage({
           value={user._count.followedBy}
           note={`${user._count.following} kullanıcıyı takip ediyor`}
           icon={<Users size={18} />}
+        />
+        <Metric
+          label="Sitede Geçirilen Süre"
+          value={timeFormatted}
+          note={
+            isOnline
+              ? "Şu an sitede aktif"
+              : diffMins !== null && diffMins < 60
+                ? `${diffMins} dk önce aktifti`
+                : "Toplam aktiflik süresi"
+          }
+          icon={<Clock size={18} className="text-amber-400" />}
         />
       </div>
       <div className="grid items-start gap-5 lg:grid-cols-2">

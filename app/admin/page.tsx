@@ -10,6 +10,7 @@ import {
   MessageSquare,
   ScrollText,
   Settings2,
+  Clock,
 } from "lucide-react";
 import { getAdmin } from "@/lib/admin/access";
 import {
@@ -137,30 +138,47 @@ async function Overview({ days, since }: { days: number; since: Date }) {
           ))}
         </div>
       </div>
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-6">
         <Metric
           label="Kayıtlı kullanıcı"
           value={data.users}
-          note={`${number(data.suspended)} hesap askıda · tüm zamanlar`}
+          note={`${number(data.suspended)} hesap askıda`}
           icon={<Users size={18} />}
+        />
+        <Metric
+          label="Anlık Çevrimiçi"
+          value={data.onlineCount}
+          note="Son 5 dakikada aktif"
+          icon={
+            <span className="relative flex h-3 w-3">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
+            </span>
+          }
         />
         <Metric
           label="Aktif üye"
           value={data.active}
-          note={`Son ${days} günde ölçülen farklı üye`}
+          note={`Son ${days} günde ölçülen`}
           icon={<Activity size={18} />}
         />
         <Metric
           label="Yeni kayıt"
           value={data.newUsers}
-          note={`Son ${days} gün · kayıt tarihi bilinenler`}
+          note={`Son ${days} gün`}
           icon={<UserPlus size={18} />}
         />
         <Metric
           label="Sayfa görüntüleme"
           value={data.views}
-          note={`Son ${days} gün · tekil ziyaretçi değildir`}
+          note={`Son ${days} gün`}
           icon={<Globe2 size={18} />}
+        />
+        <Metric
+          label="Sitede süre"
+          value={data.totalMinutes >= 60 ? `${Math.floor(data.totalMinutes / 60)} sa ${data.totalMinutes % 60} dk` : `${data.totalMinutes} dk`}
+          note={data.active > 0 ? `Ortalama ${Math.round(data.totalMinutes / data.active)} dk / aktif üye` : "Toplam aktiflik"}
+          icon={<Clock size={18} className="text-amber-400" />}
         />
       </div>
       {!data.firstDay && (
@@ -355,6 +373,7 @@ async function UsersTab({ params }: { params: Params }) {
           >
             <option value="name">Kullanıcı adı</option>
             <option value="recent">Son görülme</option>
+            <option value="time">Sitede kalma süresi</option>
             <option value="registered">Kayıt tarihi</option>
           </select>
         </label>
@@ -384,10 +403,11 @@ async function UsersTab({ params }: { params: Params }) {
               <tr>
                 {[
                   "Kullanıcı",
+                  "Aktiflik",
+                  "Sitede Süre",
                   "Ülke",
                   "Durum",
                   "Kayıt tarihi",
-                  "Son görülme",
                   "İzleme / Bölüm",
                   "",
                 ].map((label, i) => (
@@ -398,56 +418,112 @@ async function UsersTab({ params }: { params: Params }) {
               </tr>
             </thead>
             <tbody>
-              {data.users.map((user) => (
-                <tr
-                  key={user.id}
-                  className="border-b border-white/5 hover:bg-white/[.02]"
-                >
-                  <td className="max-w-64 px-3 py-4">
-                    <Link
-                      href={`/admin/users/${user.id}`}
-                      className="block truncate font-bold text-white hover:text-amber-400"
-                    >
-                      {user.name || user.username}
-                    </Link>
-                    <p className="mt-1 truncate text-xs text-slate-400">
-                      @{user.username} · {user.email || "E-posta yok"}
-                    </p>
-                  </td>
-                  <td className="px-3 py-4 text-slate-400">
-                    {countryLabel(user.adminProfile?.country)}
-                  </td>
-                  <td className="px-3 py-4">
-                    <span
-                      className={`rounded-lg px-2 py-1 text-xs ${user.isSuspended ? "bg-rose-400/10 text-rose-300" : "bg-emerald-400/10 text-emerald-300"}`}
-                    >
-                      {user.isSuspended ? "Askıda" : "Aktif"}
-                    </span>
-                    {!user.hasCompletedOnboarding && (
-                      <p className="mt-2 text-[11px] text-slate-500">
-                        Kurulum eksik
+              {data.users.map((user) => {
+                const lastSeen = user.adminProfile?.lastSeenAt
+                  ? new Date(user.adminProfile.lastSeenAt).getTime()
+                  : 0;
+                const diffMins = lastSeen
+                  ? Math.round((Date.now() - lastSeen) / 60000)
+                  : null;
+                const isOnline = diffMins !== null && diffMins <= 4;
+                const totalMinutes = user.adminProfile?.totalMinutes || 0;
+                const timeFormatted =
+                  totalMinutes >= 60
+                    ? `${Math.floor(totalMinutes / 60)} sa ${totalMinutes % 60} dk`
+                    : totalMinutes > 0
+                      ? `${totalMinutes} dk`
+                      : "< 1 dk";
+
+                return (
+                  <tr
+                    key={user.id}
+                    className="border-b border-white/5 hover:bg-white/[.02]"
+                  >
+                    <td className="max-w-64 px-3 py-4">
+                      <Link
+                        href={`/admin/users/${user.id}`}
+                        className="block truncate font-bold text-white hover:text-amber-400"
+                      >
+                        {user.name || user.username}
+                      </Link>
+                      <p className="mt-1 truncate text-xs text-slate-400">
+                        @{user.username} · {user.email || "E-posta yok"}
                       </p>
-                    )}
-                  </td>
-                  <td className="px-3 py-4 text-xs text-slate-400">
-                    {date(user.adminProfile?.registeredAt)}
-                  </td>
-                  <td className="px-3 py-4 text-xs text-slate-400">
-                    {date(user.adminProfile?.lastSeenAt)}
-                  </td>
-                  <td className="px-3 py-4 font-mono text-xs">
-                    {user._count.watched} / {user._count.watchedEpisodes}
-                  </td>
-                  <td className="px-3 py-4">
-                    <Link
-                      href={`/admin/users/${user.id}`}
-                      className="text-xs text-amber-300"
-                    >
-                      İncele →
-                    </Link>
-                  </td>
-                </tr>
-              ))}
+                    </td>
+                    <td className="px-3 py-4">
+                      {isOnline ? (
+                        <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2.5 py-1 text-xs font-bold text-emerald-400 shadow-sm whitespace-nowrap">
+                          <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
+                          Çevrimiçi
+                        </span>
+                      ) : diffMins !== null && diffMins < 60 ? (
+                        <span className="inline-flex items-center gap-1.5 rounded-lg bg-amber-500/10 px-2 py-0.5 text-xs font-medium text-amber-300 whitespace-nowrap">
+                          <span className="h-1.5 w-1.5 rounded-full bg-amber-400/80" />
+                          {diffMins} dk önce
+                        </span>
+                      ) : diffMins !== null && diffMins < 1440 ? (
+                        <span className="text-xs text-slate-400 whitespace-nowrap">
+                          {Math.round(diffMins / 60)} saat önce
+                        </span>
+                      ) : lastSeen ? (
+                        <span className="text-xs text-slate-500 whitespace-nowrap">
+                          {date(user.adminProfile?.lastSeenAt)}
+                        </span>
+                      ) : (
+                        <span className="text-xs text-slate-600 whitespace-nowrap">
+                          —
+                        </span>
+                      )}
+                    </td>
+                    <td className="px-3 py-4 font-mono text-xs text-slate-300 whitespace-nowrap">
+                      <div className="flex items-center gap-1.5">
+                        <Clock
+                          size={13}
+                          className="text-amber-400/80 shrink-0"
+                        />
+                        <span
+                          className={
+                            totalMinutes > 0
+                              ? "font-semibold text-amber-200"
+                              : "text-slate-500"
+                          }
+                        >
+                          {timeFormatted}
+                        </span>
+                      </div>
+                    </td>
+                    <td className="px-3 py-4 text-slate-400">
+                      {countryLabel(user.adminProfile?.country)}
+                    </td>
+                    <td className="px-3 py-4">
+                      <span
+                        className={`rounded-lg px-2 py-1 text-xs ${user.isSuspended ? "bg-rose-400/10 text-rose-300" : "bg-emerald-400/10 text-emerald-300"}`}
+                      >
+                        {user.isSuspended ? "Askıda" : "Aktif"}
+                      </span>
+                      {!user.hasCompletedOnboarding && (
+                        <p className="mt-2 text-[11px] text-slate-500">
+                          Kurulum eksik
+                        </p>
+                      )}
+                    </td>
+                    <td className="px-3 py-4 text-xs text-slate-400">
+                      {date(user.adminProfile?.registeredAt)}
+                    </td>
+                    <td className="px-3 py-4 font-mono text-xs">
+                      {user._count.watched} / {user._count.watchedEpisodes}
+                    </td>
+                    <td className="px-3 py-4">
+                      <Link
+                        href={`/admin/users/${user.id}`}
+                        className="text-xs text-amber-300 hover:underline"
+                      >
+                        İncele →
+                      </Link>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>

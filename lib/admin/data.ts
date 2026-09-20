@@ -68,12 +68,17 @@ export async function getUsers(filters: UserFilters) {
           { adminProfile: { lastSeenAt: { sort: "desc", nulls: "last" } } },
           { id: "asc" },
         ]
-      : filters.sort === "registered"
+      : filters.sort === "time"
         ? [
-            { adminProfile: { registeredAt: { sort: "desc", nulls: "last" } } },
+            { adminProfile: { totalMinutes: "desc" } },
             { id: "asc" },
           ]
-        : [{ username: "asc" }, { id: "asc" }];
+        : filters.sort === "registered"
+          ? [
+              { adminProfile: { registeredAt: { sort: "desc", nulls: "last" } } },
+              { id: "asc" },
+            ]
+          : [{ username: "asc" }, { id: "asc" }];
   const [users, countries] = await Promise.all([
     prisma.user.findMany({
       where,
@@ -93,12 +98,15 @@ export async function getUsers(filters: UserFilters) {
 
 export async function getOverview(since: Date) {
   await requireAdmin();
+  const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
   const [
     users,
     suspended,
     onboarded,
     newUsers,
     active,
+    onlineCount,
+    totalMinutesSum,
     media,
     watched,
     episodes,
@@ -120,6 +128,8 @@ export async function getOverview(since: Date) {
     prisma.user.count({ where: { hasCompletedOnboarding: true } }),
     prisma.userAdminProfile.count({ where: { registeredAt: { gte: since } } }),
     prisma.userAdminProfile.count({ where: { lastSeenAt: { gte: since } } }),
+    prisma.userAdminProfile.count({ where: { lastSeenAt: { gte: fiveMinutesAgo } } }),
+    prisma.userAdminProfile.aggregate({ _sum: { totalMinutes: true } }),
     prisma.mediaItem.count(),
     prisma.watched.count(),
     prisma.watchedEpisode.count(),
@@ -188,6 +198,8 @@ export async function getOverview(since: Date) {
     onboarded,
     newUsers,
     active,
+    onlineCount,
+    totalMinutes: totalMinutesSum._sum.totalMinutes || 0,
     media,
     watched,
     episodes,

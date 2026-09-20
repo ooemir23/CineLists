@@ -52,7 +52,7 @@ export function Metric({
   icon,
 }: {
   label: string;
-  value: number;
+  value: number | string;
   note: string;
   icon: ReactNode;
 }) {
@@ -63,7 +63,7 @@ export function Metric({
         <span className="text-amber-400">{icon}</span>
       </div>
       <p className="mt-4 font-bricolage text-3xl font-black tracking-tight text-white">
-        {number(value)}
+        {typeof value === "number" ? number(value) : value}
       </p>
       <p className="mt-2 text-xs text-slate-500">{note}</p>
     </div>
