@@ -107,7 +107,9 @@ async function Overview({ tab, days, since }: { tab: string; days: number; since
   const rows = Array.from({ length: days }, (_, i) => {
     const day = new Date(since);
     day.setUTCDate(day.getUTCDate() + i);
+    const dateStr = day.toISOString().slice(0, 10);
     return {
+      date: dateStr,
       label: day.toLocaleDateString("tr-TR", {
         day: "numeric",
         month: "short",
@@ -116,8 +118,7 @@ async function Overview({ tab, days, since }: { tab: string; days: number; since
       value:
         data.daily.find(
           (row) =>
-            row.day.toISOString().slice(0, 10) ===
-            day.toISOString().slice(0, 10),
+            row.day.toISOString().slice(0, 10) === dateStr,
         )?._sum.views || 0,
     };
   });

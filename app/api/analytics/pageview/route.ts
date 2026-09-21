@@ -68,6 +68,28 @@ export async function POST(request: Request) {
         },
         update: { lastSeenAt: now, ...(country !== "ZZ" ? { country } : {}) },
       });
+
+      // Record daily visit entry for admin drill-down inspection
+      try {
+        await prisma.$executeRaw`
+          CREATE TABLE IF NOT EXISTS "UserDailyVisit" (
+            "id" TEXT PRIMARY KEY,
+            "userId" TEXT NOT NULL,
+            "day" DATE NOT NULL,
+            "views" INTEGER NOT NULL DEFAULT 1,
+            "lastSeen" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            CONSTRAINT "UserDailyVisit_userId_day_key" UNIQUE ("userId", "day")
+          )
+        `;
+        await prisma.$executeRaw`
+          INSERT INTO "UserDailyVisit" ("id", "userId", "day", "views", "lastSeen")
+          VALUES (gen_random_uuid()::text, ${session.user.id}, ${day}::date, 1, ${now})
+          ON CONFLICT ("userId", "day")
+          DO UPDATE SET "views" = "UserDailyVisit"."views" + 1, "lastSeen" = ${now}
+        `;
+      } catch {
+        // Non-blocking
+      }
     }
     return new Response(null, { status: 204 });
   } catch {
