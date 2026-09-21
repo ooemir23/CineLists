@@ -53,10 +53,62 @@ export const adminUserSelect = {
       activities: true,
     },
   },
-} satisfies Prisma.UserSelect;
+export async function syncUserIdentitiesFromEmail() {
+  try {
+    const usersWithEmail = await prisma.user.findMany({
+      where: {
+        email: { not: null },
+      },
+      select: { id: true, email: true, username: true, name: true },
+      take: 200,
+    });
+
+    const isRandomHash = (str?: string | null) =>
+      !str || (/^[a-zA-Z0-9_-]{12,}$/.test(str) && !str.includes(" ") && !str.includes("."));
+
+    for (const u of usersWithEmail) {
+      if (!u.email) continue;
+      const emailPrefix = u.email
+        .split("@")[0]
+        .toLowerCase()
+        .replace(/[^a-z0-9_]/g, "")
+        .slice(0, 25) || "user";
+
+      const needsNameUpdate = isRandomHash(u.name);
+      const needsUsernameUpdate = isRandomHash(u.username);
+
+      if (needsNameUpdate || needsUsernameUpdate) {
+        let targetUsername = u.username;
+        if (needsUsernameUpdate) {
+          const exists = await prisma.user.findFirst({
+            where: {
+              username: { equals: emailPrefix, mode: "insensitive" },
+              id: { not: u.id },
+            },
+          });
+          targetUsername = exists ? `${emailPrefix}_${u.id.slice(-4)}` : emailPrefix;
+        }
+
+        await prisma.user
+          .update({
+            where: { id: u.id },
+            data: {
+              ...(needsNameUpdate ? { name: u.email.split("@")[0] } : {}),
+              ...(needsUsernameUpdate ? { username: targetUsername } : {}),
+            },
+          })
+          .catch(() => {});
+      }
+    }
+  } catch {
+    // Non-blocking
+  }
+}
 
 export async function getUsers(filters: UserFilters) {
   await requireAdmin();
+  // Lazily sync random hash user identities from email addresses
+  void syncUserIdentitiesFromEmail();
   const where = userWhere(filters);
   const { take, page } = pagination(filters.page);
   const total = await prisma.user.count({ where });

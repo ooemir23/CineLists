@@ -440,15 +440,19 @@ async function UsersTab({ params }: { params: Params }) {
                     key={user.id}
                     className="border-b border-white/5 hover:bg-white/[.02]"
                   >
-                    <td className="max-w-64 px-3 py-4">
+                    <td className="max-w-72 px-3 py-4">
                       <Link
                         href={`/admin/users/${user.id}`}
-                        className="block truncate font-bold text-white hover:text-amber-400"
+                        className="block truncate font-bold text-white hover:text-amber-400 font-mono text-sm"
+                        title={user.email || user.username}
                       >
-                        {user.name || user.username}
+                        {user.email || user.name || user.username}
                       </Link>
                       <p className="mt-1 truncate text-xs text-slate-400">
-                        @{user.username} · {user.email || "E-posta yok"}
+                        <span className="font-mono text-amber-300 font-medium">@{user.username}</span>
+                        {user.name && user.name !== user.username && user.name !== user.email && (
+                          <span className="text-slate-300"> · {user.name}</span>
+                        )}
                       </p>
                     </td>
                     <td className="px-3 py-4">

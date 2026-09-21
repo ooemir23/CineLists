@@ -83,11 +83,13 @@ export default async function AdminUserPage({
           <p className="text-xs font-bold uppercase tracking-widest text-slate-500">
             Kullanıcı ayrıntısı
           </p>
-          <h2 className="mt-2 break-words text-2xl font-black">
-            {user.name || user.username}
+          <h2 className="mt-2 break-words text-2xl font-black font-mono">
+            {user.email || user.name || user.username}
           </h2>
           <p className="mt-1 break-all text-sm text-slate-400">
-            @{user.username} {isAdminId(user.id) ? "· Yönetici" : ""}
+            <span className="font-mono text-amber-300">@{user.username}</span>{" "}
+            {user.name && user.name !== user.email && user.name !== user.username ? `· ${user.name} ` : ""}
+            {isAdminId(user.id) ? "· Yönetici" : ""}
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-3">
