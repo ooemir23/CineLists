@@ -32,6 +32,7 @@ import {
   number,
   date,
 } from "@/components/admin/ui";
+import { MetricCards } from "@/components/admin/metric-cards";
 import { AdminActionButton } from "@/components/admin/action-button";
 
 type Params = {
@@ -139,49 +140,7 @@ async function Overview({ tab, days, since }: { tab: string; days: number; since
           ))}
         </div>
       </div>
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-6">
-        <Metric
-          label="Kayıtlı kullanıcı"
-          value={data.users}
-          note={`${number(data.suspended)} hesap askıda`}
-          icon={<Users size={18} />}
-        />
-        <Metric
-          label="Anlık Çevrimiçi"
-          value={data.onlineCount}
-          note="Son 5 dakikada aktif"
-          icon={
-            <span className="relative flex h-3 w-3">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
-            </span>
-          }
-        />
-        <Metric
-          label="Aktif üye"
-          value={data.active}
-          note={`Son ${days} günde ölçülen`}
-          icon={<Activity size={18} />}
-        />
-        <Metric
-          label="Yeni kayıt"
-          value={data.newUsers}
-          note={`Son ${days} gün`}
-          icon={<UserPlus size={18} />}
-        />
-        <Metric
-          label="Sayfa görüntüleme"
-          value={data.views}
-          note={`Son ${days} gün`}
-          icon={<Globe2 size={18} />}
-        />
-        <Metric
-          label="Sitede süre"
-          value={data.totalMinutes >= 60 ? `${Math.floor(data.totalMinutes / 60)} sa ${data.totalMinutes % 60} dk` : `${data.totalMinutes} dk`}
-          note={data.active > 0 ? `Ortalama ${Math.round(data.totalMinutes / data.active)} dk / aktif üye` : "Toplam aktiflik"}
-          icon={<Clock size={18} className="text-amber-400" />}
-        />
-      </div>
+      <MetricCards days={days} data={data} />
       {!data.firstDay && (
         <p className="rounded-xl border border-amber-400/20 bg-amber-400/5 p-4 text-sm text-amber-200">
           Ziyaret ölçümü henüz veri üretmedi. Ülke, cihaz ve trafik grafikleri

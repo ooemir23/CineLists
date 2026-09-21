@@ -53,6 +53,8 @@ export const adminUserSelect = {
       activities: true,
     },
   },
+};
+
 export async function syncUserIdentitiesFromEmail() {
   try {
     const usersWithEmail = await prisma.user.findMany({
