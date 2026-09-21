@@ -74,20 +74,29 @@ export function Bars({ rows }: { rows: { label: string; value: number }[] }) {
   const max = Math.max(1, ...rows.map((row) => row.value));
   return rows.length ? (
     <div className="space-y-4">
-      {rows.map((row) => (
-        <div key={row.label}>
-          <div className="mb-1.5 flex justify-between gap-4 text-sm">
-            <span className="truncate text-slate-300">{row.label}</span>
-            <span className="font-mono text-white">{number(row.value)}</span>
+      {rows.map((row) => {
+        const isZero = row.value === 0;
+        return (
+          <div key={row.label}>
+            <div className="mb-1.5 flex justify-between gap-4 text-sm">
+              <span className={`truncate ${isZero ? "text-slate-500" : "text-slate-300"}`}>
+                {row.label}
+              </span>
+              <span className={`font-mono ${isZero ? "text-slate-600" : "text-white font-medium"}`}>
+                {number(row.value)}
+              </span>
+            </div>
+            <div className="h-1.5 overflow-hidden rounded-full bg-white/5">
+              <div
+                className={`h-full rounded-full transition-all ${
+                  isZero ? "bg-transparent" : "bg-amber-400/80"
+                }`}
+                style={{ width: `${(row.value / max) * 100}%` }}
+              />
+            </div>
           </div>
-          <div className="h-1.5 overflow-hidden rounded-full bg-white/5">
-            <div
-              className="h-full rounded-full bg-amber-400/80"
-              style={{ width: `${(row.value / max) * 100}%` }}
-            />
-          </div>
-        </div>
-      ))}
+        );
+      })}
     </div>
   ) : (
     <Empty />
@@ -150,42 +159,80 @@ export function DailyChart({
 }) {
   if (!rows.some((row) => row.value > 0))
     return <Empty>Seçili dönemde ölçüm bulunmuyor.</Empty>;
+  const total = rows.reduce((sum, row) => sum + row.value, 0);
   const max = Math.max(1, ...rows.map((row) => row.value));
   return (
     <div>
-      <div
-        className="flex h-40 items-end gap-1"
-        role="img"
-        aria-label={`Günlük sayfa görüntülemeleri. Toplam ${number(rows.reduce((sum, row) => sum + row.value, 0))}.`}
-      >
-        {rows.map((row) => (
-          <div
-            key={row.label}
-            className="group relative flex h-full min-w-0 flex-1 items-end"
-            title={`${row.label}: ${number(row.value)}`}
-          >
-            <div
-              className="w-full rounded-t bg-gradient-to-t from-amber-600/70 to-amber-300"
-              style={{
-                height: row.value
-                  ? `${Math.max(2, (row.value / max) * 100)}%`
-                  : "1px",
-              }}
-            />
-          </div>
-        ))}
+      {/* Scale & Peak Indicators */}
+      <div className="mb-3 flex items-center justify-between border-b border-white/5 pb-2 text-xs">
+        <span className="text-slate-400">
+          Zirve: <strong className="text-amber-400">{number(max)}</strong> görüntüleme/gün
+        </span>
+        <span className="text-slate-400">
+          Toplam: <strong className="text-white">{number(total)}</strong>
+        </span>
       </div>
+
+      <div className="relative">
+        {/* Subtle Horizontal Guidelines */}
+        <div className="pointer-events-none absolute inset-x-0 top-0 border-b border-dashed border-white/10 text-[10px] text-slate-600">
+          <span className="absolute -top-3 right-0">{number(max)}</span>
+        </div>
+        <div className="pointer-events-none absolute inset-x-0 top-1/2 border-b border-dashed border-white/5 text-[10px] text-slate-600">
+          <span className="absolute -top-3 right-0">{number(Math.round(max / 2))}</span>
+        </div>
+
+        {/* Bars Container */}
+        <div
+          className="flex h-40 items-end gap-1 pt-2"
+          role="img"
+          aria-label={`Günlük sayfa görüntülemeleri. Toplam ${number(total)}.`}
+        >
+          {rows.map((row) => (
+            <div
+              key={row.label}
+              className="group relative flex h-full min-w-0 flex-1 items-end"
+            >
+              {/* Interactive hover tooltip card */}
+              <div className="pointer-events-none absolute bottom-full left-1/2 mb-2 hidden -translate-x-1/2 z-30 whitespace-nowrap rounded-lg border border-white/15 bg-slate-950/95 px-2.5 py-1.5 text-center text-xs shadow-2xl backdrop-blur-sm group-hover:block">
+                <span className="font-bold text-amber-400">{number(row.value)}</span>
+                <span className="ml-1 text-[11px] text-slate-300">görüntüleme</span>
+                <div className="text-[10px] text-slate-400 mt-0.5">{row.label}</div>
+              </div>
+
+              <div
+                className={`w-full rounded-t transition-all ${
+                  row.value > 0
+                    ? "bg-gradient-to-t from-amber-600/70 to-amber-300 group-hover:from-amber-500 group-hover:to-amber-200"
+                    : "bg-white/10"
+                }`}
+                style={{
+                  height: row.value
+                    ? `${Math.max(3, (row.value / max) * 100)}%`
+                    : "2px",
+                }}
+              />
+            </div>
+          ))}
+        </div>
+      </div>
+
       <div className="mt-3 flex justify-between text-xs text-slate-500">
         <span>{rows[0]?.label}</span>
         <span>{rows.at(-1)?.label}</span>
       </div>
+
       <details className="mt-4 text-xs text-slate-400">
-        <summary className="cursor-pointer">Günlük değerleri göster</summary>
+        <summary className="cursor-pointer hover:text-white transition-colors">
+          Günlük değerleri göster
+        </summary>
         <div className="mt-3 grid max-h-48 grid-cols-2 gap-2 overflow-auto">
           {rows.map((row) => (
-            <p key={row.label}>
+            <p key={row.label} className={row.value > 0 ? "text-amber-300" : "text-slate-500"}>
               {row.label}:{" "}
-              <span className="text-white">{number(row.value)}</span>
+              <span className={row.value > 0 ? "text-white font-bold" : "text-slate-500"}>
+                {number(row.value)}
+              </span>
             </p>
           ))}
         </div>

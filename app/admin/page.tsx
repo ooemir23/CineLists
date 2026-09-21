@@ -93,7 +93,7 @@ export default async function AdminPage({
           </Link>
         ))}
       </nav>
-      {tab === "overview" && <Overview days={days} since={since} />}
+      {tab === "overview" && <Overview tab={tab} days={days} since={since} />}
       {tab === "users" && <UsersTab params={params} />}
       {tab === "content" && <Moderation params={params} />}
       {tab === "audit" && <Audit params={params} />}
@@ -102,7 +102,7 @@ export default async function AdminPage({
   );
 }
 
-async function Overview({ days, since }: { days: number; since: Date }) {
+async function Overview({ tab, days, since }: { tab: string; days: number; since: Date }) {
   const data = await getOverview(since);
   const rows = Array.from({ length: days }, (_, i) => {
     const day = new Date(since);
@@ -129,9 +129,9 @@ async function Overview({ days, since }: { days: number; since: Date }) {
           {[7, 30, 90].map((value) => (
             <Link
               key={value}
-              href={`/admin?days=${value}`}
+              href={`/admin?tab=${tab}&days=${value}`}
               aria-current={value === days ? "true" : undefined}
-              className={`rounded-lg px-3 py-2 text-xs font-bold ${value === days ? "bg-white/10 text-white" : "text-slate-500"}`}
+              className={`rounded-lg px-3 py-2 text-xs font-bold ${value === days ? "bg-white/10 text-white" : "text-slate-500 hover:text-slate-300"}`}
             >
               Son {value} gün
             </Link>
@@ -209,16 +209,13 @@ async function Overview({ days, since }: { days: number; since: Date }) {
       <div className="grid gap-5 md:grid-cols-3">
         <Panel title="Cihaz dağılımı">
           <Bars
-            rows={data.devices.map((row) => ({
-              label:
-                (
-                  {
-                    desktop: "Masaüstü",
-                    mobile: "Mobil",
-                    tablet: "Tablet",
-                  } as Record<string, string>
-                )[row.device] || row.device,
-              value: row._sum.views || 0,
+            rows={[
+              { key: "desktop", label: "Masaüstü" },
+              { key: "mobile", label: "Mobil" },
+              { key: "tablet", label: "Tablet" },
+            ].map(({ key, label }) => ({
+              label,
+              value: data.devices.find((d) => d.device === key)?._sum.views || 0,
             }))}
           />
         </Panel>
@@ -227,13 +224,16 @@ async function Overview({ days, since }: { days: number; since: Date }) {
           subtitle="Görüntüleme anındaki oturum durumuna göre."
         >
           <Bars
-            rows={data.audience.map((row) => ({
-              label:
-                row.audience === "member"
-                  ? "Üye görüntülemeleri"
-                  : "Misafir görüntülemeleri",
-              value: row._sum.views || 0,
-            }))}
+            rows={[
+              {
+                label: "Üye görüntülemeleri",
+                value: data.audience.find((a) => a.audience === "member")?._sum.views || 0,
+              },
+              {
+                label: "Misafir görüntülemeleri",
+                value: data.audience.find((a) => a.audience === "guest")?._sum.views || 0,
+              },
+            ]}
           />
         </Panel>
         <Panel

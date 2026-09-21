@@ -18,6 +18,7 @@ import {
   Layers,
   Flame,
   LogIn,
+  ShieldCheck,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { LanguageSelector } from "@/components/layout/language-selector";
@@ -28,7 +29,9 @@ type PortalSidebarProps = {
     name?: string | null;
     email?: string | null;
     image?: string | null;
+    id?: string | null;
   };
+  isAdmin?: boolean;
 };
 
 const PLATFORMS = [
@@ -50,7 +53,7 @@ const GENRES = [
   { id: "53", nameTr: "Gerilim", nameEn: "Thriller" },
 ];
 
-export function PortalSidebar({ user }: PortalSidebarProps) {
+export function PortalSidebar({ user, isAdmin = false }: PortalSidebarProps) {
   const { dict, locale } = useTranslation();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -205,6 +208,21 @@ export function PortalSidebar({ user }: PortalSidebarProps) {
             <Award className="w-4 h-4" />
             {dict.nav.achievements}
           </Link>
+
+          {isAdmin && (
+            <Link
+              href="/admin"
+              className={cn(
+                "flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-bold transition-all border border-amber-400/20 bg-amber-400/10 text-amber-300 hover:bg-amber-400/20",
+                pathname.startsWith("/admin")
+                  ? "bg-amber-400 text-slate-950 font-black shadow-md shadow-amber-400/20"
+                  : ""
+              )}
+            >
+              <ShieldCheck className="w-4 h-4 text-amber-400" />
+              <span>Yönetim Merkezi</span>
+            </Link>
+          )}
         </nav>
 
         {/* Collapsible: Platformlar */}

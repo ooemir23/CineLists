@@ -216,6 +216,24 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
                             (token as any).username = dbUser.username;
                             (token as any).hasCompletedOnboarding = dbUser.hasCompletedOnboarding ?? false;
                             (token as any).isSuspended = dbUser.isSuspended ?? false;
+
+                            // Ensure UserAdminProfile exists with registeredAt for OAuth users
+                            try {
+                                const profile = await prisma.userAdminProfile.findUnique({
+                                    where: { userId: dbUser.id },
+                                });
+                                if (!profile) {
+                                    await prisma.userAdminProfile.create({
+                                        data: {
+                                            userId: dbUser.id,
+                                            registeredAt: new Date(),
+                                        },
+                                    });
+                                }
+                            } catch (profErr) {
+                                console.warn("[Auth] Failed to initialize UserAdminProfile:", profErr);
+                            }
+
                             return token;
                         }
                     } catch (e) {
