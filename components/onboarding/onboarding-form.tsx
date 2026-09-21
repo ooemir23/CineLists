@@ -1,10 +1,10 @@
 "use client";
 
-import { useState } from "react";
-// framer-motion removed — step transitions and progress bar use CSS animations
-import { Check, ChevronRight, ChevronLeft, User, Search, Sparkles, CheckCircle2 } from "lucide-react";
+import { useState, useTransition } from "react";
+import Image from "next/image";
+import { Check, Sparkles, User, Tv, Film, ArrowRight, Loader2, FastForward } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { completeOnboarding } from "@/lib/onboarding-actions";
+import { completeOnboarding, skipOnboarding } from "@/lib/onboarding-actions";
 
 interface Genre {
     id: number;
@@ -24,370 +24,207 @@ interface OnboardingFormProps {
 }
 
 export function OnboardingForm({ genres, platforms, defaultUsername = "" }: OnboardingFormProps) {
-    const [step, setStep] = useState(1);
     const [username, setUsername] = useState(defaultUsername);
     const [selectedGenres, setSelectedGenres] = useState<number[]>([]);
     const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>([]);
-    const [searchQuery, setSearchQuery] = useState("");
-    const [searchResults, setSearchResults] = useState<any[]>([]);
-    const [selectedFavorites, setSelectedFavorites] = useState<any[]>([]);
-    const [isSearching, setIsSearching] = useState(false);
-    const [genreSearch, setGenreSearch] = useState("");
-    const [platformSearch, setPlatformSearch] = useState("");
-
-    const totalSteps = 4;
-
-    const handleNext = () => {
-        if (step < totalSteps) setStep(step + 1);
-    };
-
-    const handleBack = () => {
-        if (step > 1) setStep(step - 1);
-    };
+    const [isPending, startTransition] = useTransition();
 
     const toggleGenre = (id: number) => {
-        setSelectedGenres(prev => 
-            prev.includes(id) ? prev.filter(g => g !== id) : [...prev, id]
+        setSelectedGenres((prev) =>
+            prev.includes(id) ? prev.filter((g) => g !== id) : [...prev, id]
         );
     };
 
     const togglePlatform = (id: string) => {
-        setSelectedPlatforms(prev => 
-            prev.includes(id) ? prev.filter(p => p !== id) : [...prev, id]
+        setSelectedPlatforms((prev) =>
+            prev.includes(id) ? prev.filter((p) => p !== id) : [...prev, id]
         );
     };
 
-    const handleSearch = async (q: string) => {
-        setSearchQuery(q);
-        if (q.length < 3) {
-            setSearchResults([]);
-            return;
-        }
-
-        setIsSearching(true);
-        try {
-            const res = await fetch(`/api/tmdb/search?q=${encodeURIComponent(q)}`);
-            const data = await res.json();
-            setSearchResults(data.results || []);
-        } catch (err) {
-            console.error(err);
-        } finally {
-            setIsSearching(false);
-        }
-    };
-
-    const toggleFavorite = (item: any) => {
-        setSelectedFavorites(prev => {
-            const exists = prev.find(f => f.id === item.id);
-            if (exists) return prev.filter(f => f.id !== item.id);
-            if (prev.length >= 5) return prev; // Limit to 5 favorites
-            return [...prev, item];
+    const handleSkip = () => {
+        startTransition(async () => {
+            await skipOnboarding();
         });
     };
 
     return (
-        <div className="w-full max-w-4xl mx-auto">
-            {/* Progress Bar */}
-            <div className="mb-12">
-                <div className="flex items-center justify-between mb-4">
-                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-amber-400">
-                        Adım {step} / {totalSteps}
-                    </span>
-                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-neutral-500">
-                        {Math.round((step / totalSteps) * 100)}% Tamamlandı
-                    </span>
+        <div className="w-full max-w-3xl mx-auto rounded-3xl border border-white/10 bg-slate-900/60 p-6 md:p-10 shadow-2xl backdrop-blur-xl">
+            {/* Header with quick skip button */}
+            <div className="flex items-start justify-between gap-4 border-b border-white/10 pb-6">
+                <div>
+                    <div className="inline-flex items-center gap-2 rounded-full border border-amber-400/30 bg-amber-400/10 px-3 py-1 text-xs font-bold text-amber-400">
+                        <Sparkles size={14} />
+                        Hızlı Kurulum (10 Saniye)
+                    </div>
+                    <h1 className="mt-3 text-2xl md:text-3xl font-black tracking-tight text-white">
+                        Hoş Geldin! 🎉
+                    </h1>
+                    <p className="mt-1 text-sm text-slate-400">
+                        Sana özel film ve dizi önerileri sunabilmemiz için birkaç saniyede tercihlerini seç.
+                    </p>
                 </div>
-                <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
-                    <div
-                        className="h-full bg-amber-400 shadow-[0_0_15px_rgba(251,191,36,0.5)] transition-all duration-500 ease-out"
-                        style={{ width: `${(step / totalSteps) * 100}%` }}
-                    />
-                </div>
+                <button
+                    type="button"
+                    onClick={handleSkip}
+                    disabled={isPending}
+                    className="flex shrink-0 items-center gap-1.5 rounded-xl border border-white/10 bg-white/5 px-3.5 py-2 text-xs font-bold text-slate-400 transition-colors hover:border-white/20 hover:bg-white/10 hover:text-white disabled:opacity-50"
+                    title="Kurulumu hemen tamamlayıp ana sayfaya geçin"
+                >
+                    <FastForward size={14} className="text-amber-400" />
+                    <span>Şimdilik Atla</span>
+                </button>
             </div>
 
-            <>
-                <div
-                    key={step}
-                    className="min-h-[400px] animate-in fade-in slide-in-from-bottom-4 duration-400"
-                >
-                    {/* STEP 1: USERNAME */}
-                    {step === 1 && (
-                        <div className="space-y-6">
-                            <div className="text-center md:text-left">
-                                <h2 className="text-2xl md:text-3xl font-black text-white tracking-tight uppercase mb-1">
-                                    Kullanıcı Adı
-                                </h2>
-                                <p className="text-xs text-neutral-400 font-medium">
-                                    Seni nasıl çağırmamızı istersin? (İsteğe bağlı)
-                                </p>
-                            </div>
+            <form action={completeOnboarding} className="mt-8 space-y-8">
+                {/* 1. Kullanıcı Adı */}
+                <div className="space-y-2">
+                    <label className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-300">
+                        <User size={14} className="text-amber-400" />
+                        Kullanıcı Adın
+                        <span className="text-[10px] font-normal text-slate-500 lowercase">(isteğe bağlı)</span>
+                    </label>
+                    <div className="relative max-w-md">
+                        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm font-bold text-slate-500">
+                            @
+                        </span>
+                        <input
+                            type="text"
+                            name="username"
+                            value={username}
+                            onChange={(e) => setUsername(e.target.value)}
+                            placeholder="kullanici_adi"
+                            className="w-full rounded-xl border border-white/10 bg-slate-950/70 py-2.5 pl-9 pr-4 text-sm font-medium text-white transition-all placeholder:text-slate-600 focus:border-amber-400/50 focus:outline-none focus:ring-2 focus:ring-amber-400/20"
+                        />
+                    </div>
+                </div>
 
-                            <div className="max-w-md mx-auto md:mx-0 space-y-3">
-                                <div className="relative group">
-                                    <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-neutral-500 group-focus-within:text-amber-400 transition-colors" />
-                                    <input 
-                                        type="text"
-                                        placeholder={defaultUsername || "Kullanıcı Adı"}
-                                        value={username}
-                                        onChange={(e) => setUsername(e.target.value)}
-                                        className="w-full pl-12 pr-4 py-3.5 bg-white/5 border border-white/10 rounded-2xl text-lg font-bold text-white focus:outline-none focus:border-amber-400/50 focus:ring-4 focus:ring-amber-400/10 transition-all placeholder:text-neutral-500/50"
-                                    />
-                                </div>
-                                <p className="text-[9px] text-neutral-500 font-black uppercase tracking-widest px-4">
-                                    Boş bırakırsanız e-posta adresinizin ilk kısmı kullanılacaktır.
-                                </p>
-                            </div>
-                        </div>
-                    )}
+                {/* 2. Platformlar */}
+                <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                        <label className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-300">
+                            <Tv size={14} className="text-amber-400" />
+                            Kullandığın Platformlar
+                            <span className="text-[10px] font-normal text-slate-500 lowercase">
+                                ({selectedPlatforms.length} seçildi)
+                            </span>
+                        </label>
+                        <span className="text-[11px] text-slate-500">
+                            İzleyebileceğin içerikleri öne çıkarırız
+                        </span>
+                    </div>
 
-                    {/* STEP 2: GENRES */}
-                    {step === 2 && (
-                        <div className="space-y-6">
-                            <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
-                                <div className="text-center md:text-left">
-                                    <h2 className="text-2xl md:text-3xl font-black text-white tracking-tight uppercase mb-1">
-                                        Neler İzlemeyi Seversin?
-                                    </h2>
-                                    <p className="text-xs text-neutral-400 font-medium">
-                                        Sana özel öneriler için en az 3 tür seçmeni öneririz.
-                                    </p>
-                                </div>
-                                <div className="relative">
-                                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-500" />
-                                    <input
-                                        type="text"
-                                        placeholder="Tür ara..."
-                                        value={genreSearch}
-                                        onChange={(e) => setGenreSearch(e.target.value)}
-                                        className="w-full md:w-48 pl-9 pr-4 py-2 bg-white/5 border border-white/10 rounded-xl text-xs font-medium text-white focus:outline-none focus:border-amber-400/50 transition-colors"
-                                    />
-                                </div>
-                            </div>
-
-                            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-1.5 md:gap-2">
-                                {genres
-                                    .filter(g => g.name.toLowerCase().includes(genreSearch.toLowerCase()))
-                                    .map((genre) => {
-                                    const isActive = selectedGenres.includes(genre.id);
-                                    return (
-                                        <button
-                                            key={genre.id}
-                                            onClick={() => toggleGenre(genre.id)}
-                                            className={cn(
-                                                "relative px-3 py-2 rounded-xl border text-[10px] font-black uppercase tracking-widest transition-all duration-300",
-                                                isActive 
-                                                    ? "bg-amber-400 border-amber-400 text-slate-950 shadow-lg shadow-amber-400/10 scale-105" 
-                                                    : "bg-white/5 border-white/5 text-neutral-500 hover:bg-white/10 hover:border-white/10"
-                                            )}
-                                        >
-                                            {genre.name}
-                                            {isActive && (
-                                                <div className="absolute -top-1 -right-1 bg-slate-950 rounded-full p-0.5 border border-amber-400">
-                                                    <Check className="w-2 h-2 text-amber-400" />
-                                                </div>
-                                            )}
-                                        </button>
-                                    );
-                                })}
-                            </div>
-                        </div>
-                    )}
-
-                    {/* STEP 3: PLATFORMS */}
-                    {step === 3 && (
-                        <div className="space-y-6">
-                            <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
-                                <div className="text-center md:text-left">
-                                    <h2 className="text-2xl md:text-3xl font-black text-white tracking-tight uppercase mb-1">
-                                        Hangi Platformları Kullanıyorsun?
-                                    </h2>
-                                    <p className="text-xs text-neutral-400 font-medium">
-                                        Sadece izleyebileceğin platformları öne çıkaralım.
-                                    </p>
-                                </div>
-                                <div className="relative">
-                                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-500" />
-                                    <input
-                                        type="text"
-                                        placeholder="Platform ara..."
-                                        value={platformSearch}
-                                        onChange={(e) => setPlatformSearch(e.target.value)}
-                                        className="w-full md:w-48 pl-9 pr-4 py-2 bg-white/5 border border-white/10 rounded-xl text-xs font-medium text-white focus:outline-none focus:border-amber-400/50 transition-colors"
-                                    />
-                                </div>
-                            </div>
-
-                            <div className="flex flex-wrap gap-4 justify-center md:justify-start">
-                                {platforms
-                                    .filter(p => p.name.toLowerCase().includes(platformSearch.toLowerCase()))
-                                    .map((platform) => {
-                                    const isActive = selectedPlatforms.includes(platform.id);
-                                    return (
-                                        <button
-                                            key={platform.id}
-                                            onClick={() => togglePlatform(platform.id)}
-                                            title={platform.name}
-                                            className="relative group transition-transform duration-300 hover:scale-110 active:scale-95"
-                                        >
-                                            <div className={cn(
-                                                "w-14 h-14 md:w-16 md:h-16 rounded-xl overflow-hidden shadow-xl transition-all duration-300 border-2",
-                                                isActive
-                                                    ? "border-amber-400 opacity-100 ring-4 ring-amber-400/20 scale-105"
-                                                    : "border-transparent opacity-50 grayscale hover:grayscale-0 hover:opacity-100"
-                                            )}>
-                                                <img src={platform.icon} alt={platform.name} className="w-full h-full object-cover" />
-                                            </div>
-                                            {isActive && (
-                                                <div className="absolute -top-2 -right-2 bg-amber-400 rounded-full p-1 border-2 border-[#020617] shadow-lg">
-                                                    <Check className="w-3 h-3 text-slate-950 font-black" />
-                                                </div>
-                                            )}
-                                        </button>
-                                    );
-                                })}
-                            </div>
-                        </div>
-                    )}
-
-                    {/* STEP 4: FAVORITES */}
-                    {step === 4 && (
-                        <div className="space-y-6">
-                            <div className="text-center md:text-left">
-                                <h2 className="text-2xl md:text-3xl font-black text-white tracking-tight uppercase mb-1">
-                                    Favori Filmlerin Neler?
-                                </h2>
-                                <p className="text-xs text-neutral-400 font-medium">
-                                    Beğendiğin yapımları seç, zevkini daha iyi anlayalım. (Max 5)
-                                </p>
-                            </div>
-
-                            <div className="space-y-4">
-                                {/* Search Bar */}
-                                <div className="relative group max-w-xl">
-                                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-500 group-focus-within:text-amber-400 transition-colors" />
-                                    <input 
-                                        type="text"
-                                        placeholder="Film veya dizi ara..."
-                                        value={searchQuery}
-                                        onChange={(e) => handleSearch(e.target.value)}
-                                        className="w-full pl-12 pr-4 py-3 bg-white/5 border border-white/10 rounded-xl text-base font-bold text-white focus:outline-none focus:border-amber-400/50 focus:ring-4 focus:ring-amber-400/10 transition-all placeholder:text-neutral-700"
-                                    />
-                                    {isSearching && (
-                                        <div className="absolute right-4 top-1/2 -translate-y-1/2">
-                                            <div className="w-4 h-4 border-2 border-amber-400 border-t-transparent rounded-full animate-spin" />
+                    <div className="grid grid-cols-3 gap-2.5 sm:grid-cols-4 md:grid-cols-6">
+                        {platforms.slice(0, 18).map((platform) => {
+                            const isSelected = selectedPlatforms.includes(platform.id);
+                            return (
+                                <button
+                                    key={platform.id}
+                                    type="button"
+                                    onClick={() => togglePlatform(platform.id)}
+                                    className={cn(
+                                        "group relative flex flex-col items-center gap-2 rounded-2xl border p-2.5 transition-all text-center focus:outline-none",
+                                        isSelected
+                                            ? "border-amber-400 bg-amber-400/10 shadow-lg shadow-amber-400/10 scale-[1.02]"
+                                            : "border-white/10 bg-slate-950/40 hover:border-white/20 hover:bg-slate-950/70 opacity-70 hover:opacity-100"
+                                    )}
+                                >
+                                    <div className="relative h-10 w-10 overflow-hidden rounded-xl border border-white/10">
+                                        <img
+                                            src={platform.icon}
+                                            alt={platform.name}
+                                            className="h-full w-full object-cover"
+                                        />
+                                    </div>
+                                    <span className="truncate w-full text-[11px] font-bold text-slate-300 group-hover:text-white">
+                                        {platform.name}
+                                    </span>
+                                    {isSelected && (
+                                        <div className="absolute top-1.5 right-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-amber-400 text-slate-950">
+                                            <Check size={10} strokeWidth={3} />
                                         </div>
                                     )}
-                                </div>
-
-                                {/* Results Grid */}
-                                {searchResults.length > 0 && (
-                                    <div className="grid grid-cols-3 sm:grid-cols-5 gap-2 p-2 bg-white/5 border border-white/10 rounded-2xl animate-in fade-in slide-in-from-top-2 duration-500">
-                                        {searchResults.map((item) => {
-                                            const isSelected = selectedFavorites.find(f => f.id === item.id);
-                                            return (
-                                                <button
-                                                    key={item.id}
-                                                    onClick={() => toggleFavorite(item)}
-                                                    className={cn(
-                                                        "relative aspect-[2/3] rounded-lg overflow-hidden transition-all duration-300",
-                                                        isSelected ? "ring-2 ring-amber-400 ring-offset-2 ring-offset-slate-950 scale-95" : "hover:scale-105"
-                                                    )}
-                                                >
-                                                    <img 
-                                                        src={item.poster_path ? `https://image.tmdb.org/t/p/w200${item.poster_path}` : "/placeholder.jpg"} 
-                                                        alt={item.title || item.name}
-                                                        className="w-full h-full object-cover"
-                                                    />
-                                                    {isSelected && (
-                                                        <div className="absolute inset-0 bg-amber-400/20 backdrop-blur-[1px] flex items-center justify-center">
-                                                            <CheckCircle2 className="w-8 h-8 text-amber-400 fill-slate-950" />
-                                                        </div>
-                                                    )}
-                                                </button>
-                                            );
-                                        })}
-                                    </div>
-                                )}
-
-                                {/* Selected Favorites */}
-                                <div className="space-y-2">
-                                    <h3 className="text-[9px] font-black uppercase tracking-[0.2em] text-neutral-500 ml-1">
-                                        Seçilen Favoriler ({selectedFavorites.length} / 5)
-                                    </h3>
-                                    <div className="flex flex-wrap gap-2 min-h-[80px] p-4 border border-white/5 rounded-2xl bg-white/2">
-                                        {selectedFavorites.length === 0 ? (
-                                            <div className="flex items-center justify-center w-full text-neutral-700 gap-2">
-                                                <Sparkles className="w-5 h-5 opacity-20" />
-                                                <p className="text-[10px] font-black uppercase tracking-widest opacity-40">Henüz seçim yok</p>
-                                            </div>
-                                        ) : (
-                                            selectedFavorites.map((item) => (
-                                                <div key={item.id} className="relative group animate-in zoom-in duration-300">
-                                                    <div className="w-12 h-18 rounded-md overflow-hidden border border-amber-400/30">
-                                                        <img 
-                                                            src={item.poster_path ? `https://image.tmdb.org/t/p/w200${item.poster_path}` : "/placeholder.jpg"} 
-                                                            className="w-full h-full object-cover"
-                                                            alt={item.title || item.name}
-                                                        />
-                                                    </div>
-                                                    <button 
-                                                        onClick={() => toggleFavorite(item)}
-                                                        className="absolute -top-1.5 -right-1.5 bg-rose-500 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
-                                                    >
-                                                        <Check className="w-2.5 h-2.5 rotate-45" />
-                                                    </button>
-                                                </div>
-                                            ))
-                                        )}
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    )}
+                                </button>
+                            );
+                        })}
+                    </div>
                 </div>
-            </>
 
-            {/* Navigation Buttons */}
-            <div className="mt-12 flex items-center justify-between border-t border-white/5 pt-6">
-                <button
-                    onClick={handleBack}
-                    className={cn(
-                        "flex items-center gap-1.5 px-4 py-2 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all",
-                        step === 1 ? "opacity-0 pointer-events-none" : "text-neutral-500 hover:text-white hover:bg-white/5"
-                    )}
-                >
-                    <ChevronLeft className="w-3.5 h-3.5" />
-                    Geri
-                </button>
+                {/* 3. Sevilen Türler */}
+                <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                        <label className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-300">
+                            <Film size={14} className="text-amber-400" />
+                            Sevdiğin Türler
+                            <span className="text-[10px] font-normal text-slate-500 lowercase">
+                                ({selectedGenres.length} seçildi)
+                            </span>
+                        </label>
+                        <span className="text-[11px] text-slate-500">
+                            Zevkine uygun öneriler sunulur
+                        </span>
+                    </div>
 
-                {step < totalSteps ? (
+                    <div className="flex flex-wrap gap-2">
+                        {genres.map((genre) => {
+                            const isSelected = selectedGenres.includes(genre.id);
+                            return (
+                                <button
+                                    key={genre.id}
+                                    type="button"
+                                    onClick={() => toggleGenre(genre.id)}
+                                    className={cn(
+                                        "flex items-center gap-1.5 rounded-xl border px-3.5 py-2 text-xs font-bold transition-all focus:outline-none",
+                                        isSelected
+                                            ? "border-amber-400 bg-amber-400 text-slate-950 shadow-md shadow-amber-400/20 scale-105"
+                                            : "border-white/10 bg-slate-950/40 text-slate-400 hover:border-white/20 hover:text-white"
+                                    )}
+                                >
+                                    {isSelected && <Check size={12} strokeWidth={3} />}
+                                    <span>{genre.name}</span>
+                                </button>
+                            );
+                        })}
+                    </div>
+                </div>
+
+                {/* Hidden Inputs for Form submission */}
+                {selectedGenres.map((id) => (
+                    <input key={`g-${id}`} type="hidden" name="genres" value={id} />
+                ))}
+                {selectedPlatforms.map((id) => (
+                    <input key={`p-${id}`} type="hidden" name="platforms" value={id} />
+                ))}
+
+                {/* Actions */}
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-white/10 pt-6">
                     <button
-                        onClick={handleNext}
-                        className={cn(
-                            "flex items-center gap-2 px-6 py-3 bg-amber-400 text-slate-950 rounded-xl font-black text-[10px] uppercase tracking-widest shadow-lg shadow-amber-400/10 hover:bg-amber-300 transition-all active:scale-95 disabled:opacity-50 disabled:grayscale"
-                        )}
+                        type="button"
+                        onClick={handleSkip}
+                        disabled={isPending}
+                        className="text-xs font-bold text-slate-400 hover:text-white transition-colors py-2"
                     >
-                        Devam Et
-                        <ChevronRight className="w-3.5 h-3.5" />
+                        Tercihleri sonra ayarlarım, şimdi geç ↗
                     </button>
-                ) : (
-                    <form action={completeOnboarding}>
-                        {/* Hidden Inputs for Form Data */}
-                        <input type="hidden" name="username" value={username} />
-                        {selectedGenres.map(id => <input key={`g-${id}`} type="hidden" name="genres" value={id} />)}
-                        {selectedPlatforms.map(id => <input key={`p-${id}`} type="hidden" name="platforms" value={id} />)}
-                        {selectedFavorites.map(item => <input key={`f-${item.id}`} type="hidden" name="favorites" value={item.id} />)}
 
-                        <button
-                            type="submit"
-                            className="flex items-center gap-2 px-8 py-3 bg-amber-400 text-slate-950 rounded-xl font-black text-[10px] uppercase tracking-widest shadow-lg shadow-amber-400/10 hover:bg-amber-300 transition-all active:scale-95"
-                        >
-                            Tamamla ve Başla
-                            <Sparkles className="w-3.5 h-3.5" />
-                        </button>
-                    </form>
-                )}
-            </div>
+                    <button
+                        type="submit"
+                        disabled={isPending}
+                        className="w-full sm:w-auto flex items-center justify-center gap-2 rounded-2xl bg-amber-400 px-8 py-3.5 text-sm font-black text-slate-950 shadow-xl shadow-amber-400/20 transition-all hover:bg-amber-300 hover:scale-[1.02] active:scale-95 disabled:opacity-50"
+                    >
+                        {isPending ? (
+                            <>
+                                <Loader2 size={16} className="animate-spin" />
+                                <span>Kaydediliyor...</span>
+                            </>
+                        ) : (
+                            <>
+                                <span>Kaydet ve Keşfetmeye Başla</span>
+                                <ArrowRight size={16} />
+                            </>
+                        )}
+                    </button>
+                </div>
+            </form>
         </div>
     );
 }

@@ -63,3 +63,23 @@ export async function completeOnboarding(formData: FormData) {
     revalidatePath("/profile");
     redirect("/");
 }
+
+export async function skipOnboarding() {
+    const session = await auth();
+    if (!session?.user?.id) {
+        throw new Error("Unauthorized");
+    }
+
+    if (!(session.user as any).isGuest && !session.user.id.startsWith("guest_")) {
+        await prisma.user.update({
+            where: { id: session.user.id },
+            data: {
+                hasCompletedOnboarding: true,
+            },
+        }).catch(() => {});
+    }
+
+    revalidatePath("/");
+    revalidatePath("/profile");
+    redirect("/");
+}

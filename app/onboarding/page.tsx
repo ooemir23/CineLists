@@ -44,14 +44,14 @@ export default async function OnboardingPage() {
     const platforms = await getAppPlatforms();
 
     return (
-        <div className=" bg-[#020617] py-12 md:py-20 px-4 md:px-6 relative overflow-hidden">
+        <div className="min-h-screen bg-[#020617] py-10 px-4 md:px-6 relative overflow-hidden flex items-center justify-center">
             {/* Background Effects */}
             <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
                 <div className="absolute -top-[20%] -left-[10%] w-[50%] h-[50%] bg-amber-400/10 blur-[120px] rounded-full" />
                 <div className="absolute -bottom-[20%] -right-[10%] w-[50%] h-[50%] bg-blue-600/10 blur-[120px] rounded-full" />
             </div>
 
-            <div className="max-w-4xl mx-auto relative z-10">
+            <div className="w-full max-w-4xl mx-auto relative z-10">
                 <OnboardingForm 
                     genres={allGenres} 
                     platforms={platforms}
