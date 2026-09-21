@@ -66,6 +66,9 @@ export function analyticsPath(path: string): string | null {
     return "/settings";
   const pages = [
     "/",
+    "/in-theatres",
+    "/tv-shows",
+    "/top-rated",
     "/search",
     "/watchlist",
     "/watched",
@@ -103,4 +106,39 @@ export function countryLabel(code: string | null | undefined) {
   } catch {
     return code;
   }
+}
+
+export function pathLabel(path: string | null | undefined): string {
+  if (!path) return "Bilinmeyen Sayfa";
+  const map: Record<string, string> = {
+    "/": "Ana Sayfa",
+    "/in-theatres": "Vizyondakiler",
+    "/tv-shows": "Diziler",
+    "/top-rated": "En İyiler",
+    "/movie/[id]": "Film Detay",
+    "/tv/[id]": "Dizi Detay",
+    "/tv/[id]/episode": "Dizi Bölüm",
+    "/person/[id]": "Oyuncu / Kişi",
+    "/profile/[id]": "Kullanıcı Profilleri",
+    "/search": "Keşfet & Arama",
+    "/watched": "İzlenenler",
+    "/watchlist": "İzlenecekler",
+    "/watching": "İzliyorum",
+    "/community": "Topluluk",
+    "/feed": "Sosyal Akış",
+    "/calendar": "Takvim",
+    "/achievements": "Rozetler & Sıralama",
+    "/upcoming-episodes": "Gelecek Bölümler",
+    "/messages": "Mesajlar",
+    "/messages/[id]": "Mesajlaşma",
+    "/notifications": "Bildirimler",
+    "/settings": "Ayarlar",
+    "/stats": "İstatistikler",
+    "/taste-match": "Zevk Uyumu",
+    "/recommendations": "Öneriler",
+    "/explore/[type]/[category]": "Kategori Keşfi",
+    "/privacy": "Gizlilik Politikası",
+    "/privacy-policy": "Gizlilik Politikası",
+  };
+  return map[path] || path;
 }

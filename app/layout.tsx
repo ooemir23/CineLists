@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { Suspense } from "react";
 import { Hanken_Grotesk, Bricolage_Grotesque, JetBrains_Mono } from "next/font/google";
 import { auth } from "@/auth";
 import "./globals.css";
@@ -108,7 +109,11 @@ export default async function RootLayout({
             {/* Main Portal View (Topbar + Page Content) */}
             <div className="flex-1 flex flex-col min-w-0 min-h-screen">
               <PortalTopbar user={session?.user} isAdmin={isAdminId(session?.user?.id)} />
-              {process.env.ANALYTICS_ENABLED === "true" && <Pageview />}
+              {process.env.ANALYTICS_ENABLED === "true" && (
+                <Suspense fallback={null}>
+                  <Pageview />
+                </Suspense>
+              )}
               <main className="flex-1 pb-24 md:pb-12 relative z-0">
                 <ErrorBoundary>
                   {children}

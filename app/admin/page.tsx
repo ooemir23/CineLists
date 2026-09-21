@@ -20,7 +20,7 @@ import {
   getAudit,
 } from "@/lib/admin/data";
 import { dateWindow } from "@/lib/admin/policy";
-import { countryLabel } from "@/lib/admin/analytics";
+import { countryLabel, pathLabel } from "@/lib/admin/analytics";
 import {
   Panel,
   Metric,
@@ -256,7 +256,7 @@ async function Overview({ tab, days, since }: { tab: string; days: number; since
         >
           <Bars
             rows={data.paths.map((row) => ({
-              label: row.path,
+              label: `${pathLabel(row.path)} (${row.path})`,
               value: row._sum.views || 0,
             }))}
           />

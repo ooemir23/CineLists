@@ -16,6 +16,7 @@ import {
   ShieldCheck,
   Calendar,
 } from "lucide-react";
+import { pathLabel } from "@/lib/admin/analytics";
 
 export type DailyChartRow = {
   date: string; // "YYYY-MM-DD"
@@ -370,7 +371,10 @@ export function DailyChart({ rows }: { rows: DailyChartRow[] }) {
                           key={p.path}
                           className="flex items-center justify-between rounded-lg bg-slate-950/50 px-3 py-2 text-xs"
                         >
-                          <span className="font-mono text-slate-300">{p.path}</span>
+                          <span className="text-slate-300 font-medium">
+                            {pathLabel(p.path)}{" "}
+                            <span className="font-mono text-slate-500 text-[11px]">({p.path})</span>
+                          </span>
                           <span className="font-bold text-amber-400">
                             {p.views.toLocaleString("tr-TR")} görüntüleme
                           </span>

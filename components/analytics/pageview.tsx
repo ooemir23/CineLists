@@ -1,32 +1,43 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 
 export function Pageview() {
-  const path = usePathname();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const last = useRef("");
   const lastActivityTime = useRef<number>(Date.now());
   const activeSecondsAccumulator = useRef<number>(0);
 
+  // Map homepage section query params to identifiable paths
+  let currentPath = pathname;
+  if (pathname === "/") {
+    const type = searchParams.get("type");
+    const category = searchParams.get("category");
+    if (type === "movie") currentPath = "/in-theatres";
+    else if (type === "tv") currentPath = "/tv-shows";
+    else if (category === "top_rated") currentPath = "/top-rated";
+  }
+
   // 1. Route Change Pageview Tracking
   useEffect(() => {
     if (
-      last.current === path ||
-      path.startsWith("/admin") ||
+      last.current === currentPath ||
+      currentPath.startsWith("/admin") ||
       navigator.doNotTrack === "1"
     )
       return;
-    last.current = path;
+    last.current = currentPath;
     void fetch("/api/analytics/pageview", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ path }),
+      body: JSON.stringify({ path: currentPath }),
       keepalive: true,
     }).catch(() => {
       /* Analytics must never interrupt navigation. */
     });
-  }, [path]);
+  }, [currentPath]);
 
   // 2. Real-time Heartbeat & Active Time Spent Tracking (Every 45s)
   useEffect(() => {
