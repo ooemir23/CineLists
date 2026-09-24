@@ -166,7 +166,7 @@ export function MediaActions({
         <div className="flex flex-col gap-3 w-full">
             <div className={cn(
                 "items-center gap-1.5 sm:gap-2 w-full max-w-xl",
-                type === "tv" ? "grid grid-cols-[1fr_1fr_1fr_auto]" : "grid grid-cols-[1fr_1fr_auto]"
+                type === "tv" ? "grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_auto_auto]" : "grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto_auto]"
             )}>
                 {/* Watchlist (Takip Et) Button */}
                 <button

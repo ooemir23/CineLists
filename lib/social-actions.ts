@@ -4,8 +4,9 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { checkAndUnlockAchievements } from "@/lib/achievement-actions";
+import { sendFollowerEmail } from "@/lib/mail";
 
-export async function toggleFollow(targetUserId: string) {
+export async function toggleFollow(targetUserIdOrUsername: string) {
     try {
         const session = await auth();
         if (!session?.user?.id) {
@@ -21,13 +22,13 @@ export async function toggleFollow(targetUserId: string) {
         // Verify current user in DB (resolves Google sub vs cuid issue)
         let currentUser = await prisma.user.findUnique({
             where: { id: currentUserId },
-            select: { id: true, name: true, image: true }
+            select: { id: true, name: true, image: true, username: true, email: true }
         });
 
         if (!currentUser && session.user.email) {
             currentUser = await prisma.user.findUnique({
                 where: { email: session.user.email },
-                select: { id: true, name: true, image: true }
+                select: { id: true, name: true, image: true, username: true, email: true }
             });
             if (currentUser) {
                 currentUserId = currentUser.id;
@@ -38,18 +39,25 @@ export async function toggleFollow(targetUserId: string) {
             return { error: "Kullanıcı hesabınız veritabanında bulunamadı. Lütfen tekrar giriş yapın." };
         }
 
-        if (currentUserId === targetUserId) {
-            return { error: "Kendinizi takip edemezsiniz" };
-        }
-
-        // Verify target user exists
-        const targetUser = await prisma.user.findUnique({
-            where: { id: targetUserId },
-            select: { id: true }
+        // Verify target user exists (support both id and username)
+        const targetUser = await prisma.user.findFirst({
+            where: {
+                OR: [
+                    { id: targetUserIdOrUsername },
+                    { username: targetUserIdOrUsername }
+                ]
+            },
+            select: { id: true, email: true, name: true, username: true }
         });
 
         if (!targetUser) {
             return { error: "Takip edilmek istenen kullanıcı bulunamadı" };
+        }
+
+        const targetUserId = targetUser.id;
+
+        if (currentUserId === targetUserId) {
+            return { error: "Kendinizi takip edemezsiniz" };
         }
 
         // Check if already following
@@ -73,8 +81,11 @@ export async function toggleFollow(targetUserId: string) {
                 },
             });
             revalidatePath(`/profile/${targetUserId}`);
+            revalidatePath(`/profile/${targetUser.username || targetUserId}`);
+            revalidatePath(`/profile/${currentUser.username || currentUserId}`);
             revalidatePath("/profile");
             revalidatePath("/community");
+            revalidatePath("/notifications");
             return { isFollowing: false };
         } else {
             // Follow
@@ -87,14 +98,17 @@ export async function toggleFollow(targetUserId: string) {
 
             checkAndUnlockAchievements(currentUserId).catch((e) => console.warn("[Achievements] Check failed:", e));
 
-            // Create notification safely
+            const followerDisplayName = currentUser.name || (currentUser.username ? `@${currentUser.username}` : "Bir sinemasever");
+            const followerProfileLink = `/profile/${currentUser.username || currentUserId}`;
+
+            // Create in-app notification safely
             try {
                 await prisma.indicates.create({
                     data: {
                         userId: targetUserId,
                         type: "NEW_FOLLOWER",
-                        message: `${currentUser.name || "Birisi"} seni takip etmeye başladı.`,
-                        link: `/profile/${currentUserId}`, 
+                        message: `${followerDisplayName} seni takip etmeye başladı.`,
+                        link: followerProfileLink,
                         image: currentUser.image,
                     }
                 });
@@ -102,9 +116,26 @@ export async function toggleFollow(targetUserId: string) {
                 console.warn("[Social] Follow notification creation warning:", notifErr);
             }
 
+            // Send Email Notification if target user has an email
+            if (targetUser.email) {
+                sendFollowerEmail({
+                    toEmail: targetUser.email,
+                    recipientName: targetUser.name || (targetUser.username ? `@${targetUser.username}` : "Sinemasever"),
+                    followerName: followerDisplayName,
+                    followerUsername: currentUser.username || undefined,
+                    followerImage: currentUser.image,
+                    followerId: currentUser.username || currentUserId,
+                }).catch((mailErr) => {
+                    console.error("[Social] Follow email sending error:", mailErr);
+                });
+            }
+
             revalidatePath(`/profile/${targetUserId}`);
+            revalidatePath(`/profile/${targetUser.username || targetUserId}`);
+            revalidatePath(`/profile/${currentUser.username || currentUserId}`);
             revalidatePath("/profile");
             revalidatePath("/community");
+            revalidatePath("/notifications");
             return { isFollowing: true };
         }
     } catch (error) {

@@ -401,8 +401,8 @@ export function CommentsSection({
     return (
         <div className="w-full space-y-4 sm:space-y-6">
             {/* ═══ 1. TOP HEADER & SORT BAR ════════════════════════ */}
-            <div className="flex items-center justify-between gap-4 pb-2 border-b border-white/5">
-                <div className="flex items-center gap-2.5">
+            <div className="flex items-center justify-between gap-3 pb-2 border-b border-white/5">
+                <div className="flex items-center gap-2.5 min-w-0">
                     <div className="w-8 h-8 rounded-xl bg-amber-400/10 text-amber-400 flex items-center justify-center border border-amber-400/15">
                         <MessageSquare size={16} />
                     </div>
@@ -417,7 +417,7 @@ export function CommentsSection({
                 </div>
 
                 {/* Sort Toggle */}
-                <div className="flex items-center gap-1 bg-white/5 p-1 rounded-xl border border-white/5 text-[10px] sm:text-xs font-black uppercase tracking-wider">
+                <div className="flex items-center gap-1 shrink-0 whitespace-nowrap bg-white/5 p-1 rounded-xl border border-white/5 text-[10px] sm:text-xs font-black uppercase tracking-wider">
                     <button
                         onClick={() => setSortBy("newest")}
                         className={cn(
@@ -488,7 +488,7 @@ export function CommentsSection({
                                     "w-full bg-white/5 border border-white/10 rounded-xl sm:rounded-2xl p-3 sm:p-4 text-xs sm:text-sm text-white placeholder-neutral-500 focus:outline-none focus:border-amber-400/40 resize-none transition-all shadow-inner",
                                     isInputFocused || newComment.length > 0
                                         ? "min-h-[90px] sm:min-h-[110px]"
-                                        : "min-h-[48px] sm:min-h-[56px]"
+                                        : "min-h-[72px] sm:min-h-[56px]"
                                 )}
                             />
 

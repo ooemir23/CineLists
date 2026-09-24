@@ -106,14 +106,14 @@ export function PortalHero({ items }: { items: PortalHeroItem[] }) {
           <>
             <button
               onClick={handlePrev}
-              className="absolute left-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/40 hover:bg-black/70 border border-white/10 flex items-center justify-center text-white backdrop-blur-md transition-all hover:scale-110 active:scale-95 z-20"
+              className="absolute left-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/40 hover:bg-black/70 border border-white/10 hidden md:flex items-center justify-center text-white backdrop-blur-md transition-all hover:scale-110 active:scale-95 z-20"
               aria-label="Önceki manşet"
             >
               <ChevronLeft className="w-5 h-5" />
             </button>
             <button
               onClick={handleNext}
-              className="absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/40 hover:bg-black/70 border border-white/10 flex items-center justify-center text-white backdrop-blur-md transition-all hover:scale-110 active:scale-95 z-20"
+              className="absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/40 hover:bg-black/70 border border-white/10 hidden md:flex items-center justify-center text-white backdrop-blur-md transition-all hover:scale-110 active:scale-95 z-20"
               aria-label="Sonraki manşet"
             >
               <ChevronRight className="w-5 h-5" />
@@ -122,7 +122,7 @@ export function PortalHero({ items }: { items: PortalHeroItem[] }) {
         )}
 
         {/* Content Details (Hero Copy) */}
-        <div className="absolute bottom-0 left-0 right-0 p-5 md:p-8 lg:p-10 z-10 flex flex-col justify-end max-w-3xl">
+        <div className="absolute bottom-0 left-0 right-0 px-5 pt-5 pb-8 md:px-16 md:py-8 lg:px-20 lg:py-10 z-10 flex flex-col justify-end max-w-3xl">
           {/* Badge & Tags Row */}
           <div className="flex flex-wrap items-center gap-2 mb-2 md:mb-3">
             <span className="px-2.5 py-0.5 rounded-md text-xs font-black uppercase tracking-wider bg-amber-400 text-slate-950 shadow-sm shadow-amber-400/30">

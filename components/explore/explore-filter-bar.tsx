@@ -109,6 +109,7 @@ export function ExploreFilterBar() {
     const category = newCategory || currentCategory;
 
     const params = new URLSearchParams(searchParams.toString());
+    params.delete("page");
     router.push(`/explore/${type}/${category}?${params.toString()}`);
   };
 
@@ -121,7 +122,8 @@ export function ExploreFilterBar() {
 
   const commitFilters = () => {
     const params = new URLSearchParams(searchParams.toString());
-    
+    params.delete("page");
+
     if (stagedGenre) params.set("genre", stagedGenre); else params.delete("genre");
     if (stagedProvider) params.set("provider", stagedProvider); else params.delete("provider");
     if (stagedYear) params.set("year", stagedYear); else params.delete("year");

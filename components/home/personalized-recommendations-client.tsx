@@ -112,7 +112,7 @@ export function PersonalizedRecommendationsClient({
                                         </div>
 
                                         <h3 className="text-base md:text-lg font-black text-white group-hover:text-amber-400 transition-colors line-clamp-2 leading-tight">
-                                            {item.title || item.name || "Tarih Bekleniyor"}
+                                            {item.title || item.name || "İsimsiz İçerik"}
                                         </h3>
 
                                         {(item.original_title || item.original_name) && (item.original_title || item.original_name) !== (item.title || item.name) && (
@@ -147,7 +147,7 @@ export function PersonalizedRecommendationsClient({
                         <div key={`${item.mediaType}-${item.id}`} className="transition-all duration-300">
                             <MediaCard
                                 id={item.id}
-                                title={item.title || item.name || "Tarih Bekleniyor"}
+                                title={item.title || item.name || "İsimsiz İçerik"}
                                 originalTitle={item.original_title || item.original_name}
                                 posterPath={item.poster_path ?? null}
                                 voteAverage={item.vote_average || 0}

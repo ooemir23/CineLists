@@ -69,7 +69,7 @@ export function FriendsStatsWidget({ stats }: FriendsStatsWidgetProps) {
 
             {/* View All */}
             <Link
-                href="/friends"
+                href="/community"
                 className="mt-3 pt-3 border-t border-white/10 text-[10px] text-emerald-400 font-bold hover:text-emerald-300 transition-colors flex items-center gap-1 justify-center"
             >
                 <Users size={10} />

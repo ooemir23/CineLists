@@ -294,12 +294,12 @@ export function PortalFeedbackCard() {
           <p className="text-xs text-neutral-400 mt-0.5 leading-relaxed">
             Eksik film, çeviri hatası veya önerilerini ekibe ilet.
           </p>
-          <Link
-            href="/feedback"
+          <a
+            href="mailto:support@cinelists.com?subject=CineLists%20Geri%20Bildirim"
             className="mt-2.5 inline-block text-xs font-bold text-amber-400 hover:underline"
           >
-            Geri Bildirim Bildir →
-          </Link>
+            Geri Bildirim Gönder →
+          </a>
         </div>
       </div>
     </section>

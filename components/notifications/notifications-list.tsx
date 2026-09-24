@@ -56,7 +56,9 @@ function NotificationBadge({
     image?: string | null;
     message: string;
 }) {
-    if (!image) {
+    const [imgError, setImgError] = useState(false);
+
+    if (!image || imgError) {
         return (
             <div className="w-11 h-11 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center shrink-0 shadow-lg">
                 {getNotificationIcon(type)}
@@ -70,16 +72,13 @@ function NotificationBadge({
 
     if (isFollower) {
         return (
-            <div className="relative w-11 h-11 rounded-2xl overflow-hidden ring-2 ring-blue-400/30 shrink-0 shadow-lg bg-white/5">
+            <div className="relative w-11 h-11 rounded-2xl overflow-hidden ring-2 ring-sky-400/30 shrink-0 shadow-lg bg-white/5">
                 <img
                     src={src}
                     alt={message}
                     className="w-full h-full object-cover"
                     loading="lazy"
-                    onError={(e) => {
-                        e.currentTarget.style.display = "none";
-                        e.currentTarget.parentElement?.classList.add("hidden");
-                    }}
+                    onError={() => setImgError(true)}
                 />
             </div>
         );
@@ -92,10 +91,7 @@ function NotificationBadge({
                 alt="İçerik afişi"
                 className="w-full h-full object-cover"
                 loading="lazy"
-                onError={(e) => {
-                    e.currentTarget.style.display = "none";
-                    e.currentTarget.parentElement?.classList.add("hidden");
-                }}
+                onError={() => setImgError(true)}
             />
         </div>
     );
