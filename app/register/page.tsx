@@ -24,6 +24,8 @@ export default async function RegisterPage({ searchParams }: RegisterPageProps) 
                         ? "Kayıt servisine şu anda bağlanılamıyor. Lütfen birazdan tekrar deneyin."
                         : params.error === "unknown"
                             ? "Kayıt sırasında beklenmeyen bir hata oluştu."
+                        : params.error === "ratelimit"
+                            ? "Çok fazla kayıt denemesi yapıldı. Lütfen birkaç dakika sonra tekrar deneyin."
                         : null;
 
     return (

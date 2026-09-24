@@ -44,6 +44,24 @@ interface HeroSliderProps {
   friendPopularIds?: number[];
 }
 
+function getCategoryHref(category: CategoryType, mediaType: "movie" | "tv") {
+  switch (category) {
+    case "upcoming":
+      return "/calendar";
+    case "personalized":
+      return "/recommendations";
+    case "followed":
+      return "/feed";
+    case "tv":
+      return "/explore/tv/trending";
+    case "popular":
+      return "/explore/movie/popular";
+    case "trending":
+    default:
+      return `/explore/${mediaType}/trending`;
+  }
+}
+
 const CATEGORY_CONFIG = {
   trending: {
     label: "Günün En Gözdesi",
@@ -259,11 +277,7 @@ export function HeroSlider({ items }: HeroSliderProps) {
                 </Link>
               )}
               <Link
-                href={
-                  currentItem.category === "upcoming"
-                    ? "/calendar"
-                    : `/${currentItem.media_type}`
-                }
+                href={getCategoryHref(currentItem.category, currentItem.media_type)}
                 className="px-3 py-1.5 md:px-4 rounded-full bg-white/10 text-white/90 text-[9px] md:text-[10px] font-black uppercase tracking-widest border border-white/10 backdrop-blur-md flex items-center gap-2 transition-all hover:scale-105 active:scale-95 hover:bg-white/20"
               >
                 <categoryConfig.icon

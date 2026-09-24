@@ -36,6 +36,9 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
             case "OAuthCallback":
                 errorMessage = "Google servisinden kullanıcı bilgileri alınırken hata oluştu.";
                 break;
+            case "ratelimit":
+                errorMessage = "Çok fazla deneme yaptınız. Lütfen birkaç dakika sonra tekrar deneyin.";
+                break;
             default:
                 errorMessage = "Giriş yapılırken bir hata oluştu. Lütfen daha sonra tekrar deneyin.";
         }

@@ -15,7 +15,7 @@ export default async function EpisodePage({ params }: { params: Promise<{ id: st
         tmdb.getEpisodeDetails(id, Number(seasonNumber), Number(episodeNumber)),
         tmdb.getDetails("tv", id),
         prisma.mediaItem.findUnique({
-            where: { tmdbId: Number(id) },
+            where: { type_tmdbId: { type: "TV", tmdbId: Number(id) } },
             include: {
                 episodes: {
                     where: {

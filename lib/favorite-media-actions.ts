@@ -45,7 +45,7 @@ export async function toggleFavoriteMedia(
       if (!isNaN(numId)) {
         try {
           let media = await prisma.mediaItem.findUnique({
-            where: { tmdbId: numId },
+            where: { type_tmdbId: { type: type === "tv" ? "TV" : "MOVIE", tmdbId: numId } },
           });
 
           if (!media) {

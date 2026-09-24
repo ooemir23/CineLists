@@ -34,11 +34,12 @@ export async function GET(request: Request) {
 
     let targetUrl = "/";
     let message = "success";
+    let writeSucceeded = false;
 
     try {
         // 1. Ensure MediaItem exists
         let media = await prisma.mediaItem.findUnique({
-            where: { tmdbId },
+            where: { type_tmdbId: { type: type as "MOVIE" | "TV", tmdbId } },
         });
 
         if (!media) {
@@ -62,61 +63,67 @@ export async function GET(request: Request) {
         }
 
         if (media) {
-            targetUrl = `/${type.toLowerCase()}/${tmdbId}`;
-            
+            const candidateUrl = `/${type.toLowerCase()}/${tmdbId}`;
+
             if (action === "WATCHED") {
-                // Add to watched
-                await prisma.watched.upsert({
-                    where: { userId_mediaId: { userId: session.user.id, mediaId: media.id } },
-                    update: { watchedAt: new Date() },
-                    create: { userId: session.user.id, mediaId: media.id }
-                });
-                // Remove from toWatch
-                await prisma.toWatch.deleteMany({
-                    where: { userId: session.user.id, mediaId: media.id }
-                });
+                await prisma.$transaction([
+                    prisma.watched.upsert({
+                        where: { userId_mediaId: { userId: session.user.id, mediaId: media.id } },
+                        update: { watchedAt: new Date() },
+                        create: { userId: session.user.id, mediaId: media.id }
+                    }),
+                    prisma.toWatch.deleteMany({
+                        where: { userId: session.user.id, mediaId: media.id }
+                    }),
+                ]);
                 message = "watched";
             } else if (action === "WATCHING") {
-                // Add to toWatch with status WATCHING
-                await prisma.toWatch.upsert({
-                    where: { userId_mediaId: { userId: session.user.id, mediaId: media.id } },
-                    update: { status: "WATCHING" },
-                    create: { userId: session.user.id, mediaId: media.id, status: "WATCHING" }
-                });
-                // Remove from watched
-                await prisma.watched.deleteMany({
-                    where: { userId: session.user.id, mediaId: media.id }
-                });
+                await prisma.$transaction([
+                    prisma.toWatch.upsert({
+                        where: { userId_mediaId: { userId: session.user.id, mediaId: media.id } },
+                        update: { status: "WATCHING" },
+                        create: { userId: session.user.id, mediaId: media.id, status: "WATCHING" }
+                    }),
+                    prisma.watched.deleteMany({
+                        where: { userId: session.user.id, mediaId: media.id }
+                    }),
+                ]);
                 message = "watching";
             } else if (action === "PLAN_TO_WATCH") {
-                // Add to toWatch with status PLAN_TO_WATCH
-                await prisma.toWatch.upsert({
-                    where: { userId_mediaId: { userId: session.user.id, mediaId: media.id } },
-                    update: { status: "PLAN_TO_WATCH" },
-                    create: { userId: session.user.id, mediaId: media.id, status: "PLAN_TO_WATCH" }
-                });
-                // Remove from watched
-                await prisma.watched.deleteMany({
-                    where: { userId: session.user.id, mediaId: media.id }
-                });
+                await prisma.$transaction([
+                    prisma.toWatch.upsert({
+                        where: { userId_mediaId: { userId: session.user.id, mediaId: media.id } },
+                        update: { status: "PLAN_TO_WATCH" },
+                        create: { userId: session.user.id, mediaId: media.id, status: "PLAN_TO_WATCH" }
+                    }),
+                    prisma.watched.deleteMany({
+                        where: { userId: session.user.id, mediaId: media.id }
+                    }),
+                ]);
                 message = "added";
             }
+
+            // Only point the redirect/response at the media page once the write above
+            // has actually committed - otherwise a failed write would still report success.
+            targetUrl = candidateUrl;
+            writeSucceeded = true;
         }
     } catch (error) {
-        console.error("Email action error details:", error);
+        console.error("Media action error details:", error);
+        message = "error";
+        writeSucceeded = false;
     }
 
     if (shouldRedirect) {
-        revalidatePath("/watchlist");
-        revalidatePath("/social"); // Revalidate social for activities
-        if (targetUrl !== "/") {
+        if (writeSucceeded) {
+            revalidatePath("/watchlist");
+            revalidatePath("/social"); // Revalidate social for activities
             revalidatePath(targetUrl);
-            const finalUrl = new URL(targetUrl, process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000");
-            finalUrl.searchParams.set("actionMsg", message);
-            return redirect(finalUrl.toString().replace(finalUrl.origin, ""));
         }
-        return redirect(targetUrl);
+        const finalUrl = new URL(targetUrl, process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000");
+        finalUrl.searchParams.set("actionMsg", message);
+        return redirect(finalUrl.toString().replace(finalUrl.origin, ""));
     }
 
-    return Response.json({ success: targetUrl !== "/" });
+    return Response.json({ success: writeSucceeded });
 }

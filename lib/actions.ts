@@ -44,10 +44,11 @@ export async function toggleToWatch(mediaId: number, type: "movie" | "tv" | "per
         }
 
         const currentUserId = dbUser.id;
+        const mediaType = type === "movie" ? "MOVIE" : type === "tv" ? "TV" : "PERSON";
 
         // Ensure media exists in our DB
         let media = await prisma.mediaItem.findUnique({
-            where: { tmdbId: mediaId },
+            where: { type_tmdbId: { type: mediaType, tmdbId: mediaId } },
         });
 
         if (!media) {
@@ -62,7 +63,7 @@ export async function toggleToWatch(mediaId: number, type: "movie" | "tv" | "per
             media = await prisma.mediaItem.create({
                 data: {
                     tmdbId: mediaId,
-                    type: type === "movie" ? "MOVIE" : type === "tv" ? "TV" : "PERSON",
+                    type: mediaType,
                     title: title,
                     posterPath: posterPath,
                     genres: genres,
@@ -141,13 +142,14 @@ export async function toggleToWatch(mediaId: number, type: "movie" | "tv" | "per
     }
 }
 
-export async function getToWatchStatus(mediaId: number) {
+export async function getToWatchStatus(mediaId: number, type: "movie" | "tv" | "person" = "movie") {
     const session = await auth();
     if (!session?.user?.id) return false;
 
     try {
+        const mediaType = type === "movie" ? "MOVIE" : type === "tv" ? "TV" : "PERSON";
         const media = await prisma.mediaItem.findUnique({
-            where: { tmdbId: mediaId },
+            where: { type_tmdbId: { type: mediaType, tmdbId: mediaId } },
         });
 
         if (!media) return false;

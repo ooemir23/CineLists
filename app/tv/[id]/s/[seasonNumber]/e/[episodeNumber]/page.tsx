@@ -31,7 +31,7 @@ export default async function EpisodePage(props: Props) {
 
     if (!data) notFound();
 
-    const media = await prisma.mediaItem.findUnique({ where: { tmdbId: tvId } });
+    const media = await prisma.mediaItem.findUnique({ where: { type_tmdbId: { type: "TV", tmdbId: tvId } } });
     let dbEpisode = null;
     let ratings: any[] = [];
     let comments: any[] = [];

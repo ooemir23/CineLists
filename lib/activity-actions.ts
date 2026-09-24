@@ -43,7 +43,7 @@ export async function toggleWatchedStatus(mediaId: number, type: "movie" | "tv",
         const currentUserId = dbUser.id;
 
         let media = await prisma.mediaItem.findUnique({
-            where: { tmdbId: mediaId },
+            where: { type_tmdbId: { type: type === "movie" ? "MOVIE" : "TV", tmdbId: mediaId } },
         });
 
         if (!media) {
@@ -195,7 +195,7 @@ export async function setWatchStatus(mediaId: number, type: "movie" | "tv", titl
         const currentUserId = dbUser.id;
 
         let media = await prisma.mediaItem.findUnique({
-            where: { tmdbId: mediaId },
+            where: { type_tmdbId: { type: type === "movie" ? "MOVIE" : "TV", tmdbId: mediaId } },
         });
 
         if (!media) {
@@ -267,13 +267,13 @@ export async function setWatchStatus(mediaId: number, type: "movie" | "tv", titl
     }
 }
 
-export async function getWatchStatus(mediaId: number) {
+export async function getWatchStatus(mediaId: number, type: "movie" | "tv" = "movie") {
     const session = await auth();
     if (!session?.user?.id) return null;
 
     try {
         const media = await prisma.mediaItem.findUnique({
-            where: { tmdbId: mediaId },
+            where: { type_tmdbId: { type: type === "movie" ? "MOVIE" : "TV", tmdbId: mediaId } },
         });
 
         if (!media) return null;
@@ -319,7 +319,7 @@ export async function addComment(mediaId: number, type: "movie" | "tv", content:
 
     try {
         let media = await prisma.mediaItem.findUnique({
-            where: { tmdbId: mediaId },
+            where: { type_tmdbId: { type: type === "movie" ? "MOVIE" : "TV", tmdbId: mediaId } },
         });
 
         if (!media) {
@@ -446,7 +446,7 @@ export async function saveWatchDetails(params: {
     const { tmdbId, type, title, posterPath, rating, watchedAt, watchedWith, recommendedById, recommendedByText, review } = params;
 
     let media = await prisma.mediaItem.findUnique({
-        where: { tmdbId },
+        where: { type_tmdbId: { type: type === "movie" ? "MOVIE" : "TV", tmdbId } },
     });
 
     if (!media) {

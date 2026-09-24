@@ -157,7 +157,7 @@ model VerificationToken {
 
 model MediaItem {
   id              String           @id @default(cuid())
-  tmdbId          Int              @unique
+  tmdbId          Int
   type            MediaType
   title           String
   posterPath      String?
@@ -175,6 +175,11 @@ model MediaItem {
   recommendations Recommendation[]
   toWatchBy       ToWatch[]
   watchedBy       Watched[]
+
+  // Movie and TV (and person) TMDB ids share the same numeric namespace, so
+  // tmdbId alone isn't unique across types - a movie and a show can have the
+  // same numeric id.
+  @@unique([type, tmdbId])
 }
 
 model Watched {

@@ -116,8 +116,8 @@ export default async function DetailsPage(props: Props) {
         activeRecommendation,
         isFavorite,
       ] = await Promise.all([
-        safe(getToWatchStatus(mediaId), false),
-        safe(getWatchStatus(mediaId), null),
+        safe(getToWatchStatus(mediaId, type as "movie" | "tv"), false),
+        safe(getWatchStatus(mediaId, type as "movie" | "tv"), null),
         type === "tv"
           ? safe(getWatchedEpisodes(mediaId), [])
           : Promise.resolve([]),
@@ -135,7 +135,7 @@ export default async function DetailsPage(props: Props) {
           })(),
           [],
         ),
-        safe(getReceivedRecommendation(mediaId), null),
+        safe(getReceivedRecommendation(mediaId, type as "movie" | "tv"), null),
         safe(
           (async () => {
             const { getIsFavoriteMedia } = await import("@/lib/favorite-media-actions");
@@ -148,7 +148,7 @@ export default async function DetailsPage(props: Props) {
 
     const dbMedia = await safe(
       prisma.mediaItem.findUnique({
-        where: { tmdbId: mediaId },
+        where: { type_tmdbId: { type: type === "movie" ? "MOVIE" : "TV", tmdbId: mediaId } },
         include: {
           activities: {
             where: {
