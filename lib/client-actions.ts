@@ -8,7 +8,7 @@ export async function fetchSeasonEpisodes(tmdbId: number, seasonNumber: number) 
         const [tmdbData, mediaItem] = await Promise.all([
             tmdb.getSeasonDetails(String(tmdbId), seasonNumber),
             prisma.mediaItem.findUnique({
-                where: { tmdbId },
+                where: { type_tmdbId: { type: "TV", tmdbId } },
                 select: { id: true }
             })
         ]);

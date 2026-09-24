@@ -8,6 +8,13 @@ import { redirect } from "next/navigation";
 import { sendPasswordResetEmail } from "./mail";
 import crypto from "crypto";
 import { safeInternalRedirect } from "@/lib/admin/policy";
+import { checkRateLimit } from "@/lib/ratelimit";
+import { headers } from "next/headers";
+
+async function getClientIp() {
+    const headersList = await headers();
+    return headersList.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
+}
 
 export async function loginUser(formData: FormData) {
     const rawInput = String(formData.get("email") || "").trim();
@@ -17,6 +24,14 @@ export async function loginUser(formData: FormData) {
 
     if (!rawInput || !password) {
         redirect("/login?error=missing");
+    }
+
+    const ip = await getClientIp();
+    // Max 10 attempts per 5 minutes, keyed by IP + attempted account so a single
+    // account can't be brute-forced and a single IP can't spray many accounts.
+    const rateLimit = checkRateLimit(`login:${ip}:${rawInput.toLowerCase()}`, 10, 5 * 60 * 1000);
+    if (!rateLimit.allowed) {
+        redirect(`/login?error=ratelimit${rawCallbackUrl ? `&callbackUrl=${encodeURIComponent(rawCallbackUrl)}` : ""}`);
     }
 
     try {
@@ -45,6 +60,13 @@ export async function registerUser(formData: FormData) {
 
     if (password.length < 6) {
         redirect("/register?error=weak");
+    }
+
+    const ip = await getClientIp();
+    // Max 8 registrations per hour per IP to slow down mass account creation.
+    const rateLimit = checkRateLimit(`register:${ip}`, 8, 60 * 60 * 1000);
+    if (!rateLimit.allowed) {
+        redirect("/register?error=ratelimit");
     }
 
     // Check if user already exists
@@ -153,6 +175,16 @@ export async function requestPasswordReset(formData: FormData) {
 
     const email = rawEmail.toLowerCase();
 
+    const ip = await getClientIp();
+    // Max 3 reset requests per hour per IP+email so this can't be used to spam
+    // a victim's inbox or brute-force account existence at volume.
+    const rateLimit = checkRateLimit(`reset:${ip}:${email}`, 3, 60 * 60 * 1000);
+    if (!rateLimit.allowed) {
+        // Same success response as the happy path: don't let response timing/shape
+        // reveal whether the account exists or is just rate-limited.
+        redirect("/forgot-password?success=sent");
+    }
+
     try {
         // Case-insensitive lookup so users entering upper/mixed-case email always match
         const user = await prisma.user.findFirst({
@@ -165,8 +197,10 @@ export async function requestPasswordReset(formData: FormData) {
         });
 
         if (!user || !user.email) {
+            // Don't reveal whether the account exists - respond exactly like the
+            // success path so this endpoint can't be used to enumerate accounts.
             console.warn(`Password reset requested for non-existent email: ${rawEmail}`);
-            redirect("/forgot-password?error=not-found");
+            redirect("/forgot-password?success=sent");
         }
 
         const userEmail = user.email.toLowerCase();

@@ -4,6 +4,7 @@ import { tmdb } from "@/lib/tmdb";
 import { getUserStats } from "@/lib/stats-actions";
 import { notFound } from "next/navigation";
 import { PublicProfileShell } from "@/components/profile/public-profile-shell";
+import { PrivateProfileNotice } from "@/components/profile/private-profile-notice";
 import { getFollowStatus } from "@/lib/social-actions";
 
 export default async function PublicProfilePage({
@@ -14,8 +15,10 @@ export default async function PublicProfilePage({
   const session = await auth();
   const { id: userId } = await params;
 
-  // Fetch user data (support lookup by id or username)
-  const user = await prisma.user.findFirst({
+  // Light lookup first: only the fields needed to render a public header and to
+  // decide access. Watched/toWatch/activities/stats are fetched further below,
+  // only once we know the viewer is allowed to see them.
+  const user = (await prisma.user.findFirst({
     where: {
       OR: [
         { id: userId },
@@ -24,24 +27,15 @@ export default async function PublicProfilePage({
     },
     select: {
       id: true, name: true, username: true, image: true, bio: true,
-      favoriteGenres: true, platforms: true, isPrivate: true,
-      showActivities: true, showStats: true, favoriteMediaIds: true,
-      favoritePersons: { take: 12, orderBy: { addedAt: "desc" } },
-      activities: {
-        take: 30,
-        orderBy: { createdAt: "desc" },
-        include: { media: true },
-      },
+      isPrivate: true, showActivities: true, showStats: true,
       _count: {
         select: {
-          toWatch: true,
-          watched: true,
           followedBy: true,
           following: true,
         },
       },
     },
-  });
+  })) as any;
 
   if (!user) {
     notFound();
@@ -54,8 +48,28 @@ export default async function PublicProfilePage({
   }
 
   const resolvedUserId = user.id;
+  const isFollowing = session?.user?.id ? await getFollowStatus(resolvedUserId) : false;
 
-  const [stats, movieGenres, tvGenres, recentWatched, allWatched, toWatch, isFollowing] = await Promise.all([
+  // Private accounts only expose their activity/lists/stats to followers.
+  if (user.isPrivate && !isFollowing) {
+    return (
+      <PrivateProfileNotice
+        user={user}
+        isFollowing={isFollowing}
+        currentUserId={session?.user?.id}
+      />
+    );
+  }
+
+  const [
+    stats,
+    movieGenres,
+    tvGenres,
+    recentWatched,
+    allWatched,
+    toWatch,
+    fullUser,
+  ] = await Promise.all([
     getUserStats(resolvedUserId),
     tmdb.getGenres("movie"),
     tmdb.getGenres("tv"),
@@ -77,12 +91,30 @@ export default async function PublicProfilePage({
       orderBy: { addedAt: "desc" },
       include: { media: true },
     }),
-    session?.user?.id ? getFollowStatus(resolvedUserId) : false,
+    prisma.user.findUnique({
+      where: { id: resolvedUserId },
+      select: {
+        favoriteGenres: true, platforms: true, favoriteMediaIds: true,
+        favoritePersons: { take: 12, orderBy: { addedAt: "desc" } },
+        activities: {
+          take: 30,
+          orderBy: { createdAt: "desc" },
+          include: { media: true },
+        },
+        _count: {
+          select: { toWatch: true, watched: true },
+        },
+      },
+    }),
   ]);
 
-  if (!stats) {
+  if (!stats || !fullUser) {
     notFound();
   }
+
+  Object.assign(user, fullUser, {
+    _count: { ...user._count, ...fullUser._count },
+  });
 
   // Collect favorite backdrops from favoriteMediaIds or top watched/watchlist
   const favoriteIds = (user.favoriteMediaIds || []).map(Number).filter(Boolean);
@@ -168,15 +200,16 @@ export default async function PublicProfilePage({
     watchedAt: w.watchedAt,
   }));
 
-  // Calculate this month's count
-  const oneMonthAgo = new Date();
-  oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
-  const thisMonthCount = recentWatched.filter(
-    (w: any) => w.watchedAt && new Date(w.watchedAt) > oneMonthAgo
+  // Calculate this calendar month's count (over the full watched history, not just the recent 12)
+  const startOfMonth = new Date();
+  startOfMonth.setHours(0, 0, 0, 0);
+  startOfMonth.setDate(1);
+  const thisMonthCount = allWatched.filter(
+    (w: any) => w.watchedAt && new Date(w.watchedAt) >= startOfMonth
   ).length;
 
-  // Calculate average rating
-  const ratedItems = recentWatched.filter((w: any) => w.rating != null && w.rating > 0);
+  // Calculate average rating over the full watched history
+  const ratedItems = allWatched.filter((w: any) => w.rating != null);
   const averageRating =
     ratedItems.length > 0
       ? ratedItems.reduce((sum: number, w: any) => sum + (w.rating || 0), 0) / ratedItems.length

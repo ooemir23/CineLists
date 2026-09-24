@@ -11,6 +11,7 @@ import { MediaRow } from "@/components/media/media-row";
 import { DiscoveryEngine } from "@/components/search/discovery-engine";
 import { getServerLocale } from "@/lib/i18n/server";
 import { getServerCountry } from "@/lib/country";
+import { cachedGetWatchProviders } from "@/lib/watch-provider-cache";
 
 type SearchPageProps = {
   searchParams: Promise<{
@@ -74,9 +75,65 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
       }
 
       const merged = Array.from(itemsMap.values());
-      results = type
+
+      // People aren't affected by media filters (year/rating/genre/provider); only
+      // narrow them out when a specific media type is explicitly requested.
+      const personResults = type
+        ? []
+        : merged.filter((item: any) => item.media_type === "person");
+      let mediaResults = type
         ? merged.filter((item: any) => item.media_type === type)
-        : merged;
+        : merged.filter(
+            (item: any) => item.media_type === "movie" || item.media_type === "tv",
+          );
+
+      if (year) {
+        mediaResults = mediaResults.filter((item: any) => {
+          const dateStr = item.release_date || item.first_air_date;
+          return typeof dateStr === "string" && dateStr.slice(0, 4) === year;
+        });
+      }
+
+      if (rating) {
+        const minRating = parseFloat(rating);
+        mediaResults = mediaResults.filter(
+          (item: any) => (item.vote_average || 0) >= minRating,
+        );
+      }
+
+      if (genre) {
+        const genreId = Number(genre);
+        mediaResults = mediaResults.filter(
+          (item: any) =>
+            Array.isArray(item.genre_ids) && item.genre_ids.includes(genreId),
+        );
+      }
+
+      if (provider) {
+        const providerIds = new Set(provider.split(","));
+        const availability = await Promise.all(
+          mediaResults.map(async (item: any) => {
+            try {
+              const data = await cachedGetWatchProviders(
+                item.media_type,
+                String(item.id),
+              );
+              const countryData = (data as any)?.results?.[country];
+              const available = [
+                ...(countryData?.flatrate || []),
+                ...(countryData?.free || []),
+                ...(countryData?.ads || []),
+              ];
+              return available.some((p: any) => providerIds.has(String(p.provider_id)));
+            } catch {
+              return false;
+            }
+          }),
+        );
+        mediaResults = mediaResults.filter((_item: any, i: number) => availability[i]);
+      }
+
+      results = [...personResults, ...mediaResults];
     } else {
       if (year) {
         apiParams[type === "tv" ? "first_air_date_year" : "primary_release_year"] = year;

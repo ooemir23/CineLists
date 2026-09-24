@@ -11,15 +11,13 @@ type ForgotPasswordPageProps = {
 export default async function ForgotPasswordPage({ searchParams }: ForgotPasswordPageProps) {
     const params = await searchParams;
     const errorMessage =
-        params.error === "not-found"
-            ? "Bu e-posta adresiyle kayıtlı bir kullanıcı bulunamadı."
-            : params.error === "missing"
-                ? "Lütfen e-posta adresinizi girin."
-                : params.error === "mail"
-                    ? "E-posta gönderilirken bir sorun oluştu. Lütfen tekrar deneyin."
-                    : params.error === "db"
-                        ? "Bir hata oluştu. Lütfen daha sonra tekrar deneyin."
-                        : null;
+        params.error === "missing"
+            ? "Lütfen e-posta adresinizi girin."
+            : params.error === "mail"
+                ? "E-posta gönderilirken bir sorun oluştu. Lütfen tekrar deneyin."
+                : params.error === "db"
+                    ? "Bir hata oluştu. Lütfen daha sonra tekrar deneyin."
+                    : null;
     
     const successMessage = params.success === "sent" 
         ? "Şifre sıfırlama bağlantısı e-posta adresinize gönderildi." 

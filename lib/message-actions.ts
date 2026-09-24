@@ -42,36 +42,42 @@ export async function getConversations() {
     const session = await auth();
     if (!session?.user?.id) return [];
 
-    // Group messages to find unique conversation partners
-    // We can fetch recent messages where user is sender OR receiver.
-    const messages = await prisma.message.findMany({
-        where: {
-            OR: [
-                { senderId: session.user.id },
-                { receiverId: session.user.id },
-            ],
-        },
-        orderBy: { createdAt: "desc" },
-        include: {
-            sender: { select: { id: true, name: true, image: true } },
-            receiver: { select: { id: true, name: true, image: true } },
-        },
-        take: 50,
+    const userId = session.user.id;
+
+    // Get the latest message per conversation partner (not just the latest 50
+    // messages overall, which could drop older/quieter conversations from the list
+    // once a single partner sends 50+ new messages).
+    const latestPerPartner = await prisma.$queryRaw<
+        { id: string; senderId: string; receiverId: string; content: string; createdAt: Date; isRead: boolean; partnerId: string }[]
+    >`
+        SELECT DISTINCT ON (partner_id) id, "senderId", "receiverId", content, "createdAt", "isRead", partner_id AS "partnerId"
+        FROM (
+            SELECT
+                m.*,
+                CASE WHEN m."senderId" = ${userId} THEN m."receiverId" ELSE m."senderId" END AS partner_id
+            FROM "Message" m
+            WHERE m."senderId" = ${userId} OR m."receiverId" = ${userId}
+        ) sub
+        ORDER BY partner_id, "createdAt" DESC
+    `;
+
+    if (latestPerPartner.length === 0) return [];
+
+    const partnerIds = latestPerPartner.map((m) => m.partnerId);
+    const partners = await prisma.user.findMany({
+        where: { id: { in: partnerIds } },
+        select: { id: true, name: true, image: true },
     });
+    const partnerById = new Map(partners.map((p) => [p.id, p]));
 
-    const conversations = new Map();
-
-    messages.forEach((msg) => {
-        const partner = msg.senderId === session.user?.id ? msg.receiver : msg.sender;
-        if (partner && !conversations.has(partner.id)) {
-            conversations.set(partner.id, {
-                partner,
-                lastMessage: msg,
-            });
-        }
-    });
-
-    return Array.from(conversations.values());
+    return latestPerPartner
+        .map((msg) => {
+            const partner = partnerById.get(msg.partnerId);
+            if (!partner) return null;
+            return { partner, lastMessage: msg };
+        })
+        .filter((c): c is { partner: (typeof partners)[number]; lastMessage: typeof latestPerPartner[number] } => c !== null)
+        .sort((a, b) => b.lastMessage.createdAt.getTime() - a.lastMessage.createdAt.getTime());
 }
 
 export async function getMessages(partnerId: string) {

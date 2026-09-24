@@ -47,7 +47,7 @@ export async function rateMedia(tmdbId: number, type: "movie" | "tv", rating: nu
     try {
         // Find or create MediaItem
         let mediaItem = await prisma.mediaItem.findUnique({
-            where: { tmdbId },
+            where: { type_tmdbId: { type: type === "movie" ? "MOVIE" : "TV", tmdbId } },
         });
 
         if (!mediaItem) {
@@ -83,23 +83,29 @@ export async function rateMedia(tmdbId: number, type: "movie" | "tv", rating: nu
             });
         }
 
-        // Update/Create Watched entry with rating
-        await prisma.watched.upsert({
-            where: {
-                userId_mediaId: {
+        // Update/Create Watched entry with rating, and drop any "to watch" entry
+        // for the same media so a rated item doesn't sit in both lists at once.
+        await prisma.$transaction([
+            prisma.watched.upsert({
+                where: {
+                    userId_mediaId: {
+                        userId: currentUserId,
+                        mediaId: mediaItem.id,
+                    },
+                },
+                update: {
+                    rating: rating,
+                },
+                create: {
                     userId: currentUserId,
                     mediaId: mediaItem.id,
+                    rating: rating,
                 },
-            },
-            update: {
-                rating: rating,
-            },
-            create: {
-                userId: currentUserId,
-                mediaId: mediaItem.id,
-                rating: rating,
-            },
-        });
+            }),
+            prisma.toWatch.deleteMany({
+                where: { userId: currentUserId, mediaId: mediaItem.id },
+            }),
+        ]);
 
         // Also create/update Activity for social feed
         const existingActivity = await prisma.activity.findFirst({
@@ -143,7 +149,7 @@ export async function rateMedia(tmdbId: number, type: "movie" | "tv", rating: nu
     }
 }
 
-export async function getUserRating(tmdbId: number, _type?: "movie" | "tv") {
+export async function getUserRating(tmdbId: number, type: "movie" | "tv" = "movie") {
     const session = await auth();
     if (!session?.user?.id) {
         return null;
@@ -151,7 +157,7 @@ export async function getUserRating(tmdbId: number, _type?: "movie" | "tv") {
 
     try {
         const mediaItem = await prisma.mediaItem.findUnique({
-            where: { tmdbId },
+            where: { type_tmdbId: { type: type === "movie" ? "MOVIE" : "TV", tmdbId } },
             include: {
                 watchedBy: {
                     where: { userId: session.user.id },
@@ -169,7 +175,7 @@ export async function getUserRating(tmdbId: number, _type?: "movie" | "tv") {
     }
 }
 
-export async function getFriendsRatings(tmdbId: number, _type?: "movie" | "tv") {
+export async function getFriendsRatings(tmdbId: number, type: "movie" | "tv" = "movie") {
     const session = await auth();
     if (!session?.user?.id) {
         return [];
@@ -177,7 +183,7 @@ export async function getFriendsRatings(tmdbId: number, _type?: "movie" | "tv") 
 
     try {
         const mediaItem = await prisma.mediaItem.findUnique({
-            where: { tmdbId },
+            where: { type_tmdbId: { type: type === "movie" ? "MOVIE" : "TV", tmdbId } },
         });
 
         if (!mediaItem) return [];
@@ -304,10 +310,10 @@ export async function getCommunityRatingsBulk(tmdbIds: number[]) {
     }
 }
 
-export async function getAllMediaRatings(tmdbId: number) {
+export async function getAllMediaRatings(tmdbId: number, type: "movie" | "tv" = "movie") {
     try {
         const mediaItem = await prisma.mediaItem.findUnique({
-            where: { tmdbId },
+            where: { type_tmdbId: { type: type === "movie" ? "MOVIE" : "TV", tmdbId } },
         });
 
         if (!mediaItem) return [];

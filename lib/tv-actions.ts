@@ -40,7 +40,7 @@ export async function markEpisodeAsWatched(
 
         // 1. Ensure MediaItem exists and has correct info
         let media = await prisma.mediaItem.findUnique({
-            where: { tmdbId },
+            where: { type_tmdbId: { type: "TV", tmdbId } },
         });
 
         if (!media || media.title === "TV Show") {
@@ -193,7 +193,7 @@ export async function markSeasonAsWatched(tmdbId: number, seasonNumber: number) 
         if (!seasonData?.episodes) return { error: "Sezon bilgileri alınamadı" };
 
         // Ensure MediaItem
-        let media = await prisma.mediaItem.findUnique({ where: { tmdbId } });
+        let media = await prisma.mediaItem.findUnique({ where: { type_tmdbId: { type: "TV", tmdbId } } });
         if (!media || media.title === "TV Show" || media.title === "Dizi") {
             const tvDetails = await tmdb.getDetails("tv", String(tmdbId)).catch(() => null);
             if (!media) {
@@ -394,7 +394,7 @@ export async function removeEpisodeWatch(tmdbId: number, seasonNumber: number, e
         const userId = await resolveUserId(session);
         if (!userId) return { error: "Kullanıcı hesabı bulunamadı, lütfen tekrar giriş yapın." };
 
-        const media = await prisma.mediaItem.findUnique({ where: { tmdbId } });
+        const media = await prisma.mediaItem.findUnique({ where: { type_tmdbId: { type: "TV", tmdbId } } });
         if (!media) return { error: "Medya bulunamadı" };
 
         const episode = await prisma.episode.findUnique({
@@ -430,7 +430,7 @@ export async function getWatchedEpisodes(tmdbId: number) {
         const session = await auth();
         if (!session?.user?.id) return [];
 
-        const media = await prisma.mediaItem.findUnique({ where: { tmdbId } });
+        const media = await prisma.mediaItem.findUnique({ where: { type_tmdbId: { type: "TV", tmdbId } } });
         if (!media) return [];
 
         const watched = await prisma.watchedEpisode.findMany({
@@ -460,7 +460,7 @@ export async function ensureEpisodeExists(params: {
 }) {
     const { tmdbId, seasonNumber, episodeNumber, title, overview, stillPath, airDate } = params;
 
-    let media = await prisma.mediaItem.findUnique({ where: { tmdbId } });
+    let media = await prisma.mediaItem.findUnique({ where: { type_tmdbId: { type: "TV", tmdbId } } });
     if (!media || media.title === "TV Show") {
         const tvDetails = await tmdb.getDetails("tv", String(tmdbId)).catch(() => null);
         if (!media) {

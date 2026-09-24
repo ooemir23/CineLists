@@ -42,7 +42,7 @@ export async function recommendMedia(params: {
 
     // Ensure MediaItem exists in DB
     let media = await prisma.mediaItem.findUnique({
-        where: { tmdbId: mediaId },
+        where: { type_tmdbId: { type: mediaType === "movie" ? "MOVIE" : "TV", tmdbId: mediaId } },
     });
 
     if (!media) {
@@ -133,7 +133,7 @@ export async function recommendMedia(params: {
     return { success: true };
 }
 
-export async function getReceivedRecommendation(tmdbId: number) {
+export async function getReceivedRecommendation(tmdbId: number, type: "movie" | "tv" = "movie") {
     const session = await auth();
     if (!session?.user?.id) return null;
 
@@ -141,7 +141,8 @@ export async function getReceivedRecommendation(tmdbId: number) {
         where: {
             receiverId: session.user.id,
             media: {
-                tmdbId: tmdbId
+                tmdbId: tmdbId,
+                type: type === "movie" ? "MOVIE" : "TV",
             }
         },
         include: {
