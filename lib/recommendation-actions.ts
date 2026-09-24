@@ -29,10 +29,10 @@ export async function recommendMedia(params: {
     
     // Try to find receiver by ID or Email
     const receiver = await prisma.user.findFirst({
-        where: isEmail 
-            ? { email: receiverIdOrEmail } 
+        where: isEmail
+            ? { email: receiverIdOrEmail }
             : { id: receiverIdOrEmail },
-        select: { id: true, email: true, name: true }
+        select: { id: true, email: true, name: true, locale: true }
     });
 
     const sender = await prisma.user.findUnique({
@@ -122,7 +122,8 @@ export async function recommendMedia(params: {
                 platforms: trProviders,
                 senderRating: senderWatched?.rating,
                 globalRating: details?.vote_average,
-                backdropPath: details?.backdrop_path
+                backdropPath: details?.backdrop_path,
+                locale: receiver?.locale === "en" ? "en" : "tr",
             });
         } catch (error: any) {
             console.error("Recommendation email error:", { error: error.message, targetEmail });

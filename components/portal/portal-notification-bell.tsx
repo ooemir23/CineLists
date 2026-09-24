@@ -7,7 +7,9 @@ import {
     Bell,
     UserPlus,
     MessageSquare,
+    Mail,
     Sparkles,
+    Trophy,
     CheckCheck,
     ChevronRight,
     Loader2,
@@ -50,6 +52,10 @@ function getNotificationIcon(type: string) {
             return <MessageSquare size={15} className="text-emerald-400" />;
         case "NEW_RECOMMENDATION":
             return <Sparkles size={15} className="text-amber-400" />;
+        case "NEW_MESSAGE":
+            return <Mail size={15} className="text-blue-400" />;
+        case "ACHIEVEMENT_UNLOCKED":
+            return <Trophy size={15} className="text-yellow-400" />;
         default:
             return <Bell size={15} className="text-amber-400" />;
     }

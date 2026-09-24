@@ -53,6 +53,7 @@ model User {
   showActivities          Boolean          @default(true)
   showStats               Boolean          @default(true)
   suspendedAt             DateTime?
+  locale                  String           @default("tr")
   username                String           @unique @default(cuid())
   favoriteMediaIds        String[]
   accounts                Account[]
@@ -368,6 +369,8 @@ enum NotificationType {
   NEW_RECOMMENDATION
   MENTION
   FRIEND_ACTIVITY
+  NEW_MESSAGE
+  ACHIEVEMENT_UNLOCKED
 }
 
 

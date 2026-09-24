@@ -351,14 +351,34 @@ export async function addComment(mediaId: number, type: "movie" | "tv", content:
 
         if (parentId) {
             // This is a reply to an existing activity (review)
-            await prisma.comment.create({
+            const comment = await prisma.comment.create({
                 data: {
                     userId: currentUserId,
                     activityId: parentId,
                     content: content,
                     isSpoiler: isSpoiler,
                 },
+                include: {
+                    activity: { select: { userId: true } },
+                },
             });
+
+            if (comment.activity && comment.activity.userId !== currentUserId) {
+                try {
+                    const preview = content.length > 60 ? `${content.slice(0, 60)}...` : content;
+                    await prisma.indicates.create({
+                        data: {
+                            userId: comment.activity.userId,
+                            type: "NEW_COMMENT",
+                            message: `${session.user.name || "Birisi"} ${title} hakkındaki incelemene yorum yaptı: "${preview}"`,
+                            link: `/${type}/${mediaId}?tab=comments`,
+                            image: posterPath,
+                        },
+                    });
+                } catch (notifErr) {
+                    console.warn("[Activity] Comment notification warning:", notifErr);
+                }
+            }
         } else {
             // This is a new top-level review
             await prisma.activity.create({

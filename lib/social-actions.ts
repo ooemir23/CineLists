@@ -47,7 +47,7 @@ export async function toggleFollow(targetUserIdOrUsername: string) {
                     { username: targetUserIdOrUsername }
                 ]
             },
-            select: { id: true, email: true, name: true, username: true }
+            select: { id: true, email: true, name: true, username: true, locale: true }
         });
 
         if (!targetUser) {
@@ -125,6 +125,7 @@ export async function toggleFollow(targetUserIdOrUsername: string) {
                     followerUsername: currentUser.username || undefined,
                     followerImage: currentUser.image,
                     followerId: currentUser.username || currentUserId,
+                    locale: targetUser.locale === "en" ? "en" : "tr",
                 }).catch((mailErr) => {
                     console.error("[Social] Follow email sending error:", mailErr);
                 });

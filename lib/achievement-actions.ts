@@ -129,6 +129,24 @@ export async function checkAndUnlockAchievements(userId: string) {
     }
   }
 
+  if (newAchievements.length > 0) {
+    try {
+      await prisma.indicates.createMany({
+        data: newAchievements.map((type) => {
+          const def = ACHIEVEMENT_DEFINITIONS.find((d) => d.type === type);
+          return {
+            userId,
+            type: "ACHIEVEMENT_UNLOCKED" as const,
+            message: `${def?.icon || "🏆"} Yeni rozet kazandın: ${def?.label || type}`,
+            link: "/achievements",
+          };
+        }),
+      });
+    } catch (notifErr) {
+      console.warn("[Achievements] Notification creation warning:", notifErr);
+    }
+  }
+
   return newAchievements;
 }
 

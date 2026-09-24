@@ -46,6 +46,22 @@ export async function updateProfile(data: {
     }
 }
 
+export async function updateUserLocale(locale: "tr" | "en") {
+    const session = await auth();
+    if (!session?.user?.id) return { success: false };
+
+    try {
+        await prisma.user.update({
+            where: { id: session.user.id },
+            data: { locale },
+        });
+        return { success: true };
+    } catch (error) {
+        console.warn("Locale persist error:", error);
+        return { success: false };
+    }
+}
+
 export async function updatePrivacySettings(data: {
     isPrivate: boolean;
     showActivities: boolean;
