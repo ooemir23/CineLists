@@ -5,10 +5,12 @@ import {
     Bell,
     UserPlus,
     MessageSquare,
+    Mail,
     Check,
     Clock,
     ChevronRight,
     Sparkles,
+    Trophy,
     Ghost,
     MailOpen
 } from "lucide-react";
@@ -42,6 +44,10 @@ function getNotificationIcon(type: string) {
             return <Sparkles className="w-5 h-5 text-amber-400" />;
         case "MENTION":
             return <span className="w-5 h-5 flex items-center justify-center font-black text-purple-400 text-sm">@</span>;
+        case "NEW_MESSAGE":
+            return <Mail className="w-5 h-5 text-blue-400" />;
+        case "ACHIEVEMENT_UNLOCKED":
+            return <Trophy className="w-5 h-5 text-yellow-400" />;
         default:
             return <Bell className="w-5 h-5 text-neutral-400" />;
     }

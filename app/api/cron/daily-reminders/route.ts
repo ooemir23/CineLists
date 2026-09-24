@@ -51,7 +51,8 @@ export async function GET(request: Request) {
                     tmdbId,
                     title: details.name,
                     posterPath: details.poster_path,
-                    episodeInfo: `${nextEpisode.season_number}. Sezon ${nextEpisode.episode_number}. Bölüm`,
+                    episodeInfoTr: `${nextEpisode.season_number}. Sezon ${nextEpisode.episode_number}. Bölüm`,
+                    episodeInfoEn: `Season ${nextEpisode.season_number}, Episode ${nextEpisode.episode_number}`,
                     platforms: trProviders
                 });
             }
@@ -66,7 +67,7 @@ export async function GET(request: Request) {
         // 3. Find users who follow these shows and send emails
         const users = await prisma.user.findMany({
             where: { email: { not: null } },
-            select: { id: true, email: true, name: true }
+            select: { id: true, email: true, name: true, locale: true }
         });
 
         for (const user of users) {
@@ -82,17 +83,18 @@ export async function GET(request: Request) {
             });
 
             if (userShows.length > 0 && user.email) {
+                const locale = user.locale === "en" ? "en" : "tr";
                 const mailData = showsWithEpisodesToday
                     .filter(s => userShows.some(us => us.tmdbId === s.tmdbId))
                     .map(s => ({
                         title: s.title,
                         posterPath: s.posterPath,
-                        episodeInfo: s.episodeInfo,
+                        episodeInfo: locale === "en" ? s.episodeInfoEn : s.episodeInfoTr,
                         platforms: s.platforms
                     }));
 
                 console.log(`Sending reminder to ${user.email} for ${mailData.length} shows.`);
-                await sendDailyReminderEmail(user.email, user.name || "Sinefil", mailData);
+                await sendDailyReminderEmail(user.email, user.name || (locale === "en" ? "Film fan" : "Sinefil"), mailData, locale);
             }
         }
 

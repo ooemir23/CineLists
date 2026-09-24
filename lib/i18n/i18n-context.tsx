@@ -63,6 +63,13 @@ export function I18nProvider({
         }
       }
       document.documentElement.lang = newLocale;
+      // Persist for logged-in users so async emails (follower/recommendation/
+      // reminder notices) can be sent in their chosen language later. No-ops
+      // silently when there's no session. Loaded lazily so this foundational,
+      // app-wide context module doesn't statically pull in the auth/db chain.
+      import("@/lib/profile-actions")
+        .then(({ updateUserLocale }) => updateUserLocale(newLocale))
+        .catch(() => {});
       router.refresh();
     },
     [router]

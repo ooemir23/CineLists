@@ -1,5 +1,7 @@
 import { Resend } from "resend";
 
+export type MailLocale = "tr" | "en";
+
 const resendApiKey = process.env.RESEND_API_KEY;
 const resend = resendApiKey ? new Resend(resendApiKey) : null;
 const FROM_EMAIL = (process.env.MAIL_FROM && !process.env.MAIL_FROM.includes("onboarding@resend.dev"))
@@ -19,7 +21,11 @@ export function getAppDomain(): string {
     return (process.env.NEXT_PUBLIC_APP_URL || process.env.AUTH_URL || process.env.NEXTAUTH_URL || "http://localhost:3000").replace(/\/$/, "");
 }
 
-export const sendPasswordResetEmail = async (email: string, token: string) => {
+function pick(locale: MailLocale | undefined, tr: string, en: string): string {
+    return locale === "en" ? en : tr;
+}
+
+export const sendPasswordResetEmail = async (email: string, token: string, locale: MailLocale = "tr") => {
     if (!resend) {
         console.error("RESEND_API_KEY eksik! Lütfen .env dosyanızı kontrol edin.");
         throw new Error("E-posta servisi yapilandirilmamis.");
@@ -27,15 +33,30 @@ export const sendPasswordResetEmail = async (email: string, token: string) => {
     const domain = getAppDomain();
     const resetLink = `${domain}/reset-password?token=${token}`;
 
+    const subject = pick(locale, "Şifrenizi Sıfırlayın", "Reset Your Password");
+    const heading = pick(locale, "Şifre Sıfırlama", "Password Reset");
+    const body = pick(
+        locale,
+        "Hesabın için bir şifre sıfırlama talebi aldık. Eğer bu işlemi sen başlattıysan, aşağıdaki butona tıklayarak yeni şifreni belirleyebilirsin.",
+        "We received a password reset request for your account. If you made this request, click the button below to set a new password."
+    );
+    const buttonLabel = pick(locale, "Şifremi Sıfırla", "Reset My Password");
+    const footer = pick(
+        locale,
+        "Bu talep senin tarafından yapılmadıysa bu e-postayı silebilirsin.<br>Güvenliğin için bu bağlantı <strong>1 saat</strong> içinde geçerliliğini yitirecektir.",
+        "If you didn't request this, you can safely delete this email.<br>For your security, this link will expire in <strong>1 hour</strong>."
+    );
+    const brandLine = pick(locale, "© 2026 CineLists • Sinema Sosyal Ağı", "© 2026 CineLists • Social Network for Film Lovers");
+
     try {
         const result = await resend.emails.send({
             from: FROM_EMAIL,
             to: email,
-            subject: "Şifrenizi Sıfırlayın",
+            subject,
             html: `
                 <div style="background-color: #020617; padding: 40px 20px; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #f8fafc; text-align: center;">
                     <div style="max-width: 500px; margin: 0 auto; background-color: #0f172a; border: 1px solid #1e293b; border-radius: 32px; padding: 40px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);">
-                        
+
                         <!-- Logo -->
                         <div style="margin-bottom: 30px;">
                             <img src="${domain}/icon-192.png" width="60" height="60" alt="CineLists" style="width: 60px; height: 60px; border-radius: 16px; margin: 0 auto; display: block; border: 1px solid rgba(255, 255, 255, 0.1);" />
@@ -46,27 +67,26 @@ export const sendPasswordResetEmail = async (email: string, token: string) => {
 
                         <!-- Content -->
                         <h2 style="color: #ffffff; font-size: 22px; font-weight: 800; margin-bottom: 15px; text-transform: uppercase;">
-                            Şifre Sıfırlama
+                            ${heading}
                         </h2>
                         <p style="color: #94a3b8; font-size: 15px; line-height: 1.6; margin-bottom: 30px; text-align: center;">
-                            Hesabın için bir şifre sıfırlama talebi aldık. Eğer bu işlemi sen başlattıysan, aşağıdaki butona tıklayarak yeni şifreni belirleyebilirsin.
+                            ${body}
                         </p>
 
                         <!-- Action Button -->
                         <a href="${resetLink}" style="display: inline-block; background-color: #fbbf24; color: #020617; padding: 18px 36px; border-radius: 16px; font-weight: 900; text-decoration: none; text-transform: uppercase; font-size: 13px; letter-spacing: 1px; box-shadow: 0 10px 20px rgba(251, 191, 36, 0.2);">
-                            Şifremi Sıfırla
+                            ${buttonLabel}
                         </a>
 
                         <div style="margin-top: 40px; padding-top: 25px; border-top: 1px solid #1e293b;">
                             <p style="color: #64748b; font-size: 12px; line-height: 1.5; text-align: center;">
-                                Bu talep senin tarafın yapılmadıysa bu e-postayı silebilirsin.<br>
-                                Güvenliğin için bu bağlantı <strong>1 saat</strong> içinde geçerliliğini yitirecektir.
+                                ${footer}
                             </p>
                         </div>
                     </div>
-                    
+
                     <p style="margin-top: 25px; color: #475569; font-size: 11px; text-transform: uppercase; letter-spacing: 2px;">
-                        © 2026 CineLists • Sinema Sosyal Ağı
+                        ${brandLine}
                     </p>
                 </div>
             `,
@@ -96,49 +116,68 @@ export const sendRecommendationEmail = async (params: {
     senderRating?: number | null;
     globalRating?: number | null;
     backdropPath?: string | null;
+    locale?: MailLocale;
 }) => {
-    const { email, senderName, senderImage, mediaTitle, mediaType, mediaId, posterPath, message, overview, runtime, platforms, senderRating, globalRating, backdropPath } = params;
-    
+    const { email, senderName, senderImage, mediaTitle, mediaType, mediaId, posterPath, message, overview, runtime, platforms, senderRating, globalRating, backdropPath, locale = "tr" } = params;
+
     if (!resend) {
         console.error("RESEND_API_KEY eksik!");
         return;
     }
 
     const domain = getAppDomain();
-    const mediaLabel = mediaType === "movie" ? "FİLM" : "DİZİ";
+    const mediaLabel = mediaType === "movie" ? pick(locale, "FİLM", "MOVIE") : pick(locale, "DİZİ", "SHOW");
     const posterUrl = posterPath ? `https://image.tmdb.org/t/p/w400${posterPath}` : null;
     const backdropUrl = backdropPath ? `https://image.tmdb.org/t/p/w780${backdropPath}` : posterUrl;
     const mediaLink = `${domain}/${mediaType}/${mediaId}`;
     const baseUrl = `${domain}/api/media/action?tmdbId=${mediaId}&type=${mediaType.toUpperCase()}&redirect=true`;
-    
+
     const watchlistLink = `${baseUrl}&action=PLAN_TO_WATCH`;
     const watchedLink = `${baseUrl}&action=WATCHED`;
     const watchingLink = `${baseUrl}&action=WATCHING`;
 
-    const formattedRuntime = runtime ? (runtime > 60 ? `${Math.floor(runtime / 60)}s ${runtime % 60}dk` : `${runtime}dk`) : null;
+    const formattedRuntime = runtime
+        ? (runtime > 60
+            ? pick(locale, `${Math.floor(runtime / 60)}s ${runtime % 60}dk`, `${Math.floor(runtime / 60)}h ${runtime % 60}m`)
+            : pick(locale, `${runtime}dk`, `${runtime}m`))
+        : null;
+
+    const subject = pick(
+        locale,
+        `${senderName} sana bir ${mediaLabel.toLowerCase()} tavsiye etti!`,
+        `${senderName} recommended a ${mediaLabel.toLowerCase()} to you!`
+    );
+    const introText = pick(locale, "sana bir öneride bulundu", "sent you a recommendation");
+    const introSub = pick(locale, "Sana harika bir tavsiyesi var!", "They have a great recommendation for you!");
+    const ratingLabel = pick(locale, "Puanı", "Rating");
+    const noOverview = pick(locale, "Bu içerik hakkında özet bulunmuyor.", "No summary available for this content.");
+    const watchedLabel = pick(locale, "✅ İzledim", "✅ Watched");
+    const watchingLabel = pick(locale, "📺 İzliyorum", "📺 Watching");
+    const watchlistLabel = pick(locale, "➕ Listeme Ekle", "➕ Add to My List");
+    const thoughtsLabel = pick(locale, "DÜŞÜNCELERİ", "THEIR THOUGHTS");
 
     try {
         await resend.emails.send({
             from: FROM_EMAIL,
             to: email,
-            subject: `${senderName} sana bir ${mediaLabel.toLowerCase()} tavsiye etti!`,
+            subject,
             html: `
                 <div style="background-color: #020617; ${backdropUrl ? `background-image: linear-gradient(rgba(2, 6, 23, 0.7), rgba(2, 6, 23, 0.85)), url('${backdropUrl}'); background-size: cover; background-position: center;` : ''} padding: 60px 0; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #f8fafc; text-align: center; min-height: 100%;">
                     <div style="max-width: 740px; margin: 0 auto; background-color: rgba(15, 23, 42, 0.85); border: 1px solid rgba(255,255,255,0.12); border-radius: 40px; overflow: hidden; box-shadow: 0 60px 120px -20px rgba(0, 0, 0, 0.8); text-align: left; backdrop-filter: blur(10px);">
-                        
+
                         <!-- Header with Sender Info -->
                         <div style="padding: 40px 40px 20px 40px; text-align: left;">
                             <div style="display: table; width: 100%;">
                                 <div style="display: table-row;">
                                     <div style="display: table-cell; width: 48px; vertical-align: middle; padding-right: 20px;">
-                                        ${senderImage ? 
+                                        ${senderImage ?
                                             `<img src="${senderImage}" style="width: 48px; height: 48px; border-radius: 16px; border: 2.5px solid #fbbf24; object-fit: cover;" />` :
                                             `<div style="width: 48px; height: 48px; border-radius: 16px; background-color: #fbbf24; color: #020617; line-height: 48px; font-size: 20px; font-weight: 900; text-align: center;">${senderName[0].toUpperCase()}</div>`
                                         }
                                     </div>
                                     <div style="display: table-cell; vertical-align: middle;">
-                                        <h2 style="color: #ffffff; font-size: 16px; font-weight: 900; margin: 0; letter-spacing: -0.5px;">${senderName} <span style="color: #94a3b8; font-weight: 500; font-size: 14px; margin-left: 5px;">sana bir öneride bulundu</span></h2>
-                                        <p style="color: #fbbf24; font-size: 11px; font-weight: 800; margin-top: 2px; text-transform: uppercase; letter-spacing: 1px;">Sana harika bir tavsiyesi var!</p>
+                                        <h2 style="color: #ffffff; font-size: 16px; font-weight: 900; margin: 0; letter-spacing: -0.5px;">${senderName} <span style="color: #94a3b8; font-weight: 500; font-size: 14px; margin-left: 5px;">${introText}</span></h2>
+                                        <p style="color: #fbbf24; font-size: 11px; font-weight: 800; margin-top: 2px; text-transform: uppercase; letter-spacing: 1px;">${introSub}</p>
                                     </div>
                                 </div>
                             </div>
@@ -148,18 +187,18 @@ export const sendRecommendationEmail = async (params: {
                         <div style="padding: 20px 40px 10px 40px;">
                             <div style="display: table; width: 100%; border-collapse: separate; border-spacing: 0;">
                                 <div style="display: table-row;">
-                                    
+
                                     <!-- Column 1: Poster & Label/Platforms -->
                                     <div style="display: table-cell; width: 160px; vertical-align: top; padding-right: 30px;">
                                         <a href="${mediaLink}" style="text-decoration: none; border: none; outline: none;">
-                                            ${posterUrl ? 
+                                            ${posterUrl ?
                                                 `<img src="${posterUrl}" style="width: 160px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 20px 40px rgba(0,0,0,0.5);" />` :
                                                 `<div style="width: 160px; height: 240px; background-color: rgba(255,255,255,0.05); border-radius: 20px;"></div>`
                                             }
                                         </a>
                                         <div style="margin-top: 15px; text-align: center; display: flex; align-items: center; justify-content: center; gap: 8px; flex-wrap: wrap;">
                                             <div style="background: #fbbf24; color: #020617; padding: 4px 10px; border-radius: 6px; font-size: 9px; font-weight: 900; text-transform: uppercase; white-space: nowrap;">${mediaLabel}</div>
-                                            
+
                                             ${platforms && platforms.length > 0 ? `
                                                 <div style="display: inline-flex; align-items: center; gap: 6px;">
                                                     ${platforms.slice(0, 3).map(p => `
@@ -176,15 +215,15 @@ export const sendRecommendationEmail = async (params: {
                                     <div style="display: table-cell; vertical-align: top; padding-right: 30px;">
                                         <a href="${mediaLink}" style="text-decoration: none; color: inherit; display: block;">
                                             <h3 style="color: #ffffff; font-size: 26px; font-weight: 900; margin: 0 0 10px 0; line-height: 1.1; letter-spacing: -0.8px;">${mediaTitle}</h3>
-                                            
+
                                             <div style="margin-bottom: 15px; display: flex; align-items: center; gap: 12px;">
                                                 <span style="color: #94a3b8; font-size: 13px; font-weight: 800;">⭐ TMDB: ${globalRating?.toFixed(1) || '0.0'}</span>
-                                                ${senderRating ? `<span style="color: #fbbf24; font-size: 13px; font-weight: 800;">🎬 Puanı: ${senderRating}/10</span>` : ''}
+                                                ${senderRating ? `<span style="color: #fbbf24; font-size: 13px; font-weight: 800;">🎬 ${ratingLabel}: ${senderRating}/10</span>` : ''}
                                                 ${formattedRuntime ? `<span style="color: #94a3b8; font-size: 13px; font-weight: 600;">⏱️ ${formattedRuntime}</span>` : ''}
                                             </div>
 
                                             <p style="color: #94a3b8; font-size: 13px; line-height: 1.6; margin: 0; font-weight: 500;">
-                                                ${overview ? (overview.length > 250 ? overview.substring(0, 250) + '...' : overview) : 'Bu içerik hakkında özet bulunmuyor.'}
+                                                ${overview ? (overview.length > 250 ? overview.substring(0, 250) + '...' : overview) : noOverview}
                                             </p>
                                         </a>
                                     </div>
@@ -194,15 +233,15 @@ export const sendRecommendationEmail = async (params: {
                                         <div style="display: table; width: 100%; border-collapse: separate; border-spacing: 0;">
                                             <div style="display: table-row;">
                                                 <div style="display: table-cell; width: 50%; padding-right: 5px;">
-                                                    <a href="${watchedLink}" style="display: block; background-color: rgba(34, 197, 94, 0.1); color: #22c55e; padding: 12px; border-radius: 14px; font-weight: 800; text-decoration: none; text-transform: uppercase; font-size: 10px; border: 1px solid rgba(34, 197, 94, 0.2); text-align: center;">✅ İzledim</a>
+                                                    <a href="${watchedLink}" style="display: block; background-color: rgba(34, 197, 94, 0.1); color: #22c55e; padding: 12px; border-radius: 14px; font-weight: 800; text-decoration: none; text-transform: uppercase; font-size: 10px; border: 1px solid rgba(34, 197, 94, 0.2); text-align: center;">${watchedLabel}</a>
                                                 </div>
                                                 <div style="display: table-cell; width: 50%; padding-left: 5px;">
-                                                    <a href="${watchingLink}" style="display: block; background-color: rgba(59, 130, 246, 0.1); color: #3b82f6; padding: 12px; border-radius: 14px; font-weight: 800; text-decoration: none; text-transform: uppercase; font-size: 10px; border: 1px solid rgba(59, 130, 246, 0.2); text-align: center;">📺 İzliyorum</a>
+                                                    <a href="${watchingLink}" style="display: block; background-color: rgba(59, 130, 246, 0.1); color: #3b82f6; padding: 12px; border-radius: 14px; font-weight: 800; text-decoration: none; text-transform: uppercase; font-size: 10px; border: 1px solid rgba(59, 130, 246, 0.2); text-align: center;">${watchingLabel}</a>
                                                 </div>
                                             </div>
                                         </div>
 
-                                        <a href="${watchlistLink}" style="display: block; background-color: rgba(255,255,255,0.05); color: #ffffff; padding: 12px; border-radius: 14px; font-weight: 800; text-decoration: none; text-transform: uppercase; font-size: 11px; border: 1px solid rgba(255,255,255,0.1); text-align: center; margin-top: 10px;">➕ Listeme Ekle</a>
+                                        <a href="${watchlistLink}" style="display: block; background-color: rgba(255,255,255,0.05); color: #ffffff; padding: 12px; border-radius: 14px; font-weight: 800; text-decoration: none; text-transform: uppercase; font-size: 11px; border: 1px solid rgba(255,255,255,0.1); text-align: center; margin-top: 10px;">${watchlistLabel}</a>
                                     </div>
 
                                 </div>
@@ -213,7 +252,7 @@ export const sendRecommendationEmail = async (params: {
                         ${message ? `
                             <div style="padding: 0 40px 10px 40px;">
                                 <div style="padding: 20px; background: rgba(255, 255, 255, 0.03); border-left: 4px solid #fbbf24; border-radius: 20px; border: 1px solid rgba(255,255,255,0.05);">
-                                    <p style="margin: 0; color: #fbbf24; font-size: 9px; font-weight: 900; text-transform: uppercase; margin-bottom: 8px; letter-spacing: 0.5px;">DÜŞÜNCELERİ</p>
+                                    <p style="margin: 0; color: #fbbf24; font-size: 9px; font-weight: 900; text-transform: uppercase; margin-bottom: 8px; letter-spacing: 0.5px;">${thoughtsLabel}</p>
                                     <p style="margin: 0; color: #f8fafc; font-size: 14px; font-weight: 500; font-style: italic; line-height: 1.5;">"${message}"</p>
                                 </div>
                             </div>
@@ -237,25 +276,39 @@ export const sendRecommendationEmail = async (params: {
     }
 };
 
-export const sendDailyReminderEmail = async (email: string, userName: string, shows: { title: string, posterPath: string | null, episodeInfo: string, platforms: string[] }[]) => {
+export const sendDailyReminderEmail = async (
+    email: string,
+    userName: string,
+    shows: { title: string, posterPath: string | null, episodeInfo: string, platforms: string[] }[],
+    locale: MailLocale = "tr"
+) => {
     if (!resend) return;
 
     const domain = getAppDomain();
+
+    const subject = pick(
+        locale,
+        `🍿 Bugün Yayında! Senin için ${shows.length} yeni bölüm var`,
+        `🍿 Airing Today! You have ${shows.length} new episode${shows.length === 1 ? "" : "s"}`
+    );
+    const greeting = pick(locale, `GÜNAYDIN ${userName.toUpperCase()}!`, `GOOD MORNING ${userName.toUpperCase()}!`);
+    const subheading = pick(locale, "Takip ettiğin dizilerin yeni bölümleri bugün yayında.", "New episodes of shows you follow are airing today.");
+    const calendarLabel = pick(locale, "Takvimi Görüntüle", "View Calendar");
 
     try {
         await resend.emails.send({
             from: FROM_EMAIL,
             to: email,
-            subject: `🍿 Bugün Yayında! Senin için ${shows.length} yeni bölüm var`,
+            subject,
             html: `
                 <div style="background-color: #020617; padding: 40px 10px; font-family: 'Inter', sans-serif; color: #f8fafc; text-align: center;">
                     <div style="max-width: 600px; margin: 0 auto; background-color: #0f172a; border: 1px solid #1e293b; border-radius: 40px; overflow: hidden; box-shadow: 0 50px 100px -20px rgba(0, 0, 0, 0.7);">
-                        
+
                         <!-- Header -->
                         <div style="padding: 40px 20px; background: linear-gradient(to bottom, #1e293b, #0f172a);">
                             <div style="background-color: #fbbf24; width: 60px; height: 60px; border-radius: 20px; margin: 0 auto 20px auto; display: flex; align-items: center; justify-content: center; font-size: 30px; line-height: 60px;">🍿</div>
-                            <h1 style="color: #ffffff; font-size: 28px; font-weight: 900; margin: 0; letter-spacing: -1px;">GÜNAYDIN ${userName.toUpperCase()}!</h1>
-                            <p style="color: #94a3b8; font-size: 14px; font-weight: 600; margin-top: 10px;">Takip ettiğin dizilerin yeni bölümleri bugün yayında.</p>
+                            <h1 style="color: #ffffff; font-size: 28px; font-weight: 900; margin: 0; letter-spacing: -1px;">${greeting}</h1>
+                            <p style="color: #94a3b8; font-size: 14px; font-weight: 600; margin-top: 10px;">${subheading}</p>
                         </div>
 
                         <!-- Shows List -->
@@ -278,7 +331,7 @@ export const sendDailyReminderEmail = async (email: string, userName: string, sh
                             `).join('')}
 
                             <a href="${domain}/calendar" style="display: block; background-color: #fbbf24; color: #020617; padding: 20px; border-radius: 20px; font-weight: 900; text-decoration: none; text-transform: uppercase; font-size: 14px; letter-spacing: 1px; margin-top: 20px; text-align: center;">
-                                Takvimi Görüntüle
+                                ${calendarLabel}
                             </a>
                         </div>
 
@@ -302,8 +355,9 @@ export const sendFollowerEmail = async (params: {
     followerUsername?: string;
     followerImage?: string | null;
     followerId: string;
+    locale?: MailLocale;
 }) => {
-    const { toEmail, recipientName, followerName, followerUsername, followerImage, followerId } = params;
+    const { toEmail, recipientName, followerName, followerUsername, followerImage, followerId, locale = "tr" } = params;
 
     const client = resend || (process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null);
     if (!client) {
@@ -315,15 +369,29 @@ export const sendFollowerEmail = async (params: {
     const profileLink = `${domain}/profile/${followerId}`;
     const initials = followerName ? followerName.slice(0, 2).toUpperCase() : "CL";
 
+    const subject = pick(locale, `🎬 ${followerName} seni CineLists'te takip etmeye başladı!`, `🎬 ${followerName} started following you on CineLists!`);
+    const introText = pick(
+        locale,
+        `Merhaba <strong>${recipientName}</strong>, CineLists sinema topluluğunda yeni bir takipçin var! Artık izlediğin filmleri, dizi bölümlerini ve incelemelerini takip edebilecek.`,
+        `Hi <strong>${recipientName}</strong>, you have a new follower in the CineLists film community! They'll now be able to follow the movies, episodes, and reviews you log.`
+    );
+    const ctaLabel = pick(locale, "Profili İncele & Geri Takip Et ↗", "View Profile & Follow Back ↗");
+    const footerText = pick(
+        locale,
+        `Bu bildirimi CineLists hesabına kayıtlı olduğun için aldın.<br><a href="${domain}/settings" style="color: #94a3b8; text-decoration: underline;">Bildirim ayarlarını</a> dilediğin zaman güncelleyebilirsin.`,
+        `You received this notification because you have a CineLists account.<br>You can update your <a href="${domain}/settings" style="color: #94a3b8; text-decoration: underline;">notification settings</a> anytime.`
+    );
+    const brandLine = pick(locale, "© 2026 CineLists • Sinema ve Dizi Sosyal Ağı", "© 2026 CineLists • Movie & TV Social Network");
+
     try {
         await client.emails.send({
             from: FROM_EMAIL,
             to: toEmail,
-            subject: `🎬 ${followerName} seni CineLists'te takip etmeye başladı!`,
+            subject,
             html: `
                 <div style="background-color: #020617; padding: 40px 15px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #f8fafc; text-align: center;">
                     <div style="max-width: 540px; margin: 0 auto; background-color: #0f172a; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 28px; padding: 36px 24px; box-shadow: 0 30px 60px -12px rgba(0, 0, 0, 0.7);">
-                        
+
                         <!-- Logo Header -->
                         <div style="margin-bottom: 28px;">
                             <img src="${domain}/icon-192.png" width="48" height="48" alt="CineLists" style="width: 48px; height: 48px; border-radius: 14px; margin: 0 auto 12px auto; display: block; border: 1px solid rgba(255, 255, 255, 0.1);" />
@@ -343,7 +411,7 @@ export const sendFollowerEmail = async (params: {
                                     </div>
                                 `}
                             </div>
-                            
+
                             <h2 style="color: #ffffff; font-size: 20px; font-weight: 800; margin: 0 0 4px 0;">
                                 ${followerName}
                             </h2>
@@ -352,30 +420,29 @@ export const sendFollowerEmail = async (params: {
                                     @${followerUsername}
                                 </p>
                             ` : ''}
-                            
+
                             <p style="color: #94a3b8; font-size: 14px; line-height: 1.5; margin: 0;">
-                                Merhaba <strong>${recipientName}</strong>, CineLists sinema topluluğunda yeni bir takipçin var! Artık izlediğin filmleri, dizi bölümlerini ve incelemelerini takip edebilecek.
+                                ${introText}
                             </p>
                         </div>
 
                         <!-- CTA Button -->
                         <div style="margin-bottom: 28px;">
                             <a href="${profileLink}" style="display: inline-block; background-color: #fbbf24; color: #020617; padding: 15px 32px; border-radius: 14px; font-weight: 900; text-decoration: none; text-transform: uppercase; font-size: 13px; letter-spacing: 0.5px; box-shadow: 0 8px 24px rgba(251, 191, 36, 0.25);">
-                                Profili İncele & Geri Takip Et ↗
+                                ${ctaLabel}
                             </a>
                         </div>
 
                         <!-- Footer notes -->
                         <div style="padding-top: 20px; border-top: 1px solid rgba(255, 255, 255, 0.08);">
                             <p style="color: #64748b; font-size: 12px; margin: 0; line-height: 1.4;">
-                                Bu bildirimi CineLists hesabına kayıtlı olduğun için aldın.<br>
-                                <a href="${domain}/settings" style="color: #94a3b8; text-decoration: underline;">Bildirim ayarlarını</a> dilediğin zaman güncelleyebilirsin.
+                                ${footerText}
                             </p>
                         </div>
                     </div>
 
                     <p style="margin-top: 20px; color: #475569; font-size: 11px; text-transform: uppercase; letter-spacing: 1.5px;">
-                        © 2026 CineLists • Sinema ve Dizi Sosyal Ağı
+                        ${brandLine}
                     </p>
                 </div>
             `,
@@ -392,8 +459,9 @@ export const sendCommentNotificationEmail = async (params: {
     commentContent: string;
     mediaTitle: string;
     mediaLink: string;
+    locale?: MailLocale;
 }) => {
-    const { toEmail, recipientName, commenterName, commentContent, mediaTitle, mediaLink } = params;
+    const { toEmail, recipientName, commenterName, commentContent, mediaTitle, mediaLink, locale = "tr" } = params;
 
     const client = resend || (process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null);
     if (!client) return;
@@ -401,11 +469,19 @@ export const sendCommentNotificationEmail = async (params: {
     const domain = getAppDomain();
     const fullLink = mediaLink.startsWith("http") ? mediaLink : `${domain}${mediaLink}`;
 
+    const subject = pick(locale, `💬 ${commenterName}, ${mediaTitle} paylaşımına yorum yaptı`, `💬 ${commenterName} commented on ${mediaTitle}`);
+    const introText = pick(
+        locale,
+        `Merhaba <strong>${recipientName}</strong>, <strong>${commenterName}</strong> içeriğine bir yorum bıraktı:`,
+        `Hi <strong>${recipientName}</strong>, <strong>${commenterName}</strong> left a comment on your post:`
+    );
+    const ctaLabel = pick(locale, "Yorumu Gör ve Yanıtla ↗", "View and Reply ↗");
+
     try {
         await client.emails.send({
             from: FROM_EMAIL,
             to: toEmail,
-            subject: `💬 ${commenterName}, ${mediaTitle} paylaşımına yorum yaptı`,
+            subject,
             html: `
                 <div style="background-color: #020617; padding: 40px 15px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #f8fafc; text-align: center;">
                     <div style="max-width: 540px; margin: 0 auto; background-color: #0f172a; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 28px; padding: 36px 24px; box-shadow: 0 30px 60px -12px rgba(0, 0, 0, 0.7);">
@@ -416,7 +492,7 @@ export const sendCommentNotificationEmail = async (params: {
                         </div>
                         <div style="background-color: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 20px; padding: 20px; margin-bottom: 24px; text-align: left;">
                             <p style="color: #94a3b8; font-size: 13px; margin: 0 0 10px 0;">
-                                Merhaba <strong>${recipientName}</strong>, <strong>${commenterName}</strong> içeriğine bir yorum bıraktı:
+                                ${introText}
                             </p>
                             <blockquote style="margin: 0; padding: 12px 16px; background-color: rgba(0, 0, 0, 0.3); border-left: 3px solid #fbbf24; border-radius: 8px; color: #ffffff; font-size: 14px; font-style: italic;">
                                 "${commentContent}"
@@ -424,7 +500,7 @@ export const sendCommentNotificationEmail = async (params: {
                         </div>
                         <div style="margin-bottom: 24px;">
                             <a href="${fullLink}" style="display: inline-block; background-color: #fbbf24; color: #020617; padding: 14px 28px; border-radius: 12px; font-weight: 900; text-decoration: none; text-transform: uppercase; font-size: 12px; letter-spacing: 0.5px;">
-                                Yorumu Gör ve Yanıtla ↗
+                                ${ctaLabel}
                             </a>
                         </div>
                     </div>

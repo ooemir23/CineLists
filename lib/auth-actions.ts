@@ -10,6 +10,7 @@ import crypto from "crypto";
 import { safeInternalRedirect } from "@/lib/admin/policy";
 import { checkRateLimit } from "@/lib/ratelimit";
 import { headers } from "next/headers";
+import { getServerLocale } from "@/lib/i18n/server";
 
 async function getClientIp() {
     const headersList = await headers();
@@ -222,8 +223,9 @@ export async function requestPasswordReset(formData: FormData) {
             }
         });
 
-        // E-posta gönder
-        await sendPasswordResetEmail(userEmail, token);
+        // E-posta gönder (talebi yapan kişinin o an aktif olan arayüz diline göre)
+        const locale = await getServerLocale();
+        await sendPasswordResetEmail(userEmail, token, locale);
         
         redirect("/forgot-password?success=sent");
     } catch (error: any) {
