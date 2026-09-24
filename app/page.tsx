@@ -19,6 +19,7 @@ import {
 } from "@/components/portal/portal-right-rail";
 import { MediaCard } from "@/components/media/media-card";
 import { getHomeFeedActivities } from "@/lib/feed-actions";
+import { getCommunityPulse } from "@/lib/community-pulse";
 import { cachedGetWatchProviders } from "@/lib/watch-provider-cache";
 import { Film, Filter, X } from "lucide-react";
 import Link from "next/link";
@@ -234,6 +235,7 @@ export default async function Home({ searchParams }: HomeProps) {
     topRatedMovies,
     popularMovies,
     feedActivities,
+    communityPulse,
   ] = await Promise.all([
     tmdb.getTrendingMovies().catch(() => ({ results: [] })),
     tmdb.getTrendingTV().catch(() => ({ results: [] })),
@@ -242,6 +244,7 @@ export default async function Home({ searchParams }: HomeProps) {
     tmdb.getTopRated("movie").catch(() => ({ results: [] })),
     tmdb.getPopular("movie").catch(() => ({ results: [] })),
     getHomeFeedActivities(session?.user?.id).catch(() => []),
+    getCommunityPulse(),
   ]);
 
   // 1. Hero Items (Merlin'in Kazanı large featured slider)
@@ -487,6 +490,7 @@ export default async function Home({ searchParams }: HomeProps) {
 
           {/* CineLists Nabzı (Kazan Kaynıyor) */}
           <PortalCommunityPulse
+            {...communityPulse}
             focusTitle={heroList[0]?.title || "Dune: Part Two"}
             focusId={heroList[0]?.id || 693134}
             focusType={heroList[0]?.media_type || "movie"}

@@ -90,7 +90,7 @@ export function SearchResultsClient({
             <div className="min-h-[400px]">
                 {activeTab === "content" ? (
                     mediaItems.length > 0 ? (
-                        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-7 xl:grid-cols-9 gap-4 pt-4">
+                        <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-8 gap-x-3 gap-y-5 sm:gap-4 pt-4">
                             {mediaItems.map((item: any) => (
                                 <MediaCard
                                     key={item.id}

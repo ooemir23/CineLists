@@ -69,7 +69,7 @@ export function RandomSuggestion({
                 href={`/${suggested.media?.type === "TV" ? "tv" : "movie"}/${suggested.media?.id}`}
                 className="text-sm font-bold text-white hover:text-primary transition-colors line-clamp-2"
               >
-                {suggested.media?.title || "Tarih Bekleniyor"}
+                {suggested.media?.title || "İsimsiz İçerik"}
               </Link>
 
               {suggested.media?.releaseDate && (

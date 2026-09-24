@@ -138,17 +138,33 @@ describe("Merlin-inspired Portal Components", () => {
         activeListsCount: 220,
         topContributorName: "Emir_Sinefil",
         focusTitle: "Interstellar",
+        recentReactions: [
+          { emoji: "🍿", reaction: "Mükemmel", title: "Dune", author: "Ayşe", id: 438631, type: "movie" },
+        ],
+        recentComments: [
+          { author: "Can", avatarInitial: "C", title: "Dark", comment: "Harika final", id: 70523, type: "tv" },
+        ],
       })
     );
 
     expect(html).toContain("CineLists Nabzı");
     expect(html).toContain("Canlı");
     expect(html).toContain("150");
-    expect(html).toContain("Sinefil çevrimiçi");
+    expect(html).toContain("Aktif sinefil");
+    expect(html).toContain("Ayşe");
+    expect(html).toContain("Harika final");
+    expect(html).not.toContain("Mert_K");
     expect(html).toContain("Emir_Sinefil");
     expect(html).toContain("Günün Sinefili");
     expect(html).toContain("Interstellar");
     expect(html).toContain("Son İzleyici Tepkileri");
+  });
+
+  test("PortalCommunityPulse shows empty states instead of fake data", () => {
+    const html = renderToStaticMarkup(React.createElement(PortalCommunityPulse, {}));
+    expect(html).toContain("Henüz puanlama yok");
+    expect(html).toContain("Henüz inceleme yazılmamış");
+    expect(html).not.toContain("Sinefil_Emir");
   });
 
   test("PortalRightRail renders ranked trending topics and poll widget", () => {

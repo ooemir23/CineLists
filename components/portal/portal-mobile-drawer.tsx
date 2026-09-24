@@ -1,5 +1,7 @@
 "use client";
 
+import { createPortal } from "react-dom";
+
 import { useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
@@ -97,10 +99,11 @@ export function PortalMobileDrawer({
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [isOpen, onClose]);
 
-  if (!isOpen) return null;
+  if (!isOpen || typeof document === "undefined") return null;
 
-  return (
-    <div className="fixed inset-0 z-[100] xl:hidden">
+  // Body'e portal: header'ın stacking context'inden çıkıp alt menünün (dock) üstünde açılır.
+  return createPortal(
+    <div className="fixed inset-0 z-[200] xl:hidden">
       {/* Backdrop overlay */}
       <div
         onClick={onClose}
@@ -415,5 +418,7 @@ export function PortalMobileDrawer({
         </div>
       </div>
     </div>
+  ,
+    document.body
   );
 }

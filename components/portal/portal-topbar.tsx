@@ -26,6 +26,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { PortalMobileDrawer } from "./portal-mobile-drawer";
+import { PortalNotificationBell } from "./portal-notification-bell";
 import { LanguageSelector } from "@/components/layout/language-selector";
 import { useTranslation } from "@/lib/i18n/i18n-context";
 
@@ -424,7 +425,7 @@ export function PortalTopbar({ user, isAdmin = false }: PortalTopbarProps) {
 
       <header className="sticky top-0 z-30 w-full bg-slate-950/90 backdrop-blur-xl border-b border-white/10 transition-shadow">
         {/* Top Header Row */}
-        <div className="h-16 px-3 sm:px-6 flex items-center justify-between gap-3 max-w-[1600px] mx-auto">
+        <div className="h-16 px-2 sm:px-6 flex items-center justify-between gap-2 sm:gap-3 max-w-[1600px] mx-auto">
           {/* Mobile Search Active Bar (Takes over on mobile when search is clicked) */}
           {mobileSearchOpen ? (
             <div
@@ -496,15 +497,15 @@ export function PortalTopbar({ user, isAdmin = false }: PortalTopbarProps) {
           ) : (
             <>
               {/* Brand & Hamburger (Visible on mobile/tablet, brand logo only on mobile/tablet) */}
-              <div className="flex items-center gap-2 xl:hidden">
+              <div className="flex items-center gap-1 sm:gap-2 min-w-0 xl:hidden">
                 <button
                   onClick={() => setMobileMenuOpen(true)}
-                  className="p-2 rounded-xl text-neutral-300 hover:text-white hover:bg-white/10 transition-colors"
+                  className="p-2 shrink-0 rounded-xl text-neutral-300 hover:text-white hover:bg-white/10 transition-colors"
                   aria-label="Menüyü aç"
                 >
                   <Menu className="w-5 h-5" />
                 </button>
-                <Link href="/" className="flex items-center gap-2 group">
+                <Link href="/" className="flex items-center gap-2 group min-w-0">
                   <div className="w-8 h-8 relative flex items-center justify-center shrink-0 drop-shadow-[0_2px_10px_rgba(251,191,36,0.3)] group-hover:scale-105 transition-transform">
                     <Image
                       src="/logo.png"
@@ -515,7 +516,7 @@ export function PortalTopbar({ user, isAdmin = false }: PortalTopbarProps) {
                       className="w-full h-full object-contain"
                     />
                   </div>
-                  <span className="font-black text-white text-base tracking-tight">
+                  <span className="font-black text-white text-base tracking-tight truncate max-[359px]:hidden">
                     <span className="text-amber-400">CINE</span>LISTS
                   </span>
                 </Link>
@@ -627,8 +628,8 @@ export function PortalTopbar({ user, isAdmin = false }: PortalTopbarProps) {
 
               {/* Right Actions */}
               <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
-                {/* Language Selector */}
-                <LanguageSelector variant="dropdown" />
+                {/* Language Selector (mobilde menü çekmecesinde yer alıyor) */}
+                <LanguageSelector variant="dropdown" className="hidden sm:block" />
 
                 {/* Mobile Search Button trigger (Visible only on < md) */}
                 <button
@@ -645,13 +646,7 @@ export function PortalTopbar({ user, isAdmin = false }: PortalTopbarProps) {
 
                 {user ? (
                   <div className="flex items-center gap-1.5 sm:gap-2">
-                    <Link
-                      href="/notifications"
-                      className="w-9 h-9 rounded-xl flex items-center justify-center text-neutral-400 hover:text-white hover:bg-white/5 border border-white/5 transition-colors relative"
-                      title="Bildirimler"
-                    >
-                      <Bell className="w-4 h-4" />
-                    </Link>
+                    <PortalNotificationBell />
                     <Link
                       href="/profile"
                       className="flex items-center gap-2 p-1 pl-1.5 sm:pl-2 rounded-xl hover:bg-white/5 border border-transparent hover:border-white/10 transition-colors"

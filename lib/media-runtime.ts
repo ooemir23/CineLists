@@ -18,7 +18,7 @@ const refresh = unstable_cache(
     await prisma.mediaItem.createMany({
       skipDuplicates: true,
       data: [{ tmdbId: id, type: type === "movie" ? "MOVIE" : "TV",
-        title: details.title || details.name || "Tarih Bekleniyor", posterPath: details.poster_path,
+        title: details.title || details.name || "İsimsiz İçerik", posterPath: details.poster_path,
         genres: (details.genres || []).map((genre: { name: string }) => genre.name), runtime }]
     });
     await prisma.mediaItem.updateMany({

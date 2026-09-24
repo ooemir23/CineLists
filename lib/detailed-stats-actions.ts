@@ -112,16 +112,16 @@ const defaultDetailedStats: DetailedStats = {
             { day: 'Cuma', count: 0 },
             { day: 'Cumartesi', count: 0 },
         ],
-        mostActiveMonth: 'Tarih Bekleniyor',
-        mostActiveDay: 'Tarih Bekleniyor',
+        mostActiveMonth: 'Henüz veri yok',
+        mostActiveDay: 'Henüz veri yok',
     },
     personalInsights: {
-        favoriteGenre: 'Tarih Bekleniyor',
+        favoriteGenre: 'Henüz veri yok',
         favoriteGenreCount: 0,
-        mostUsedPlatform: 'Tarih Bekleniyor',
-        averageRatingTendency: 'Tarih Bekleniyor',
+        mostUsedPlatform: 'Henüz veri yok',
+        averageRatingTendency: 'Henüz veri yok',
         mostWatchedWithPerson: 'Yalnız',
-        mostRecommendedByPerson: 'Tarih Bekleniyor',
+        mostRecommendedByPerson: 'Henüz veri yok',
         totalDaysActive: 1,
     }
 };
@@ -410,11 +410,11 @@ export async function getTemporalStats(userId: string): Promise<TemporalStats> {
 
         const mostActiveMonth = monthlyActivity.length > 0 && monthlyActivity.some(m => m.count > 0)
             ? monthlyActivity.reduce((max, curr) => curr.count > max.count ? curr : max).month
-            : 'Tarih Bekleniyor';
+            : 'Henüz veri yok';
 
         const mostActiveDay = weeklyPattern.some(w => w.count > 0)
             ? weeklyPattern.reduce((max, curr) => curr.count > max.count ? curr : max).day
-            : 'Tarih Bekleniyor';
+            : 'Henüz veri yok';
 
         return {
             monthlyActivity,
@@ -445,7 +445,7 @@ export async function getPersonalInsights(userId: string): Promise<PersonalInsig
             })
         ]);
 
-        const favoriteGenre = genreBreakdown.length > 0 ? genreBreakdown[0].genre : 'Tarih Bekleniyor';
+        const favoriteGenre = genreBreakdown.length > 0 ? genreBreakdown[0].genre : 'Henüz veri yok';
         const favoriteGenreCount = genreBreakdown.length > 0 ? genreBreakdown[0].count : 0;
 
         // Platform analizi
@@ -457,14 +457,14 @@ export async function getPersonalInsights(userId: string): Promise<PersonalInsig
         });
         const mostUsedPlatform = Object.keys(platformCount).length > 0
             ? Object.entries(platformCount).reduce((max, curr) => curr[1] > max[1] ? curr : max)[0]
-            : 'Tarih Bekleniyor';
+            : 'Henüz veri yok';
 
         // Puan verme eğilimi
         const ratings = activities.filter(a => a.rating).map(a => a.rating!);
         const avgRating = ratings.length > 0
             ? ratings.reduce((sum, r) => sum + r, 0) / ratings.length
             : 0;
-        const averageRatingTendency = avgRating >= 4 ? 'Cömert' : avgRating >= 3 ? 'Dengeli' : avgRating > 0 ? 'Seçici' : 'Tarih Bekleniyor';
+        const averageRatingTendency = avgRating >= 8 ? 'Cömert' : avgRating >= 6 ? 'Dengeli' : avgRating > 0 ? 'Seçici' : 'Henüz veri yok';
 
         // Kiminle izleme analizi
         const watchedWithCount: Record<string, number> = {};
@@ -514,7 +514,7 @@ export async function getPersonalInsights(userId: string): Promise<PersonalInsig
         });
         const mostRecommendedByPerson = Object.keys(recommendedByCount).length > 0
             ? Object.entries(recommendedByCount).reduce((max, curr) => curr[1] > max[1] ? curr : max)[0]
-            : 'Tarih Bekleniyor';
+            : 'Henüz veri yok';
 
         // Aktif gün sayısı
         const firstActivity = activities.length > 0

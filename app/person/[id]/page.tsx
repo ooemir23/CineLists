@@ -9,6 +9,21 @@ import { PersonCredits } from "@/components/person/person-credits";
 import { PersonComments } from "@/components/person/person-comments";
 import { getPersonComments } from "@/lib/comment-actions";
 
+const DEPARTMENT_TR: Record<string, string> = {
+    Acting: "Oyunculuk",
+    Directing: "Yönetmenlik",
+    Writing: "Senaryo",
+    Production: "Yapım",
+    Sound: "Ses / Müzik",
+    Camera: "Görüntü Yönetimi",
+    Editing: "Kurgu",
+    Art: "Sanat Yönetimi",
+    "Costume & Make-Up": "Kostüm & Makyaj",
+    Crew: "Ekip",
+    "Visual Effects": "Görsel Efekt",
+    Lighting: "Işık",
+};
+
 type Props = {
     params: Promise<{ id: string }>;
 };
@@ -38,10 +53,10 @@ export default async function PersonPage(props: Props) {
     return (
         <div className=" bg-background pb-20">
             <div className="max-w-[1600px] mx-auto px-3 sm:px-6 md:px-8 lg:px-12 py-6 sm:py-12">
-                <div className="flex flex-col md:flex-row gap-12 items-start">
+                <div className="flex flex-col md:flex-row gap-8 md:gap-12 items-start">
                     {/* Left Column: Image and Social */}
                     <div className="w-full md:w-80 shrink-0 space-y-8 mx-auto md:mx-0">
-                        <div className="relative aspect-[2/3] w-full rounded-2xl overflow-hidden shadow-2xl ring-1 ring-white/10">
+                        <div className="relative aspect-[2/3] w-full max-w-[220px] sm:max-w-[260px] md:max-w-none mx-auto rounded-2xl overflow-hidden shadow-2xl ring-1 ring-white/10">
                             {person.profile_path ? (
                                 <Image
                                     src={`https://image.tmdb.org/t/p/h632${person.profile_path}`}
@@ -87,7 +102,10 @@ export default async function PersonPage(props: Props) {
                                 {person.birthday && (
                                     <div>
                                         <p className="text-neutral-500 font-bold uppercase tracking-wider text-[10px]">Doğum Tarihi</p>
-                                        <p className="text-white font-medium">{person.birthday}</p>
+                                        <p className="text-white font-medium">
+                                            {new Date(person.birthday).toLocaleDateString("tr-TR", { day: "numeric", month: "long", year: "numeric" })}
+                                            {person.deathday && ` – ${new Date(person.deathday).toLocaleDateString("tr-TR", { day: "numeric", month: "long", year: "numeric" })}`}
+                                        </p>
                                     </div>
                                 )}
                                 {person.place_of_birth && (
@@ -98,16 +116,16 @@ export default async function PersonPage(props: Props) {
                                 )}
                                 <div>
                                     <p className="text-neutral-500 font-bold uppercase tracking-wider text-[10px]">Bölüm</p>
-                                    <p className="text-white font-medium">{person.known_for_department}</p>
+                                    <p className="text-white font-medium">{DEPARTMENT_TR[person.known_for_department] ?? person.known_for_department}</p>
                                 </div>
                             </div>
                         </div>
                     </div>
 
                     {/* Right Column: Bio and Filmography */}
-                    <div className="flex-1 space-y-12">
-                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 pb-6 border-b border-white/5">
-                            <h1 className="text-4xl md:text-6xl font-black text-white tracking-tight">{person.name}</h1>
+                    <div className="flex-1 min-w-0 space-y-8 md:space-y-12">
+                        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 lg:gap-6 pb-6 border-b border-white/5">
+                            <h1 className="min-w-0 text-3xl sm:text-4xl md:text-5xl xl:text-6xl font-black text-white tracking-tight break-words">{person.name}</h1>
                             <FavoritePersonButton
                                 personId={person.id}
                                 name={person.name}

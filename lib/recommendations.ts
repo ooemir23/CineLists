@@ -239,7 +239,7 @@ async function getPersonalizedRecommendationsForUser(userId: string) {
 
         const favoriteGenreList = (user.favoriteGenres || []).map(id => ({
             id: Number(id),
-            name: genreIdToName[Number(id)] || "Tarih Bekleniyor"
+            name: genreIdToName[Number(id)] || "Diğer"
         }));
 
         const organicGenreList = Array.from(ratedGenres).map(genre => {
@@ -252,7 +252,7 @@ async function getPersonalizedRecommendationsForUser(userId: string) {
             reasons: {
                 favorites: favoriteGenreList,
                 organic: organicGenreList as { id: number; name: string }[],
-                platforms: providerIds.map(id => ID_TO_PLATFORM_NAME[id] || "Tarih Bekleniyor"),
+                platforms: providerIds.map(id => ID_TO_PLATFORM_NAME[id] || "Diğer"),
                 friendsCount: friendsPopularItems.length
             }
         };

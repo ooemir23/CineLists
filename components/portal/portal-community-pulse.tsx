@@ -1,83 +1,26 @@
 import Link from "next/link";
-import { Users, MessageSquare, Flame, Trophy, Film, Sparkles, Heart } from "lucide-react";
+import { MessageSquare, Flame, Trophy, Sparkles } from "lucide-react";
+import type { PulseComment, PulseReaction } from "@/lib/community-pulse";
 
 type CommunityPulseProps = {
   activeUsersCount?: number;
   dailyReviewsCount?: number;
   activeListsCount?: number;
-  topContributorName?: string;
+  topContributorName?: string | null;
+  recentReactions?: PulseReaction[];
+  recentComments?: PulseComment[];
   focusTitle?: string;
   focusId?: number;
   focusType?: "movie" | "tv";
 };
 
-const RECENT_REACTIONS = [
-  {
-    emoji: "🍿",
-    reaction: "Mükemmel",
-    title: "Dune: Part Two",
-    author: "Mert_K",
-    type: "movie",
-    id: 693134,
-  },
-  {
-    emoji: "🔥",
-    reaction: "Soluksuz",
-    title: "Arcane",
-    author: "ZeynepS",
-    type: "tv",
-    id: 94605,
-  },
-  {
-    emoji: "🤯",
-    reaction: "Şaşırtıcı",
-    title: "Severance",
-    author: "CineGuru",
-    type: "tv",
-    id: 95557,
-  },
-  {
-    emoji: "❤️",
-    reaction: "Duygusal",
-    title: "Past Lives",
-    author: "Elif_B",
-    type: "movie",
-    id: 666277,
-  },
-];
-
-const RECENT_COMMENTS = [
-  {
-    author: "Ahmet23",
-    avatarInitial: "A",
-    title: "Oppenheimer",
-    comment: "Ses kurgusu ve diyalog temposu muazzamdı.",
-    id: 872585,
-    type: "movie",
-  },
-  {
-    author: "Selin_D",
-    avatarInitial: "S",
-    title: "The Bear",
-    comment: "3. sezon mutfak gerilimini bambaşka seviyeye taşımış.",
-    id: 136315,
-    type: "tv",
-  },
-  {
-    author: "Kaan99",
-    avatarInitial: "K",
-    title: "Interstellar",
-    comment: "Yıllar geçse de her izleyişte ağlatıyor.",
-    id: 157336,
-    type: "movie",
-  },
-];
-
 export function PortalCommunityPulse({
-  activeUsersCount = 138,
-  dailyReviewsCount = 54,
-  activeListsCount = 186,
-  topContributorName = "Sinefil_Emir",
+  activeUsersCount = 0,
+  dailyReviewsCount = 0,
+  activeListsCount = 0,
+  topContributorName = null,
+  recentReactions = [],
+  recentComments = [],
   focusTitle = "Dune: Part Two",
   focusId = 693134,
   focusType = "movie",
@@ -110,10 +53,10 @@ export function PortalCommunityPulse({
             {activeUsersCount}
           </strong>
           <span className="text-xs font-semibold text-neutral-300 mt-1">
-            Sinefil çevrimiçi
+            Aktif sinefil
           </span>
           <small className="text-[11px] text-neutral-500 truncate mt-0.5">
-            Topluluk aktif
+            Son 24 saat
           </small>
         </div>
 
@@ -122,7 +65,7 @@ export function PortalCommunityPulse({
             {dailyReviewsCount}
           </strong>
           <span className="text-xs font-semibold text-neutral-300 mt-1">
-            Bugün puan & inceleme
+            Puan & inceleme
           </span>
           <small className="text-[11px] text-neutral-500 truncate mt-0.5">
             Son 24 saat
@@ -143,7 +86,7 @@ export function PortalCommunityPulse({
 
         <div className="p-3 rounded-xl bg-amber-400/5 border border-amber-400/20 flex flex-col justify-center">
           <strong className="text-xs sm:text-sm font-black text-amber-400 truncate leading-none">
-            {topContributorName}
+            {topContributorName || "Henüz yok"}
           </strong>
           <span className="text-xs font-semibold text-neutral-300 mt-1 flex items-center gap-1">
             <Trophy className="w-3.5 h-3.5 text-amber-400 shrink-0" />
@@ -182,7 +125,12 @@ export function PortalCommunityPulse({
             Son İzleyici Tepkileri
           </h3>
           <div className="space-y-2">
-            {RECENT_REACTIONS.map((item, idx) => (
+            {recentReactions.length === 0 && (
+              <p className="text-xs text-neutral-500 p-3 rounded-xl bg-white/[0.02] border border-dashed border-white/10">
+                Henüz puanlama yok. İlk puanı sen ver!
+              </p>
+            )}
+            {recentReactions.map((item, idx) => (
               <Link
                 key={idx}
                 href={`/${item.type}/${item.id}`}
@@ -213,7 +161,12 @@ export function PortalCommunityPulse({
             Son İnceleme & Yorumlar
           </h3>
           <div className="space-y-2">
-            {RECENT_COMMENTS.map((item, idx) => (
+            {recentComments.length === 0 && (
+              <p className="text-xs text-neutral-500 p-3 rounded-xl bg-white/[0.02] border border-dashed border-white/10">
+                Henüz inceleme yazılmamış.
+              </p>
+            )}
+            {recentComments.map((item, idx) => (
               <Link
                 key={idx}
                 href={`/${item.type}/${item.id}`}

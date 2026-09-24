@@ -224,7 +224,7 @@ export function MediaCard({
                 onTouchStart={handleTouchStart}
                 onTouchEnd={handleTouchEnd}
                 className={cn(
-                    "group relative isolate overflow-visible flex flex-col gap-1.5 md:gap-2 transition-all duration-500 ease-out flex-none z-0 hover:z-[140] md:hover:scale-110 snap-start",
+                    "@container/card group relative isolate overflow-visible flex flex-col gap-1.5 md:gap-2 transition-all duration-500 ease-out flex-none z-0 hover:z-[140] md:hover:scale-110 snap-start",
                     fullWidth ? "w-full" : compact ? "w-[28vw] sm:w-28 md:w-32" : "w-[43vw] sm:w-36 md:w-44 lg:w-48"
                 )}
             >
@@ -354,7 +354,7 @@ export function MediaCard({
                 )}>
                     {type !== "person" && (
                         <div className="flex items-center justify-between gap-1 overflow-hidden">
-                            <div className="flex items-center gap-1.5 shrink-0">
+                            <div className="flex items-center gap-1.5 min-w-0 overflow-hidden whitespace-nowrap">
                                 <span className={cn(
                                     "font-black uppercase tracking-[0.08em]",
                                     compact ? "text-[8px]" : "text-[9px] min-[390px]:text-[10px] md:text-xs",
@@ -364,9 +364,9 @@ export function MediaCard({
                                 </span>
                                 {(releaseDate || runtime) && (
                                     <>
-                                        <span className="text-neutral-600 font-black text-[9px]">•</span>
+                                        <span className="hidden @min-[170px]/card:inline text-neutral-600 font-black text-[9px]">•</span>
                                         <span className={cn(
-                                            "font-bold text-neutral-400 flex items-center gap-1 uppercase tracking-wider",
+                                            "hidden @min-[170px]/card:flex font-bold text-neutral-400 items-center gap-1 uppercase tracking-wider",
                                             compact ? "text-[8px]" : "text-[9px] min-[390px]:text-[10px] md:text-xs"
                                         )}>
                                             {releaseDate && new Date(releaseDate).getFullYear()}
@@ -375,26 +375,9 @@ export function MediaCard({
                                         </span>
                                     </>
                                 )}
-                                {providers?.flatrate && providers.flatrate.length > 0 && (
-                                    <div className="flex items-center -space-x-1 shrink-0 ml-1" title={providers.flatrate.map(p => p.provider_name).join(", ")}>
-                                        {providers.flatrate.slice(0, 2).map((provider) => (
-                                            <div
-                                                key={provider.provider_id}
-                                                className="w-3.5 h-3.5 md:w-4 md:h-4 rounded-full overflow-hidden border border-white/20 shadow-sm relative bg-slate-900"
-                                                title={provider.provider_name}
-                                            >
-                                                <img
-                                                    src={`https://image.tmdb.org/t/p/w92${provider.logo_path}`}
-                                                    alt={provider.provider_name}
-                                                    className="w-full h-full object-cover"
-                                                />
-                                            </div>
-                                        ))}
-                                    </div>
-                                )}
                             </div>
 
-                            <div className={cn("flex items-center flex-1 justify-end min-w-0", compact ? "gap-0.5" : "gap-1 md:gap-2")}>
+                            <div className={cn("flex items-center justify-end shrink-0", compact ? "gap-0.5" : "gap-1 md:gap-2")}>
                                 <div className="flex items-center gap-0.5 bg-white/5 px-1.5 py-0.5 rounded-md border border-white/5 shrink-0" title="Dünya Geneli Puanı (TMDB)">
                                     <Globe className="w-2.5 md:w-3 h-2.5 md:h-3 text-blue-400" />
                                     <span className="text-[9px] min-[390px]:text-[10px] md:text-xs font-black text-white">{voteAverage?.toFixed(1) || "0"}</span>

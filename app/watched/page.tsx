@@ -2,6 +2,7 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";import { redirect } from "next/navigation";
 
 import { Check } from "lucide-react";
+import { getPreferredGenreName } from "@/lib/genres";
 
 import WatchedSearchBarWrapper from "@/components/watched/watched-search-wrapper";
 
@@ -66,8 +67,10 @@ export default async function WatchedPage() {
     // Favori tür
     let favoriteGenre = "-";
     if (user?.favoriteGenres && user.favoriteGenres.length > 0) {
-        // Sadece ilkini göster
-        favoriteGenre = user.favoriteGenres[0];
+        // Sadece ilkini göster (tür kimlik olarak saklanıyor, adına çevir)
+        const firstGenre = user.favoriteGenres[0];
+        const genreId = Number(firstGenre);
+        favoriteGenre = Number.isFinite(genreId) ? getPreferredGenreName(genreId, firstGenre) : firstGenre;
     }
 
     return (

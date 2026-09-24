@@ -20,11 +20,11 @@ export const ACHIEVEMENT_DEFINITIONS: AchievementDefinition[] = [
   { type: "MOVIE_BUFF_500", label: "Sinema Tanrısı", description: "500 film izle", icon: "👑", color: "from-amber-400 to-yellow-600", category: "watch" },
   { type: "TV_BINGER_5", label: "Dizi Başlangıcı", description: "5 dizi izle", icon: "📺", color: "from-teal-400 to-teal-600", category: "watch" },
   { type: "TV_BINGER_20", label: "Dizi Bağımlısı", description: "20 dizi izle", icon: "📺", color: "from-teal-400 to-cyan-600", category: "watch" },
-  { type: "TV_BINGER_50", label: "Maratoncu", description: "50 dizi izle", icon: "📺", color: "from-cyan-400 to-blue-600", category: "watch" },
+  { type: "TV_BINGER_50", label: "Dizi Maratoncusu", description: "50 dizi izle", icon: "📺", color: "from-cyan-400 to-blue-600", category: "watch" },
   { type: "EPISODE_MASTER_50", label: "Bölüm Avcısı", description: "50 bölüm izle", icon: "📋", color: "from-sky-400 to-sky-600", category: "watch" },
   { type: "EPISODE_MASTER_200", label: "Bölüm Ustası", description: "200 bölüm izle", icon: "📋", color: "from-sky-400 to-blue-600", category: "watch" },
   { type: "EPISODE_MASTER_500", label: "Bölüm Efsanesi", description: "500 bölüm izle", icon: "📋", color: "from-blue-400 to-indigo-600", category: "watch" },
-  { type: "MARATHON_RUNNER", label: "Maratoncu", description: "Günde 3+ film izle", icon: "🏃", color: "from-red-400 to-orange-600", category: "watch" },
+  { type: "MARATHON_RUNNER", label: "Film Maratoncusu", description: "Günde 3+ film izle", icon: "🏃", color: "from-red-400 to-orange-600", category: "watch" },
 
   // Puanlama rozetleri
   { type: "CRITIC_10", label: "Çaylak Eleştirmen", description: "10 içeriği puanla", icon: "⭐", color: "from-yellow-400 to-amber-600", category: "rate" },

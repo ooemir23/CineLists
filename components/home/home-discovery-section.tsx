@@ -1241,7 +1241,7 @@ export function HomeDiscoverySection({
                 >
                   <MediaCard
                     id={item.id}
-                    title={item.title || item.name || "Tarih Bekleniyor"}
+                    title={item.title || item.name || "İsimsiz İçerik"}
                     originalTitle={item.original_title || item.original_name}
                     posterPath={item.poster_path}
                     voteAverage={item.vote_average}

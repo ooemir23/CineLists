@@ -294,3 +294,144 @@ export const sendDailyReminderEmail = async (email: string, userName: string, sh
         console.error("Daily reminder email error:", error);
     }
 };
+
+export const sendFollowerEmail = async (params: {
+    toEmail: string;
+    recipientName: string;
+    followerName: string;
+    followerUsername?: string;
+    followerImage?: string | null;
+    followerId: string;
+}) => {
+    const { toEmail, recipientName, followerName, followerUsername, followerImage, followerId } = params;
+
+    const client = resend || (process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null);
+    if (!client) {
+        console.warn("[Mail] RESEND_API_KEY eksik, takipçi e-postası gönderilemedi.");
+        return;
+    }
+
+    const domain = getAppDomain();
+    const profileLink = `${domain}/profile/${followerId}`;
+    const initials = followerName ? followerName.slice(0, 2).toUpperCase() : "CL";
+
+    try {
+        await client.emails.send({
+            from: FROM_EMAIL,
+            to: toEmail,
+            subject: `🎬 ${followerName} seni CineLists'te takip etmeye başladı!`,
+            html: `
+                <div style="background-color: #020617; padding: 40px 15px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #f8fafc; text-align: center;">
+                    <div style="max-width: 540px; margin: 0 auto; background-color: #0f172a; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 28px; padding: 36px 24px; box-shadow: 0 30px 60px -12px rgba(0, 0, 0, 0.7);">
+                        
+                        <!-- Logo Header -->
+                        <div style="margin-bottom: 28px;">
+                            <img src="${domain}/icon-192.png" width="48" height="48" alt="CineLists" style="width: 48px; height: 48px; border-radius: 14px; margin: 0 auto 12px auto; display: block; border: 1px solid rgba(255, 255, 255, 0.1);" />
+                            <h1 style="color: #ffffff; font-size: 24px; font-weight: 900; letter-spacing: -0.5px; margin: 0; text-transform: uppercase; font-style: italic;">
+                                <span style="color: #fbbf24;">cine</span>lists
+                            </h1>
+                        </div>
+
+                        <!-- Follower Card -->
+                        <div style="background-color: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 20px; padding: 24px; margin-bottom: 24px;">
+                            <div style="margin-bottom: 16px;">
+                                ${followerImage ? `
+                                    <img src="${followerImage}" width="72" height="72" alt="${followerName}" style="width: 72px; height: 72px; border-radius: 50%; object-fit: cover; margin: 0 auto; display: block; border: 3px solid #fbbf24; box-shadow: 0 8px 16px rgba(251, 191, 36, 0.2);" />
+                                ` : `
+                                    <div style="width: 72px; height: 72px; border-radius: 50%; background: linear-gradient(135deg, #fbbf24, #d97706); color: #020617; line-height: 72px; font-size: 24px; font-weight: 900; margin: 0 auto; display: block; box-shadow: 0 8px 16px rgba(251, 191, 36, 0.2);">
+                                        ${initials}
+                                    </div>
+                                `}
+                            </div>
+                            
+                            <h2 style="color: #ffffff; font-size: 20px; font-weight: 800; margin: 0 0 4px 0;">
+                                ${followerName}
+                            </h2>
+                            ${followerUsername ? `
+                                <p style="color: #fbbf24; font-size: 13px; font-weight: 700; margin: 0 0 12px 0;">
+                                    @${followerUsername}
+                                </p>
+                            ` : ''}
+                            
+                            <p style="color: #94a3b8; font-size: 14px; line-height: 1.5; margin: 0;">
+                                Merhaba <strong>${recipientName}</strong>, CineLists sinema topluluğunda yeni bir takipçin var! Artık izlediğin filmleri, dizi bölümlerini ve incelemelerini takip edebilecek.
+                            </p>
+                        </div>
+
+                        <!-- CTA Button -->
+                        <div style="margin-bottom: 28px;">
+                            <a href="${profileLink}" style="display: inline-block; background-color: #fbbf24; color: #020617; padding: 15px 32px; border-radius: 14px; font-weight: 900; text-decoration: none; text-transform: uppercase; font-size: 13px; letter-spacing: 0.5px; box-shadow: 0 8px 24px rgba(251, 191, 36, 0.25);">
+                                Profili İncele & Geri Takip Et ↗
+                            </a>
+                        </div>
+
+                        <!-- Footer notes -->
+                        <div style="padding-top: 20px; border-top: 1px solid rgba(255, 255, 255, 0.08);">
+                            <p style="color: #64748b; font-size: 12px; margin: 0; line-height: 1.4;">
+                                Bu bildirimi CineLists hesabına kayıtlı olduğun için aldın.<br>
+                                <a href="${domain}/settings" style="color: #94a3b8; text-decoration: underline;">Bildirim ayarlarını</a> dilediğin zaman güncelleyebilirsin.
+                            </p>
+                        </div>
+                    </div>
+
+                    <p style="margin-top: 20px; color: #475569; font-size: 11px; text-transform: uppercase; letter-spacing: 1.5px;">
+                        © 2026 CineLists • Sinema ve Dizi Sosyal Ağı
+                    </p>
+                </div>
+            `,
+        });
+    } catch (err: any) {
+        console.error("[Mail] sendFollowerEmail error:", err?.message || err);
+    }
+};
+
+export const sendCommentNotificationEmail = async (params: {
+    toEmail: string;
+    recipientName: string;
+    commenterName: string;
+    commentContent: string;
+    mediaTitle: string;
+    mediaLink: string;
+}) => {
+    const { toEmail, recipientName, commenterName, commentContent, mediaTitle, mediaLink } = params;
+
+    const client = resend || (process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null);
+    if (!client) return;
+
+    const domain = getAppDomain();
+    const fullLink = mediaLink.startsWith("http") ? mediaLink : `${domain}${mediaLink}`;
+
+    try {
+        await client.emails.send({
+            from: FROM_EMAIL,
+            to: toEmail,
+            subject: `💬 ${commenterName}, ${mediaTitle} paylaşımına yorum yaptı`,
+            html: `
+                <div style="background-color: #020617; padding: 40px 15px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #f8fafc; text-align: center;">
+                    <div style="max-width: 540px; margin: 0 auto; background-color: #0f172a; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 28px; padding: 36px 24px; box-shadow: 0 30px 60px -12px rgba(0, 0, 0, 0.7);">
+                        <div style="margin-bottom: 24px;">
+                            <h1 style="color: #ffffff; font-size: 22px; font-weight: 900; margin: 0; text-transform: uppercase; font-style: italic;">
+                                <span style="color: #fbbf24;">cine</span>lists
+                            </h1>
+                        </div>
+                        <div style="background-color: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 20px; padding: 20px; margin-bottom: 24px; text-align: left;">
+                            <p style="color: #94a3b8; font-size: 13px; margin: 0 0 10px 0;">
+                                Merhaba <strong>${recipientName}</strong>, <strong>${commenterName}</strong> içeriğine bir yorum bıraktı:
+                            </p>
+                            <blockquote style="margin: 0; padding: 12px 16px; background-color: rgba(0, 0, 0, 0.3); border-left: 3px solid #fbbf24; border-radius: 8px; color: #ffffff; font-size: 14px; font-style: italic;">
+                                "${commentContent}"
+                            </blockquote>
+                        </div>
+                        <div style="margin-bottom: 24px;">
+                            <a href="${fullLink}" style="display: inline-block; background-color: #fbbf24; color: #020617; padding: 14px 28px; border-radius: 12px; font-weight: 900; text-decoration: none; text-transform: uppercase; font-size: 12px; letter-spacing: 0.5px;">
+                                Yorumu Gör ve Yanıtla ↗
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            `,
+        });
+    } catch (err: any) {
+        console.error("[Mail] sendCommentNotificationEmail error:", err?.message || err);
+    }
+};

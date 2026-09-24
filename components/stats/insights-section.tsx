@@ -96,12 +96,23 @@ export default function InsightsSection({ insights }: InsightsSectionProps) {
                     <div className="flex items-start gap-3">
                         <span className="text-xl">🎬</span>
                         <div>
-                            <p className="text-white/90 font-semibold">
-                                {insights.favoriteGenre} türünde uzmanlaşıyorsun!
-                            </p>
-                            <p className="text-white/60 text-xs mt-1">
-                                Bu türde {insights.favoriteGenreCount} içerik izledin
-                            </p>
+                            {insights.favoriteGenreCount > 0 ? (
+                                <>
+                                    <p className="text-white/90 font-semibold">
+                                        {insights.favoriteGenre} türünde uzmanlaşıyorsun!
+                                    </p>
+                                    <p className="text-white/60 text-xs mt-1">
+                                        Bu türde {insights.favoriteGenreCount} içerik izledin
+                                    </p>
+                                </>
+                            ) : (
+                                <>
+                                    <p className="text-white/90 font-semibold">Henüz favori türün belli değil</p>
+                                    <p className="text-white/60 text-xs mt-1">
+                                        Birkaç film ya da dizi işaretledikçe burada görünecek
+                                    </p>
+                                </>
+                            )}
                         </div>
                     </div>
                     <div className="flex items-start gap-3">
