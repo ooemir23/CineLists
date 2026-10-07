@@ -1,10 +1,14 @@
+import { getDictionary } from "@/lib/i18n/server";
+import { resolveLocale } from "@/lib/i18n/resolve-locale";
+import { validateTmdbRequest, tmdbErrorResponse } from "@/lib/api-budget";
+import { mediaKey } from "@/lib/media-key";
 import { cachedGetWatchProviders } from "@/lib/watch-provider-cache";
 import { NextRequest, NextResponse } from "next/server";
 import { tmdb } from "@/lib/tmdb";
 import { getFriendsActivity } from "@/lib/feed-actions";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
-import { unstable_cache } from "next/cache";
+
 import { detectUserCountry } from "@/lib/country";
 
 type DiscoverResult = {
@@ -69,26 +73,24 @@ function asDiscoverResult(
   };
 }
 
-async function getWatchedIdsForUser(userId: string): Promise<number[]> {
+async function getWatchedIdsForUser(userId: string): Promise<string[]> {
   try {
     const watched = await prisma.watched.findMany({
       where: { userId },
-      select: { media: { select: { tmdbId: true } } },
+      select: { media: { select: { tmdbId: true, type: true } } },
     });
 
-    return watched.map((entry) => entry.media.tmdbId);
+    return watched.map((entry) => mediaKey(entry.media.tmdbId, entry.media.type));
   } catch {
     return [];
   }
 }
 
-const cachedGetWatchedIdsForUser = unstable_cache(
-  getWatchedIdsForUser,
-  ["home-discover-watched-ids"],
-  { revalidate: 120 },
-);
-
 export async function GET(request: NextRequest) {
+  const rejected = validateTmdbRequest(request);
+  if (rejected) return rejected;
+
+  const dictionary = getDictionary(resolveLocale(request.headers, request.cookies));
   const searchParams = request.nextUrl.searchParams;
   const typeParam = searchParams.get("type");
   const type =
@@ -112,7 +114,7 @@ export async function GET(request: NextRequest) {
   try {
     const session = await auth();
     const userId = session?.user?.id;
-    const watchedIds = userId ? await cachedGetWatchedIdsForUser(userId) : [];
+    const watchedIds = userId ? await getWatchedIdsForUser(userId) : [];
     const watchedIdSet = new Set(watchedIds);
 
     const isDiscovering = Boolean(
@@ -147,7 +149,7 @@ export async function GET(request: NextRequest) {
         { results: results.slice(0, limit), hasMore: results.length > limit },
         {
           headers: {
-            "Cache-Control": "private, max-age=60, stale-while-revalidate=300",
+            "Cache-Control": "private, no-store",
           },
         },
       );
@@ -178,7 +180,7 @@ export async function GET(request: NextRequest) {
     };
 
     const discoverParams: Record<string, string> = {
-      watch_region: "TR",
+      watch_region: country?.split(",")[0].toUpperCase() || detectUserCountry(request.headers, request.cookies),
       sort_by: sortBy,
       page,
     };
@@ -315,13 +317,13 @@ export async function GET(request: NextRequest) {
 
                   userItems.push({
                     id: item.media.tmdbId,
-                    title: item.media.title || details?.name || "Dizi",
+                    title: item.media.title || details?.name || dictionary.reviewUi.tv,
                     poster_path:
                       item.media.posterPath || details?.poster_path || null,
                     media_type: "tv",
                     vote_average:
                       item.media.voteAverage || details?.vote_average || 0,
-                    statusLabel: `${nextEpisode.season_number}. Sezon ${nextEpisode.episode_number}. Bölüm`,
+                    statusLabel: dictionary.reviewUi.episode.replace("{season}", String(nextEpisode.season_number)).replace("{episode}", String(nextEpisode.episode_number)),
                     statusType: item.statusType,
                     addedAt: item.addedAt,
                     targetDate: nextEpisode.air_date,
@@ -362,7 +364,7 @@ export async function GET(request: NextRequest) {
                     poster_path: poster,
                     media_type: "movie",
                     vote_average: voteAverage,
-                    statusLabel: "Yakında Vizyonda",
+                    statusLabel: dictionary.reviewUi.upcoming,
                     statusType: item.statusType,
                     addedAt: item.addedAt,
                     targetDate: releaseDateStr,
@@ -382,7 +384,7 @@ export async function GET(request: NextRequest) {
           unknown
         >[];
         let filteredTmdbResults: DiscoverResult[] = rawTmdbResults
-          .filter((item) => !watchedIdSet.has(Number(item.id)))
+          .filter((item) => !watchedIdSet.has(mediaKey(Number(item.id), mediaType)))
           .map((item) => asDiscoverResult(item, mediaType));
 
         if (upcomingFilter !== "all") {
@@ -434,13 +436,13 @@ export async function GET(request: NextRequest) {
         ...tvResults.map((item) => asDiscoverResult(item, "tv")),
       ].sort((a, b) => (b.popularity || 0) - (a.popularity || 0));
 
-      results = combined.filter((item) => !watchedIdSet.has(item.id));
+      results = combined.filter((item) => !watchedIdSet.has(mediaKey(item.id, item.media_type || "movie")));
     } else {
       const data = await fetchTypeResults(type as "movie" | "tv");
       const typedResults = (data?.results || []) as Record<string, unknown>[];
       results = typedResults
         .map((item) => asDiscoverResult(item, type as "movie" | "tv"))
-        .filter((item) => !watchedIdSet.has(item.id));
+        .filter((item) => !watchedIdSet.has(mediaKey(item.id, item.media_type || "movie")));
     }
 
     const userCountry =
@@ -492,12 +494,12 @@ export async function GET(request: NextRequest) {
       },
       {
         headers: {
-          "Cache-Control": "private, max-age=60, stale-while-revalidate=300",
+          "Cache-Control": "private, no-store",
         },
       },
     );
   } catch (error) {
     console.error("Home discover API error:", error);
-    return NextResponse.json({ results: [] });
+    return tmdbErrorResponse(error, request);
   }
 }

@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { useRouter, useSearchParams, useParams, usePathname } from "next/navigation";
-import { motion, AnimatePresence } from "framer-motion";
+
 import { cn } from "@/lib/utils";
 import { Filter, X, Check, Film, Tv, TrendingUp, Star, Calendar, Sparkles } from "lucide-react";
 
@@ -128,7 +128,7 @@ export function ExploreFilterBar() {
     if (stagedProvider) params.set("provider", stagedProvider); else params.delete("provider");
     if (stagedYear) params.set("year", stagedYear); else params.delete("year");
     if (stagedRating) params.set("rating", stagedRating); else params.delete("rating");
-    
+
     router.push(`/explore/${currentType}/${currentCategory}?${params.toString()}`, { scroll: false });
     setIsMenuOpen(false);
   };
@@ -196,14 +196,11 @@ export function ExploreFilterBar() {
       </div>
 
       {/* Refined Pro Mobile Filter Overlay / Menu */}
-      <AnimatePresence>
+      <>
         {isMenuOpen && (
           isMobile ? (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="fixed inset-0 z-[2000] bg-slate-950/98 backdrop-blur-3xl flex flex-col"
+            <div
+              className="animate-enter fixed inset-0 z-[2000] bg-slate-950/98 backdrop-blur-3xl flex flex-col"
             >
               {/* Compact Header */}
               <div className="flex items-center justify-between px-6 py-4 border-b border-white/10">
@@ -211,7 +208,7 @@ export function ExploreFilterBar() {
                   <div className="w-1.5 h-4 bg-amber-400 rounded-full" />
                   Filtrele
                 </h3>
-                <button 
+                <button
                   onClick={() => setIsMenuOpen(false)}
                   className="p-2 -mr-2 text-neutral-500 hover:text-white transition-colors"
                 >
@@ -250,13 +247,9 @@ export function ExploreFilterBar() {
 
               {/* Options Content Area */}
               <div className="flex-1 overflow-y-auto p-6 no-scrollbar">
-                <AnimatePresence mode="wait">
-                  <motion.div
+                <>
+                  <div
                     key={activeFilterCategory}
-                    initial={{ opacity: 0, x: 10 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: -10 }}
-                    transition={{ duration: 0.2 }}
                     className="flex flex-wrap gap-2 justify-center"
                   >
                     {(activeFilterCategory === 0 ? genres.map(g => ({ id: g.id.toString(), name: g.name })) :
@@ -267,7 +260,7 @@ export function ExploreFilterBar() {
                       const queryKey = ["genre", "provider", "year", "rating"][activeFilterCategory];
                       const currentStaged = [stagedGenre, stagedProvider, stagedYear, stagedRating][activeFilterCategory];
                       const isSelected = currentStaged === opt.id;
-                      
+
                       return (
                         <button
                           key={opt.id}
@@ -283,8 +276,8 @@ export function ExploreFilterBar() {
                         </button>
                       );
                     })}
-                  </motion.div>
-                </AnimatePresence>
+                  </div>
+                </>
               </div>
 
               {/* Selection Summary Strip */}
@@ -294,7 +287,7 @@ export function ExploreFilterBar() {
                     <>
                       <div className="flex items-center gap-2 mb-1">
                         <span className="text-[10px] font-black uppercase tracking-[0.2em] text-amber-400">Seçili Filtreler</span>
-                        <button 
+                        <button
                           onClick={clearAllStaged}
                           className="p-1 text-rose-500 active:scale-90 transition-transform"
                         >
@@ -308,7 +301,7 @@ export function ExploreFilterBar() {
                           { id: stagedYear, label: stagedYear, key: "year" },
                           { id: stagedRating, label: stagedRating ? `${stagedRating}+ Puan` : null, key: "rating" }
                         ].filter(o => o.label).map((opt, i, arr) => (
-                          <button 
+                          <button
                             key={i}
                             onClick={() => updateQuery(opt.key, "")}
                             className="flex items-center gap-1.5 text-[9px] font-black text-neutral-400 hover:text-white active:text-rose-500 transition-colors uppercase tracking-wider"
@@ -338,7 +331,7 @@ export function ExploreFilterBar() {
                     </>
                   )}
                 </div>
-                <button 
+                <button
                   onClick={commitFilters}
                   className="flex-none px-6 py-2.5 rounded-xl bg-amber-400 text-slate-950 text-[10px] font-black uppercase tracking-widest active:scale-95 transition-all shadow-lg shadow-amber-400/10"
                 >
@@ -361,12 +354,9 @@ export function ExploreFilterBar() {
                   Uygula
                 </button>
               </div>
-            </motion.div>
+            </div>
           ) : (
-            <motion.div
-              initial={{ opacity: 0, y: -20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
+            <div
               className="grid grid-cols-2 md:grid-cols-4 gap-4 p-6 bg-white/5 rounded-[2.5rem] border border-white/10 backdrop-blur-2xl"
             >
               {/* Genre */}
@@ -438,10 +428,10 @@ export function ExploreFilterBar() {
                   <X size={14} /> Filtreleri Temizle
                 </button>
               </div>
-            </motion.div>
+            </div>
           )
         )}
-      </AnimatePresence>
+      </>
     </div>
   );
 }

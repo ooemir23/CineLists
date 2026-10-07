@@ -108,7 +108,16 @@ export default async function RootLayout({
 
             {/* Main Portal View (Topbar + Page Content) */}
             <div className="flex-1 flex flex-col min-w-0 min-h-screen">
-              <PortalTopbar user={session?.user} isAdmin={isAdminId(session?.user?.id)} />
+              <PortalTopbar
+                user={session?.user}
+                isAdmin={isAdminId(session?.user?.id)}
+                needsProfileCompletion={Boolean(
+                  session?.user?.id &&
+                  !(session.user as { hasCompletedOnboarding?: boolean }).hasCompletedOnboarding &&
+                  !(session.user as { isGuest?: boolean }).isGuest &&
+                  !session.user.id.startsWith("guest_")
+                )}
+              />
               {process.env.ANALYTICS_ENABLED === "true" && (
                 <Suspense fallback={null}>
                   <Pageview />

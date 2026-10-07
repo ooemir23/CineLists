@@ -1,3 +1,4 @@
+import { RequestBudget, RequestOverloadError } from "@/lib/request-budget";
 import { env } from "./env";
 
 const TMDB_BASE_URL = "https://api.themoviedb.org/3";
@@ -38,33 +39,9 @@ interface CacheEntry {
 
 const memoryCache = new Map<string, CacheEntry>();
 const inFlightRequests = new Map<string, Promise<any>>();
-const MAX_CACHE_SIZE = 1500;
+const MAX_CACHE_SIZE = 300;
 
-// ── Rate Limiter & Concurrency Queue (Prevents TMDB 429 Too Many Requests) ──
-const MAX_CONCURRENT_REQUESTS = 25;
-let activeRequests = 0;
-const requestQueue: Array<() => void> = [];
-
-function acquireSlot(): Promise<void> {
-    if (activeRequests < MAX_CONCURRENT_REQUESTS) {
-        activeRequests++;
-        return Promise.resolve();
-    }
-    return new Promise<void>((resolve) => {
-        requestQueue.push(() => {
-            activeRequests++;
-            resolve();
-        });
-    });
-}
-
-function releaseSlot() {
-    activeRequests--;
-    if (requestQueue.length > 0) {
-        const next = requestQueue.shift();
-        next?.();
-    }
-}
+const requestBudget = new RequestBudget(25, 100);
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -104,9 +81,8 @@ export const tmdb = {
         let lang = params?.language;
         if (!lang) {
             try {
-                const { cookies } = await import("next/headers");
-                const cookieStore = await cookies();
-                const locale = cookieStore.get("NEXT_LOCALE")?.value;
+                const { getServerLocale } = await import("@/lib/i18n/server");
+                const locale = await getServerLocale();
                 lang = locale === "en" ? "en-US" : "tr-TR";
             } catch {
                 lang = "tr-TR";
@@ -139,12 +115,12 @@ export const tmdb = {
         }
 
         const fetchPromise = (async () => {
-            // Acquire concurrency slot
-            await acquireSlot();
-
+            const deadline = Date.now() + 10_000;
+            let release: (() => void) | undefined;
             try {
+                release = await requestBudget.acquire(deadline);
                 const fetchOptions: RequestInit & { next?: { revalidate: number } } = {
-                    signal: AbortSignal.timeout(10000),
+                    signal: AbortSignal.timeout(Math.max(1, deadline - Date.now())),
                 };
 
                 if (cache === "no-store") {
@@ -159,7 +135,8 @@ export const tmdb = {
                 if (res.status === 429) {
                     console.warn(`[TMDB RateLimit] 429 on ${endpoint}, waiting 600ms before retry...`);
                     await sleep(600);
-                    res = await fetch(cacheKey, fetchOptions);
+                    if (Date.now() >= deadline) throw new RequestOverloadError();
+                    res = await fetch(cacheKey, { ...fetchOptions, signal: AbortSignal.timeout(Math.max(1, deadline - Date.now())) });
                 }
 
                 if (!res.ok) {
@@ -176,7 +153,7 @@ export const tmdb = {
                 const data = await res.json();
 
                 // Save to in-memory cache
-                if (cache !== "no-store" && data) {
+                if (cache !== "no-store" && data && JSON.stringify(data).length <= 100_000) {
                     if (memoryCache.size >= MAX_CACHE_SIZE) {
                         const firstKey = memoryCache.keys().next().value;
                         if (firstKey) memoryCache.delete(firstKey);
@@ -190,6 +167,7 @@ export const tmdb = {
 
                 return data;
             } catch (_error) {
+                if (_error instanceof RequestOverloadError) throw _error;
                 // Fallback to stale cache if available
                 const stale = memoryCache.get(cacheKey);
                 if (stale) return stale.data;
@@ -199,7 +177,7 @@ export const tmdb = {
                 }
                 return null;
             } finally {
-                releaseSlot();
+                release?.();
                 inFlightRequests.delete(cacheKey);
             }
         })();
@@ -305,8 +283,8 @@ export const tmdb = {
         return this.fetch("/movie/now_playing", { params });
     },
 
-    async getGenres(type: "movie" | "tv") {
-        return this.fetch(`/genre/${type}/list`);
+    async getGenres(type: "movie" | "tv", language?: string) {
+        return this.fetch(`/genre/${type}/list`, { params: language ? { language } : undefined });
     },
 
     async getPersonDetails(id: string) {

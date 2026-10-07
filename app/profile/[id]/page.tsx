@@ -20,9 +20,11 @@ export default async function PublicProfilePage({
   // only once we know the viewer is allowed to see them.
   const user = (await prisma.user.findFirst({
     where: {
+      isSuspended: false,
       OR: [
         { id: userId },
         { username: userId },
+        { usernameAliases: { some: { username: userId } } },
       ],
     },
     select: {
@@ -70,39 +72,39 @@ export default async function PublicProfilePage({
     toWatch,
     fullUser,
   ] = await Promise.all([
-    getUserStats(resolvedUserId),
+    user.showStats ? getUserStats(resolvedUserId) : Promise.resolve({ movieCount: 0, showCount: 0, episodeCount: 0 }),
     tmdb.getGenres("movie"),
     tmdb.getGenres("tv"),
-    prisma.watched.findMany({
+    user.showActivities ? prisma.watched.findMany({
       where: { userId: resolvedUserId },
       take: 12,
       orderBy: { watchedAt: "desc" },
       include: { media: true },
-    }),
-    prisma.watched.findMany({
+    }) : Promise.resolve([]),
+    user.showActivities ? prisma.watched.findMany({
       where: { userId: resolvedUserId },
       take: 100,
       orderBy: { watchedAt: "desc" },
       include: { media: true },
-    }),
-    prisma.toWatch.findMany({
+    }) : Promise.resolve([]),
+    user.showActivities ? prisma.toWatch.findMany({
       where: { userId: resolvedUserId },
       take: 100,
       orderBy: { addedAt: "desc" },
       include: { media: true },
-    }),
+    }) : Promise.resolve([]),
     prisma.user.findUnique({
       where: { id: resolvedUserId },
       select: {
         favoriteGenres: true, platforms: true, favoriteMediaIds: true,
         favoritePersons: { take: 12, orderBy: { addedAt: "desc" } },
-        activities: {
+        activities: user.showActivities ? {
           take: 30,
           orderBy: { createdAt: "desc" },
           include: { media: true },
-        },
+        } : false,
         _count: {
-          select: { toWatch: true, watched: true },
+          select: { toWatch: user.showActivities, watched: user.showStats },
         },
       },
     }),
@@ -116,43 +118,12 @@ export default async function PublicProfilePage({
     _count: { ...user._count, ...fullUser._count },
   });
 
-  // Collect favorite backdrops from favoriteMediaIds or top watched/watchlist
-  const favoriteIds = (user.favoriteMediaIds || []).map(Number).filter(Boolean);
-  let favoriteBackdrops: string[] = [];
-
-  if (favoriteIds.length > 0) {
-    try {
-      const favoriteMediaItems = await prisma.mediaItem.findMany({
-        where: { tmdbId: { in: favoriteIds } },
-        select: { tmdbId: true, backdropPath: true, posterPath: true },
-      });
-
-      favoriteBackdrops = favoriteMediaItems
-        .map(m => m.backdropPath ? `https://image.tmdb.org/t/p/w1280${m.backdropPath}` : null)
-        .filter(Boolean) as string[];
-
-      // If some missing from DB, fetch from TMDB
-      if (favoriteBackdrops.length < favoriteIds.length) {
-        const missingIds = favoriteIds.filter((id: number) => !favoriteMediaItems.some(m => m.tmdbId === id));
-        const tmdbResults = await Promise.all(
-          missingIds.slice(0, 4).map(async (id: number) => {
-            try {
-              const m = await tmdb.getDetails("movie", String(id));
-              if (m?.backdrop_path) return `https://image.tmdb.org/t/p/w1280${m.backdrop_path}`;
-              const s = await tmdb.getDetails("tv", String(id));
-              if (s?.backdrop_path) return `https://image.tmdb.org/t/p/w1280${s.backdrop_path}`;
-            } catch {
-              return null;
-            }
-            return null;
-          })
-        );
-        favoriteBackdrops.push(...(tmdbResults.filter(Boolean) as string[]));
-      }
-    } catch (e) {
-      console.warn("Error resolving favorite backdrops:", e);
-    }
-  }
+  const favorites = await prisma.favoriteMedia.findMany({
+    where: { userId: user.id }, orderBy: { position: "asc" }, take: 12,
+    include: { media: true },
+  });
+  user.favoriteMedia = favorites;
+  let favoriteBackdrops: string[] = favorites.flatMap(f => f.media.backdropPath ? [`https://image.tmdb.org/t/p/w1280${f.media.backdropPath}`] : []);
 
   // If still no backdrops from favoriteMediaIds, use watched items with backdrops
   if (favoriteBackdrops.length === 0) {
@@ -200,20 +171,14 @@ export default async function PublicProfilePage({
     watchedAt: w.watchedAt,
   }));
 
-  // Calculate this calendar month's count (over the full watched history, not just the recent 12)
   const startOfMonth = new Date();
   startOfMonth.setHours(0, 0, 0, 0);
   startOfMonth.setDate(1);
-  const thisMonthCount = allWatched.filter(
-    (w: any) => w.watchedAt && new Date(w.watchedAt) >= startOfMonth
-  ).length;
-
-  // Calculate average rating over the full watched history
-  const ratedItems = allWatched.filter((w: any) => w.rating != null);
-  const averageRating =
-    ratedItems.length > 0
-      ? ratedItems.reduce((sum: number, w: any) => sum + (w.rating || 0), 0) / ratedItems.length
-      : 0;
+  const [thisMonthCount, ratingSummary] = user.showStats ? await Promise.all([
+    prisma.watched.count({ where: { userId: resolvedUserId, watchedAt: { gte: startOfMonth } } }),
+    prisma.watched.aggregate({ where: { userId: resolvedUserId }, _avg: { rating: true } }),
+  ]) : [0, { _avg: { rating: null } }];
+  const averageRating = ratingSummary._avg.rating ?? 0;
 
   return (
     <PublicProfileShell

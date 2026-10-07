@@ -1,6 +1,10 @@
 import { prisma } from "@/lib/prisma";
 import { tmdb } from "@/lib/tmdb";
-import { unstable_cache } from "next/cache";
+import { getDictionary, getServerLocale } from "@/lib/i18n/server";
+import { getServerCountry } from "@/lib/country";
+import { visibleUserWhere } from "@/lib/profile-access";
+import { mediaKey } from "@/lib/media-key";
+import type { Locale } from "@/lib/i18n/types";
 
 const PLATFORM_MAP: Record<string, string> = {
     "netflix": "8",
@@ -42,7 +46,8 @@ type SocialMediaRecord = {
     genres: string[];
 };
 
-async function getPersonalizedRecommendationsForUser(userId: string) {
+async function getPersonalizedRecommendationsForUser(userId: string, locale: Locale, country: string) {
+    const dict = getDictionary(locale);
     try {
         // 1. Fetch user profile
         const user = await prisma.user.findUnique({
@@ -59,16 +64,16 @@ async function getPersonalizedRecommendationsForUser(userId: string) {
         const [watchedItems, watchlistItems] = await Promise.all([
             prisma.watched.findMany({
                 where: { userId },
-                select: { media: { select: { tmdbId: true } } }
+                select: { media: { select: { tmdbId: true, type: true } } }
             }),
             prisma.toWatch.findMany({
                 where: { userId },
-                select: { media: { select: { tmdbId: true } } }
+                select: { media: { select: { tmdbId: true, type: true } } }
             })
         ]);
 
         const excludeIds = new Set([
-            ...watchedItems.map(item => item.media.tmdbId),
+            ...watchedItems.map(item => mediaKey(item.media.tmdbId, item.media.type)),
             ...watchlistItems.map(item => item.media.tmdbId)
         ]);
 
@@ -101,6 +106,7 @@ async function getPersonalizedRecommendationsForUser(userId: string) {
             const friendsWatched = await prisma.watched.findMany({
                 where: {
                     userId: { in: followingIds },
+                    user: visibleUserWhere(userId, "showActivities"),
                     watchedAt: { gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) } // Last 30 days
                 },
                 include: { media: true },
@@ -108,16 +114,16 @@ async function getPersonalizedRecommendationsForUser(userId: string) {
             });
 
             // Count occurrences
-            const counts: Record<number, { count: number; media: SocialMediaRecord }> = {};
+            const counts: Record<string, { count: number; media: SocialMediaRecord }> = {};
             friendsWatched.forEach(w => {
-                if (!excludeIds.has(w.media.tmdbId)) {
-                    if (!counts[w.media.tmdbId]) {
-                        counts[w.media.tmdbId] = {
+                if (!excludeIds.has(mediaKey(w.media.tmdbId, w.media.type))) {
+                    if (!counts[mediaKey(w.media.tmdbId, w.media.type)]) {
+                        counts[mediaKey(w.media.tmdbId, w.media.type)] = {
                             count: 0,
                             media: w.media as SocialMediaRecord,
                         };
                     }
-                    counts[w.media.tmdbId].count++;
+                    counts[mediaKey(w.media.tmdbId, w.media.type)].count++;
                 }
             });
 
@@ -135,8 +141,8 @@ async function getPersonalizedRecommendationsForUser(userId: string) {
 
         // 6. Fetch genres to map names to IDs if necessary
         const [movieGenres, tvGenres] = await Promise.all([
-            tmdb.getGenres("movie"),
-            tmdb.getGenres("tv"),
+            tmdb.getGenres("movie", locale === "en" ? "en-US" : "tr-TR"),
+            tmdb.getGenres("tv", locale === "en" ? "en-US" : "tr-TR"),
         ]);
 
         const genreNameToId: Record<string, number> = {};
@@ -170,7 +176,8 @@ async function getPersonalizedRecommendationsForUser(userId: string) {
         // 5. Prepare discover params
         const params: Record<string, string> = {
             sort_by: "popularity.desc",
-            watch_region: "TR",
+            watch_region: country,
+            language: locale === "en" ? "en-US" : "tr-TR",
             "vote_count.gte": "100",
         };
 
@@ -212,7 +219,7 @@ async function getPersonalizedRecommendationsForUser(userId: string) {
             ...movieResults.map((m) => normalizeDiscoverItem(m, "movie")),
             ...tvResults.map((t) => normalizeDiscoverItem(t, "tv")),
         ]
-            .filter((m) => !excludeIds.has(m.id))
+            .filter((m) => !excludeIds.has(mediaKey(m.id, m.mediaType || "movie")))
             .sort((a, b) => {
                 if (a.isSocial && !b.isSocial) return -1;
                 if (!a.isSocial && b.isSocial) return 1;
@@ -239,7 +246,7 @@ async function getPersonalizedRecommendationsForUser(userId: string) {
 
         const favoriteGenreList = (user.favoriteGenres || []).map(id => ({
             id: Number(id),
-            name: genreIdToName[Number(id)] || "Diğer"
+            name: genreIdToName[Number(id)] || dict.reviewUi.other
         }));
 
         const organicGenreList = Array.from(ratedGenres).map(genre => {
@@ -252,7 +259,7 @@ async function getPersonalizedRecommendationsForUser(userId: string) {
             reasons: {
                 favorites: favoriteGenreList,
                 organic: organicGenreList as { id: number; name: string }[],
-                platforms: providerIds.map(id => ID_TO_PLATFORM_NAME[id] || "Diğer"),
+                platforms: providerIds.map(id => ID_TO_PLATFORM_NAME[id] || dict.reviewUi.other),
                 friendsCount: friendsPopularItems.length
             }
         };
@@ -262,12 +269,7 @@ async function getPersonalizedRecommendationsForUser(userId: string) {
     }
 }
 
-const cachedGetPersonalizedRecommendations = unstable_cache(
-    getPersonalizedRecommendationsForUser,
-    ["personalized-recommendations"],
-    { revalidate: 300 }
-);
-
 export async function getPersonalizedRecommendations(userId: string) {
-    return cachedGetPersonalizedRecommendations(userId);
+    const [locale, country] = await Promise.all([getServerLocale(), getServerCountry()]);
+    return getPersonalizedRecommendationsForUser(userId, locale, country);
 }

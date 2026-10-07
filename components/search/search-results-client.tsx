@@ -7,9 +7,9 @@ import { cn } from "@/lib/utils";
 type SearchResultsClientProps = {
     people: any[];
     mediaItems: any[];
-    userRatingsMap: Record<number, number>;
-    communityRatingsMap: Record<number, { average: number; count: number }>;
-    metadataMap: Record<number, any>;
+    userRatingsMap: Record<string, number>;
+    communityRatingsMap: Record<string, { average: number; count: number }>;
+    metadataMap: Record<string, any>;
     type: string;
     countryCode?: string;
 };
@@ -99,9 +99,9 @@ export function SearchResultsClient({
                                     originalTitle={item.original_title || item.original_name}
                                     posterPath={item.poster_path || item.profile_path}
                                     voteAverage={item.vote_average || 0}
-                                    userRating={userRatingsMap[item.id]}
-                                    communityRating={communityRatingsMap[item.id]}
-                                    runtime={metadataMap[item.id]?.runtime || undefined}
+                                    userRating={userRatingsMap[`${item.media_type || "movie"}:${item.id}`]}
+                                    communityRating={communityRatingsMap[`${item.media_type || "movie"}:${item.id}`]}
+                                    runtime={metadataMap[`${item.media_type || "movie"}:${item.id}`]?.runtime || undefined}
                                     type={(item.media_type || type) as "movie" | "tv"}
                                     fullWidth={true}
                                     countryCode={countryCode}

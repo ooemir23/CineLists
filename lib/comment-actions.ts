@@ -1,4 +1,6 @@
 "use server";
+import { visibleUserWhere } from "@/lib/profile-access";
+import { getDictionary, getServerLocale } from "@/lib/i18n/server";
 
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
@@ -8,15 +10,15 @@ import { checkAndUnlockAchievements } from "@/lib/achievement-actions";
 export async function addPersonComment(personId: number, content: string) {
     const session = await auth();
     if (!session?.user?.id) {
-        return { error: "Giriş yapmalısınız" };
+        return { error: getDictionary(await getServerLocale()).common.errorOccurred };
     }
 
     if ((session.user as any).isGuest || session.user.id.startsWith("guest_")) {
-        return { error: "Yorum yapmak için giriş yapmalısınız" };
+        return { error: getDictionary(await getServerLocale()).common.errorOccurred };
     }
 
-    if (!content.trim()) {
-        return { error: "Yorum boş olamaz" };
+    if (typeof content !== "string" || content.length > 4000 || !content.trim()) {
+        return { error: getDictionary(await getServerLocale()).common.errorOccurred };
     }
 
     try {
@@ -35,7 +37,7 @@ export async function addPersonComment(personId: number, content: string) {
         return { success: true };
     } catch (error) {
         console.error("Error adding person comment:", error);
-        return { error: "Yorum eklenirken bir hata oluştu" };
+        return { error: getDictionary(await getServerLocale()).common.errorOccurred };
     }
 }
 
@@ -65,17 +67,19 @@ export async function getPersonComments(personId: number) {
 export async function addActivityComment(activityId: string, content: string) {
     const session = await auth();
     if (!session?.user?.id) {
-        return { error: "Giriş yapmalısınız" };
+        return { error: getDictionary(await getServerLocale()).common.errorOccurred };
     }
 
     if ((session.user as any).isGuest || session.user.id.startsWith("guest_")) {
-        return { error: "Yorum yapmak için giriş yapmalısınız" };
+        return { error: getDictionary(await getServerLocale()).common.errorOccurred };
     }
 
-    if (!content.trim()) {
-        return { error: "Yorum boş olamaz" };
+    if (typeof content !== "string" || content.length > 4000 || !content.trim()) {
+        return { error: getDictionary(await getServerLocale()).common.errorOccurred };
     }
 
+    const activity = await prisma.activity.findFirst({ where: { id: activityId, user: visibleUserWhere(session.user.id, "showActivities") }, select: { id: true } });
+    if (!activity) return { error: getDictionary(await getServerLocale()).common.errorOccurred };
     try {
         const comment = await prisma.comment.create({
             data: {
@@ -113,6 +117,7 @@ export async function addActivityComment(activityId: string, content: string) {
                 data: {
                     userId: comment.activity.userId,
                     type: "NEW_COMMENT",
+                        payload: { kind: "comment", name: session.user.name || "", title: mediaTitle, preview: content.slice(0, 60) },
                     message: `${session.user.name || "Birisi"} ${mediaTitle} hakkındaki paylaşımına yorum yaptı: "${content.substring(0, 30)}${content.length > 30 ? "..." : ""}"`,
                     link: mediaLink,
                     image: comment.activity.media?.posterPath,
@@ -126,14 +131,15 @@ export async function addActivityComment(activityId: string, content: string) {
         return { success: true };
     } catch (error) {
         console.error("Error adding activity comment:", error);
-        return { error: "Yorum eklenirken bir hata oluştu" };
+        return { error: getDictionary(await getServerLocale()).common.errorOccurred };
     }
 }
 
 export async function getActivityComments(activityId: string) {
+    const session = await auth();
     try {
         const comments = await prisma.comment.findMany({
-            where: { activityId },
+            where: { activityId, activity: { user: visibleUserWhere(session?.user?.id, "showActivities") }, user: visibleUserWhere(session?.user?.id, "showActivities") },
             include: {
                 user: {
                     select: {
@@ -156,13 +162,13 @@ export async function getActivityComments(activityId: string) {
 
 export async function addEpisodeComment(episodeId: string, content: string, path: string, isSpoiler: boolean = false) {
     const session = await auth();
-    if (!session?.user?.id) return { error: "Giriş yapmalısınız" };
+    if (!session?.user?.id) return { error: getDictionary(await getServerLocale()).common.errorOccurred };
 
     if ((session.user as any).isGuest || session.user.id.startsWith("guest_")) {
-        return { error: "Yorum yapmak için giriş yapmalısınız" };
+        return { error: getDictionary(await getServerLocale()).common.errorOccurred };
     }
 
-    if (!content.trim()) return { error: "Yorum boş olamaz" };
+    if (typeof content !== "string" || content.length > 4000 || !content.trim()) return { error: getDictionary(await getServerLocale()).common.errorOccurred };
 
     try {
         await prisma.comment.create({

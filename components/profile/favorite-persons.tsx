@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { motion } from "framer-motion";
+
 import { Heart } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
@@ -49,12 +49,9 @@ export function FavoritePersons({
           ? "grid grid-cols-2 md:grid-cols-4 lg:grid-cols-4 gap-3"
           : "flex gap-3 overflow-x-auto pb-2"
       )}>
-        {displayedPersons.map((person, index) => (
-          <motion.div
+        {displayedPersons.map((person) => (
+          <div className="animate-enter"
             key={person.id}
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: index * 0.05 }}
           >
             <Link
               href={`/person/${person.tmdbId}`}
@@ -84,22 +81,19 @@ export function FavoritePersons({
                 {person.name}
               </p>
             </Link>
-          </motion.div>
+          </div>
         ))}
 
         {/* Show More */}
         {hiddenCount > 0 && (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: displayedPersons.length * 0.05 }}
+          <div
             className="flex items-center justify-center p-3 rounded-xl border border-white/5 bg-white/2 hover:bg-white/5 transition-all cursor-default"
           >
             <div className="text-center">
               <div className="text-lg font-black text-primary">+{hiddenCount}</div>
               <div className="text-[10px] font-bold text-neutral-500">Daha fazla</div>
             </div>
-          </motion.div>
+          </div>
         )}
       </div>
     </div>

@@ -1,8 +1,7 @@
+import { validateTmdbRequest, tmdbErrorResponse } from "@/lib/api-budget";
 import { NextRequest, NextResponse } from "next/server";
-import { getEnvVar } from "@/lib/env";
-
-const TMDB_API_KEY = getEnvVar("TMDB_API_KEY");
-const TMDB_BASE_URL = "https://api.themoviedb.org/3";
+import { tmdb } from "@/lib/tmdb";
+import { detectUserCountry } from "@/lib/country";
 
 type Provider = {
     provider_id: number;
@@ -12,16 +11,15 @@ type Provider = {
 };
 
 export async function GET(request: NextRequest) {
+  const rejected = validateTmdbRequest(request);
+  if (rejected) return rejected;
+
     const searchParams = request.nextUrl.searchParams;
-    const type = searchParams.get("type") || "movie";
-    const country = searchParams.get("country") || "TR";
+    const type = searchParams.get("type") === "tv" ? "tv" : "movie";
+    const country = (searchParams.get("country") || detectUserCountry(request.headers, request.cookies)).toUpperCase();
 
     try {
-        const response = await fetch(
-            `${TMDB_BASE_URL}/watch/providers/${type}?api_key=${TMDB_API_KEY}&watch_region=${country}`
-        );
-
-        const data = await response.json();
+        const data = await tmdb.fetch(`/watch/providers/${type}`, { params: { watch_region: country } });
 
         // Format providers with logo URLs and filter by region availability
         const providers = (data.results as Provider[] | undefined)?.filter((provider) => {
@@ -79,12 +77,13 @@ export async function GET(request: NextRequest) {
             { providers: sortedProviders },
             {
                 headers: {
-                    "Cache-Control": "public, max-age=86400, stale-while-revalidate=604800",
+                    "Cache-Control": "private, max-age=86400",
+                    "Vary": "Cookie",
                 },
             }
         );
     } catch (error) {
         console.error("Error fetching providers:", error);
-        return NextResponse.json({ providers: [] }, { status: 500 });
+        return tmdbErrorResponse(error, request);
     }
 }

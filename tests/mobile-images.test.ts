@@ -1,4 +1,6 @@
-import { tmdbImageLoader } from "@/components/ui/tmdb-image";
+import React from "react";
+import { renderToStaticMarkup } from "react-dom/server";
+import { tmdbImageLoader, TmdbImage } from "@/components/ui/tmdb-image";
 
 test.each([
   ["w500", 170, "w185"],
@@ -12,9 +14,6 @@ test.each([
 });
 
 test("emits native responsive candidates even when global Next optimization is disabled", () => {
-  const React = require("react");
-  const { renderToStaticMarkup } = require("react-dom/server");
-  const { TmdbImage } = require("@/components/ui/tmdb-image");
   const html = renderToStaticMarkup(React.createElement(TmdbImage, {
     src: "https://image.tmdb.org/t/p/w500/poster.jpg", alt: "Poster", fill: true, sizes: "45vw"
   }));

@@ -1,3 +1,5 @@
+import { notificationText } from "@/lib/notification-text";
+import { getDictionary, getServerLocale } from "@/lib/i18n/server";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
@@ -6,6 +8,7 @@ export const dynamic = "force-dynamic";
 
 export async function GET() {
     try {
+        const dictionary = getDictionary(await getServerLocale());
         const session = await auth();
         if (!session?.user?.id) {
             return NextResponse.json({ items: [], unreadCount: 0 });
@@ -27,7 +30,7 @@ export async function GET() {
                 items: items.map((n) => ({
                     id: n.id,
                     type: n.type,
-                    message: n.message,
+                    message: notificationText(n, dictionary),
                     link: n.link,
                     isRead: n.isRead,
                     image: n.image,

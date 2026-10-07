@@ -1,17 +1,18 @@
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { tmdb } from "@/lib/tmdb";
-import { getAppPlatforms } from "@/lib/platforms";
+import { APP_PLATFORMS, getAppPlatforms } from "@/lib/platforms";
 import { redirect } from "next/navigation";
 import { OnboardingForm } from "@/components/onboarding/onboarding-form";
 import { GENRE_MAP } from "@/lib/genres";
+import { getServerLocale } from "@/lib/i18n/server";
 
 export default async function OnboardingPage() {
     const session = await auth();
-    if (!session?.user) redirect("/login");
+    if (!session?.user?.id) redirect("/login");
 
     // Guest users bypass onboarding entirely
-    if ((session.user as any).isGuest) {
+    if ((session.user as any).isGuest || session.user.id.startsWith("guest_")) {
         redirect("/");
     }
 
@@ -20,10 +21,11 @@ export default async function OnboardingPage() {
         redirect("/");
     }
 
+    const locale = await getServerLocale();
     const [movieGenres, tvGenres, dbUser] = await Promise.all([
         tmdb.getGenres("movie"),
         tmdb.getGenres("tv"),
-        prisma.user.findUnique({ where: { id: session.user.id }, select: { username: true } })
+        prisma.user.findUnique({ where: { id: session.user.id }, select: { username: true, favoriteGenres: true, platforms: true } })
     ]);
 
     // Merge and unique genres from TMDB
@@ -34,8 +36,8 @@ export default async function OnboardingPage() {
     // Filter and normalize
     const allGenres = rawGenres.map((g: any) => ({
         id: g.id,
-        name: GENRE_MAP[g.id] || g.name
-    })).sort((a, b) => a.name.localeCompare(b.name, "tr"));
+        name: locale === "tr" ? GENRE_MAP[g.id] || g.name : g.name
+    })).sort((a, b) => a.name.localeCompare(b.name, locale));
 
     // We can also prioritize certain genres to match "previous" experience if needed,
     // but alphabetical is usually safest unless a specific order is requested.
@@ -56,9 +58,12 @@ export default async function OnboardingPage() {
                     genres={allGenres} 
                     platforms={platforms}
                     defaultUsername={dbUser?.username || ""}
+                    defaultGenres={dbUser?.favoriteGenres || []}
+                    defaultPlatforms={(dbUser?.platforms || []).map(id =>
+                        Object.entries(APP_PLATFORMS).find(([, platform]) => platform.id === id)?.[0] || id
+                    )}
                 />
             </div>
         </div>
     );
 }
-

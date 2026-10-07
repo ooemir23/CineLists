@@ -1,5 +1,10 @@
 "use server";
+import { getDictionary, getServerLocale } from "@/lib/i18n/server";
+import { ensureMediaItem } from "@/lib/media-item";
 
+import { withUserTransaction } from "@/lib/user-transaction";
+import { mediaKey, type MediaIdentity } from "@/lib/media-key";
+import { visibleUserWhere } from "@/lib/profile-access";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
@@ -15,13 +20,14 @@ function isPrismaConnectionError(error: unknown) {
 }
 
 export async function rateMedia(tmdbId: number, type: "movie" | "tv", rating: number, title?: string, posterPath?: string | null) {
+    const dict = getDictionary(await getServerLocale());
     const session = await auth();
     if (!session?.user?.id) {
-        return { success: false, error: "Giriş yapmalısınız" };
+        return { success: false, error: dict.common.errorOccurred };
     }
 
     if ((session.user as any).isGuest || session.user.id.startsWith("guest_")) {
-        return { success: false, error: "Puanlama yapmak için giriş yapmalısınız" };
+        return { success: false, error: dict.common.errorOccurred };
     }
 
     let currentUserId = session.user.id;
@@ -37,11 +43,11 @@ export async function rateMedia(tmdbId: number, type: "movie" | "tv", rating: nu
     }
 
     if (!dbUser) {
-        return { success: false, error: "Oturum geçersiz, lütfen tekrar giriş yapın." };
+        return { success: false, error: dict.common.errorOccurred };
     }
 
-    if (rating < 0 || rating > 10) {
-        return { success: false, error: "Puan 0 ile 10 arasında olmalıdır." };
+    if (!Number.isFinite(rating) || rating < 0 || rating > 10) {
+        return { success: false, error: dict.common.errorOccurred };
     }
 
     try {
@@ -68,10 +74,10 @@ export async function rateMedia(tmdbId: number, type: "movie" | "tv", rating: nu
             }
 
             if (!finalTitle) {
-                return { success: false, error: "Medya bilgileri alınamadı." };
+                return { success: false, error: dict.common.errorOccurred };
             }
 
-            mediaItem = await prisma.mediaItem.create({
+            mediaItem = await ensureMediaItem({
                 data: {
                     tmdbId,
                     type: type === "movie" ? "MOVIE" : "TV",
@@ -85,12 +91,12 @@ export async function rateMedia(tmdbId: number, type: "movie" | "tv", rating: nu
 
         // Update/Create Watched entry with rating, and drop any "to watch" entry
         // for the same media so a rated item doesn't sit in both lists at once.
-        await prisma.$transaction([
-            prisma.watched.upsert({
+        await withUserTransaction(currentUserId, async tx => {
+            await tx.watched.upsert({
                 where: {
                     userId_mediaId: {
                         userId: currentUserId,
-                        mediaId: mediaItem.id,
+                        mediaId: mediaItem!.id,
                     },
                 },
                 update: {
@@ -98,27 +104,26 @@ export async function rateMedia(tmdbId: number, type: "movie" | "tv", rating: nu
                 },
                 create: {
                     userId: currentUserId,
-                    mediaId: mediaItem.id,
+                    mediaId: mediaItem!.id,
                     rating: rating,
                 },
-            }),
-            prisma.toWatch.deleteMany({
-                where: { userId: currentUserId, mediaId: mediaItem.id },
-            }),
-        ]);
+            });
+            await tx.toWatch.deleteMany({
+                where: { userId: currentUserId, mediaId: mediaItem!.id },
+            });
 
         // Also create/update Activity for social feed
-        const existingActivity = await prisma.activity.findFirst({
+        const existingActivity = await tx.activity.findFirst({
             where: {
                 userId: currentUserId,
-                mediaId: mediaItem.id,
+                mediaId: mediaItem!.id,
                 type: "RATED",
                 episodeId: null
             },
         });
 
         if (existingActivity) {
-            await prisma.activity.update({
+            await tx.activity.update({
                 where: { id: existingActivity.id },
                 data: {
                     rating,
@@ -126,15 +131,17 @@ export async function rateMedia(tmdbId: number, type: "movie" | "tv", rating: nu
                 }
             });
         } else {
-            await prisma.activity.create({
+            await tx.activity.create({
                 data: {
                     userId: currentUserId,
-                    mediaId: mediaItem.id,
+                    mediaId: mediaItem!.id,
                     type: "RATED",
                     rating,
                 }
             });
         }
+
+        });
 
         checkAndUnlockAchievements(currentUserId).catch(console.error);
 
@@ -145,7 +152,7 @@ export async function rateMedia(tmdbId: number, type: "movie" | "tv", rating: nu
         return { success: true };
     } catch (error) {
         console.error("Rate media error:", error);
-        return { success: false, error: "Puanlama işlemi başarısız oldu." };
+        return { success: false, error: dict.common.errorOccurred };
     }
 }
 
@@ -201,6 +208,7 @@ export async function getFriendsRatings(tmdbId: number, type: "movie" | "tv" = "
             where: {
                 mediaId: mediaItem.id,
                 userId: { in: friendIds },
+                user: visibleUserWhere(session.user.id, "showStats"),
                 rating: { not: null },
             },
             include: {
@@ -231,9 +239,9 @@ export async function getFriendsRatings(tmdbId: number, type: "movie" | "tv" = "
     }
 }
 
-export async function getUserRatingsBulk(tmdbIds: number[]) {
+export async function getUserRatingsBulk(items: MediaIdentity[]) {
     const session = await auth();
-    if (!session?.user?.id || tmdbIds.length === 0) {
+    if (!session?.user?.id || items.length === 0) {
         return {};
     }
 
@@ -242,21 +250,21 @@ export async function getUserRatingsBulk(tmdbIds: number[]) {
             where: {
                 userId: session.user.id,
                 media: {
-                    tmdbId: { in: tmdbIds }
+                    OR: items.slice(0, 100).map(item => ({ tmdbId: item.id, type: item.type === "tv" ? "TV" as const : "MOVIE" as const }))
                 },
                 rating: { not: null }
             },
             select: {
                 rating: true,
                 media: {
-                    select: { tmdbId: true }
+                    select: { tmdbId: true, type: true }
                 }
             }
         });
 
-        const ratingsMap: Record<number, number> = {};
+        const ratingsMap: Record<string, number> = {};
         ratings.forEach(r => {
-            ratingsMap[r.media.tmdbId] = r.rating!;
+            ratingsMap[mediaKey(r.media.tmdbId, r.media.type)] = r.rating!;
         });
 
         return ratingsMap;
@@ -269,25 +277,26 @@ export async function getUserRatingsBulk(tmdbIds: number[]) {
     }
 }
 
-export async function getCommunityRatingsBulk(tmdbIds: number[]) {
-    if (tmdbIds.length === 0) return {};
+export async function getCommunityRatingsBulk(items: MediaIdentity[]) {
+    if (items.length === 0) return {};
 
     try {
         const ratings = await prisma.watched.findMany({
             where: {
-                media: { tmdbId: { in: tmdbIds } },
-                rating: { not: null }
+                media: { OR: items.slice(0, 100).map(item => ({ tmdbId: item.id, type: item.type === "tv" ? "TV" as const : "MOVIE" as const })) },
+                rating: { not: null },
+                user: { isPrivate: false, isSuspended: false, showStats: true }
             },
             select: {
                 rating: true,
-                media: { select: { tmdbId: true } }
+                media: { select: { tmdbId: true, type: true } }
             }
         });
 
-        const statsMap: Record<number, { average: number; count: number }> = {};
+        const statsMap: Record<string, { average: number; count: number }> = {};
 
         ratings.forEach(r => {
-            const id = r.media.tmdbId;
+            const id = mediaKey(r.media.tmdbId, r.media.type);
             if (!statsMap[id]) {
                 statsMap[id] = { average: 0, count: 0 };
             }
@@ -296,7 +305,7 @@ export async function getCommunityRatingsBulk(tmdbIds: number[]) {
         });
 
         Object.keys(statsMap).forEach(key => {
-            const id = Number(key);
+            const id = key;
             statsMap[id].average = Number((statsMap[id].average / statsMap[id].count).toFixed(1));
         });
 
@@ -322,6 +331,7 @@ export async function getAllMediaRatings(tmdbId: number, type: "movie" | "tv" = 
             where: {
                 mediaId: mediaItem.id,
                 rating: { not: null },
+                user: { isPrivate: false, isSuspended: false, showStats: true },
             },
             include: {
                 user: {
@@ -356,7 +366,7 @@ export async function getEpisodeStatsBulk(tmdbId: number) {
         const episodes = await prisma.episode.findMany({
             where: { media: { tmdbId } },
             include: {
-                activities: { where: { type: "RATED" }, select: { rating: true } },
+                activities: { where: { type: "RATED", user: { isPrivate: false, isSuspended: false, showStats: true } }, select: { rating: true } },
                 _count: {
                     select: { comments: true }
                 }

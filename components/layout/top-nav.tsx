@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import Image from "next/image";
-import { motion, AnimatePresence } from "framer-motion";
+
 import {
   Film,
   Search,
@@ -152,18 +152,8 @@ export function TopNav({ user, isAdmin = false }: TopNavProps) {
                 </div>
 
                 {/* CURVED TEXT */}
-                <motion.div
-                  className="absolute -bottom-10 w-40 h-16 pointer-events-none z-30 flex items-center justify-center"
-                  initial={{ opacity: 0.8 }}
-                  animate={{
-                    opacity: [0.8, 1, 0.8],
-                    scale: [1, 1.02, 1]
-                  }}
-                  transition={{
-                    duration: 4,
-                    repeat: Infinity,
-                    ease: "easeInOut"
-                  }}
+                <div
+                  className="absolute -bottom-10 w-40 h-16 pointer-events-none z-30 flex items-center justify-center animate-soft-pulse"
                 >
                   <svg viewBox="0 0 160 60" className="w-full h-full overflow-visible">
                     <path id="curve-path" d="M 20,15 Q 80,55 140,15" fill="transparent" />
@@ -173,7 +163,7 @@ export function TopNav({ user, isAdmin = false }: TopNavProps) {
                       </textPath>
                     </text>
                   </svg>
-                </motion.div>
+                </div>
               </Link>
             </div>
 
@@ -278,17 +268,17 @@ export function TopNav({ user, isAdmin = false }: TopNavProps) {
           <div className="flex-shrink-0 w-[240px] h-[60px] relative">
             <svg width="240" height="60" viewBox="0 0 240 60" className="overflow-visible">
               {/* Fill Area */}
-              <path 
-                d="M 0 0 Q 120 70 240 0" 
-                fill="#0f172a" 
+              <path
+                d="M 0 0 Q 120 70 240 0"
+                fill="#0f172a"
                 className="opacity-95"
               />
               {/* Border Line */}
-              <path 
-                d="M 0 0 Q 120 70 240 0" 
-                fill="none" 
-                stroke="rgba(255,255,255,0.1)" 
-                strokeWidth="1.5" 
+              <path
+                d="M 0 0 Q 120 70 240 0"
+                fill="none"
+                stroke="rgba(255,255,255,0.1)"
+                strokeWidth="1.5"
               />
             </svg>
           </div>
@@ -296,21 +286,15 @@ export function TopNav({ user, isAdmin = false }: TopNavProps) {
         </div>
       </header>
 
-      <AnimatePresence>
+      <>
         {profileMenuOpen && (
           <>
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
+            <div
               className="fixed inset-0 z-[9998] bg-black/20 backdrop-blur-[2px] cursor-default"
               onClick={() => setProfileMenuOpen(false)}
             />
             <div className="fixed top-[80px] right-6 z-[9999]">
-              <motion.div
-                initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                exit={{ opacity: 0, y: 10, scale: 0.95 }}
+              <div
                 className="w-60 bg-slate-900/95 backdrop-blur-2xl rounded-3xl shadow-[0_25px_60px_-15px_rgba(0,0,0,0.7)] flex flex-col py-3 border border-white/10 overflow-hidden ring-1 ring-white/10"
               >
                 {user ? (
@@ -364,11 +348,11 @@ export function TopNav({ user, isAdmin = false }: TopNavProps) {
                     ))}
                   </>
                 )}
-              </motion.div>
+              </div>
             </div>
           </>
         )}
-      </AnimatePresence>
+      </>
     </>
   );
 }

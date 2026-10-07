@@ -139,7 +139,7 @@ export default async function DetailsPage(props: Props) {
         safe(
           (async () => {
             const { getIsFavoriteMedia } = await import("@/lib/favorite-media-actions");
-            return getIsFavoriteMedia(mediaId);
+            return getIsFavoriteMedia(mediaId, type as "movie" | "tv");
           })(),
           false,
         ),

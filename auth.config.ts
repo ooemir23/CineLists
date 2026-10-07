@@ -13,10 +13,17 @@ if (!process.env.AUTH_URL && !process.env.NEXTAUTH_URL) {
 
 const fallbackSecret = "cinelists-secret-key-development-2026-auth-3891724";
 
+const configuredSecret = process.env.AUTH_SECRET?.trim() || process.env.NEXTAUTH_SECRET?.trim();
+if (process.env.NODE_ENV === "production" && configuredSecret === fallbackSecret) {
+    throw new Error("A public development auth secret cannot be used in production");
+}
+const privateSecret = configuredSecret;
+
 export const authConfig = {
     basePath: "/api/auth",
     session: { strategy: "jwt" },
-    secret: process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET || fallbackSecret,
+    secret: privateSecret ||
+        (process.env.NODE_ENV === "production" ? undefined : fallbackSecret),
     trustHost: true,
     pages: {
         signIn: "/login",

@@ -24,6 +24,7 @@ type CompactActivityCardProps = {
         rating: number | null;
         review: string | null;
         votes: number;
+    viewerVote?: number;
         content?: string | null;
         watchedWith: string | null;
         recommendedByText: string | null;
@@ -64,7 +65,7 @@ type CompactActivityCardProps = {
 };
 
 export function CompactActivityCard({ activity }: CompactActivityCardProps) {
-    const [isLiked, setIsLiked] = useState(false);
+    const [isLiked, setIsLiked] = useState(activity.viewerVote === 1);
     const [likesCount, setLikesCount] = useState(activity.votes || 0);
     const [showComments, setShowComments] = useState(false);
     const [comments, setComments] = useState<{ id: string; user: { name: string | null }; content: string }[]>([]);
@@ -96,7 +97,9 @@ export function CompactActivityCard({ activity }: CompactActivityCardProps) {
         setIsLiked(newIsLiked);
         setLikesCount(prev => newIsLiked ? prev + 1 : prev - 1);
         
-        await voteActivity(activity.id, newIsLiked ? 1 : -1);
+        const result = await voteActivity(activity.id, newIsLiked ? 1 : 0);
+        if (result.error) { setIsLiked(!newIsLiked); setLikesCount(activity.votes); }
+        else if (typeof result.votes === "number") setLikesCount(result.votes);
     };
 
     const handleDoubleTap = (e: React.MouseEvent) => {

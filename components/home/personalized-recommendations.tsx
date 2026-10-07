@@ -27,7 +27,7 @@ type PersonalizedRecommendationsProps = {
 export async function PersonalizedRecommendations({ results, reasons }: PersonalizedRecommendationsProps) {
     if (!results || results.length === 0) return null;
 
-    const tmdbIds = results.map(i => i.id);
+    const tmdbIds = results.map(i => ({ id: i.id, type: i.mediaType || "movie" as const }));
     const [userRatingsMap, metadataMap] = await Promise.all([
         getUserRatingsBulk(tmdbIds),
         import("@/lib/activity-actions").then(m => m.getMediaMetadataBulk(results.map(r => ({ id: r.id, type: r.mediaType || (r as any).media_type || "movie" }))))

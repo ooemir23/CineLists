@@ -1,5 +1,8 @@
 "use server";
 
+import { getServerCountry } from "@/lib/country";
+import { getDictionary, getServerLocale } from "@/lib/i18n/server";
+import { isValidUsername, normalizeUsername } from "@/lib/username";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
@@ -10,18 +13,30 @@ export async function updateProfile(data: {
     bio?: string;
     image?: string;
 }) {
+    const dict = getDictionary(await getServerLocale());
     const session = await auth();
-    if (!session?.user?.id) return { error: "Giriş yapmalısınız" };
+    if (!session?.user?.id) return { error: dict.common.errorOccurred };
 
+    if (!data || typeof data !== "object") return { error: dict.common.errorOccurred };
+    if (data.username !== undefined) {
+        if (typeof data.username !== "string") return { error: dict.onboarding.invalidUsername };
+        data.username = normalizeUsername(data.username);
+        if (!isValidUsername(data.username)) return { error: dict.onboarding.invalidUsername };
+    }
+    if ((data.name !== undefined && (typeof data.name !== "string" || data.name.length > 100)) ||
+        (data.bio !== undefined && (typeof data.bio !== "string" || data.bio.length > 1000)) ||
+        (data.image !== undefined && (typeof data.image !== "string" || data.image.length > 2048 || (data.image !== "" && !/^https:\/\//.test(data.image))))) {
+        return { error: dict.common.errorOccurred };
+    }
     try {
         // If username is changing, check if it's already taken
         if (data.username) {
-            const existingUser = await prisma.user.findUnique({
-                where: { username: data.username },
+            const existingUser = await prisma.user.findFirst({
+                where: { OR: [{ username: { equals: data.username, mode: "insensitive" } }, { usernameAliases: { some: { username: { equals: data.username, mode: "insensitive" } } } }] },
             });
 
             if (existingUser && existingUser.id !== session.user.id) {
-                return { error: "Bu kullanıcı adı zaten alınmış" };
+                return { error: dict.onboarding.usernameTaken };
             }
         }
 
@@ -35,25 +50,26 @@ export async function updateProfile(data: {
             },
         });
 
-        revalidatePath("/profile");
+        revalidatePath("/", "layout");
         return { success: true };
     } catch (error: any) {
         if (error.code === 'P2002') {
-            return { error: "Bu kullanıcı adı zaten başka bir üye tarafından kullanılıyor" };
+            return { error: dict.onboarding.usernameTaken };
         }
         console.error("Profile update error:", error);
-        return { error: "Profil güncellenirken bir hata oluştu" };
+        return { error: dict.common.errorOccurred };
     }
 }
 
 export async function updateUserLocale(locale: "tr" | "en") {
     const session = await auth();
     if (!session?.user?.id) return { success: false };
+    if (locale !== "tr" && locale !== "en") return { success: false };
 
     try {
         await prisma.user.update({
             where: { id: session.user.id },
-            data: { locale },
+            data: { locale, country: await getServerCountry() },
         });
         return { success: true };
     } catch (error) {
@@ -67,8 +83,9 @@ export async function updatePrivacySettings(data: {
     showActivities: boolean;
     showStats: boolean;
 }) {
+    const dict = getDictionary(await getServerLocale());
     const session = await auth();
-    if (!session?.user?.id) return { error: "Giriş yapmalısınız" };
+    if (!session?.user?.id) return { error: dict.common.errorOccurred };
 
     try {
         await prisma.user.update({
@@ -80,11 +97,11 @@ export async function updatePrivacySettings(data: {
             },
         });
 
-        revalidatePath("/profile");
+        revalidatePath("/", "layout");
         return { success: true };
     } catch (error) {
         console.error("Privacy update error:", error);
-        return { error: "Gizlilik ayarları güncellenirken bir hata oluştu" };
+        return { error: dict.common.errorOccurred };
     }
 }
 
@@ -92,9 +109,11 @@ export async function updateUserPreferences(data: {
     favoriteGenres: string[];
     platforms: string[];
 }) {
+    const dict = getDictionary(await getServerLocale());
     const session = await auth();
-    if (!session?.user?.id) return { error: "Giriş yapmalısınız" };
+    if (!session?.user?.id) return { error: dict.common.errorOccurred };
 
+    if (!data || !Array.isArray(data.favoriteGenres) || !Array.isArray(data.platforms) || data.favoriteGenres.length > 100 || data.platforms.length > 100 || [...data.favoriteGenres, ...data.platforms].some(id => typeof id !== "string" || !/^[1-9]\d{0,9}$/.test(id))) return { error: dict.onboarding.invalidPreferences };
     try {
         await prisma.user.update({
             where: { id: session.user.id },
@@ -112,13 +131,14 @@ export async function updateUserPreferences(data: {
         return { success: true };
     } catch (error) {
         console.error("Preferences update error:", error);
-        return { error: "Tercihler güncellenirken bir hata oluştu" };
+        return { error: dict.common.errorOccurred };
     }
 }
 
 export async function deleteAccount() {
+    const dict = getDictionary(await getServerLocale());
     const session = await auth();
-    if (!session?.user?.id) return { error: "Giriş yapmalısınız" };
+    if (!session?.user?.id) return { error: dict.common.errorOccurred };
 
     try {
         // Prisma cascade deletes should handle relations if configured, 
@@ -130,13 +150,14 @@ export async function deleteAccount() {
         return { success: true };
     } catch (error) {
         console.error("Account deletion error:", error);
-        return { error: "Hesap silinirken bir hata oluştu" };
+        return { error: dict.common.errorOccurred };
     }
 }
 
 export async function suspendAccount() {
+    const dict = getDictionary(await getServerLocale());
     const session = await auth();
-    if (!session?.user?.id) return { error: "Giriş yapmalısınız" };
+    if (!session?.user?.id) return { error: dict.common.errorOccurred };
 
     try {
         await prisma.user.update({
@@ -150,25 +171,23 @@ export async function suspendAccount() {
         return { success: true };
     } catch (error) {
         console.error("Account suspension error:", error);
-        return { error: "Hesap askıya alınırken bir hata oluştu" };
+        return { error: dict.common.errorOccurred };
     }
 }
 
 export async function checkUsernameAvailability(username: string) {
-    if (!username || username.length < 3) return { available: false, message: "Kullanıcı adı en az 3 karakter olmalıdır" };
-
+    const dict = getDictionary(await getServerLocale());
+    if (typeof username !== "string") return { available: false, message: dict.onboarding.invalidUsername };
+    username = normalizeUsername(username);
+    if (!isValidUsername(username)) return { available: false, message: dict.onboarding.invalidUsername };
     const session = await auth();
-
-    const user = await prisma.user.findUnique({
-        where: { username },
-        select: { id: true },
-    });
+    const user = await prisma.user.findFirst({ where: { OR: [{ username: { equals: username, mode: "insensitive" } }, { usernameAliases: { some: { username: { equals: username, mode: "insensitive" } } } }] }, select: { id: true } });
 
     if (user) {
         if (session?.user?.id && user.id === session.user.id) {
             return { available: true };
         }
-        return { available: false, message: "Bu kullanıcı adı zaten alınmış" };
+        return { available: false, message: dict.onboarding.usernameTaken };
     }
 
     return { available: true };

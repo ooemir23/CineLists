@@ -1,4 +1,7 @@
-"use server";import { prisma } from "@/lib/prisma";
+"use server";
+import { auth } from "@/auth";
+import { accessibleProfileId } from "@/lib/profile-access";
+import { prisma } from "@/lib/prisma";
 import { ACHIEVEMENT_DEFINITIONS } from "@/lib/achievement-definitions";
 
 // ============================================
@@ -6,6 +9,8 @@ import { ACHIEVEMENT_DEFINITIONS } from "@/lib/achievement-definitions";
 // ============================================
 
 export async function checkAndUnlockAchievements(userId: string) {
+  const session = await auth();
+  if (session?.user?.id !== userId) return [];
   const newAchievements: string[] = [];
 
   // Mevcut rozetleri al
@@ -137,6 +142,7 @@ export async function checkAndUnlockAchievements(userId: string) {
           return {
             userId,
             type: "ACHIEVEMENT_UNLOCKED" as const,
+                        payload: { kind: "achievement", achievementType: type },
             message: `${def?.icon || "🏆"} Yeni rozet kazandın: ${def?.label || type}`,
             link: "/achievements",
           };
@@ -155,6 +161,7 @@ export async function checkAndUnlockAchievements(userId: string) {
 // ============================================
 
 export async function getUserAchievements(userId: string) {
+  if (!await accessibleProfileId(userId)) return { achievements: [], totalUnlocked: 0, totalPossible: ACHIEVEMENT_DEFINITIONS.length };
   try {
     const achievements = await prisma.achievement.findMany({
       where: { userId },
@@ -190,6 +197,7 @@ export async function getUserAchievements(userId: string) {
 }
 
 export async function getAchievementStats(userId: string) {
+  if (!await accessibleProfileId(userId)) return { unlocked: 0, total: ACHIEVEMENT_DEFINITIONS.length, percentage: 0 };
   const count = await prisma.achievement.count({
     where: { userId },
   });

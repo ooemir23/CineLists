@@ -1,4 +1,7 @@
 "use server";
+import { withUserTransaction } from "@/lib/user-transaction";
+import { ensureMediaItem } from "@/lib/media-item";
+import { getDictionary, getServerLocale } from "@/lib/i18n/server";
 
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
@@ -17,10 +20,10 @@ type TmdbMediaDetails = {
     runtime?: number | null;
 };
 
-export async function toggleToWatch(mediaId: number, type: "movie" | "tv" | "person", title: string, posterPath: string | null) {
+export async function toggleToWatch(mediaId: number, type: "movie" | "tv" | "person", title: string, posterPath: string | null): Promise<{ added?: boolean; success?: boolean; inWatchlist?: boolean; error?: string }> {
     const session = await auth();
     if (!session?.user?.id) {
-        return { error: "Giriş yapmalısınız" };
+        return { error: getDictionary(await getServerLocale()).common.errorOccurred };
     }
 
     if ((session.user as GuestAwareUser).isGuest) {
@@ -40,7 +43,7 @@ export async function toggleToWatch(mediaId: number, type: "movie" | "tv" | "per
         }
 
         if (!dbUser) {
-            return { error: "Oturum geçersiz, lütfen tekrar giriş yapın." };
+            return { error: getDictionary(await getServerLocale()).common.errorOccurred };
         }
 
         const currentUserId = dbUser.id;
@@ -60,7 +63,7 @@ export async function toggleToWatch(mediaId: number, type: "movie" | "tv" | "per
                 genres = details.genres?.map((genre) => GENRE_MAP[genre.id] || genre.name) || [];
             }
 
-            media = await prisma.mediaItem.create({
+            media = await ensureMediaItem({
                 data: {
                     tmdbId: mediaId,
                     type: mediaType,
@@ -73,18 +76,19 @@ export async function toggleToWatch(mediaId: number, type: "movie" | "tv" | "per
             });
         }
 
+        return await withUserTransaction(currentUserId, async tx => {
         // Check if already in toWatch
-        const existing = await prisma.toWatch.findUnique({
+        const existing = await tx.toWatch.findUnique({
             where: {
                 userId_mediaId: {
                     userId: currentUserId,
-                    mediaId: media.id,
+                    mediaId: media!.id,
                 },
             },
         });
 
         if (existing) {
-            await prisma.toWatch.delete({
+            await tx.toWatch.delete({
                 where: { id: existing.id },
             });
 
@@ -96,35 +100,35 @@ export async function toggleToWatch(mediaId: number, type: "movie" | "tv" | "per
             return { added: false };
         } else {
             // Remove from watched if it exists there (exclusive)
-            const watched = await prisma.watched.findUnique({
+            const watched = await tx.watched.findUnique({
                 where: {
                     userId_mediaId: {
                         userId: currentUserId,
-                        mediaId: media.id,
+                        mediaId: media!.id,
                     },
                 },
             });
 
             if (watched) {
-                await prisma.watched.delete({
+                await tx.watched.delete({
                     where: { id: watched.id },
                 });
 
                 // Also remove WATCHED activities for this show/movie
-                await prisma.activity.deleteMany({
+                await tx.activity.deleteMany({
                     where: {
                         userId: currentUserId,
-                        mediaId: media.id,
+                        mediaId: media!.id,
                         type: "WATCHED",
                         episodeId: null
                     }
                 });
             }
 
-            await prisma.toWatch.create({
+            await tx.toWatch.create({
                 data: {
                     userId: currentUserId,
-                    mediaId: media.id,
+                    mediaId: media!.id,
                 },
             });
 
@@ -134,9 +138,10 @@ export async function toggleToWatch(mediaId: number, type: "movie" | "tv" | "per
             }
             return { added: true };
         }
+        });
     } catch (error: any) {
         if (error?.message?.includes("Can't reach database server")) {
-            return { error: "Veritabanı bağlantısı kurulamadı. Lütfen veritabanı servisinin çalıştığından emin olun." };
+            return { error: getDictionary(await getServerLocale()).common.errorOccurred };
         }
         return { error: error?.message || "İşlem gerçekleştirilemedi." };
     }

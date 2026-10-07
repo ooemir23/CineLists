@@ -77,7 +77,7 @@ export async function getCommunityPulse(): Promise<CommunityPulseData> {
           take: 1,
         }),
         prisma.activity.findMany({
-          where: { rating: { not: null }, user: { isPrivate: false, isSuspended: false } },
+          where: { rating: { not: null }, user: { isPrivate: false, isSuspended: false, showActivities: true, showStats: true } },
           orderBy: { createdAt: "desc" },
           take: 5,
           select: {
@@ -90,7 +90,7 @@ export async function getCommunityPulse(): Promise<CommunityPulseData> {
           where: {
             review: { not: null },
             isSpoiler: false,
-            user: { isPrivate: false, isSuspended: false },
+            user: { isPrivate: false, isSuspended: false, showActivities: true, showStats: true },
           },
           orderBy: { createdAt: "desc" },
           take: 3,
@@ -106,9 +106,9 @@ export async function getCommunityPulse(): Promise<CommunityPulseData> {
     if (topContributors[0]) {
       const topUser = await prisma.user.findUnique({
         where: { id: topContributors[0].userId },
-        select: { name: true, username: true, isPrivate: true },
+        select: { name: true, username: true, isPrivate: true, isSuspended: true, showActivities: true },
       });
-      if (topUser && !topUser.isPrivate) topContributorName = topUser.name || topUser.username;
+      if (topUser && !topUser.isPrivate && !topUser.isSuspended && topUser.showActivities) topContributorName = topUser.name || topUser.username;
     }
 
     return {

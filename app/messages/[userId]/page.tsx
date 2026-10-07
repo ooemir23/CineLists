@@ -1,3 +1,4 @@
+import { ChatHistory } from "@/components/messages/chat-history";
 import { auth } from "@/auth";
 import { getMessages } from "@/lib/message-actions";
 import { prisma } from "@/lib/prisma";
@@ -9,7 +10,7 @@ import { ChatInput } from "@/components/messages/chat-input";
 
 export default async function ChatPage({ params }: { params: Promise<{ userId: string }> }) {
     const session = await auth();
-    if (!session?.user) redirect("/login");
+    if (!session?.user?.id) redirect("/login");
 
     const { userId: partnerId } = await params;
     const partner = await prisma.user.findUnique({ where: { id: partnerId } }); // Helper fetch
@@ -27,7 +28,7 @@ export default async function ChatPage({ params }: { params: Promise<{ userId: s
                 </Link>
                 <div className="w-10 h-10 rounded-full overflow-hidden relative bg-neutral-800">
                     {partner.image ? (
-                        <Image src={partner.image} alt={partner.name || "User"} fill className="object-cover" />
+                        <Image src={partner.image} alt={partner.name || ""} fill className="object-cover" />
                     ) : (
                         <div className="w-full h-full flex items-center justify-center">👤</div>
                     )}
@@ -37,30 +38,7 @@ export default async function ChatPage({ params }: { params: Promise<{ userId: s
                 </div>
             </div>
 
-            {/* Messages Area */}
-            <div className="flex-1 overflow-y-auto space-y-4 mb-4 pr-2">
-                {messages.length === 0 && (
-                    <div className="text-center text-neutral-500 mt-20">
-                        Sohbeti başlatın...
-                    </div>
-                )}
-                {messages.map((msg) => {
-                    const isMe = msg.senderId === session.user?.id;
-                    return (
-                        <div key={msg.id} className={`flex ${isMe ? "justify-end" : "justify-start"}`}>
-                            <div className={`max-w-[75%] px-4 py-2 rounded-2xl ${isMe
-                                ? "bg-primary text-white rounded-br-none"
-                                : "bg-white/10 text-white rounded-bl-none"
-                                }`}>
-                                <p>{msg.content}</p>
-                                <span className={`text-[10px] block text-right mt-1 opacity-70 ${isMe ? "text-primary-foreground" : "text-neutral-400"}`}>
-                                    {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                </span>
-                            </div>
-                        </div>
-                    )
-                })}
-            </div>
+            <ChatHistory initial={messages} partnerId={partnerId} userId={session.user.id!} />
 
             {/* Input Area */}
             <ChatInput partnerId={partnerId} />

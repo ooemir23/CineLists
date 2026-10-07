@@ -24,19 +24,18 @@ export function TasteMatchCard({
   const [showRecommendations, setShowRecommendations] = useState(false);
 
   useEffect(() => {
-    loadMatch();
-  }, [currentUserId, profileUserId]);
-
-  const loadMatch = async () => {
-    try {
-      const result = await calculateTasteMatch(currentUserId, profileUserId);
-      setMatch(result);
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setLoading(false);
+    let cancelled = false;
+    setLoading(true);
+    async function loadMatch() {
+      try {
+        const result = await calculateTasteMatch(currentUserId, profileUserId);
+        if (!cancelled) setMatch(result);
+      } catch { if (!cancelled) setMatch(null); }
+      finally { if (!cancelled) setLoading(false); }
     }
-  };
+    void loadMatch();
+    return () => { cancelled = true; };
+  }, [currentUserId, profileUserId]);
 
   if (loading) {
     return (

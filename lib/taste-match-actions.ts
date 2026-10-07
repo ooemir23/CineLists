@@ -1,5 +1,6 @@
 "use server";
 
+import { accessibleProfileId, visibleUserWhere } from "@/lib/profile-access";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 
@@ -107,15 +108,10 @@ function calculateRatingCorrelation(
     return Math.max(0, 100 - (avgAbsDiff * 10));
 }
 
-export async function calculateTasteMatch(userId1: string, userId2: string): Promise<TasteMatchResult | null> {
-    if (userId1 === userId2) return null;
-
-    const [watched1, watched2, ratings1, ratings2] = await Promise.all([
-        getUserWatchedMedia(userId1),
-        getUserWatchedMedia(userId2),
-        getUserRatings(userId1),
-        getUserRatings(userId2),
-    ]);
+type WatchedHistory = Awaited<ReturnType<typeof getUserWatchedMedia>>;
+function calculateLoadedTasteMatch(watched1: WatchedHistory, watched2: WatchedHistory): TasteMatchResult {
+    const ratings1 = watched1.filter(w => w.rating !== null);
+    const ratings2 = watched2.filter(w => w.rating !== null);
 
     const watched1Set = new Set(watched1.map((w) => w.mediaId));
     const watched2Set = new Set(watched2.map((w) => w.mediaId));
@@ -138,7 +134,7 @@ export async function calculateTasteMatch(userId1: string, userId2: string): Pro
         .filter((item): item is NonNullable<typeof item> => item !== null)
         .slice(0, 20);
 
-    const commonRated = commonMedia.filter((m) => m.user1Rating !== null && m.user2Rating !== null).length;
+    const commonRated = commonWatchedIds.filter(id => watched1.find(w => w.mediaId === id)?.rating != null && watched2.find(w => w.mediaId === id)?.rating != null).length;
 
     const genreCounts1: Record<string, number> = {};
     const genreCounts2: Record<string, number> = {};
@@ -185,7 +181,7 @@ export async function calculateTasteMatch(userId1: string, userId2: string): Pro
 
     finalScore = Math.min(100, Math.max(0, Math.round(finalScore)));
 
-    const recommendations = await getRecommendationsFromSimilarUsers(userId1, userId2, commonWatchedIds);
+    const recommendations = watched2.filter(w => (w.rating ?? 0) >= 7 && !watched1Set.has(w.mediaId)).slice(0, 20).map(w => ({ tmdbId: w.media.tmdbId, title: w.media.title, posterPath: w.media.posterPath, type: w.media.type === "MOVIE" ? "movie" as const : "tv" as const }));
 
     return {
         score: finalScore,
@@ -197,66 +193,29 @@ export async function calculateTasteMatch(userId1: string, userId2: string): Pro
     };
 }
 
-async function getRecommendationsFromSimilarUsers(
-    userId1: string,
-    userId2: string,
-    excludeIds: string[]
-) {
-    const user2Watched = await prisma.watched.findMany({
-        where: { userId: userId2, rating: { gte: 7 } },
-        include: { media: { select: { tmdbId: true, title: true, posterPath: true, type: true } } },
-        take: 20,
-    });
-
-    return user2Watched
-        .filter((w) => !excludeIds.includes(w.mediaId))
-        .map((w) => ({
-            tmdbId: w.media.tmdbId,
-            title: w.media.title,
-            posterPath: w.media.posterPath,
-            type: w.media.type === "MOVIE" ? "movie" as const : "tv" as const,
-        }));
+export async function calculateTasteMatch(userId1: string, userId2: string): Promise<TasteMatchResult | null> {
+    const session = await auth();
+    if (session?.user?.id !== userId1 || userId1 === userId2 || !await accessibleProfileId(userId2)) return null;
+    const [own, target] = await Promise.all([getUserWatchedMedia(userId1), getUserWatchedMedia(userId2)]);
+    return calculateLoadedTasteMatch(own, target);
 }
 
 export async function getTopTasteMatches(userId: string, limit: number = 10) {
-    const userWatched = await prisma.watched.findMany({
-        where: { userId },
-        select: { mediaId: true },
-    });
-
-    const watchedMediaIds = userWatched.map((w) => w.mediaId);
-
+    const session = await auth();
+    if (session?.user?.id !== userId || !Number.isInteger(limit) || limit < 1 || limit > 20) return [];
+    const own = await getUserWatchedMedia(userId);
     const similarUsers = await prisma.watched.groupBy({
-        by: ["userId"],
-        where: {
-            mediaId: { in: watchedMediaIds },
-            userId: { not: userId },
-        },
-        _count: { mediaId: true },
-        orderBy: { _count: { mediaId: "desc" } },
-        take: limit * 2,
+        by: ["userId"], where: { mediaId: { in: own.map(w => w.mediaId) }, userId: { not: userId }, user: visibleUserWhere(userId, "showStats") },
+        _count: { mediaId: true }, orderBy: { _count: { mediaId: "desc" } }, take: limit * 2,
     });
-
-    const results: Array<{ userId: string; name: string | null; image: string | null; score: number }> = [];
-
-    for (const similar of similarUsers) {
-        if (results.length >= limit) break;
-
-        const match = await calculateTasteMatch(userId, similar.userId);
-        if (match && match.score > 20) {
-            const user = await prisma.user.findUnique({
-                where: { id: similar.userId },
-                select: { name: true, image: true },
-            });
-
-            results.push({
-                userId: similar.userId,
-                name: user?.name || null,
-                image: user?.image || null,
-                score: match.score,
-            });
-        }
-    }
+    const candidates = similarUsers.map(u => u.userId);
+    const [histories, users] = await Promise.all([
+        prisma.watched.findMany({ where: { userId: { in: candidates }, user: visibleUserWhere(userId, "showStats") }, include: { media: { select: { tmdbId: true, title: true, posterPath: true, genres: true, type: true } } } }),
+        prisma.user.findMany({ where: { id: { in: candidates }, ...visibleUserWhere(userId, "showStats") }, select: { id: true, name: true, image: true } }),
+    ]);
+    const grouped = new Map<string, WatchedHistory>();
+    for (const item of histories) { const history = grouped.get(item.userId) || []; history.push(item); grouped.set(item.userId, history); }
+    const results = users.map(user => ({ userId: user.id, name: user.name, image: user.image, score: calculateLoadedTasteMatch(own, grouped.get(user.id) || []).score })).filter(r => r.score > 20);
 
     return results.sort((a, b) => b.score - a.score).slice(0, limit);
 }

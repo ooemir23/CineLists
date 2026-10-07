@@ -1,8 +1,12 @@
+import { validateTmdbRequest } from "@/lib/api-budget";
 import { NextRequest, NextResponse } from "next/server";
 import { cachedGetWatchProviders } from "@/lib/watch-provider-cache";
 import { detectUserCountry } from "@/lib/country";
 
 export async function GET(request: NextRequest) {
+  const rejected = validateTmdbRequest(request);
+  if (rejected) return rejected;
+
   const tokens = request.nextUrl.searchParams.get("items")?.split(",") || [];
   if (
     !tokens.length ||

@@ -38,43 +38,49 @@ model Session {
 }
 
 model User {
-  id                      String           @id @default(cuid())
+  id                      String          @id @default(cuid())
   name                    String?
-  email                   String?          @unique
+  email                   String?         @unique
   emailVerified           DateTime?
   image                   String?
   bio                     String?
   favoriteGenres          String[]
-  hasCompletedOnboarding  Boolean          @default(false)
+  hasCompletedOnboarding  Boolean         @default(false)
   platforms               String[]
   password                String?
-  isPrivate               Boolean          @default(false)
-  isSuspended             Boolean          @default(false)
-  showActivities          Boolean          @default(true)
-  showStats               Boolean          @default(true)
+  isPrivate               Boolean         @default(false)
+  isSuspended             Boolean         @default(false)
+  showActivities          Boolean         @default(true)
+  showStats               Boolean         @default(true)
   suspendedAt             DateTime?
-  locale                  String           @default("tr")
-  username                String           @unique @default(cuid())
+  sessionVersion          Int             @default(0)
+  country                 String          @default("TR")
+  activityVotes           ActivityVote[]
+  commentVotes            CommentVote[]
+  locale                  String          @default("tr")
+  username                String          @unique @default(cuid())
   favoriteMediaIds        String[]
+  usernameAliases         UsernameAlias[]
+  favoriteMedia           FavoriteMedia[]
   accounts                Account[]
   achievements            Achievement[]
-  activityRecommendations Activity[]       @relation("ActivityRecommendations")
+  activityRecommendations Activity[]      @relation("ActivityRecommendations")
   activities              Activity[]
   comments                Comment[]
 
-  favoritePersons         FavoritePerson[]
-  following               Follow[]         @relation("following")
-  followedBy              Follow[]         @relation("followedBy")
+  favoritePersons FavoritePerson[]
+  following       Follow[]         @relation("following")
+  followedBy      Follow[]         @relation("followedBy")
 
   notifications           Indicates[]
-  receivedMessages        Message[]        @relation("receivedMessages")
-  sentMessages            Message[]        @relation("sentMessages")
-  receivedRecommendations Recommendation[] @relation("receivedRecommendations")
-  sentRecommendations     Recommendation[] @relation("sentRecommendations")
+  receivedMessages        Message[]         @relation("receivedMessages")
+  sentMessages            Message[]         @relation("sentMessages")
+  receivedRecommendations Recommendation[]  @relation("receivedRecommendations")
+  sentRecommendations     Recommendation[]  @relation("sentRecommendations")
   sessions                Session[]
   toWatch                 ToWatch[]
-  watchedRecommendations  Watched[]        @relation("WatchedRecommendations")
-  watched                 Watched[]        @relation("UserWatched")
+  watchedRecommendations  Watched[]         @relation("WatchedRecommendations")
+  watched                 Watched[]         @relation("UserWatched")
   watchedEpisodes         WatchedEpisode[]
   adminProfile            UserAdminProfile?
   adminActions            AdminAuditLog[]
@@ -98,13 +104,13 @@ model UserAdminProfile {
 
 // Aggregate page views; no IP address, visitor cookie, query or full referrer.
 model AnalyticsDaily {
-  id        String   @id @default(cuid())
-  day       DateTime @db.Date
-  country   String
-  device    String
-  path      String
-  audience  String
-  views     Int      @default(0)
+  id       String   @id @default(cuid())
+  day      DateTime @db.Date
+  country  String
+  device   String
+  path     String
+  audience String
+  views    Int      @default(0)
 
   @@unique([day, country, device, path, audience])
   @@index([day])
@@ -157,24 +163,25 @@ model VerificationToken {
 }
 
 model MediaItem {
-  id              String           @id @default(cuid())
-  tmdbId          Int
-  type            MediaType
-  title           String
-  posterPath      String?
-  backdropPath    String?
-  overview        String?
-  releaseDate     DateTime?
-  seasonCount     Int?
-  episodeCount    Int?
-  genres          String[]
-  voteAverage     Float?
-  runtime         Int?
-  activities      Activity[]
+  id           String     @id @default(cuid())
+  tmdbId       Int
+  type         MediaType
+  title        String
+  posterPath   String?
+  backdropPath String?
+  overview     String?
+  releaseDate  DateTime?
+  seasonCount  Int?
+  episodeCount Int?
+  genres       String[]
+  voteAverage  Float?
+  runtime      Int?
+  activities   Activity[]
 
   episodes        Episode[]
   recommendations Recommendation[]
   toWatchBy       ToWatch[]
+  favorites       FavoriteMedia[]
   watchedBy       Watched[]
 
   // Movie and TV (and person) TMDB ids share the same numeric namespace, so
@@ -198,6 +205,7 @@ model Watched {
   @@unique([userId, mediaId])
   @@index([userId])
   @@index([mediaId])
+  @@index([userId, watchedAt(sort: Desc)])
 }
 
 model ToWatch {
@@ -210,7 +218,7 @@ model ToWatch {
   user    User        @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, mediaId])
-  @@index([userId])
+  @@index([userId, addedAt(sort: Desc)])
   @@index([mediaId])
 }
 
@@ -220,7 +228,7 @@ enum WatchStatus {
 }
 
 model Activity {
-  id                String       @id @default(cuid())
+  id                String         @id @default(cuid())
   userId            String
   mediaId           String
   type              ActivityType
@@ -229,17 +237,18 @@ model Activity {
   watchedAt         DateTime?
   watchedWith       String?
   platform          String?
-  createdAt         DateTime     @default(now())
+  createdAt         DateTime       @default(now())
   episodeId         String?
-  isSpoiler         Boolean      @default(false)
-  votes             Int          @default(0)
+  isSpoiler         Boolean        @default(false)
+  votes             Int            @default(0)
   recommendedById   String?
   recommendedByText String?
-  episode           Episode?     @relation(fields: [episodeId], references: [id])
-  media             MediaItem    @relation(fields: [mediaId], references: [id])
-  recommendedBy     User?        @relation("ActivityRecommendations", fields: [recommendedById], references: [id])
-  user              User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  episode           Episode?       @relation(fields: [episodeId], references: [id])
+  media             MediaItem      @relation(fields: [mediaId], references: [id])
+  recommendedBy     User?          @relation("ActivityRecommendations", fields: [recommendedById], references: [id])
+  user              User           @relation(fields: [userId], references: [id], onDelete: Cascade)
   comments          Comment[]
+  voterRecords      ActivityVote[]
 
   @@unique([userId, mediaId, type, episodeId], name: "userId_mediaId_type_episode")
   @@index([userId])
@@ -249,21 +258,22 @@ model Activity {
 }
 
 model Comment {
-  id         String    @id @default(cuid())
-  userId     String
-  activityId String?
-  episodeId  String?
-  parentId   String?
-  content    String
-  createdAt  DateTime  @default(now())
-  personId   Int?
-  isSpoiler  Boolean   @default(false)
-  votes      Int       @default(0)
-  activity   Activity? @relation(fields: [activityId], references: [id], onDelete: Cascade)
-  episode    Episode?  @relation(fields: [episodeId], references: [id], onDelete: Cascade)
-  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  parent     Comment?  @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
-  replies    Comment[] @relation("CommentReplies")
+  id           String        @id @default(cuid())
+  userId       String
+  activityId   String?
+  episodeId    String?
+  parentId     String?
+  content      String
+  createdAt    DateTime      @default(now())
+  personId     Int?
+  isSpoiler    Boolean       @default(false)
+  votes        Int           @default(0)
+  activity     Activity?     @relation(fields: [activityId], references: [id], onDelete: Cascade)
+  episode      Episode?      @relation(fields: [episodeId], references: [id], onDelete: Cascade)
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  parent       Comment?      @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  voterRecords CommentVote[]
+  replies      Comment[]     @relation("CommentReplies")
 
   @@index([userId])
   @@index([activityId])
@@ -300,7 +310,7 @@ model Message {
   sender     User     @relation("sentMessages", fields: [senderId], references: [id], onDelete: Cascade)
 
   @@index([receiverId])
-  @@index([senderId])
+  @@index([senderId, receiverId, createdAt(sort: Desc), id])
   @@index([createdAt(sort: Desc)])
 }
 
@@ -309,6 +319,7 @@ model Indicates {
   userId    String
   type      NotificationType
   message   String
+  payload   Json?
   image     String?
   link      String?
   isRead    Boolean          @default(false)
@@ -360,7 +371,6 @@ enum ActivityType {
   WATCHED
   RATED
   REVIEWED
-
 }
 
 enum NotificationType {
@@ -373,18 +383,16 @@ enum NotificationType {
   ACHIEVEMENT_UNLOCKED
 }
 
-
-
 // ============================================
 // ACHIEVEMENT / ROZET SİSTEMİ
 // ============================================
 
 model Achievement {
-  id          String   @id @default(cuid())
-  userId      String
-  type        AchievementType
-  unlockedAt  DateTime @default(now())
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id         String          @id @default(cuid())
+  userId     String
+  type       AchievementType
+  unlockedAt DateTime        @default(now())
+  user       User            @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, type])
   @@index([userId])
@@ -392,45 +400,93 @@ model Achievement {
 
 enum AchievementType {
   // İzleme rozetleri
-  FIRST_WATCH          // İlk film/dizi izle
-  MOVIE_BUFF_10        // 10 film izle
-  MOVIE_BUFF_50        // 50 film izle
-  MOVIE_BUFF_100       // 100 film izle
-  MOVIE_BUFF_250       // 250 film izle
-  MOVIE_BUFF_500       // 500 film izle
-  TV_BINGER_5          // 5 dizi izle
-  TV_BINGER_20         // 20 dizi izle
-  TV_BINGER_50         // 50 dizi izle
-  EPISODE_MASTER_50    // 50 bölüm izle
-  EPISODE_MASTER_200   // 200 bölüm izle
-  EPISODE_MASTER_500   // 500 bölüm izle
-  MARATHON_RUNNER      // Günde 3+ film izle
-  
-  // Puanlama rozetleri
-  CRITIC_10            // 10 içeriği puanla
-  CRITIC_50            // 50 içeriği puanla
-  CRITIC_100           // 100 içeriği puanla
-  REVIEWER_5           // 5 inceleme yaz
-  REVIEWER_25          // 25 inceleme yaz
-  
-  // Tür rozetleri
-  GENRE_EXPLORER       // 5 farklı türden izle
-  GENRE_MASTER         // Bir türden 20+ izle
-  ALL_ROUNDER          // 10 farklı türden izle
-  
-  // Sosyal rozetler
-  SOCIAL_5             // 5 kişiyi takip et
-  SOCIAL_25            // 25 kişiyi takip et
-  INFLUENCER_10        // 10 takipçi kazan
-  INFLUENCER_50        // 50 takipçi kazan
-  RECOMMENDER          // 5 öneri gönder
-  COMMENTER_10         // 10 yorum yap
-  COMMENTER_50         // 50 yorum yap
-  
+  FIRST_WATCH // İlk film/dizi izle
+  MOVIE_BUFF_10 // 10 film izle
+  MOVIE_BUFF_50 // 50 film izle
+  MOVIE_BUFF_100 // 100 film izle
+  MOVIE_BUFF_250 // 250 film izle
+  MOVIE_BUFF_500 // 500 film izle
+  TV_BINGER_5 // 5 dizi izle
+  TV_BINGER_20 // 20 dizi izle
+  TV_BINGER_50 // 50 dizi izle
+  EPISODE_MASTER_50 // 50 bölüm izle
+  EPISODE_MASTER_200 // 200 bölüm izle
+  EPISODE_MASTER_500 // 500 bölüm izle
+  MARATHON_RUNNER // Günde 3+ film izle
 
-  
+  // Puanlama rozetleri
+  CRITIC_10 // 10 içeriği puanla
+  CRITIC_50 // 50 içeriği puanla
+  CRITIC_100 // 100 içeriği puanla
+  REVIEWER_5 // 5 inceleme yaz
+  REVIEWER_25 // 25 inceleme yaz
+
+  // Tür rozetleri
+  GENRE_EXPLORER // 5 farklı türden izle
+  GENRE_MASTER // Bir türden 20+ izle
+  ALL_ROUNDER // 10 farklı türden izle
+
+  // Sosyal rozetler
+  SOCIAL_5 // 5 kişiyi takip et
+  SOCIAL_25 // 25 kişiyi takip et
+  INFLUENCER_10 // 10 takipçi kazan
+  INFLUENCER_50 // 50 takipçi kazan
+  RECOMMENDER // 5 öneri gönder
+  COMMENTER_10 // 10 yorum yap
+  COMMENTER_50 // 50 yorum yap
+
   // Özel rozetler
-  EARLY_BIRD           // Platformun erken kullanıcısı
-  NIGHT_OWL            // Gece 00:00-05:00 arası izle
-  WEEKEND_WARRIOR      // Hafta sonu 10+ içerik izle
+  EARLY_BIRD // Platformun erken kullanıcısı
+  NIGHT_OWL // Gece 00:00-05:00 arası izle
+  WEEKEND_WARRIOR // Hafta sonu 10+ içerik izle
+}
+
+model ActivityVote {
+  userId     String
+  activityId String
+  value      Int
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  activity   Activity @relation(fields: [activityId], references: [id], onDelete: Cascade)
+
+  @@id([userId, activityId])
+  @@index([activityId])
+}
+
+model CommentVote {
+  userId    String
+  commentId String
+  value     Int
+  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  comment   Comment @relation(fields: [commentId], references: [id], onDelete: Cascade)
+
+  @@id([userId, commentId])
+  @@index([commentId])
+}
+
+model AuthRateLimit {
+  key     String   @id
+  count   Int      @default(1)
+  expires DateTime
+
+  @@index([expires])
+}
+
+model FavoriteMedia {
+  userId   String
+  mediaId  String
+  position Int       @default(0)
+  addedAt  DateTime  @default(now())
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  media    MediaItem @relation(fields: [mediaId], references: [id], onDelete: Cascade)
+
+  @@id([userId, mediaId])
+  @@index([mediaId])
+  @@index([userId, position])
+}
+
+model UsernameAlias {
+  username String @id
+  userId String
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@index([userId])
 }

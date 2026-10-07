@@ -1,10 +1,15 @@
 "use client";
 
+import { useTranslation } from "@/lib/i18n/i18n-context";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import { sendMessage } from "@/lib/message-actions";
 import { Send, Loader2 } from "lucide-react";
 import { useState, useTransition } from "react";
 
 export function ChatInput({ partnerId }: { partnerId: string }) {
+    const { dict } = useTranslation();
+    const router = useRouter();
     const [content, setContent] = useState("");
     const [isPending, startTransition] = useTransition();
 
@@ -19,9 +24,9 @@ export function ChatInput({ partnerId }: { partnerId: string }) {
             const result = await sendMessage(partnerId, msg);
             if (result.error) {
                 // Handle error (toast or restore content)
-                console.error(result.error);
+                toast.error(result.error);
                 setContent(msg); // Restore if failed
-            }
+            } else router.refresh();
         });
     };
 
@@ -31,12 +36,15 @@ export function ChatInput({ partnerId }: { partnerId: string }) {
                 type="text"
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
-                placeholder="Mesaj yazın..."
+                placeholder={dict.reviewUi.messagePlaceholder}
+                aria-label={dict.reviewUi.messagePlaceholder}
+                maxLength={4000}
                 disabled={isPending}
                 className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-neutral-500 focus:ring-2 focus:ring-primary/50 focus:border-primary focus:bg-white/10 transition-all outline-none"
             />
             <button
                 type="submit"
+                aria-label={dict.reviewUi.sendMessage}
                 disabled={isPending || !content.trim()}
                 className="bg-primary text-white p-3 rounded-xl hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >

@@ -28,7 +28,7 @@ type MediaRowProps = {
 };
 
 export async function MediaRow({ title, items, type, href, countryCode = "TR" }: MediaRowProps) {
-    const tmdbIds = items.map(i => i.id);
+    const tmdbIds = items.map(i => ({ id: i.id, type: (i.media_type === "tv" ? "tv" : i.media_type === "movie" ? "movie" : type) as "movie" | "tv" }));
     const [userRatingsMap, communityRatingsMap, metadataMap] = await Promise.all([
         getUserRatingsBulk(tmdbIds),
         getCommunityRatingsBulk(tmdbIds),
@@ -62,10 +62,10 @@ export async function MediaRow({ title, items, type, href, countryCode = "TR" }:
                         originalTitle={item.original_title || item.original_name}
                         posterPath={item.poster_path}
                         voteAverage={item.vote_average}
-                        userRating={userRatingsMap[item.id]}
-                        communityRating={communityRatingsMap[item.id]}
+                        userRating={userRatingsMap[`${item.media_type || type}:${item.id}`]}
+                        communityRating={communityRatingsMap[`${item.media_type || type}:${item.id}`]}
                         releaseDate={item.release_date || item.first_air_date}
-                        runtime={item.runtime || metadataMap[item.id]?.runtime || undefined}
+                        runtime={item.runtime || metadataMap[`${item.media_type || type}:${item.id}`]?.runtime || undefined}
                         type={(item.media_type === "tv" || item.media_type === "movie" ? item.media_type : type) as "movie" | "tv"}
                         countryCode={countryCode}
                     />
