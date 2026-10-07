@@ -1,85 +1,69 @@
 import Link from "next/link";
-import {
-  Users,
-  Activity,
-  Globe2,
-  UserPlus,
-  Download,
-  Shield,
-  LayoutDashboard,
-  MessageSquare,
-  ScrollText,
-  Settings2,
-  Clock,
-} from "lucide-react";
 import { getAdmin } from "@/lib/admin/access";
 import {
   getOverview,
   getUsers,
   getModeration,
   getAudit,
+  type UserFilters,
 } from "@/lib/admin/data";
 import { dateWindow } from "@/lib/admin/policy";
-import { countryLabel, pathLabel } from "@/lib/admin/analytics";
+import { countryLabel } from "@/lib/admin/analytics";
+import { getDictionary, getServerLocale } from "@/lib/i18n/server";
 import {
-  Panel,
-  Metric,
-  Bars,
-  Empty,
-  Pager,
-  DailyChart,
-  fieldClass,
-  number,
-  date,
-} from "@/components/admin/ui";
+  adminNumber,
+  adminDate,
+  adminDuration,
+  adminActionLabel,
+  adminPathLabel,
+  onlineAt,
+  interpolate,
+  REMOVED_COMMENTS,
+} from "@/lib/admin/format";
+import { Panel, Bars, Empty, Pager, fieldClass } from "@/components/admin/ui";
+import { DailyChart } from "@/components/admin/daily-chart";
 import { MetricCards } from "@/components/admin/metric-cards";
 import { AdminActionButton } from "@/components/admin/action-button";
-
-type Params = {
-  tab?: string;
-  days?: string;
-  q?: string;
-  status?: string;
-  country?: string;
-  sort?: string;
-  page?: string;
-};
-const tabs = [
-  { key: "overview", label: "Genel bakış", icon: LayoutDashboard },
-  { key: "users", label: "Kullanıcılar", icon: Users },
-  { key: "content", label: "Moderasyon", icon: MessageSquare },
-  { key: "audit", label: "İşlem geçmişi", icon: ScrollText },
-  { key: "system", label: "Sistem", icon: Settings2 },
-];
-const actionNames: Record<string, string> = {
-  suspend: "Hesap askıya alındı",
-  activate: "Hesap etkinleştirildi",
-  "redact-comment": "Yorum kaldırıldı",
-  "redact-review": "İnceleme kaldırıldı",
-  "export-users": "CSV indirildi",
-};
-
+import { prisma } from "@/lib/prisma";
+type Params = UserFilters & { tab?: string };
+async function context() {
+  const locale = await getServerLocale(),
+    t = getDictionary(locale).admin;
+  return {
+    locale,
+    t,
+    n: (v: number) => adminNumber(v, locale),
+    d: (v: Date | null | undefined) => adminDate(v, locale, t.unknown),
+    country: (v: string | null | undefined) =>
+      countryLabel(v, locale, t.unknown),
+  };
+}
 export default async function AdminPage({
   searchParams,
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   if (!(await getAdmin())) return null;
-  const rawParams = await searchParams;
-  const params: Params = Object.fromEntries(
-    Object.entries(rawParams).map(([key, value]) => [
-      key,
-      Array.isArray(value) ? value[0] : value,
-    ]),
-  );
-  const tab = tabs.some((item) => item.key === params.tab)
-    ? params.tab!
-    : "overview";
-  const { days, since } = dateWindow(params.days);
+  const { t } = await context(),
+    raw = await searchParams,
+    params: Params = Object.fromEntries(
+      Object.entries(raw).map(([k, v]) => [k, Array.isArray(v) ? v[0] : v]),
+    );
+  const tabs = [
+      { key: "overview", label: t.overview },
+      { key: "users", label: t.users },
+      { key: "content", label: t.content },
+      { key: "audit", label: t.audit },
+      { key: "system", label: t.system },
+    ],
+    tab = tabs.some((item) => item.key === params.tab)
+      ? params.tab
+      : "overview",
+    { days, since } = dateWindow(params.days);
   return (
     <>
       <nav
-        aria-label="Yönetim bölümleri"
+        aria-label={t.sections}
         className="mb-7 flex gap-2 overflow-x-auto border-b border-white/10 pb-4"
       >
         {tabs.map((item) => (
@@ -87,412 +71,347 @@ export default async function AdminPage({
             key={item.key}
             href={`/admin?tab=${item.key}&days=${days}`}
             aria-current={tab === item.key ? "page" : undefined}
-            className={`flex shrink-0 items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition ${tab === item.key ? "bg-amber-400 text-slate-950" : "text-slate-400 hover:bg-white/5 hover:text-white"}`}
+            className={`shrink-0 rounded-xl px-4 py-2.5 text-sm font-semibold ${tab === item.key ? "bg-amber-400 text-slate-950" : "text-slate-400 hover:bg-white/5"}`}
           >
-            <item.icon size={16} />
             {item.label}
           </Link>
         ))}
       </nav>
-      {tab === "overview" && <Overview tab={tab} days={days} since={since} />}
-      {tab === "users" && <UsersTab params={params} />}
-      {tab === "content" && <Moderation params={params} />}
-      {tab === "audit" && <Audit params={params} />}
-      {tab === "system" && <System />}
+      {tab === "overview" ? (
+        <Overview days={days} since={since} />
+      ) : tab === "users" ? (
+        <UsersTab params={params} />
+      ) : tab === "content" ? (
+        <Moderation params={params} />
+      ) : tab === "audit" ? (
+        <Audit params={params} />
+      ) : (
+        <System />
+      )}
     </>
   );
 }
-
-async function Overview({ tab, days, since }: { tab: string; days: number; since: Date }) {
-  const data = await getOverview(since);
+async function Overview({ days, since }: { days: number; since: Date }) {
+  const { t, locale, n, d, country } = await context(),
+    data = await getOverview(since);
   const rows = Array.from({ length: days }, (_, i) => {
     const day = new Date(since);
     day.setUTCDate(day.getUTCDate() + i);
-    const dateStr = day.toISOString().slice(0, 10);
+    const date = day.toISOString().slice(0, 10);
     return {
-      date: dateStr,
-      label: day.toLocaleDateString("tr-TR", {
+      date,
+      label: new Intl.DateTimeFormat(locale === "tr" ? "tr-TR" : "en-US", {
         day: "numeric",
         month: "short",
         timeZone: "UTC",
-      }),
+      }).format(day),
       value:
-        data.daily.find(
-          (row) =>
-            row.day.toISOString().slice(0, 10) === dateStr,
-        )?._sum.views || 0,
+        data.daily.find((r) => r.day.toISOString().slice(0, 10) === date)?._sum
+          .views || 0,
     };
   });
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 className="text-lg font-bold">Platform özeti</h2>
-        <div className="flex gap-1 rounded-xl border border-white/10 bg-slate-900 p-1">
+      <div className="flex flex-wrap justify-between gap-3">
+        <h2 className="text-lg font-bold">{t.summary}</h2>
+        <div className="flex gap-1">
           {[7, 30, 90].map((value) => (
             <Link
               key={value}
-              href={`/admin?tab=${tab}&days=${value}`}
-              aria-current={value === days ? "true" : undefined}
-              className={`rounded-lg px-3 py-2 text-xs font-bold ${value === days ? "bg-white/10 text-white" : "text-slate-500 hover:text-slate-300"}`}
+              href={`/admin?tab=overview&days=${value}`}
+              aria-current={days === value ? "true" : undefined}
+              className={`rounded-lg px-3 py-2 text-xs ${days === value ? "bg-white/10" : "text-slate-500"}`}
             >
-              Son {value} gün
+              {interpolate(t.lastDays, { days: value })}
             </Link>
           ))}
         </div>
       </div>
       <MetricCards days={days} data={data} />
-      {!data.firstDay && (
-        <p className="rounded-xl border border-amber-400/20 bg-amber-400/5 p-4 text-sm text-amber-200">
-          Ziyaret ölçümü henüz veri üretmedi. Ülke, cihaz ve trafik grafikleri
-          yeni ziyaretlerle dolacak; geçmiş ziyaretler tahmin edilmez.
+      {process.env.ANALYTICS_ENABLED !== "true" && (
+        <p
+          role="status"
+          className="rounded-xl border border-amber-400/20 p-4 text-sm text-amber-200"
+        >
+          {t.analyticsOff}
         </p>
       )}
       <div className="grid gap-5 lg:grid-cols-[1.6fr_1fr]">
-        <Panel
-          title="Ziyaret hareketi"
-          subtitle={`Günlük sayfa görüntülemeleri · UTC gün sınırları${data.firstDay ? ` · ilk ölçüm: ${date(data.firstDay)}` : ""}`}
-        >
+        <Panel title={t.traffic} subtitle={t.trafficHint}>
           <DailyChart rows={rows} />
         </Panel>
-        <Panel
-          title="Hangi ülkelerden geliniyor?"
-          subtitle="Görüntüleme sayısına göre ilk 20 ülke. Güvenilir konum başlığı yoksa bilinmiyor."
-        >
+        <Panel title={t.countries} subtitle={t.countriesHint}>
           <Bars
-            rows={data.countries.map((row) => ({
-              label: countryLabel(row.country),
-              value: row._sum.views || 0,
+            rows={data.countries.map((r) => ({
+              label: country(r.country),
+              value: r._sum.views || 0,
             }))}
           />
         </Panel>
       </div>
       <div className="grid gap-5 md:grid-cols-3">
-        <Panel title="Cihaz dağılımı">
+        <Panel title={t.devices}>
           <Bars
             rows={[
-              { key: "desktop", label: "Masaüstü" },
-              { key: "mobile", label: "Mobil" },
-              { key: "tablet", label: "Tablet" },
-            ].map(({ key, label }) => ({
-              label,
-              value: data.devices.find((d) => d.device === key)?._sum.views || 0,
+              { key: "desktop", label: t.desktop },
+              { key: "mobile", label: t.mobile },
+              { key: "tablet", label: t.tablet },
+            ].map((r) => ({
+              label: r.label,
+              value:
+                data.devices.find((v) => v.device === r.key)?._sum.views || 0,
             }))}
           />
         </Panel>
-        <Panel
-          title="Ziyaretçi türü"
-          subtitle="Görüntüleme anındaki oturum durumuna göre."
-        >
+        <Panel title={t.audience}>
           <Bars
             rows={[
               {
-                label: "Üye görüntülemeleri",
-                value: data.audience.find((a) => a.audience === "member")?._sum.views || 0,
+                label: t.member,
+                value:
+                  data.audience.find((r) => r.audience === "member")?._sum
+                    .views || 0,
               },
               {
-                label: "Misafir görüntülemeleri",
-                value: data.audience.find((a) => a.audience === "guest")?._sum.views || 0,
+                label: t.guest,
+                value:
+                  data.audience.find((r) => r.audience === "guest")?._sum
+                    .views || 0,
               },
             ]}
           />
         </Panel>
-        <Panel
-          title="Aktif üyelerin ülkeleri"
-          subtitle="Üye başına son bilinen ülke; vatandaşlık bilgisi değildir."
-        >
+        <Panel title={t.memberCountries} subtitle={t.countriesHint}>
           <Bars
-            rows={data.memberCountries.map((row) => ({
-              label: countryLabel(row.country),
-              value: row._count.userId,
+            rows={data.memberCountries.map((r) => ({
+              label: country(r.country),
+              value: r._count.userId,
             }))}
           />
         </Panel>
       </div>
       <div className="grid gap-5 lg:grid-cols-2">
-        <Panel
-          title="En çok görüntülenen sayfalar"
-          subtitle="Kişisel kimlikler ve arama metinleri ölçümlere alınmaz."
-        >
+        <Panel title={t.paths}>
           <Bars
-            rows={data.paths.map((row) => ({
-              label: `${pathLabel(row.path)} (${row.path})`,
-              value: row._sum.views || 0,
+            rows={data.paths.map((r) => ({
+              label: adminPathLabel(r.path, t),
+              value: r._sum.views || 0,
             }))}
           />
         </Panel>
-        <Panel
-          title="Topluluğun en çok izledikleri"
-          subtitle="Tüm zamanlar · izledim kaydı sayısı"
-        >
-          <Bars
-            rows={data.popular
-              .filter((row) => row._count.watchedBy > 0)
-              .map((row) => ({
-                label: `${row.title} · ${row.type === "TV" ? "Dizi" : "Film"}`,
-                value: row._count.watchedBy,
-              }))}
-          />
-        </Panel>
-      </div>
-      <div className="grid gap-5 lg:grid-cols-2">
-        <Panel title="İçerik ve etkileşim" subtitle="Tüm zamanlar">
-          <dl className="grid grid-cols-2 gap-5">
+        <Panel title={t.library} subtitle={t.messagesHint}>
+          <dl className="space-y-3 text-sm">
             {[
-              ["Katalogdaki yapım", data.media],
-              ["İzleme kaydı", data.watched],
-              ["İzlenen bölüm", data.episodes],
-              ["Yorum", data.comments],
-              ["Mesaj", data.messages],
-              ["Kurulumu tamamlayan", data.onboarded],
+              [t.media, data.media],
+              [t.watched, data.watched],
+              [t.episodes, data.episodes],
+              [t.comments, data.comments],
+              [t.messages, data.messages],
             ].map(([label, value]) => (
-              <div key={label}>
-                <dt className="text-xs text-slate-500">{label}</dt>
-                <dd className="mt-1 text-xl font-bold">
-                  {number(Number(value))}
-                </dd>
+              <div key={label} className="flex justify-between gap-3">
+                <dt className="text-slate-400">{label}</dt>
+                <dd>{n(Number(value))}</dd>
               </div>
             ))}
           </dl>
         </Panel>
-        <Panel
-          title="Yeni kayıt günleri"
-          subtitle="Eski kullanıcıların kayıt tarihi tutulmadığından bu grafiğe dahil değildir."
-        >
+        <Panel title={t.popular}>
           <Bars
-            rows={data.registrations.slice(-10).map((row) => ({
-              label: row.day.toLocaleDateString("tr-TR", { timeZone: "UTC" }),
-              value: Number(row.count),
+            rows={data.popular.map((r) => ({
+              label: r.title,
+              value: r._count.watchedBy,
             }))}
+          />
+        </Panel>
+        <Panel title={t.registrationDays} subtitle={t.registrationHint}>
+          <Bars
+            rows={data.registrations
+              .slice(-10)
+              .map((r) => ({ label: d(r.day), value: Number(r.count) }))}
           />
         </Panel>
       </div>
     </div>
   );
 }
-
 async function UsersTab({ params }: { params: Params }) {
-  const data = await getUsers(params);
-  const exportParams = new URLSearchParams();
-  for (const key of ["q", "status", "country"] as const)
-    if (params[key]) exportParams.set(key, params[key]!);
+  const { t, locale, n, d, country } = await context(),
+    data = await getUsers(params);
+  const exports = new URLSearchParams();
+  for (const k of ["q", "status", "country", "metric", "days"] as const)
+    if (params[k]) exports.set(k, params[k]!);
   return (
     <Panel
-      title="Kullanıcı dizini"
-      subtitle={`${number(data.total)} kullanıcı · tarih alanları Türkiye saatiyle gösterilir.`}
+      title={t.userDirectory}
+      subtitle={interpolate(t.countRecords, { count: n(data.total) })}
     >
       <form
         action="/admin"
-        className="mb-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-[2fr_1fr_1fr_1fr_auto]"
+        className="mb-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-[2fr_1fr_1fr_1fr_auto]"
       >
         <input type="hidden" name="tab" value="users" />
+        {params.metric && (
+          <input type="hidden" name="metric" value={params.metric} />
+        )}
+        <input type="hidden" name="days" value={params.days || "30"} />
         <label className="text-xs text-slate-400">
-          Kullanıcı ara
+          {t.search}
           <input
             name="q"
             defaultValue={params.q}
-            placeholder="Ad, kullanıcı adı, e-posta"
+            placeholder={t.userSearchHint}
             maxLength={100}
             className={`${fieldClass} mt-2`}
           />
         </label>
         <label className="text-xs text-slate-400">
-          Durum
+          {t.status}
           <select
             name="status"
             defaultValue={params.status || ""}
             className={`${fieldClass} mt-2`}
           >
-            <option value="">Tüm kullanıcılar</option>
-            <option value="active">Aktif hesap</option>
-            <option value="suspended">Askıya alınmış</option>
-            <option value="onboarding">Kurulumu eksik</option>
+            <option value="">{t.all}</option>
+            <option value="active">{t.active}</option>
+            <option value="suspended">{t.suspended}</option>
+            <option value="onboarding">{t.onboarding}</option>
+            <option value="admin">{t.admin}</option>
           </select>
         </label>
         <label className="text-xs text-slate-400">
-          Ülke
+          {t.country}
           <select
             name="country"
             defaultValue={params.country || ""}
             className={`${fieldClass} mt-2`}
           >
-            <option value="">Tüm ülkeler</option>
-            <option value="ZZ">Bilinmiyor</option>
-            {data.countries.map((row) => (
-              <option key={row.country} value={row.country!}>
-                {countryLabel(row.country)}
+            <option value="">{t.all}</option>
+            <option value="ZZ">{t.unknown}</option>
+            {data.countries.map((r) => (
+              <option key={r.country} value={r.country!}>
+                {country(r.country)}
               </option>
             ))}
           </select>
         </label>
         <label className="text-xs text-slate-400">
-          Sıralama
+          {t.sort}
           <select
             name="sort"
             defaultValue={params.sort || "name"}
             className={`${fieldClass} mt-2`}
           >
-            <option value="name">Kullanıcı adı</option>
-            <option value="recent">Son görülme</option>
-            <option value="time">Sitede kalma süresi</option>
-            <option value="registered">Kayıt tarihi</option>
+            <option value="name">{t.username}</option>
+            <option value="recent">{t.lastSeen}</option>
+            <option value="time">{t.duration}</option>
+            <option value="registered">{t.registeredAt}</option>
           </select>
         </label>
         <button className="self-end rounded-xl bg-amber-400 px-5 py-2.5 text-sm font-bold text-slate-950">
-          Filtrele
+          {t.filter}
         </button>
       </form>
       <div className="mb-4 flex flex-wrap justify-between gap-3 text-xs">
-        <Link
-          href="/admin?tab=users"
-          className="text-slate-400 hover:text-white"
-        >
-          Filtreleri temizle
+        <Link href="/admin?tab=users" className="text-slate-400">
+          {t.clearFilters}
         </Link>
-        <a
-          href={`/api/admin/export?${exportParams}`}
-          className="flex items-center gap-2 text-amber-300"
-        >
-          <Download size={15} />
-          Filtrelenen kullanıcıları CSV indir (en fazla 5000)
+        <a href={`/api/admin/export?${exports}`} className="text-amber-300">
+          {t.export} ↓
         </a>
       </div>
+      <p className="mb-4 text-xs text-slate-500">{t.exportHint}</p>
       {data.users.length ? (
         <div className="overflow-x-auto">
           <table className="w-full min-w-[820px] text-left text-sm">
             <thead className="border-b border-white/10 text-xs text-slate-500">
               <tr>
                 {[
-                  "Kullanıcı",
-                  "Aktiflik",
-                  "Sitede Süre",
-                  "Ülke",
-                  "Durum",
-                  "Kayıt tarihi",
-                  "İzleme / Bölüm",
-                  "",
-                ].map((label, i) => (
-                  <th key={i} className="px-3 py-3 font-medium">
+                  t.users,
+                  t.lastSeen,
+                  t.duration,
+                  t.country,
+                  t.status,
+                  t.registeredAt,
+                  t.watched + " / " + t.episodes,
+                  t.details,
+                ].map((label) => (
+                  <th key={label} className="px-3 py-3 font-medium">
                     {label}
                   </th>
                 ))}
               </tr>
             </thead>
             <tbody>
-              {data.users.map((user) => {
-                const lastSeen = user.adminProfile?.lastSeenAt
-                  ? new Date(user.adminProfile.lastSeenAt).getTime()
-                  : 0;
-                const diffMins = lastSeen
-                  ? Math.round((Date.now() - lastSeen) / 60000)
-                  : null;
-                const isOnline = diffMins !== null && diffMins <= 4;
-                const totalMinutes = user.adminProfile?.totalMinutes || 0;
-                const timeFormatted =
-                  totalMinutes >= 60
-                    ? `${Math.floor(totalMinutes / 60)} sa ${totalMinutes % 60} dk`
-                    : totalMinutes > 0
-                      ? `${totalMinutes} dk`
-                      : "< 1 dk";
-
-                return (
-                  <tr
-                    key={user.id}
-                    className="border-b border-white/5 hover:bg-white/[.02]"
-                  >
-                    <td className="max-w-72 px-3 py-4">
-                      <Link
-                        href={`/admin/users/${user.id}`}
-                        className="block truncate font-bold text-white hover:text-amber-400 font-mono text-sm"
-                        title={user.email || user.username}
-                      >
-                        {user.email || user.name || user.username}
-                      </Link>
-                      <p className="mt-1 truncate text-xs text-slate-400">
-                        <span className="font-mono text-amber-300 font-medium">@{user.username}</span>
-                        {user.name && user.name !== user.username && user.name !== user.email && (
-                          <span className="text-slate-300"> · {user.name}</span>
-                        )}
-                      </p>
-                    </td>
-                    <td className="px-3 py-4">
-                      {isOnline ? (
-                        <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2.5 py-1 text-xs font-bold text-emerald-400 shadow-sm whitespace-nowrap">
-                          <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
-                          Çevrimiçi
-                        </span>
-                      ) : diffMins !== null && diffMins < 60 ? (
-                        <span className="inline-flex items-center gap-1.5 rounded-lg bg-amber-500/10 px-2 py-0.5 text-xs font-medium text-amber-300 whitespace-nowrap">
-                          <span className="h-1.5 w-1.5 rounded-full bg-amber-400/80" />
-                          {diffMins} dk önce
-                        </span>
-                      ) : diffMins !== null && diffMins < 1440 ? (
-                        <span className="text-xs text-slate-400 whitespace-nowrap">
-                          {Math.round(diffMins / 60)} saat önce
-                        </span>
-                      ) : lastSeen ? (
-                        <span className="text-xs text-slate-500 whitespace-nowrap">
-                          {date(user.adminProfile?.lastSeenAt)}
-                        </span>
-                      ) : (
-                        <span className="text-xs text-slate-600 whitespace-nowrap">
-                          —
-                        </span>
-                      )}
-                    </td>
-                    <td className="px-3 py-4 font-mono text-xs text-slate-300 whitespace-nowrap">
-                      <div className="flex items-center gap-1.5">
-                        <Clock
-                          size={13}
-                          className="text-amber-400/80 shrink-0"
-                        />
-                        <span
-                          className={
-                            totalMinutes > 0
-                              ? "font-semibold text-amber-200"
-                              : "text-slate-500"
-                          }
-                        >
-                          {timeFormatted}
-                        </span>
-                      </div>
-                    </td>
-                    <td className="px-3 py-4 text-slate-400">
-                      {countryLabel(user.adminProfile?.country)}
-                    </td>
-                    <td className="px-3 py-4">
-                      <span
-                        className={`rounded-lg px-2 py-1 text-xs ${user.isSuspended ? "bg-rose-400/10 text-rose-300" : "bg-emerald-400/10 text-emerald-300"}`}
-                      >
-                        {user.isSuspended ? "Askıda" : "Aktif"}
-                      </span>
-                      {!user.hasCompletedOnboarding && (
-                        <p className="mt-2 text-[11px] text-slate-500">
-                          Kurulum eksik
-                        </p>
-                      )}
-                    </td>
-                    <td className="px-3 py-4 text-xs text-slate-400">
-                      {date(user.adminProfile?.registeredAt)}
-                    </td>
-                    <td className="px-3 py-4 font-mono text-xs">
-                      {user._count.watched} / {user._count.watchedEpisodes}
-                    </td>
-                    <td className="px-3 py-4">
-                      <Link
-                        href={`/admin/users/${user.id}`}
-                        className="text-xs text-amber-300 hover:underline"
-                      >
-                        İncele →
-                      </Link>
-                    </td>
-                  </tr>
-                );
-              })}
+              {data.users.map((user) => (
+                <tr key={user.id} className="border-b border-white/5">
+                  <td className="max-w-64 px-3 py-4">
+                    <Link
+                      href={`/admin/users/${user.id}`}
+                      className="block truncate font-bold"
+                      title={user.email || user.username}
+                    >
+                      {user.name || user.username}
+                    </Link>
+                    <p className="mt-1 truncate text-xs text-amber-300">
+                      @{user.username}
+                    </p>
+                    <p className="mt-1 truncate text-xs text-slate-400">
+                      {user.email}
+                    </p>
+                  </td>
+                  <td className="px-3 py-4 text-xs">
+                    {onlineAt(
+                      user.adminProfile?.lastSeenAt,
+                      user.isSuspended,
+                    ) ? (
+                      <span className="text-emerald-400">{t.online}</span>
+                    ) : (
+                      d(user.adminProfile?.lastSeenAt)
+                    )}
+                  </td>
+                  <td className="px-3 py-4 text-xs">
+                    {adminDuration(
+                      user.adminProfile?.totalMinutes || 0,
+                      locale,
+                      t,
+                    )}
+                  </td>
+                  <td className="px-3 py-4 text-xs">
+                    {country(user.adminProfile?.country)}
+                  </td>
+                  <td className="px-3 py-4 text-xs">
+                    <span
+                      className={
+                        user.isSuspended ? "text-rose-300" : "text-emerald-300"
+                      }
+                    >
+                      {user.isSuspended ? t.suspended : t.active}
+                    </span>
+                    {!user.hasCompletedOnboarding && (
+                      <p className="mt-2 text-slate-500">{t.onboarding}</p>
+                    )}
+                  </td>
+                  <td className="px-3 py-4 text-xs">
+                    {d(user.adminProfile?.registeredAt)}
+                  </td>
+                  <td className="px-3 py-4">
+                    {n(user._count.watched)} / {n(user._count.watchedEpisodes)}
+                  </td>
+                  <td className="px-3 py-4">
+                    <Link
+                      href={`/admin/users/${user.id}`}
+                      className="text-xs text-amber-300"
+                    >
+                      {t.inspect} →
+                    </Link>
+                  </td>
+                </tr>
+              ))}
             </tbody>
           </table>
         </div>
       ) : (
-        <Empty>Bu filtrelere uyan kullanıcı bulunamadı.</Empty>
+        <Empty>{t.noMatch}</Empty>
       )}
       <Pager
         page={data.page}
@@ -502,173 +421,240 @@ async function UsersTab({ params }: { params: Params }) {
     </Panel>
   );
 }
-
 async function Moderation({ params }: { params: Params }) {
-  const data = await getModeration(params.page);
+  const { t, d, n } = await context(),
+    data = await getModeration(params);
   return (
-    <div className="grid items-start gap-5 lg:grid-cols-[1.4fr_1fr]">
-      <Panel
-        title="Yorum moderasyonu"
-        subtitle={`${number(data.total)} yorum · kaldırılan yorumun yanıtları korunur.`}
+    <Panel title={t.content} subtitle={t.moderationHint}>
+      <form
+        action="/admin"
+        className="mb-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-[2fr_1fr_1fr_auto]"
       >
-        {data.comments.length ? (
-          <div className="space-y-4">
-            {data.comments.map((comment) => (
-              <article
-                key={comment.id}
-                className="rounded-xl border border-white/10 p-4"
-              >
-                <div className="flex flex-wrap justify-between gap-2 text-xs">
-                  <Link
-                    href={`/admin/users/${comment.user.id}`}
-                    className="text-amber-300"
-                  >
-                    @{comment.user.username}
-                  </Link>
-                  <time className="text-slate-500">
-                    {date(comment.createdAt)}
-                  </time>
-                </div>
-                <p className="my-3 max-h-40 overflow-auto whitespace-pre-wrap break-words text-sm text-slate-300">
-                  {comment.content}
-                </p>
-                <div className="flex items-center justify-between gap-3">
-                  <span className="text-xs text-slate-500">
-                    {comment.isSpoiler ? "Spoiler işaretli" : "Yorum"}
-                  </span>
-                  {comment.content !==
-                    "[Bu yorum yönetici tarafından kaldırıldı.]" && (
-                    <AdminActionButton
-                      action="redact-comment"
-                      targetId={comment.id}
-                      label="Yorumu kaldır"
-                      description="Yorum metni kaldırıldı bildirimiyle değiştirilecek. Yanıtlar korunacak. Bu işlem geri alınamaz."
-                    />
-                  )}
-                </div>
-              </article>
-            ))}
-          </div>
-        ) : (
-          <Empty />
-        )}
-        <Pager
-          page={data.page}
-          pages={data.pages}
-          params={{ tab: "content" }}
-        />
-      </Panel>
-      <Panel
-        title="Son incelemeler"
-        subtitle="En yeni 10 inceleme. Puan ve izleme kaydı korunur."
-      >
-        {data.reviews.length ? (
-          <div className="space-y-5">
-            {data.reviews.map((review) => (
-              <article key={review.id} className="border-b border-white/5 pb-5">
-                <p className="text-sm font-bold">{review.media.title}</p>
-                <Link
-                  href={`/admin/users/${review.user.id}`}
-                  className="text-xs text-amber-300"
-                >
-                  @{review.user.username}
-                </Link>
-                <p className="my-3 max-h-40 overflow-auto whitespace-pre-wrap break-words text-sm text-slate-400">
-                  {review.review}
-                </p>
-                <AdminActionButton
-                  action="redact-review"
-                  targetId={review.id}
-                  label="İncelemeyi kaldır"
-                  description="İnceleme metni silinecek; izleme kaydı ve puan korunacak. Bu işlem geri alınamaz."
-                />
-              </article>
-            ))}
-          </div>
-        ) : (
-          <Empty />
-        )}
-      </Panel>
-    </div>
-  );
-}
-
-async function Audit({ params }: { params: Params }) {
-  const data = await getAudit(params.page);
-  return (
-    <Panel
-      title="Yönetici işlem geçmişi"
-      subtitle="Hesap işlemleri, moderasyon ve CSV indirmeleri burada kayıt altına alınır."
-    >
-      {data.logs.length ? (
-        <div className="space-y-3">
-          {data.logs.map((log) => (
-            <article
-              key={log.id}
-              className="rounded-xl border border-white/10 p-4"
+        <input type="hidden" name="tab" value="content" />
+        <label className="text-xs text-slate-400">
+          {t.search}
+          <input
+            name="q"
+            defaultValue={params.q}
+            placeholder={t.moderationSearchHint}
+            maxLength={100}
+            className={`${fieldClass} mt-2`}
+          />
+        </label>
+        <label className="text-xs text-slate-400">
+          {t.kind}
+          <select
+            name="kind"
+            defaultValue={data.kind}
+            className={`${fieldClass} mt-2`}
+          >
+            <option value="comments">{t.comments}</option>
+            <option value="reviews">{t.reviews}</option>
+          </select>
+        </label>
+        {data.kind === "comments" ? (
+          <label className="text-xs text-slate-400">
+            {t.status}
+            <select
+              name="status"
+              defaultValue={params.status || "visible"}
+              className={`${fieldClass} mt-2`}
             >
-              <div className="flex flex-wrap justify-between gap-2">
-                <p className="text-sm font-bold">
-                  {actionNames[log.action] || log.action}
-                </p>
-                <time className="text-xs text-slate-500">
-                  {date(log.createdAt)}
-                </time>
-              </div>
-              <p className="mt-2 break-words text-sm text-slate-300">
-                {log.reason}
-              </p>
-              <p className="mt-2 break-all text-xs text-slate-500">
-                @{log.actorName} · Hedef: {log.targetId}
-              </p>
-            </article>
-          ))}
-        </div>
-      ) : (
-        <Empty>Henüz yönetici işlemi yapılmadı.</Empty>
-      )}
-      <Pager page={data.page} pages={data.pages} params={{ tab: "audit" }} />
+              <option value="visible">{t.visible}</option>
+              <option value="removed">{t.removed}</option>
+              <option value="all">{t.all}</option>
+            </select>
+          </label>
+        ) : (
+          <span />
+        )}
+        <button className="self-end rounded-xl bg-amber-400 px-4 py-2 text-sm font-bold text-slate-950">
+          {t.filter}
+        </button>
+      </form>
+      <p className="mb-4 text-xs text-slate-400">
+        {interpolate(t.countRecords, { count: n(data.total) })}
+      </p>
+      <div className="space-y-4">
+        {data.comments.map((c) => (
+          <article key={c.id} className="rounded-xl border border-white/10 p-4">
+            <div className="flex flex-wrap justify-between gap-2 text-xs">
+              <Link
+                href={`/admin/users/${c.user.id}`}
+                className="text-amber-300"
+              >
+                @{c.user.username}
+              </Link>
+              <time>{d(c.createdAt)}</time>
+            </div>
+            <p className="my-3 max-h-40 overflow-auto whitespace-pre-wrap break-words text-sm">
+              {REMOVED_COMMENTS.includes(c.content)
+                ? t.removedComment
+                : c.content}
+            </p>
+            <div className="flex flex-wrap justify-between gap-3">
+              <span className="text-xs text-slate-500">
+                {c.isSpoiler ? t.spoiler : t.comment}
+              </span>
+              {!REMOVED_COMMENTS.includes(c.content) && (
+                <AdminActionButton
+                  action="redact-comment"
+                  targetId={c.id}
+                  label={t.redactComment}
+                  description={t.redactHint}
+                />
+              )}
+            </div>
+          </article>
+        ))}
+        {data.reviews.map((r) => (
+          <article key={r.id} className="rounded-xl border border-white/10 p-4">
+            <p className="text-sm font-bold">{r.media.title}</p>
+            <div className="mt-1 flex flex-wrap justify-between gap-2 text-xs">
+              <Link
+                href={`/admin/users/${r.user.id}`}
+                className="text-amber-300"
+              >
+                @{r.user.username}
+              </Link>
+              <time>{d(r.createdAt)}</time>
+            </div>
+            <p className="my-3 max-h-40 overflow-auto whitespace-pre-wrap break-words text-sm">
+              {r.review}
+            </p>
+            <AdminActionButton
+              action="redact-review"
+              targetId={r.id}
+              label={t.redactReview}
+              description={t.redactHint}
+            />
+          </article>
+        ))}
+        {!data.total && <Empty>{t.noMatch}</Empty>}
+      </div>
+      <Pager
+        page={data.page}
+        pages={data.pages}
+        params={{ ...params, tab: "content" }}
+      />
     </Panel>
   );
 }
-
-function System() {
+async function Audit({ params }: { params: Params }) {
+  const { t, d, n } = await context(),
+    data = await getAudit(params);
+  return (
+    <Panel title={t.audit} subtitle={t.auditHint}>
+      <form
+        action="/admin"
+        className="mb-6 grid gap-3 sm:grid-cols-[2fr_1fr_auto]"
+      >
+        <input type="hidden" name="tab" value="audit" />
+        <label className="text-xs text-slate-400">
+          {t.search}
+          <input
+            name="q"
+            defaultValue={params.q}
+            maxLength={100}
+            placeholder={t.auditSearchHint}
+            className={`${fieldClass} mt-2`}
+          />
+        </label>
+        <label className="text-xs text-slate-400">
+          {t.action}
+          <select
+            name="action"
+            defaultValue={params.action || ""}
+            className={`${fieldClass} mt-2`}
+          >
+            <option value="">{t.all}</option>
+            {[
+              "suspend",
+              "activate",
+              "redact-comment",
+              "redact-review",
+              "export-users",
+            ].map((a) => (
+              <option key={a} value={a}>
+                {adminActionLabel(a, t)}
+              </option>
+            ))}
+          </select>
+        </label>
+        <button className="self-end rounded-xl bg-amber-400 px-4 py-2 text-sm font-bold text-slate-950">
+          {t.filter}
+        </button>
+      </form>
+      <p className="mb-4 text-xs text-slate-400">
+        {interpolate(t.countRecords, { count: n(data.total) })}
+      </p>
+      <div className="space-y-3">
+        {data.logs.map((log) => (
+          <article
+            key={log.id}
+            className="rounded-xl border border-white/10 p-4"
+          >
+            <div className="flex flex-wrap justify-between gap-2">
+              <p className="text-sm font-bold">
+                {adminActionLabel(log.action, t)}
+              </p>
+              <time className="text-xs text-slate-500">{d(log.createdAt)}</time>
+            </div>
+            <p className="mt-2 break-words text-sm">{log.reason}</p>
+            <p className="mt-2 break-all text-xs text-slate-500">
+              @{log.actorName} · {t.target}: {log.targetId}
+            </p>
+          </article>
+        ))}
+      </div>
+      {!data.total && <Empty />}
+      <Pager
+        page={data.page}
+        pages={data.pages}
+        params={{ ...params, tab: "audit" }}
+      />
+    </Panel>
+  );
+}
+async function System() {
+  const { t } = await context();
+  let healthy = false;
+  try {
+    await prisma.$queryRaw`SELECT 1`;
+    healthy = true;
+  } catch {}
+  const configured = (ok: boolean) => (ok ? t.configured : t.notConfigured);
   const checks = [
+    [t.health, healthy ? t.healthy : t.unhealthy],
+    [t.version, (process.env.APP_COMMIT_SHA || "").slice(0, 12) || t.unknown],
     [
-      "Ziyaret ölçümü",
-      process.env.ANALYTICS_ENABLED === "true" ? "Etkin" : "Kapalı",
+      t.analytics,
+      process.env.ANALYTICS_ENABLED === "true" ? t.enabled : t.disabled,
     ],
+    [t.countrySource, process.env.ANALYTICS_COUNTRY_HEADER || t.notConfigured],
     [
-      "Ülke kaynağı",
-      process.env.ANALYTICS_COUNTRY_HEADER || "Tanımlanmadı · ülke bilinmiyor",
+      t.google,
+      configured(
+        !!(
+          (process.env.AUTH_GOOGLE_ID ||
+            process.env.GOOGLE_CLIENT_ID ||
+            process.env.GOOGLE_ID) &&
+          (process.env.AUTH_GOOGLE_SECRET ||
+            process.env.GOOGLE_CLIENT_SECRET ||
+            process.env.GOOGLE_SECRET)
+        ),
+      ),
     ],
+    [t.mail, configured(!!process.env.RESEND_API_KEY)],
+    ["TMDB", configured(!!process.env.TMDB_API_KEY)],
     [
-      "Google girişi",
-      (process.env.AUTH_GOOGLE_ID ||
-        process.env.GOOGLE_CLIENT_ID ||
-        process.env.GOOGLE_ID) &&
-      (process.env.AUTH_GOOGLE_SECRET ||
-        process.env.GOOGLE_CLIENT_SECRET ||
-        process.env.GOOGLE_SECRET)
-        ? "Yapılandırılmış"
-        : "Yapılandırılmamış",
+      t.environment,
+      process.env.NODE_ENV === "production" ? t.production : t.development,
     ],
-    [
-      "E-posta servisi",
-      process.env.RESEND_API_KEY ? "Yapılandırılmış" : "Yapılandırılmamış",
-    ],
-    [
-      "TMDB",
-      process.env.TMDB_API_KEY ? "Yapılandırılmış" : "Yapılandırılmamış",
-    ],
-    ["Ortam", process.env.NODE_ENV === "production" ? "Üretim" : "Geliştirme"],
   ];
   return (
     <div className="grid gap-5 lg:grid-cols-2">
-      <Panel
-        title="Servis yapılandırması"
-        subtitle="Anahtar varlığını gösterir; servislerin anlık erişilebilirlik testi değildir."
-      >
+      <Panel title={t.services} subtitle={t.servicesHint}>
         <dl className="space-y-4">
           {checks.map(([label, value]) => (
             <div
@@ -676,32 +662,18 @@ function System() {
               className="flex flex-wrap justify-between gap-3 border-b border-white/5 pb-3 text-sm"
             >
               <dt className="text-slate-400">{label}</dt>
-              <dd className="text-white">{value}</dd>
+              <dd>{value}</dd>
             </div>
           ))}
         </dl>
       </Panel>
-      <Panel title="Erişim ve veri kapsamı">
-        <div className="space-y-4 text-sm leading-relaxed text-slate-400">
-          <Shield className="text-amber-400" size={28} />
-          <p>
-            Yönetici erişimi sunucuda tanımlanan hesap kimlikleriyle verilir.
-            Her veri isteği ve işlem için yetki yeniden kontrol edilir.
-          </p>
-          <p>
-            Ülkeler yaklaşık bağlantı konumudur. Dil ayarından ülke tahmini
-            yapılmaz. Ölçümde IP, ziyaretçi çerezi, arama metni ve mesaj içeriği
-            saklanmaz.
-          </p>
-          <p>
-            Aktif üye sayısı, seçili dönemde ölçülen farklı hesaplardır.
-            Görüntüleme sayısı tekil ziyaretçi sayısı değildir. Do Not Track /
-            Global Privacy Control talepleri ölçüm dışında tutulur.
-          </p>
-          <p>
-            Eski hesapların kayıt tarihleri bilinmiyor olarak gösterilir.
-            Mesajların yalnızca adetleri raporlanır.
-          </p>
+      <Panel title={t.accessScope}>
+        <div className="space-y-4 text-sm text-slate-400">
+          <p>{t.accessHint}</p>
+          <p>{t.privacyHint}</p>
+          <p>{t.registrationHint}</p>
+          <p>{t.countriesHint}</p>
+          <p>{t.messagesHint}</p>
         </div>
       </Panel>
     </div>

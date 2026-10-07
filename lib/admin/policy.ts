@@ -38,3 +38,18 @@ export function pagination(value?: string) {
     Number.isSafeInteger(parsed) && parsed > 0 ? Math.min(parsed, 10000) : 1;
   return { page, take: 25, skip: (page - 1) * 25 };
 }
+
+export function validAdminDay(
+  value: string | null,
+  now = new Date(),
+): Date | null {
+  if (!value || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return null;
+  const day = new Date(value + "T00:00:00Z");
+  if (
+    !Number.isFinite(day.getTime()) ||
+    day.toISOString().slice(0, 10) !== value ||
+    value > now.toISOString().slice(0, 10)
+  )
+    return null;
+  return day;
+}

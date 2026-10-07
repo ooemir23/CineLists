@@ -50,7 +50,7 @@ test("requires an audit reason", async () => {
 });
 test("suspension and audit are written in the same transaction", async () => {
   const tx = {
-    user: { update: jest.fn() },
+    user: { updateMany: jest.fn().mockResolvedValue({ count: 1 }) },
     session: { deleteMany: jest.fn() },
     adminAuditLog: { create: jest.fn() },
   };
@@ -62,9 +62,12 @@ test("suspension and audit are written in the same transaction", async () => {
       reason: "Spam davranışı",
     }),
   ).toEqual({ success: true });
-  expect(tx.user.update).toHaveBeenCalledWith(
+  expect(tx.user.updateMany).toHaveBeenCalledWith(
     expect.objectContaining({
-      data: expect.objectContaining({ isSuspended: true }),
+      data: expect.objectContaining({
+        isSuspended: true,
+        sessionVersion: { increment: 1 },
+      }),
     }),
   );
   expect(tx.session.deleteMany).toHaveBeenCalledWith({
@@ -87,4 +90,46 @@ test("database failure never returns success", async () => {
       reason: "İnceleme tamamlandı",
     }),
   ).toHaveProperty("error");
+});
+
+test("unchanged accounts are not audited or reported as success", async () => {
+  const tx = {
+    user: { updateMany: jest.fn().mockResolvedValue({ count: 0 }) },
+    session: { deleteMany: jest.fn() },
+    adminAuditLog: { create: jest.fn() },
+  };
+  transaction.mockImplementationOnce(async (callback) => callback(tx));
+  expect(
+    await performAdminAction({
+      action: "suspend",
+      targetId: "user",
+      reason: "Reason text",
+    }),
+  ).toHaveProperty("error");
+  expect(tx.adminAuditLog.create).not.toHaveBeenCalled();
+  expect(tx.session.deleteMany).not.toHaveBeenCalled();
+});
+test("reactivation revokes old JWTs without restoring sessions", async () => {
+  const tx = {
+    user: { updateMany: jest.fn().mockResolvedValue({ count: 1 }) },
+    session: { deleteMany: jest.fn() },
+    adminAuditLog: { create: jest.fn() },
+  };
+  transaction.mockImplementationOnce(async (callback) => callback(tx));
+  expect(
+    await performAdminAction({
+      action: "activate",
+      targetId: "user",
+      reason: "Reason text",
+    }),
+  ).toEqual({ success: true });
+  expect(tx.user.updateMany).toHaveBeenCalledWith(
+    expect.objectContaining({
+      where: { id: "user", isSuspended: true },
+      data: expect.objectContaining({
+        isSuspended: false,
+        sessionVersion: { increment: 1 },
+      }),
+    }),
+  );
 });

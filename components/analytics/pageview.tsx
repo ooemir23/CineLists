@@ -24,7 +24,9 @@ export function Pageview() {
     if (
       last.current === currentPath ||
       currentPath.startsWith("/admin") ||
-      navigator.doNotTrack === "1"
+      navigator.doNotTrack === "1" ||
+      (navigator as Navigator & { globalPrivacyControl?: boolean })
+        .globalPrivacyControl === true
     )
       return;
     last.current = currentPath;
@@ -40,7 +42,13 @@ export function Pageview() {
 
   // 2. Real-time Heartbeat & Active Time Spent Tracking (Every 45s)
   useEffect(() => {
-    if (currentPath.startsWith("/admin") || navigator.doNotTrack === "1") return;
+    if (
+      currentPath.startsWith("/admin") ||
+      navigator.doNotTrack === "1" ||
+      (navigator as Navigator & { globalPrivacyControl?: boolean })
+        .globalPrivacyControl === true
+    )
+      return;
     lastActivityTime.current = Date.now();
     const handleUserActivity = () => {
       lastActivityTime.current = Date.now();
@@ -53,7 +61,7 @@ export function Pageview() {
     window.addEventListener("click", handleUserActivity, { passive: true });
 
     const sendHeartbeat = (seconds: number) => {
-      if (document.visibilityState === "hidden" && Date.now() - lastActivityTime.current > 60000) {
+      if (document.visibilityState !== "visible") {
         return; // Skip if tab was hidden and idle for more than 1 min
       }
 
@@ -67,7 +75,7 @@ export function Pageview() {
 
     // Send an initial presence ping shortly after mount
     const initialTimer = setTimeout(() => {
-      sendHeartbeat(30);
+      sendHeartbeat(0);
     }, 5000);
 
     // Periodic heartbeat every 45 seconds while user is active
@@ -78,17 +86,6 @@ export function Pageview() {
       }
     }, 45000);
 
-    // Send final presence beacon when tab is closed or hidden
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === "hidden") {
-        const elapsed = Math.min(60, Math.round((Date.now() - lastActivityTime.current) / 1000));
-        if (elapsed > 10) {
-          sendHeartbeat(elapsed);
-        }
-      }
-    };
-    document.addEventListener("visibilitychange", handleVisibilityChange);
-
     return () => {
       clearTimeout(initialTimer);
       clearInterval(interval);
@@ -96,7 +93,6 @@ export function Pageview() {
       window.removeEventListener("keydown", handleUserActivity);
       window.removeEventListener("scroll", handleUserActivity);
       window.removeEventListener("click", handleUserActivity);
-      document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
   }, [currentPath]);
 
