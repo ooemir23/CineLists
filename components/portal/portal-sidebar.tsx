@@ -326,7 +326,7 @@ export function PortalSidebar({ user, isAdmin = false }: PortalSidebarProps) {
           <span className="text-xs text-neutral-400 font-bold">
             {dict.settings.language}
           </span>
-          <LanguageSelector variant="dropdown" />
+          <LanguageSelector variant="dropdown" menuSide="top" />
         </div>
 
         {user ? (

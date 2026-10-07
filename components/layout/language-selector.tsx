@@ -9,11 +9,13 @@ import { cn } from "@/lib/utils";
 interface LanguageSelectorProps {
   className?: string;
   variant?: "dropdown" | "toggle" | "minimal";
+  menuSide?: "top" | "bottom";
 }
 
 export function LanguageSelector({
   className,
   variant = "dropdown",
+  menuSide = "bottom",
 }: LanguageSelectorProps) {
   const { locale, setLocale } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
@@ -97,7 +99,8 @@ export function LanguageSelector({
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 top-full mt-2 w-36 rounded-2xl bg-slate-900/95 border border-white/10 shadow-2xl backdrop-blur-xl p-1.5 z-[1002] animate-in fade-in zoom-in-95 duration-150">
+        <div className={cn("absolute right-0 w-36 rounded-2xl bg-slate-900/95 border border-white/10 shadow-2xl backdrop-blur-xl p-1.5 z-[1002] animate-in fade-in zoom-in-95 duration-150",
+          menuSide === "top" ? "bottom-full mb-2" : "top-full mt-2")} >
           {SUPPORTED_LOCALES.map((l) => {
             const isSelected = l.code === locale;
             return (

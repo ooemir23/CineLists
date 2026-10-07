@@ -425,7 +425,7 @@ export function PortalMobileDrawer({
             <span>{dict.settings.title}</span>
           </Link>
           {user && <SignOutButton compact className="h-9 w-9 justify-center" />}
-          <LanguageSelector variant="dropdown" />
+          <LanguageSelector variant="dropdown" menuSide="top" />
         </div>
       </div>
     </div>
