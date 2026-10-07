@@ -23,7 +23,9 @@ import {
   Check,
   Bookmark,
   Eye,
+  MessageCircle,
 } from "lucide-react";
+import { SignOutButton } from "@/components/layout/sign-out-button";
 import { cn } from "@/lib/utils";
 import { PortalMobileDrawer } from "./portal-mobile-drawer";
 import { PortalNotificationBell } from "./portal-notification-bell";
@@ -647,7 +649,12 @@ export function PortalTopbar({ user, isAdmin = false, needsProfileCompletion = f
 
                 {user ? (
                   <div className="flex items-center gap-1.5 sm:gap-2">
+                    <Link href="/messages" aria-label={dict.nav.messages} title={dict.nav.messages}
+                      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-neutral-300 hover:text-amber-400 hover:bg-white/5">
+                      <MessageCircle className="h-4 w-4" aria-hidden="true" />
+                    </Link>
                     <PortalNotificationBell />
+                    <SignOutButton compact className="h-9 w-9 shrink-0 justify-center" />
                     <Link
                       href="/profile"
                       className="flex items-center gap-2 p-1 pl-1.5 sm:pl-2 rounded-xl hover:bg-white/5 border border-transparent hover:border-white/10 transition-colors"
@@ -666,7 +673,7 @@ export function PortalTopbar({ user, isAdmin = false, needsProfileCompletion = f
                           </span>
                         )}
                       </div>
-                      <span className="hidden sm:inline text-xs font-bold text-white max-w-[120px] truncate">
+                      <span className="hidden lg:inline text-xs font-bold text-white max-w-[120px] truncate">
                         {user.name}
                       </span>
                     </Link>

@@ -19,7 +19,9 @@ import {
   Flame,
   LogIn,
   ShieldCheck,
+  MessageCircle,
 } from "lucide-react";
+import { SignOutButton } from "@/components/layout/sign-out-button";
 import { cn } from "@/lib/utils";
 import { LanguageSelector } from "@/components/layout/language-selector";
 import { useTranslation } from "@/lib/i18n/i18n-context";
@@ -223,6 +225,14 @@ export function PortalSidebar({ user, isAdmin = false }: PortalSidebarProps) {
               <span>Yönetim Merkezi</span>
             </Link>
           )}
+          {user && (
+            <Link href="/messages"
+              className={cn("flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-colors",
+                pathname.startsWith("/messages") ? "bg-amber-400/15 text-amber-400" : "text-neutral-300 hover:bg-white/5")}>
+              <MessageCircle className="h-4 w-4" aria-hidden="true" />
+              <span>{dict.nav.messages}</span>
+            </Link>
+          )}
         </nav>
 
         {/* Collapsible: Platformlar */}
@@ -356,6 +366,7 @@ export function PortalSidebar({ user, isAdmin = false }: PortalSidebarProps) {
             {dict.nav.login}
           </Link>
         )}
+        {user && <SignOutButton className="w-full px-3 py-2 text-xs font-bold" />}
       </div>
     </aside>
   );

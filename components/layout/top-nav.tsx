@@ -12,7 +12,6 @@ import {
   Check,
   Compass,
   BarChart3,
-  LogOut,
   User,
   MessageCircle,
   Users,
@@ -21,7 +20,7 @@ import {
 import { BrandLogo } from "./brand-logo";
 import { LanguageSelector } from "./language-selector";
 import { useTranslation } from "@/lib/i18n/i18n-context";
-import { handleSignOut } from "@/lib/auth-actions";
+import { SignOutButton } from "./sign-out-button";
 import {
   libraryNavItems,
   profileNavItems,
@@ -318,14 +317,7 @@ export function TopNav({ user, isAdmin = false }: TopNavProps) {
                       </Link>
                     ))}
                     <div className="h-[1px] bg-white/5 my-2 mx-3" />
-                    <form action={handleSignOut}>
-                      <button type="submit" className="w-full flex items-center gap-3 px-5 py-3.5 text-sm text-rose-400 hover:bg-rose-500/10 transition-all group text-left">
-                        <div className="w-9 h-9 rounded-xl bg-rose-500/5 flex items-center justify-center group-hover:bg-rose-500/20 transition-colors">
-                          <LogOut size={20} />
-                        </div>
-                        <span className="font-bold">{t("nav.logout", "Oturumu Kapat")}</span>
-                      </button>
-                    </form>
+                    <SignOutButton className="w-full px-5 py-3 text-sm font-bold text-left" />
                   </>
                 ) : (
                   <>

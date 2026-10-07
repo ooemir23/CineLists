@@ -8,13 +8,12 @@ import {
   Compass,
   Home,
   ListFilter,
-  LogOut,
   User,
   ShieldCheck,
   Flame,
   Award,
 } from "lucide-react";
-import { handleSignOut } from "@/lib/auth-actions";
+import { SignOutButton } from "./sign-out-button";
 import { cn } from "@/lib/utils";
 import { useTranslation } from "@/lib/i18n/i18n-context";
 import {
@@ -285,19 +284,7 @@ export function MobileDock({ user, isAdmin = false }: MobileDockProps) {
 
                     <div className="mx-3 my-1.5 h-px bg-white/5" />
 
-                    <form action={handleSignOut}>
-                      <button
-                        type="submit"
-                        className="flex w-full items-center gap-3 px-3.5 py-2 text-xs text-rose-400 transition hover:bg-rose-500/10 active:scale-[0.98]"
-                      >
-                        <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-rose-500/10 text-rose-400 shrink-0">
-                          <LogOut size={15} strokeWidth={2.5} />
-                        </div>
-                        <span className="font-bold uppercase tracking-wider text-[11px]">
-                          {t("nav.logout", "Çıkış Yap")}
-                        </span>
-                      </button>
-                    </form>
+                    <SignOutButton className="w-full px-5 py-3 text-sm font-bold text-left" />
                   </>
                 ) : (
                   guestNavItems.map((item) => (
