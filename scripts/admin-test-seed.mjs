@@ -74,8 +74,26 @@ try {
       });
     }
   }
+  const today = new Date();
+  today.setUTCHours(0, 0, 0, 0);
+  for (let i = 1; i < 32; i++)
+    await prisma.memberDailyVisit.upsert({
+      where: {
+        userId_day: {
+          userId: `member-test-${String(i).padStart(2, "0")}`,
+          day: today,
+        },
+      },
+      create: {
+        userId: `member-test-${String(i).padStart(2, "0")}`,
+        day: today,
+        views: i,
+        activeSeconds: i * 60,
+      },
+      update: {},
+    });
   const media = await prisma.mediaItem.upsert({
-    where: { tmdbId: 27205 },
+    where: { type_tmdbId: { type: "MOVIE", tmdbId: 27205 } },
     create: {
       tmdbId: 27205,
       title: "Başlangıç",

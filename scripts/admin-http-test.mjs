@@ -20,6 +20,7 @@ function verify(condition, message) {
 function client() {
   const jar = new Map();
   return async (path, options = {}) => {
+    if (options.locale) jar.set("NEXT_LOCALE", options.locale);
     const response = await fetch(`${base}${path}`, {
       ...options,
       redirect: "manual",
@@ -212,7 +213,7 @@ try {
   await login(revoked, "test_uye_04");
   await prisma.user.update({
     where: { id: "member-test-04" },
-    data: { isSuspended: true },
+    data: { isSuspended: true, sessionVersion: { increment: 1 } },
   });
   verify(
     !(await (await revoked("/api/auth/session")).json()).user,
@@ -220,12 +221,67 @@ try {
   );
   await prisma.user.update({
     where: { id: "member-test-04" },
-    data: { isSuspended: false },
+    data: { isSuspended: false, sessionVersion: { increment: 1 } },
   });
   verify(
-    (await (await revoked("/api/auth/session")).json()).user?.id ===
-      "member-test-04",
-    "Reactivation restores access",
+    !(await (await revoked("/api/auth/session")).json()).user,
+    "Reactivation does not restore revoked sessions",
+  );
+  for (const locale of ["tr", "en"]) {
+    for (const tab of ["overview", "users", "content", "audit", "system"]) {
+      const response = await admin("/admin?tab=" + tab, { locale });
+      const body = await response.text();
+      verify(
+        response.status === 200 &&
+          !body.includes("Could not load management data") &&
+          !body.includes("Yönetim verileri yüklenemedi"),
+        "Localized tab " + locale + ":" + tab,
+      );
+      verify(
+        body.includes(
+          locale === "en" ? "Management Center" : "Yönetim Merkezi",
+        ),
+        "Translated title " + locale + ":" + tab,
+      );
+    }
+  }
+  for (const type of [
+    "users",
+    "online",
+    "active",
+    "new-users",
+    "duration",
+    "views",
+  ]) {
+    const response = await admin(
+      "/api/admin/metric-details?type=" + type + "&page=999",
+    );
+    verify(response.status === 200, "Metric route: " + type);
+    verify(
+      response.headers.get("cache-control") === "private, no-store",
+      "Private metric: " + type,
+    );
+    const body = await response.json();
+    if (body.items) verify(body.items.length <= 25, "Bounded metric: " + type);
+  }
+  const date = new Date().toISOString().slice(0, 10),
+    day = await admin("/api/admin/daily-visitors?date=" + date + "&page=999"),
+    dayBody = await day.json();
+  verify(
+    day.status === 200 && dayBody.users.length <= 25 && dayBody.pages >= 2,
+    "Measured daily visitors paginate",
+  );
+  verify(
+    (await admin("/api/admin/daily-visitors?date=2026-02-30")).status === 400,
+    "Impossible date rejected",
+  );
+  verify(
+    (await anonymous("/api/admin/daily-visitors?date=" + date)).status === 403,
+    "Daily details deny anonymous request",
+  );
+  verify(
+    (await member("/api/admin/metric-details?type=users")).status === 403,
+    "Metric details deny ordinary member",
   );
   console.log(`${checks} HTTP / database integration checks passed.`);
 } finally {

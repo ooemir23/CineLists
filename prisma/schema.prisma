@@ -82,6 +82,7 @@ model User {
   watchedRecommendations  Watched[]         @relation("WatchedRecommendations")
   watched                 Watched[]         @relation("UserWatched")
   watchedEpisodes         WatchedEpisode[]
+  memberDailyVisits       MemberDailyVisit[]
   adminProfile            UserAdminProfile?
   adminActions            AdminAuditLog[]
 }
@@ -95,6 +96,7 @@ model UserAdminProfile {
   country       String?
   totalMinutes  Int       @default(0)
   activeSeconds Int       @default(0)
+  heartbeatAt   DateTime?
   user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([registeredAt])
@@ -489,4 +491,19 @@ model UsernameAlias {
   userId String
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
   @@index([userId])
+}
+
+// Measured member visits; no IP, session cookie or message content.
+model MemberDailyVisit {
+  id            String   @id @default(cuid())
+  userId        String
+  day           DateTime @db.Date
+  views         Int      @default(0)
+  activeSeconds Int      @default(0)
+  lastSeen      DateTime @default(now())
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, day])
+  @@index([day, lastSeen(sort: Desc)])
+  @@index([userId, lastSeen(sort: Desc)])
 }

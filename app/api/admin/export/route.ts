@@ -1,28 +1,25 @@
-import { getAdmin } from "@/lib/admin/access";
 import { prisma } from "@/lib/prisma";
 import { userWhere } from "@/lib/admin/data";
 import { csvCell } from "@/lib/admin/policy";
 import { checkRateLimit } from "@/lib/ratelimit";
-
+import { adminRequest, privateJson } from "@/lib/admin/http";
+import { interpolate } from "@/lib/admin/format";
 export async function GET(request: Request) {
-  const admin = await getAdmin();
-  if (!admin) return new Response("Yetkisiz erişim", { status: 403 });
-  if (!checkRateLimit(`admin-export:${admin.id}`, 5, 60000).allowed)
-    return new Response("Lütfen bir dakika sonra tekrar deneyin.", {
-      status: 429,
+  const { admin, error, t } = await adminRequest(request);
+  if (error || !admin) return error!;
+  if (!checkRateLimit(`admin-export:${admin.id}`, 5, 60_000).allowed)
+    return privateJson({ error: t.rateLimited }, 429);
+  const qs = new URL(request.url).searchParams,
+    where = userWhere({
+      q: qs.get("q") || "",
+      country: qs.get("country") || "",
+      status: qs.get("status") || "",
+      metric: qs.get("metric") || "",
+      days: qs.get("days") || "30",
     });
-  const params = new URL(request.url).searchParams;
-  const where = userWhere({
-    q: params.get("q") || "",
-    country: params.get("country") || "",
-    status: params.get("status") || "",
-  });
   try {
     if ((await prisma.user.count({ where })) > 5000)
-      return new Response(
-        "En fazla 5000 kullanıcı dışa aktarılabilir. Filtreleri daraltın.",
-        { status: 422 },
-      );
+      return privateJson({ error: t.exportLimit }, 422);
     const users = await prisma.user.findMany({
       where,
       take: 5000,
@@ -39,28 +36,28 @@ export async function GET(request: Request) {
     });
     const rows = [
       [
-        "Kimlik",
-        "Kullanıcı adı",
-        "Ad",
-        "E-posta",
-        "Durum",
-        "Kurulum tamamlandı",
-        "Kayıt tarihi (UTC)",
-        "Son görülme (UTC)",
-        "Sitede geçirilen süre (dk)",
-        "Son bilinen ülke",
+        t.userId,
+        t.username,
+        t.name,
+        t.email,
+        t.status,
+        t.completed,
+        t.registeredAt + " (UTC)",
+        t.lastSeen + " (UTC)",
+        t.duration,
+        t.country,
       ],
-      ...users.map((user) => [
-        user.id,
-        user.username,
-        user.name,
-        user.email,
-        user.isSuspended ? "Askıda" : "Aktif",
-        user.hasCompletedOnboarding ? "Evet" : "Hayır",
-        user.adminProfile?.registeredAt?.toISOString(),
-        user.adminProfile?.lastSeenAt?.toISOString(),
-        user.adminProfile?.totalMinutes || 0,
-        user.adminProfile?.country || "Bilinmiyor",
+      ...users.map((u) => [
+        u.id,
+        u.username,
+        u.name,
+        u.email,
+        u.isSuspended ? t.suspended : t.active,
+        u.hasCompletedOnboarding ? t.yes : t.no,
+        u.adminProfile?.registeredAt?.toISOString(),
+        u.adminProfile?.lastSeenAt?.toISOString(),
+        u.adminProfile?.totalMinutes || 0,
+        u.adminProfile?.country || t.unknown,
       ]),
     ];
     await prisma.adminAuditLog.create({
@@ -69,22 +66,22 @@ export async function GET(request: Request) {
         actorName: admin.username,
         action: "export-users",
         targetId: "users",
-        reason: `${users.length} kullanıcı CSV olarak dışa aktarıldı.`,
+        reason: interpolate(t.exportReason, { count: users.length }),
       },
     });
     return new Response(
-      "\uFEFF" + rows.map((row) => row.map(csvCell).join(",")).join("\r\n"),
+      "\uFEFF" + rows.map((r) => r.map(csvCell).join(",")).join("\r\n"),
       {
         headers: {
           "Content-Type": "text/csv; charset=utf-8",
-          "Content-Disposition":
-            'attachment; filename="cinelists-kullanicilar.csv"',
+          "Content-Disposition": 'attachment; filename="cinelists-users.csv"',
           "Cache-Control": "private, no-store",
           "X-Content-Type-Options": "nosniff",
+          Vary: "Cookie",
         },
       },
     );
   } catch {
-    return new Response("Dışa aktarma tamamlanamadı.", { status: 503 });
+    return privateJson({ error: t.exportError }, 503);
   }
 }

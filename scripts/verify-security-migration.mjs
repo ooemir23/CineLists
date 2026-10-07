@@ -109,6 +109,50 @@ assert.equal(
     .votes,
   0,
 );
+await db.exec(`ALTER TABLE "UserAdminProfile" ADD COLUMN IF NOT EXISTS "totalMinutes" INTEGER NOT NULL DEFAULT 0;
+CREATE TABLE "UserDailyVisit" (id TEXT PRIMARY KEY,"userId" TEXT NOT NULL,day DATE NOT NULL,views INTEGER NOT NULL,"lastSeen" TIMESTAMP NOT NULL);
+INSERT INTO "UserDailyVisit" VALUES ('v1','u1','2026-10-07',3,'2026-10-07'),('orphan','deleted-user','2026-10-07',1,'2026-10-07');
+UPDATE "UserAdminProfile" SET "totalMinutes"=4 WHERE "userId"='u1';`);
+await db.exec(
+  fs.readFileSync(
+    new URL(
+      "../prisma/migrations/20261007193000_admin_reliability/migration.sql",
+      import.meta.url,
+    ),
+    "utf8",
+  ),
+);
+assert.equal(
+  (await db.query('SELECT count(*)::int n FROM "MemberDailyVisit"')).rows[0].n,
+  1,
+);
+assert.equal(
+  (await db.query('SELECT views FROM "MemberDailyVisit"')).rows[0].views,
+  3,
+);
+assert.equal(
+  (await db.query('SELECT count(*)::int n FROM "UserDailyVisit"')).rows[0].n,
+  2,
+);
+assert.equal(
+  (
+    await db.query(
+      'SELECT "activeSeconds" FROM "UserAdminProfile" WHERE "userId"=\'u1\'',
+    )
+  ).rows[0].activeSeconds,
+  240,
+);
+await assert.rejects(
+  db.query(
+    `INSERT INTO "MemberDailyVisit" (id,"userId",day) VALUES ('bad','missing','2026-10-07')`,
+  ),
+);
+await assert.rejects(db.query(`UPDATE "MemberDailyVisit" SET views=-1`));
+await assert.rejects(
+  db.query(
+    `INSERT INTO "MemberDailyVisit" (id,"userId",day) VALUES ('duplicate','u1','2026-10-07')`,
+  ),
+);
 await db.close();
 console.log(
   "PostgreSQL migration passed: username aliases, duplicates, comment preservation, typed favorites and unique/validation constraints.",

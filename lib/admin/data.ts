@@ -2,9 +2,14 @@ import "server-only";
 import { prisma } from "@/lib/prisma";
 import { Prisma } from "@prisma/client";
 import { requireAdmin } from "./access";
-import { pagination } from "./policy";
+import { dateWindow, pagination } from "./policy";
+import { REMOVED_COMMENTS } from "./format";
 
 export type UserFilters = {
+  metric?: string;
+  days?: string;
+  action?: string;
+  kind?: string;
   q?: string;
   status?: string;
   country?: string;
@@ -14,11 +19,33 @@ export type UserFilters = {
 export function userWhere(filters: UserFilters): Prisma.UserWhereInput {
   const q = filters.q?.trim().slice(0, 100);
   const parts: Prisma.UserWhereInput[] = [];
+  const { since } = dateWindow(filters.days);
+  if (filters.metric === "online")
+    parts.push({
+      isSuspended: false,
+      adminProfile: { lastSeenAt: { gte: new Date(Date.now() - 5 * 60_000) } },
+    });
+  if (filters.metric === "active")
+    parts.push({ adminProfile: { lastSeenAt: { gte: since } } });
+  if (filters.metric === "new-users")
+    parts.push({ adminProfile: { registeredAt: { gte: since } } });
+  if (filters.metric === "duration")
+    parts.push({ adminProfile: { totalMinutes: { gt: 0 } } });
+
   if (q)
     parts.push({
       OR: ["name", "username", "email"].map((field) => ({
         [field]: { contains: q, mode: "insensitive" },
       })),
+    });
+  if (filters.status === "admin")
+    parts.push({
+      id: {
+        in: (process.env.ADMIN_USER_IDS || "")
+          .split(",")
+          .map((v) => v.trim())
+          .filter(Boolean),
+      },
     });
   if (filters.status === "suspended") parts.push({ isSuspended: true });
   if (filters.status === "active") parts.push({ isSuspended: false });
@@ -55,62 +82,8 @@ export const adminUserSelect = {
   },
 };
 
-export async function syncUserIdentitiesFromEmail() {
-  try {
-    const usersWithEmail = await prisma.user.findMany({
-      where: {
-        email: { not: null },
-      },
-      select: { id: true, email: true, username: true, name: true },
-      take: 200,
-    });
-
-    const isRandomHash = (str?: string | null) =>
-      !str || (/^[a-zA-Z0-9_-]{12,}$/.test(str) && !str.includes(" ") && !str.includes("."));
-
-    for (const u of usersWithEmail) {
-      if (!u.email) continue;
-      const emailPrefix = u.email
-        .split("@")[0]
-        .toLowerCase()
-        .replace(/[^a-z0-9_]/g, "")
-        .slice(0, 25) || "user";
-
-      const needsNameUpdate = isRandomHash(u.name);
-      const needsUsernameUpdate = isRandomHash(u.username);
-
-      if (needsNameUpdate || needsUsernameUpdate) {
-        let targetUsername = u.username;
-        if (needsUsernameUpdate) {
-          const exists = await prisma.user.findFirst({
-            where: {
-              username: { equals: emailPrefix, mode: "insensitive" },
-              id: { not: u.id },
-            },
-          });
-          targetUsername = exists ? `${emailPrefix}_${u.id.slice(-4)}` : emailPrefix;
-        }
-
-        await prisma.user
-          .update({
-            where: { id: u.id },
-            data: {
-              ...(needsNameUpdate ? { name: u.email.split("@")[0] } : {}),
-              ...(needsUsernameUpdate ? { username: targetUsername } : {}),
-            },
-          })
-          .catch(() => {});
-      }
-    }
-  } catch {
-    // Non-blocking
-  }
-}
-
 export async function getUsers(filters: UserFilters) {
   await requireAdmin();
-  // Lazily sync random hash user identities from email addresses
-  void syncUserIdentitiesFromEmail();
   const where = userWhere(filters);
   const { take, page } = pagination(filters.page);
   const total = await prisma.user.count({ where });
@@ -123,13 +96,12 @@ export async function getUsers(filters: UserFilters) {
           { id: "asc" },
         ]
       : filters.sort === "time"
-        ? [
-            { adminProfile: { totalMinutes: "desc" } },
-            { id: "asc" },
-          ]
+        ? [{ adminProfile: { totalMinutes: "desc" } }, { id: "asc" }]
         : filters.sort === "registered"
           ? [
-              { adminProfile: { registeredAt: { sort: "desc", nulls: "last" } } },
+              {
+                adminProfile: { registeredAt: { sort: "desc", nulls: "last" } },
+              },
               { id: "asc" },
             ]
           : [{ username: "asc" }, { id: "asc" }];
@@ -182,7 +154,12 @@ export async function getOverview(since: Date) {
     prisma.user.count({ where: { hasCompletedOnboarding: true } }),
     prisma.userAdminProfile.count({ where: { registeredAt: { gte: since } } }),
     prisma.userAdminProfile.count({ where: { lastSeenAt: { gte: since } } }),
-    prisma.userAdminProfile.count({ where: { lastSeenAt: { gte: fiveMinutesAgo } } }),
+    prisma.userAdminProfile.count({
+      where: {
+        lastSeenAt: { gte: fiveMinutesAgo },
+        user: { isSuspended: false },
+      },
+    }),
     prisma.userAdminProfile.aggregate({ _sum: { totalMinutes: true } }),
     prisma.mediaItem.count(),
     prisma.watched.count(),
@@ -329,54 +306,109 @@ export async function getUserDetail(id: string) {
   });
 }
 
-export async function getModeration(pageValue?: string) {
+export async function getModeration(filters: UserFilters) {
   await requireAdmin();
-  const { take, skip, page } = pagination(pageValue);
-  const [comments, total, reviews] = await Promise.all([
-    prisma.comment.findMany({
-      take,
-      skip,
-      orderBy: [{ createdAt: "desc" }, { id: "desc" }],
-      select: {
-        id: true,
-        content: true,
-        createdAt: true,
-        isSpoiler: true,
-        user: { select: { id: true, username: true } },
-      },
-    }),
-    prisma.comment.count(),
-    prisma.activity.findMany({
-      where: { review: { not: null } },
-      take: 10,
-      orderBy: { createdAt: "desc" },
-      select: {
-        id: true,
-        review: true,
-        user: { select: { id: true, username: true } },
-        media: { select: { title: true } },
-      },
-    }),
-  ]);
-  return {
-    comments,
-    total,
-    reviews,
-    page,
-    pages: Math.max(1, Math.ceil(total / take)),
+  const q = filters.q?.trim().slice(0, 100);
+  const kind = filters.kind === "reviews" ? "reviews" : "comments";
+  const where: Prisma.CommentWhereInput = {
+    ...(q
+      ? {
+          OR: [
+            { content: { contains: q, mode: "insensitive" } },
+            { user: { username: { contains: q, mode: "insensitive" } } },
+          ],
+        }
+      : {}),
+    ...(filters.status === "removed"
+      ? { content: { in: REMOVED_COMMENTS } }
+      : filters.status === "all"
+        ? {}
+        : { content: { notIn: REMOVED_COMMENTS } }),
   };
+  const reviewWhere: Prisma.ActivityWhereInput = {
+    review: { not: null },
+    ...(q
+      ? {
+          OR: [
+            { review: { contains: q, mode: "insensitive" } },
+            { user: { username: { contains: q, mode: "insensitive" } } },
+            { media: { title: { contains: q, mode: "insensitive" } } },
+          ],
+        }
+      : {}),
+  };
+  const total =
+    kind === "reviews"
+      ? await prisma.activity.count({ where: reviewWhere })
+      : await prisma.comment.count({ where });
+  const { take, page } = pagination(filters.page),
+    pages = Math.max(1, Math.ceil(total / take)),
+    currentPage = Math.min(page, pages);
+  const comments =
+    kind === "comments"
+      ? await prisma.comment.findMany({
+          where,
+          take,
+          skip: (currentPage - 1) * take,
+          orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+          select: {
+            id: true,
+            content: true,
+            createdAt: true,
+            isSpoiler: true,
+            user: { select: { id: true, username: true } },
+          },
+        })
+      : [];
+  const reviews =
+    kind === "reviews"
+      ? await prisma.activity.findMany({
+          where: reviewWhere,
+          take,
+          skip: (currentPage - 1) * take,
+          orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+          select: {
+            id: true,
+            review: true,
+            createdAt: true,
+            user: { select: { id: true, username: true } },
+            media: { select: { title: true } },
+          },
+        })
+      : [];
+  return { comments, reviews, total, page: currentPage, pages, kind };
 }
-
-export async function getAudit(pageValue?: string) {
+export async function getAudit(filters: UserFilters) {
   await requireAdmin();
-  const { take, skip, page } = pagination(pageValue);
-  const [logs, total] = await Promise.all([
-    prisma.adminAuditLog.findMany({
-      take,
-      skip,
-      orderBy: [{ createdAt: "desc" }, { id: "desc" }],
-    }),
-    prisma.adminAuditLog.count(),
-  ]);
-  return { logs, total, page, pages: Math.max(1, Math.ceil(total / take)) };
+  const q = filters.q?.trim().slice(0, 100);
+  const actions = [
+    "suspend",
+    "activate",
+    "redact-comment",
+    "redact-review",
+    "export-users",
+  ];
+  const where: Prisma.AdminAuditLogWhereInput = {
+    ...(q
+      ? {
+          OR: ["actorName", "targetId", "reason"].map((field) => ({
+            [field]: { contains: q, mode: "insensitive" },
+          })),
+        }
+      : {}),
+    ...(actions.includes(filters.action || "")
+      ? { action: filters.action }
+      : {}),
+  };
+  const total = await prisma.adminAuditLog.count({ where });
+  const { take, page } = pagination(filters.page),
+    pages = Math.max(1, Math.ceil(total / take)),
+    currentPage = Math.min(page, pages);
+  const logs = await prisma.adminAuditLog.findMany({
+    where,
+    take,
+    skip: (currentPage - 1) * take,
+    orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+  });
+  return { logs, total, page: currentPage, pages };
 }

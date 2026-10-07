@@ -40,14 +40,6 @@ export function analyticsCountry(
       : "ZZ";
   }
 
-  // Fallback: check known reverse proxy headers in priority order
-  for (const header of allowedHeaders) {
-    const code = headers.get(header)?.toUpperCase() || "";
-    if (/^[A-Z]{2}$/.test(code) && !["XX", "T1", "ZZ"].includes(code)) {
-      return code;
-    }
-  }
-
   return "ZZ";
 }
 
@@ -62,8 +54,7 @@ export function analyticsPath(path: string): string | null {
   if (/^\/messages\/[^/]+\/?$/.test(path)) return "/messages/[id]";
   if (/^\/explore\/(movie|tv)\/[^/]+\/?$/.test(path))
     return "/explore/[type]/[category]";
-  if (/^\/settings(?:\/[^/]+)?\/?$/.test(path))
-    return "/settings";
+  if (/^\/settings(?:\/[^/]+)?\/?$/.test(path)) return "/settings";
   const pages = [
     "/",
     "/in-theatres",
@@ -99,10 +90,14 @@ export function analyticsDevice(agent: string) {
       : "desktop";
 }
 
-export function countryLabel(code: string | null | undefined) {
-  if (!code || code === "ZZ") return "Bilinmiyor";
+export function countryLabel(
+  code: string | null | undefined,
+  locale: "tr" | "en" = "tr",
+  unknown = "Bilinmiyor",
+) {
+  if (!code || code === "ZZ") return unknown;
   try {
-    return new Intl.DisplayNames(["tr"], { type: "region" }).of(code) || code;
+    return new Intl.DisplayNames([locale], { type: "region" }).of(code) || code;
   } catch {
     return code;
   }
