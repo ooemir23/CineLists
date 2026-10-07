@@ -18,7 +18,10 @@ import {
   CalendarClock,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { UpcomingEpisode } from "@/lib/hero-personalization-actions";
+import type { UpcomingEpisode } from "@/lib/calendar-types";
+import { UpcomingEpisodesCarousel } from "@/components/home/carousels/upcoming-episodes-carousel";
+import { useTranslation } from "@/lib/i18n/i18n-context";
+import { calendarToday } from "@/lib/calendar-dates";
 
 export interface CalendarMediaItem {
   id: number;
@@ -43,7 +46,6 @@ interface CalendarViewProps {
 }
 
 type TabType = "all" | "episodes" | "movies" | "tv" | "theatrical";
-type UserTimeFilter = "all" | "week" | "today";
 
 export function CalendarView({
   upcomingMovies,
@@ -54,7 +56,7 @@ export function CalendarView({
   userCountry,
 }: CalendarViewProps) {
   const [activeTab, setActiveTab] = useState<TabType>("all");
-  const [userTimeFilter, setUserTimeFilter] = useState<UserTimeFilter>("week");
+  const { dict } = useTranslation();
   const [searchQuery, setSearchQuery] = useState("");
 
   const isTr = locale === "tr";
@@ -117,262 +119,13 @@ export function CalendarView({
     });
   }, [allMediaItems, activeTab, searchQuery]);
 
-  // User personalized upcoming items with time filter
-  const thisWeekCount = useMemo(() => {
-    return userUpcomingEpisodes.filter((ep) => (ep.daysLeft ?? 999) <= 7).length;
-  }, [userUpcomingEpisodes]);
-
-  const todayCount = useMemo(() => {
-    return userUpcomingEpisodes.filter((ep) => (ep.daysLeft ?? 999) === 0).length;
-  }, [userUpcomingEpisodes]);
-
-  const filteredEpisodes = useMemo(() => {
-    return userUpcomingEpisodes.filter((ep) => {
-      const days = ep.daysLeft ?? 999;
-      if (userTimeFilter === "today" && days !== 0) return false;
-      if (userTimeFilter === "week" && days > 7) return false;
-
-      if (searchQuery.trim()) {
-        const matchTitle = ep.showTitle.toLowerCase().includes(searchQuery.toLowerCase());
-        const matchEp = (ep.nextEpisodeTitle || "").toLowerCase().includes(searchQuery.toLowerCase());
-        if (!matchTitle && !matchEp) return false;
-      }
-      return true;
-    });
-  }, [userUpcomingEpisodes, userTimeFilter, searchQuery]);
-
   return (
     <div className="space-y-8">
-      {/* 1. TOP SPOTLIGHT: Tracked Shows & Movies Upcoming Countdown */}
       {userUpcomingEpisodes.length > 0 && (
-        <section className="rounded-3xl border border-amber-400/30 bg-gradient-to-br from-slate-900/95 via-slate-900/90 to-amber-950/20 p-4 sm:p-6 backdrop-blur-xl shadow-2xl shadow-amber-400/5 space-y-4">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 pb-3 border-b border-white/10">
-            <div className="flex items-center gap-2.5">
-              <div className="w-9 h-9 rounded-xl bg-amber-400/20 border border-amber-400/40 flex items-center justify-center shrink-0">
-                <CalendarClock className="w-5 h-5 text-amber-400" />
-              </div>
-              <div>
-                <h2 className="text-base sm:text-lg font-black text-white tracking-tight flex items-center gap-2">
-                  {isTr ? "Takip Ettiğin Dizi & Filmlerden Yaklaşanlar" : "Upcoming from Your Tracked Shows & Movies"}
-                  <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-amber-400 text-slate-950">
-                    {userUpcomingEpisodes.length}
-                  </span>
-                </h2>
-                <p className="text-xs text-neutral-400 mt-0.5">
-                  {isTr
-                    ? "İzlediğin dizilerin yeni bölümleri ve takip ettiğin filmlerin vizyon tarihleri"
-                    : "New episodes of your shows and theatrical releases of movies in your watchlist"}
-                </p>
-              </div>
-            </div>
-
-            {/* Time Filter Chips */}
-            <div className="flex items-center gap-1.5 self-start md:self-center bg-black/40 p-1 rounded-xl border border-white/10">
-              <button
-                onClick={() => setUserTimeFilter("week")}
-                className={cn(
-                  "px-3 py-1.5 rounded-lg text-[11px] font-black uppercase tracking-wider transition-all flex items-center gap-1.5",
-                  userTimeFilter === "week"
-                    ? "bg-amber-400 text-slate-950 shadow-sm font-black"
-                    : "text-neutral-400 hover:text-white"
-                )}
-              >
-                <span>{isTr ? "1 Hafta İçinde" : "Next 7 Days"}</span>
-                {thisWeekCount > 0 && (
-                  <span className={cn(
-                    "text-[9px] font-bold px-1.5 py-0.2 rounded-full",
-                    userTimeFilter === "week" ? "bg-slate-950/20 text-slate-950" : "bg-white/10 text-neutral-300"
-                  )}>
-                    {thisWeekCount}
-                  </span>
-                )}
-              </button>
-
-              <button
-                onClick={() => setUserTimeFilter("today")}
-                className={cn(
-                  "px-3 py-1.5 rounded-lg text-[11px] font-black uppercase tracking-wider transition-all flex items-center gap-1.5",
-                  userTimeFilter === "today"
-                    ? "bg-amber-400 text-slate-950 shadow-sm font-black"
-                    : "text-neutral-400 hover:text-white"
-                )}
-              >
-                <span>{isTr ? "Bugün" : "Today"}</span>
-                {todayCount > 0 && (
-                  <span className={cn(
-                    "text-[9px] font-bold px-1.5 py-0.2 rounded-full",
-                    userTimeFilter === "today" ? "bg-slate-950/20 text-slate-950" : "bg-white/10 text-neutral-300"
-                  )}>
-                    {todayCount}
-                  </span>
-                )}
-              </button>
-
-              <button
-                onClick={() => setUserTimeFilter("all")}
-                className={cn(
-                  "px-3 py-1.5 rounded-lg text-[11px] font-black uppercase tracking-wider transition-all",
-                  userTimeFilter === "all"
-                    ? "bg-amber-400 text-slate-950 shadow-sm font-black"
-                    : "text-neutral-400 hover:text-white"
-                )}
-              >
-                {isTr ? "Tümü" : "All"} ({userUpcomingEpisodes.length})
-              </button>
-            </div>
-          </div>
-
-          {filteredEpisodes.length === 0 ? (
-            <div className="py-6 px-4 text-center rounded-2xl bg-white/[0.02] border border-white/5">
-              <p className="text-xs font-bold text-neutral-400">
-                {userTimeFilter === "today"
-                  ? isTr
-                    ? "Bugün yayınlanacak yeni bir bölüm veya vizyona girecek film bulunmuyor."
-                    : "No episodes or releases scheduled for today."
-                  : userTimeFilter === "week"
-                  ? isTr
-                    ? "Önümüzdeki 1 hafta içinde yayınlanacak bölüm bulunmuyor. Diğer yaklaşanları görmek için 'Tümü' seçeneğine bakabilirsiniz."
-                    : "No releases scheduled within the next 7 days. Check 'All' to see future dates."
-                  : isTr
-                  ? "Takip ettiğin yapımlardan yaklaşan içerik bulunamadı."
-                  : "No upcoming content found."}
-              </p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
-              {filteredEpisodes.map((item) => {
-                const days = item.daysLeft ?? 0;
-                const isMovie = item.mediaType === "movie" || item.isTheatrical;
-
-                return (
-                  <Link
-                    key={`${item.mediaType}-${item.showId}-${item.nextEpisodeDate}`}
-                    href={`/${item.mediaType}/${item.showId}`}
-                    className={cn(
-                      "group flex gap-3.5 p-3.5 rounded-2xl border transition-all hover:-translate-y-1 hover:shadow-xl relative overflow-hidden",
-                      isMovie
-                        ? "border-amber-400/40 bg-gradient-to-br from-slate-900 via-slate-900 to-amber-950/30 hover:border-amber-400"
-                        : days <= 7
-                        ? "border-sky-400/40 bg-gradient-to-br from-slate-900 via-slate-900 to-sky-950/30 hover:border-sky-400"
-                        : "border-white/10 bg-slate-900/80 hover:border-white/20"
-                    )}
-                  >
-                    {/* Mini Poster */}
-                    <div className="relative w-20 h-28 rounded-xl overflow-hidden bg-neutral-900 shrink-0 shadow-md">
-                      {item.posterPath ? (
-                        <Image
-                          src={`https://image.tmdb.org/t/p/w200${item.posterPath}`}
-                          alt={item.showTitle}
-                          fill
-                          className="object-cover group-hover:scale-105 transition-transform duration-300"
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center">
-                          {isMovie ? (
-                            <Film className="w-7 h-7 text-neutral-600" />
-                          ) : (
-                            <Tv className="w-7 h-7 text-neutral-600" />
-                          )}
-                        </div>
-                      )}
-
-                      {/* Type Badge on Poster */}
-                      <div className="absolute top-1.5 left-1.5">
-                        <span
-                          className={cn(
-                            "text-[8px] font-black px-1.5 py-0.5 rounded shadow-sm uppercase tracking-wider",
-                            isMovie
-                              ? "bg-rose-500 text-white"
-                              : "bg-sky-500 text-white"
-                          )}
-                        >
-                          {isMovie ? (isTr ? "FİLM" : "MOVIE") : (isTr ? "DİZİ" : "TV")}
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Information */}
-                    <div className="flex-1 min-w-0 flex flex-col justify-between py-0.5">
-                      <div>
-                        {/* Countdown Badge */}
-                        <div className="flex items-center justify-between gap-1 mb-1">
-                          <span
-                            className={cn(
-                              "text-[10px] font-black px-2.5 py-0.5 rounded-full flex items-center gap-1 uppercase tracking-wider",
-                              days === 0
-                                ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 animate-pulse"
-                                : days === 1
-                                ? "bg-amber-400/20 text-amber-300 border border-amber-400/40"
-                                : days <= 7
-                                ? "bg-sky-500/20 text-sky-300 border border-sky-500/30"
-                                : "bg-white/10 text-neutral-300 border border-white/10"
-                            )}
-                          >
-                            <Clock className="w-3 h-3" />
-                            {days === 0
-                              ? isTr ? "Bugün" : "Today"
-                              : days === 1
-                              ? isTr ? "Yarın" : "Tomorrow"
-                              : isTr ? `${days} gün sonra` : `in ${days} days`}
-                          </span>
-
-                          {days <= 7 && days > 1 && (
-                            <span className="text-[9px] font-bold text-amber-400">
-                              {isTr ? "1 Hafta İçinde" : "This Week"}
-                            </span>
-                          )}
-                        </div>
-
-                        {/* Title */}
-                        <h3 className="text-sm font-black text-white truncate group-hover:text-amber-400 transition-colors">
-                          {item.showTitle}
-                        </h3>
-
-                        {/* Episode / Theatrical details */}
-                        <p className="text-xs font-bold text-neutral-300 mt-1 line-clamp-1">
-                          {isMovie ? (
-                            <span className="text-amber-300 flex items-center gap-1">
-                              <Flame className="w-3 h-3" />
-                              {isTr ? "Sinemalarda Vizyona Giriyor" : "Theatrical Release"}
-                            </span>
-                          ) : item.nextEpisodeSeason && item.nextEpisodeNumber ? (
-                            <span className="text-sky-300">
-                              {item.nextEpisodeSeason}. {isTr ? "Sezon" : "Season"} {item.nextEpisodeNumber}. {isTr ? "Bölüm" : "Episode"}
-                              {item.nextEpisodeTitle && (
-                                <span className="text-neutral-400 font-medium"> · {item.nextEpisodeTitle}</span>
-                              )}
-                            </span>
-                          ) : (
-                            <span className="text-sky-300">{isTr ? "Yeni Bölüm" : "New Episode"}</span>
-                          )}
-                        </p>
-                      </div>
-
-                      {/* Release Date & Platforms */}
-                      <div className="pt-2 border-t border-white/5 flex items-center justify-between gap-2 mt-2">
-                        <span className="text-[11px] text-neutral-400 font-medium truncate">
-                          {formatDate(item.nextEpisodeDate)}
-                        </span>
-
-                        {item.platforms && item.platforms.length > 0 && (
-                          <span
-                            className={cn(
-                              "text-[10px] font-bold px-2 py-0.5 rounded shrink-0",
-                              isMovie
-                                ? "bg-amber-400/15 text-amber-300"
-                                : "bg-sky-400/15 text-sky-300"
-                            )}
-                          >
-                            {item.platforms.slice(0, 2).join(" • ")}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  </Link>
-                );
-              })}
-            </div>
-          )}
+        <section className="rounded-3xl border border-amber-400/30 bg-gradient-to-br from-slate-900/95 via-slate-900/90 to-amber-950/20 p-4 sm:p-6 space-y-4">
+          <h2 className="text-base sm:text-lg font-black text-white">{dict.calendarUi.personalTitle}</h2>
+          <p className="text-xs text-neutral-400">{dict.calendarUi.personalHint}</p>
+          <UpcomingEpisodesCarousel episodes={userUpcomingEpisodes} today={calendarToday()} query={searchQuery} />
         </section>
       )}
 

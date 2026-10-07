@@ -1,9 +1,11 @@
 import { auth } from "@/auth";
 import Link from "next/link";
 import { Calendar, ChevronRight, Sparkles, Tv } from "lucide-react";
-import { getWatchedShowsNextEpisodes, UpcomingEpisode } from "@/lib/hero-personalization-actions";
+import { getPersonalCalendarReleases } from "@/lib/personal-calendar";
+import type { UpcomingEpisode } from "@/lib/calendar-types";
 import { UpcomingEpisodesCarousel } from "@/components/home/carousels/upcoming-episodes-carousel";
 import { getServerLocale } from "@/lib/i18n/server";
+import { calendarToday, calendarDaysLeft } from "@/lib/calendar-dates";
 import { getServerCountry } from "@/lib/country";
 
 export async function PortalCalendarSection() {
@@ -14,25 +16,19 @@ export async function PortalCalendarSection() {
   let upcomingEpisodes: UpcomingEpisode[] = [];
   if (session?.user?.id) {
     try {
-      upcomingEpisodes = await getWatchedShowsNextEpisodes(userCountry);
+      upcomingEpisodes = await getPersonalCalendarReleases(userCountry);
     } catch {
       upcomingEpisodes = [];
     }
   }
 
-  const validUpcomingEpisodes = upcomingEpisodes.filter((ep) => {
-    if (!ep.nextEpisodeDate) return false;
-    const date = new Date(ep.nextEpisodeDate);
-    const now = new Date();
-    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    const startOfTarget = new Date(date.getFullYear(), date.getMonth(), date.getDate());
-    return Math.round((startOfTarget.getTime() - startOfToday.getTime()) / (1000 * 60 * 60 * 24)) >= 0;
-  });
+  const today = calendarToday();
+  const validUpcomingEpisodes = upcomingEpisodes.filter(ep => (calendarDaysLeft(ep.nextEpisodeDate, today) ?? -1) >= 0);
 
   if (validUpcomingEpisodes.length > 0) {
     return (
       <section className="relative z-20 backdrop-blur-md bg-gradient-to-br from-slate-900/90 via-slate-900/70 to-slate-950/80 rounded-2xl md:rounded-3xl p-3 md:p-4 border border-amber-400/20 shadow-xl shadow-amber-400/5">
-        <UpcomingEpisodesCarousel episodes={validUpcomingEpisodes} />
+        <UpcomingEpisodesCarousel episodes={validUpcomingEpisodes} today={today} />
       </section>
     );
   }

@@ -1,6 +1,30 @@
 import { Dictionary } from "../types";
 
 export const tr: Dictionary = {
+  calendarUi: {
+    personalTitle: "Kişisel yayın takvimim",
+    personalHint: "Takip ettiklerin, izlediklerin ve favori oyuncu/yönetmenlerinin gelecek içerikleri.",
+    "awaiting": "Beklediklerim",
+    "today": "Bugün",
+    "week": "Bu hafta",
+    "awaitingHint": "Yayınlanmasına bir haftadan fazla kalan yapımlar",
+    "weekHint": "Bu takvim haftasında yayınlanacaklar (pazartesi–pazar)",
+    "empty": "Bu dönemde yayınlanacak içerik bulunmuyor.",
+    "unknownDate": "Tarih bekleniyor",
+    "theatres": "Sinemalarda",
+    "movieInfo": "Film · Sinema vizyonu",
+    "moviePremiere": "Yeni film",
+    "seriesPremiere": "Yeni dizi",
+    "newEpisode": "Yeni bölüm",
+    "episodeInfo": "{season}. Sezon {episode}. Bölüm",
+    "seasonInfo": "{season}. Sezon",
+    "tomorrow": "Yarın",
+    "daysAway": "{days} gün sonra",
+    "favoritePeople": "Favorilerin: {names}",
+    "previous": "Takvimde geri git",
+    "next": "Takvimde ileri git",
+    "more": "Daha fazlasını göster"
+},
   achievementNames: {
     "FIRST_WATCH": "İlk Adım",
     "MOVIE_BUFF_10": "Sinema Sever",

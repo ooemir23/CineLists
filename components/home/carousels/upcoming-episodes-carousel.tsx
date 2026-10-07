@@ -5,14 +5,21 @@ import Link from "next/link";
 import Image from "next/image";
 import { useState, useRef, useEffect } from "react";
 import { cn } from "@/lib/utils";
-import type { UpcomingEpisode } from "@/lib/hero-personalization-actions";
+import type { UpcomingEpisode } from "@/lib/calendar-types";
+import { useTranslation } from "@/lib/i18n/i18n-context";
+import { calendarToday, calendarDaysLeft, matchesCalendarFilter, type CalendarFilter } from "@/lib/calendar-dates";
 
 interface UpcomingEpisodesCarouselProps {
     episodes: UpcomingEpisode[];
+    today?: string;
+    query?: string;
 }
 
-export function UpcomingEpisodesCarousel({ episodes }: UpcomingEpisodesCarouselProps) {
-    const [filter, setFilter] = useState<"all" | "today" | "week">("all");
+export function UpcomingEpisodesCarousel({ episodes, today = calendarToday(), query = "" }: UpcomingEpisodesCarouselProps) {
+    const { dict, locale } = useTranslation();
+    const labels = dict.calendarUi;
+    const [filter, setFilter] = useState<CalendarFilter>("awaiting");
+    const [visibleCount, setVisibleCount] = useState(15);
     const [isMounted, setIsMounted] = useState(false);
     const scrollContainerRef = useRef<HTMLDivElement>(null);
 
@@ -30,102 +37,63 @@ export function UpcomingEpisodesCarousel({ episodes }: UpcomingEpisodesCarouselP
         }
     };
 
-    // Filter out any episode without a valid future/today release date
-    const validUpcoming = episodes.filter(ep => {
-        if (!ep.nextEpisodeDate) return false;
-        const date = new Date(ep.nextEpisodeDate);
-        const now = new Date();
-        const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-        const startOfTarget = new Date(date.getFullYear(), date.getMonth(), date.getDate());
-        const diffDays = Math.round((startOfTarget.getTime() - startOfToday.getTime()) / (1000 * 60 * 60 * 24));
-        return diffDays >= 0;
-    });
-
-    const filteredEpisodes = validUpcoming.filter(ep => {
-        const date = new Date(ep.nextEpisodeDate!);
-        const now = new Date();
-        const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-        const startOfTarget = new Date(date.getFullYear(), date.getMonth(), date.getDate());
-        const diffDays = Math.round((startOfTarget.getTime() - startOfToday.getTime()) / (1000 * 60 * 60 * 24));
-
-        if (filter === "today") return diffDays === 0;
-        if (filter === "week") return diffDays <= 7;
-        return true;
-    });
-
-    const todayCount = validUpcoming.filter(ep => {
-        const date = new Date(ep.nextEpisodeDate!);
-        const now = new Date();
-        const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-        const startOfTarget = new Date(date.getFullYear(), date.getMonth(), date.getDate());
-        const diffDays = Math.round((startOfTarget.getTime() - startOfToday.getTime()) / (1000 * 60 * 60 * 24));
-        return diffDays === 0;
-    }).length;
-
-    const weekCount = validUpcoming.filter(ep => {
-        const date = new Date(ep.nextEpisodeDate!);
-        const now = new Date();
-        const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-        const startOfTarget = new Date(date.getFullYear(), date.getMonth(), date.getDate());
-        const diffDays = Math.round((startOfTarget.getTime() - startOfToday.getTime()) / (1000 * 60 * 60 * 24));
-        return diffDays >= 0 && diffDays <= 7;
-    }).length;
+    const validUpcoming = episodes.filter(ep => (calendarDaysLeft(ep.nextEpisodeDate, today) ?? -1) >= 0);
+    const filteredEpisodes = validUpcoming.filter(ep => matchesCalendarFilter(ep.nextEpisodeDate, filter, today) &&
+        [ep.showTitle, ep.nextEpisodeTitle ?? "", ...(ep.favoritePeople ?? [])].some(value => value.toLocaleLowerCase(locale).includes(query.trim().toLocaleLowerCase(locale))));
+    const filters: { id: CalendarFilter; label: string; hint?: string; count: number }[] = [
+        { id: "awaiting", label: labels.awaiting, hint: labels.awaitingHint, count: validUpcoming.filter(ep => matchesCalendarFilter(ep.nextEpisodeDate, "awaiting", today)).length },
+        { id: "today", label: labels.today, count: validUpcoming.filter(ep => matchesCalendarFilter(ep.nextEpisodeDate, "today", today)).length },
+        { id: "week", label: labels.week, hint: labels.weekHint, count: validUpcoming.filter(ep => matchesCalendarFilter(ep.nextEpisodeDate, "week", today)).length },
+    ];
 
     const formatFullDate = (episode: UpcomingEpisode) => {
         if (episode.nextEpisodeDate) {
-            const date = new Date(episode.nextEpisodeDate);
-            return date.toLocaleDateString("tr-TR", {
+            const date = new Date(`${episode.nextEpisodeDate}T12:00:00Z`);
+            return date.toLocaleDateString(locale === "en" ? "en-US" : "tr-TR", {
+                timeZone: "UTC",
                 day: "numeric",
                 month: "long",
                 weekday: "long",
             });
         }
-        return "Tarih Bekleniyor";
+        return labels.unknownDate;
     };
 
-    const formatDaysLeft = (dateStr: string | null, isMovie?: boolean) => {
+    const formatDaysLeft = (dateStr: string | null) => {
         if (!dateStr) return null;
-        const today = new Date();
-        const target = new Date(dateStr);
-        const startOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-        const startOfTarget = new Date(target.getFullYear(), target.getMonth(), target.getDate());
-        const diffMs = startOfTarget.getTime() - startOfToday.getTime();
-        const days = Math.round(diffMs / (1000 * 60 * 60 * 24));
-        if (days <= 0) return isMovie ? "Bugün Vizyonda" : "Bugün";
-        if (days === 1) return isMovie ? "Yarın Vizyonda" : "Yarın";
-        return isMovie ? `${days} gün sonra vizyonda` : `${days} gün sonra`;
+        const days = calendarDaysLeft(dateStr, today);
+        if (days === null) return null;
+        if (days <= 0) return labels.today;
+        if (days === 1) return labels.tomorrow;
+        return labels.daysAway.replace("{days}", new Intl.NumberFormat(locale).format(days));
     };
 
     const formatEpisodeInfo = (episode: UpcomingEpisode) => {
-        if (episode.mediaType === "movie" || episode.isTheatrical) return "Film · Sinema Vizyonu";
+        if (episode.mediaType === "movie") return episode.isTheatrical ? labels.movieInfo : labels.moviePremiere;
         if (episode.nextEpisodeSeason && episode.nextEpisodeNumber) {
-            return `${episode.nextEpisodeSeason}. Sezon ${episode.nextEpisodeNumber}. Bölüm${episode.nextEpisodeTitle ? ` · ${episode.nextEpisodeTitle}` : ""}`;
+            return labels.episodeInfo.replace("{season}", String(episode.nextEpisodeSeason)).replace("{episode}", String(episode.nextEpisodeNumber)) + (episode.nextEpisodeTitle ? ` · ${episode.nextEpisodeTitle}` : "");
         }
-        if (episode.nextEpisodeSeason) {
-            return `${episode.nextEpisodeSeason}. Sezon`;
-        }
-        return "Yeni Bölüm";
+        if (episode.nextEpisodeSeason) return labels.seasonInfo.replace("{season}", String(episode.nextEpisodeSeason));
+        return episode.releaseKind === "premiere" ? labels.seriesPremiere : labels.newEpisode;
     };
 
     return (
         <div className="flex w-full min-w-0 flex-col gap-3 md:flex-row md:items-center md:gap-8">
             <div className="flex flex-col gap-3 md:flex-shrink-0 md:justify-center">
-                <div className="flex items-center gap-2">
+                <div className="flex flex-col items-stretch gap-2 md:flex-row md:items-center">
                     <Link href="/calendar" className="group flex shrink-0 items-center gap-2 px-1">
                         <Calendar size={18} className="text-amber-400 group-hover:text-amber-300 transition-colors" />
-                        <span className="text-base font-black text-white whitespace-nowrap group-hover:text-amber-200 transition-colors">Takvim</span>
+                        <span className="text-base font-black text-white whitespace-nowrap group-hover:text-amber-200 transition-colors">{dict.nav.calendar}</span>
                     </Link>
-                    <div className="grid min-w-0 flex-1 grid-cols-3 gap-1 rounded-full border border-white/5 bg-white/5 p-1 shadow-inner md:flex md:flex-col md:rounded-none md:border-none md:bg-transparent md:p-0 md:shadow-none">
-                    {[
-                        { id: "all", label: "Tümü", count: validUpcoming.length },
-                        { id: "today", label: "Bugün", count: todayCount },
-                        { id: "week", label: "Hafta", count: weekCount },
-                    ].map((f) => (
+                    <div className="grid min-w-0 flex-1 grid-cols-[1.5fr_0.8fr_1fr] gap-1 rounded-full border border-white/5 bg-white/5 p-1 shadow-inner md:flex md:flex-col md:rounded-none md:border-none md:bg-transparent md:p-0 md:shadow-none">
+                    {filters.map((f) => (
                         <button
                             key={f.id}
-                            onClick={() => setFilter(f.id as any)}
+                            onClick={() => { setFilter(f.id); setVisibleCount(15); }}
+                            aria-pressed={filter === f.id}
+                            title={f.hint}
                             className={cn(
-                                "min-w-0 px-2 md:px-4 py-2 md:py-2 rounded-full md:rounded-xl text-[7px] min-[390px]:text-[8px] md:text-[10px] font-black uppercase tracking-widest transition-all flex items-center justify-center md:justify-between gap-1 md:gap-3 md:w-full",
+                                "min-w-0 px-1 md:px-4 py-2 md:py-2 rounded-full md:rounded-xl text-[8px] md:text-[10px] font-black uppercase tracking-tight md:tracking-widest transition-all flex items-center justify-center md:justify-between gap-1 md:gap-3 md:w-full",
                                 filter === f.id
                                     ? "bg-blue-500 text-white shadow-lg shadow-blue-500/20"
                                     : "bg-transparent md:bg-white/5 text-neutral-500 hover:text-white border border-transparent md:border-white/5"
@@ -134,7 +102,7 @@ export function UpcomingEpisodesCarousel({ episodes }: UpcomingEpisodesCarouselP
                             <span>{f.label}</span>
                             {f.count > 0 && (
                                 <span className={cn(
-                                    "min-w-5 px-1.5 py-0.5 rounded-md text-[7px] md:text-[8px] font-bold text-center",
+                                    "min-w-3 md:min-w-5 px-1 md:px-1.5 py-0.5 rounded-md text-[7px] md:text-[8px] font-bold text-center",
                                     filter === f.id ? "bg-white/20 text-white" : "bg-white/10 text-neutral-600"
                                 )}>
                                     {f.count}
@@ -152,14 +120,14 @@ export function UpcomingEpisodesCarousel({ episodes }: UpcomingEpisodesCarouselP
                 <button
                     onClick={() => scroll("left")}
                     className="absolute left-1 top-1/2 z-30 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full border border-white/10 bg-black/60 text-white opacity-100 shadow-xl backdrop-blur-md transition-opacity md:left-0 md:opacity-0 md:group-hover/carousel:opacity-100"
-                    aria-label="Takvimde geri git"
+                    aria-label={labels.previous}
                 >
                     <ChevronLeft size={18} />
                 </button>
                 <button
                     onClick={() => scroll("right")}
                     className="absolute right-1 top-1/2 z-30 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full border border-white/10 bg-black/60 text-white opacity-100 shadow-xl backdrop-blur-md transition-opacity md:right-0 md:opacity-0 md:group-hover/carousel:opacity-100"
-                    aria-label="Takvimde ileri git"
+                    aria-label={labels.next}
                 >
                     <ChevronRight size={18} />
                 </button>
@@ -171,12 +139,12 @@ export function UpcomingEpisodesCarousel({ episodes }: UpcomingEpisodesCarouselP
                     <div className="flex gap-3 pb-1 px-1">
                         {filteredEpisodes.length === 0 ? (
                             <div className="flex items-center justify-center w-full py-4 px-8 rounded-2xl bg-white/5 border border-white/5 italic text-neutral-500 text-xs font-bold uppercase tracking-widest">
-                                Bu dönemde yayınlanacak bölüm bulunmuyor
+                                {labels.empty}
                             </div>
                         ) : (
-                            filteredEpisodes.slice(0, 15).map((episode, idx) => (
+                            filteredEpisodes.slice(0, visibleCount).map((episode) => (
                                 <Link
-                                    key={idx}
+                                    key={`${episode.mediaType}-${episode.showId}-${episode.nextEpisodeDate}-${episode.nextEpisodeSeason}-${episode.nextEpisodeNumber}`}
                                     href={`/${episode.mediaType}/${episode.showId}`}
                                     className={cn(
                                         "group flex-shrink-0 w-[85vw] sm:w-72 flex gap-3 p-2.5 rounded-2xl transition-all border relative overflow-hidden snap-start",
@@ -193,12 +161,7 @@ export function UpcomingEpisodesCarousel({ episodes }: UpcomingEpisodesCarouselP
                                             "absolute top-0 right-0 px-2 py-0.5 rounded-bl-lg text-[7px] font-black uppercase tracking-widest z-20",
                                             episode.statusType === "plan_to_watch" ? "bg-rose-500 text-white" : "bg-sky-500 text-white"
                                         )}>
-                                            {episode.statusType === "plan_to_watch" 
-                                                ? (() => {
-                                                    const diffDays = episode.addedAt ? Math.floor((new Date().getTime() - new Date(episode.addedAt).getTime()) / (1000 * 60 * 60 * 24)) : 0;
-                                                    return diffDays > 0 ? `${diffDays} Gündür İzlemedin` : "Takip Listende";
-                                                  })()
-                                                : "İzliyorum"}
+                                            {episode.statusType === "plan_to_watch" ? dict.nav.watchlist : dict.nav.watching}
                                         </div>
                                     )}
 
@@ -236,12 +199,17 @@ export function UpcomingEpisodesCarousel({ episodes }: UpcomingEpisodesCarouselP
                                                 <div className="flex items-center gap-1 text-xs text-neutral-200">
                                                     <Clock3 className="w-3 h-3 text-blue-300" />
                                                     <span className="font-bold text-blue-200">
-                                                        {isMounted ? (formatDaysLeft(episode.nextEpisodeDate, episode.mediaType === "movie" || episode.isTheatrical) || "Yakında") : ""}
+                                                        {isMounted ? (formatDaysLeft(episode.nextEpisodeDate) || labels.unknownDate) : ""}
                                                     </span>
                                                 </div>
                                             </div>
                                         </div>
 
+                                        {episode.favoritePeople?.length ? (
+                                            <p className="text-[10px] font-bold text-amber-300 line-clamp-2">
+                                                {labels.favoritePeople.replace("{names}", episode.favoritePeople.join(", "))}
+                                            </p>
+                                        ) : null}
                                         {/* Platform */}
                                         {episode.platforms.length > 0 && (
                                             <div className="flex items-center gap-2">
@@ -273,6 +241,11 @@ export function UpcomingEpisodesCarousel({ episodes }: UpcomingEpisodesCarouselP
                                     </div>
                                 </Link>
                             ))
+                        )}
+                        {filteredEpisodes.length > visibleCount && (
+                            <button type="button" onClick={() => setVisibleCount(count => count + 15)} className="shrink-0 rounded-2xl border border-white/10 bg-white/5 px-4 text-xs font-bold text-blue-200">
+                                {labels.more}
+                            </button>
                         )}
                     </div>
                 </div>

@@ -8,6 +8,30 @@ export const SUPPORTED_LOCALES: { code: Locale; label: string; flag: string }[] 
 ];
 
 export interface Dictionary {
+  calendarUi: {
+    personalTitle: string;
+    personalHint: string;
+    awaiting: string;
+    today: string;
+    week: string;
+    awaitingHint: string;
+    weekHint: string;
+    empty: string;
+    unknownDate: string;
+    theatres: string;
+    movieInfo: string;
+    moviePremiere: string;
+    seriesPremiere: string;
+    newEpisode: string;
+    episodeInfo: string;
+    seasonInfo: string;
+    tomorrow: string;
+    daysAway: string;
+    favoritePeople: string;
+    previous: string;
+    next: string;
+    more: string;
+  };
   achievementNames: {
     FIRST_WATCH: string;
     MOVIE_BUFF_10: string;

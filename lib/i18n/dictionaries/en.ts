@@ -1,6 +1,30 @@
 import { Dictionary } from "../types";
 
 export const en: Dictionary = {
+  calendarUi: {
+    personalTitle: "My release calendar",
+    personalHint: "Upcoming releases from your followed and watched titles and favorite actors/directors.",
+    "awaiting": "Awaiting",
+    "today": "Today",
+    "week": "This week",
+    "awaitingHint": "Releases more than one week away",
+    "weekHint": "Releases this calendar week (Monday–Sunday)",
+    "empty": "No releases in this period.",
+    "unknownDate": "Date to be announced",
+    "theatres": "In theatres",
+    "movieInfo": "Movie · Theatrical release",
+    "moviePremiere": "New movie",
+    "seriesPremiere": "New series",
+    "newEpisode": "New episode",
+    "episodeInfo": "Season {season}, Episode {episode}",
+    "seasonInfo": "Season {season}",
+    "tomorrow": "Tomorrow",
+    "daysAway": "In {days} days",
+    "favoritePeople": "Your favorites: {names}",
+    "previous": "Scroll calendar left",
+    "next": "Scroll calendar right",
+    "more": "Show more"
+},
   achievementNames: {
     "FIRST_WATCH": "First Step",
     "MOVIE_BUFF_10": "Film Fan",

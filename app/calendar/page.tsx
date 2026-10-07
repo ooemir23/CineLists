@@ -2,7 +2,7 @@ import { auth } from "@/auth";
 import { tmdb } from "@/lib/tmdb";
 import { Calendar, ChevronLeft, Sparkles } from "lucide-react";
 import Link from "next/link";
-import { getWatchedShowsNextEpisodes } from "@/lib/hero-personalization-actions";
+import { getPersonalCalendarReleases } from "@/lib/personal-calendar";
 import { getServerLocale } from "@/lib/i18n/server";
 import { getServerCountry, getCountryName } from "@/lib/country";
 import { CalendarView } from "@/components/calendar/calendar-view";
@@ -45,7 +45,7 @@ export default async function CalendarPage() {
         })
         .catch(() => ({ results: [] })),
       session?.user?.id
-        ? getWatchedShowsNextEpisodes(userCountry).catch(() => [])
+        ? getPersonalCalendarReleases(userCountry).catch(() => [])
         : Promise.resolve([]),
     ]);
 
