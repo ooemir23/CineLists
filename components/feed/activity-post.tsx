@@ -39,6 +39,7 @@ type ActivityPostProps = {
     watchedWith: string | null;
     recommendedByText: string | null;
     votes: number;
+    viewerVote?: number;
     recommendedBy?: {
       id: string;
       name: string | null;
@@ -78,7 +79,7 @@ type ActivityPostProps = {
 };
 
 export function ActivityPost({ activity }: ActivityPostProps) {
-  const [isLiked, setIsLiked] = useState(false);
+  const [isLiked, setIsLiked] = useState(activity.viewerVote === 1);
   const [likesCount, setLikesCount] = useState(activity.votes || 0);
   const [showHeartAnim, setShowHeartAnim] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
@@ -107,7 +108,9 @@ export function ActivityPost({ activity }: ActivityPostProps) {
     const nextState = !isLiked;
     setIsLiked(nextState);
     setLikesCount((prev) => (nextState ? prev + 1 : Math.max(0, prev - 1)));
-    await voteActivity(activity.id, nextState ? 1 : -1);
+    const result = await voteActivity(activity.id, nextState ? 1 : 0);
+    if (result.error) { setIsLiked(!nextState); setLikesCount(activity.votes); }
+    else if (typeof result.votes === "number") setLikesCount(result.votes);
   };
 
   const handleMediaDoubleClick = () => {

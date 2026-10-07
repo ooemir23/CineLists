@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { Lock, Eye, Check, Loader2, Camera, Activity, BarChart3, Trash2, AlertTriangle, History, CheckCircle2, Heart, Monitor, Search, Globe } from "lucide-react";
 // framer-motion removed — tab transitions replaced with CSS animate-in utilities
 import { cn } from "@/lib/utils";
@@ -32,7 +32,7 @@ type SettingsContentProps = {
 };
 
 export function SettingsContent({ user, activeTab }: SettingsContentProps) {
-    const { t, locale, setLocale } = useTranslation();
+    const { dict, t, locale, setLocale } = useTranslation();
     const [isPending, startTransition] = useTransition();
 
     // Form States
@@ -72,28 +72,27 @@ export function SettingsContent({ user, activeTab }: SettingsContentProps) {
     const [showSuspendConfirm, setShowSuspendConfirm] = useState(false);
     const [showAllGenres, setShowAllGenres] = useState(false);
 
-    const handleUsernameChange = async (val: string) => {
-        setUsername(val);
-        if (val.length >= 3 && val !== user.username) {
-            setIsCheckingUsername(true);
-            const res = await checkUsernameAvailability(val);
-            if (!res.available) {
-                setUsernameError(res.message || "Bu kullanıcı adı kullanılamaz");
-            } else {
-                setUsernameError("");
-            }
-            setIsCheckingUsername(false);
-        } else {
-            setUsernameError("");
-        }
-    };
+    const handleUsernameChange = (val: string) => setUsername(val.toLowerCase());
+    useEffect(() => {
+        let cancelled = false;
+        if (username === user.username) { setUsernameError(""); return; }
+        setIsCheckingUsername(true);
+        const timer = setTimeout(async () => {
+            try {
+                const res = await checkUsernameAvailability(username);
+                if (!cancelled) setUsernameError(res.available ? "" : res.message || dict.onboarding.invalidUsername);
+            } catch { if (!cancelled) setUsernameError(dict.common.tryAgain); }
+            finally { if (!cancelled) setIsCheckingUsername(false); }
+        }, 350);
+        return () => { cancelled = true; clearTimeout(timer); };
+    }, [username, user.username, dict]);
 
     const handleSaveGeneral = () => {
         if (usernameError) return;
         startTransition(async () => {
             const result = await updateProfile({ name, username, bio, image });
             if (result.success) {
-                alert("Kaydedildi");
+                alert(dict.reviewUi.saved);
             } else if (result.error) {
                 alert(result.error);
             }
@@ -104,7 +103,7 @@ export function SettingsContent({ user, activeTab }: SettingsContentProps) {
         startTransition(async () => {
             const result = await updatePrivacySettings({ isPrivate, showActivities, showStats });
             if (result.success) {
-                alert("Kaydedildi");
+                alert(dict.reviewUi.saved);
             } else if (result.error) {
                 alert(result.error);
             }
@@ -139,7 +138,7 @@ export function SettingsContent({ user, activeTab }: SettingsContentProps) {
         startTransition(async () => {
             const result = await updateUserPreferences({ favoriteGenres, platforms });
             if (result.success) {
-                alert("Kaydedildi");
+                alert(dict.reviewUi.saved);
             } else if (result.error) {
                 alert(result.error);
             }
@@ -147,12 +146,12 @@ export function SettingsContent({ user, activeTab }: SettingsContentProps) {
     };
 
     const platformItems = user.allPlatforms || [
-        { id: "netflix", name: "Netflix", icon: "https://www.google.com/s2/favicons?domain=netflix.com&sz=64" },
-        { id: "disney", name: "Disney+", icon: "https://www.google.com/s2/favicons?domain=disneyplus.com&sz=64" },
-        { id: "prime", name: "Prime Video", icon: "https://www.google.com/s2/favicons?domain=primevideo.com&sz=64" },
-        { id: "blutv", name: "BluTV", icon: "https://www.google.com/s2/favicons?domain=blutv.com&sz=64" },
-        { id: "mubi", name: "MUBI", icon: "https://www.google.com/s2/favicons?domain=mubi.com&sz=64" },
-        { id: "apple", name: "Apple TV+", icon: "https://www.google.com/s2/favicons?domain=tv.apple.com&sz=64" },
+        { id: "8", name: "Netflix", icon: "https://www.google.com/s2/favicons?domain=netflix.com&sz=64" },
+        { id: "337", name: "Disney+", icon: "https://www.google.com/s2/favicons?domain=disneyplus.com&sz=64" },
+        { id: "119", name: "Prime Video", icon: "https://www.google.com/s2/favicons?domain=primevideo.com&sz=64" },
+        { id: "341", name: "BluTV", icon: "https://www.google.com/s2/favicons?domain=blutv.com&sz=64" },
+        { id: "11", name: "MUBI", icon: "https://www.google.com/s2/favicons?domain=mubi.com&sz=64" },
+        { id: "350", name: "Apple TV+", icon: "https://www.google.com/s2/favicons?domain=tv.apple.com&sz=64" },
     ];
 
     return (
@@ -165,15 +164,15 @@ export function SettingsContent({ user, activeTab }: SettingsContentProps) {
                                     className="space-y-8 animate-in fade-in slide-in-from-right-2 duration-300"
                                 >
                                     <div>
-                                        <h3 className="text-lg font-black text-white mb-1">Profil Bilgileri</h3>
-                                        <p className="text-xs text-neutral-500 font-medium font-bold uppercase tracking-wider">Kişisel bilgilerinizi buradan güncelleyebilirsiniz.</p>
+                                        <h3 className="text-lg font-black text-white mb-1">{dict.reviewUi.profileInfo}</h3>
+                                        <p className="text-xs text-neutral-500 font-medium font-bold uppercase tracking-wider">{dict.reviewUi.profileHint}</p>
                                     </div>
 
                                     <div className="flex flex-col md:flex-row gap-8 items-start">
                                         <div className="relative group">
                                             <div className="w-24 h-24 rounded-3xl overflow-hidden bg-neutral-800 border-2 border-white/5 group-hover:border-primary/50 transition-colors relative">
                                                 {image ? (
-                                                    <Image src={image} alt="Profile" fill className="object-cover" />
+                                                    <Image src={image} alt={dict.reviewUi.profileInfo} fill className="object-cover" />
                                                 ) : (
                                                     <div className="w-full h-full flex items-center justify-center text-3xl">👤</div>
                                                 )}
@@ -181,33 +180,37 @@ export function SettingsContent({ user, activeTab }: SettingsContentProps) {
                                                     <Camera className="text-white w-6 h-6" />
                                                 </div>
                                             </div>
-                                            <p className="text-[10px] text-center mt-2 text-neutral-500 font-bold uppercase">Değiştir</p>
+                                            <p className="text-[10px] text-center mt-2 text-neutral-500 font-bold uppercase">{dict.reviewUi.change}</p>
                                         </div>
 
                                         <div className="flex-1 space-y-6 w-full">
                                             <div className="space-y-2">
-                                                <label className="text-[10px] font-black text-neutral-400 uppercase tracking-widest px-1">Görünen İsim</label>
+                                                <label className="text-[10px] font-black text-neutral-400 uppercase tracking-widest px-1">{dict.reviewUi.displayName}</label>
                                                 <input
                                                     type="text"
                                                     value={name}
+                                                    maxLength={100}
+                                                    aria-label={dict.reviewUi.displayName}
                                                     onChange={(e) => setName(e.target.value)}
                                                     className="w-full bg-white/5 border border-white/5 rounded-2xl px-5 py-3.5 text-sm font-bold text-white focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all hover:bg-white/[0.08]"
-                                                    placeholder="Adınız Soyadınız"
+                                                    placeholder={dict.reviewUi.fullName}
                                                 />
                                             </div>
                                             <div className="space-y-2">
-                                                <label className="text-[10px] font-black text-neutral-400 uppercase tracking-widest px-1">Kullanıcı Adı</label>
+                                                <label className="text-[10px] font-black text-neutral-400 uppercase tracking-widest px-1">{dict.reviewUi.username}</label>
                                                 <div className="relative">
                                                     <span className="absolute left-5 top-1/2 -translate-y-1/2 text-neutral-500 font-bold">@</span>
                                                     <input
                                                         type="text"
                                                         value={username}
+                                                        maxLength={30}
+                                                        aria-label={dict.reviewUi.username}
                                                         onChange={(e) => handleUsernameChange(e.target.value)}
                                                         className={cn(
                                                             "w-full bg-white/5 border rounded-2xl pl-10 pr-5 py-3.5 text-sm font-bold text-white focus:outline-none focus:ring-2 transition-all hover:bg-white/[0.08]",
                                                             usernameError ? "border-rose-500 focus:ring-rose-500/50" : "border-white/5 focus:ring-primary/50"
                                                         )}
-                                                        placeholder="kullaniciadi"
+                                                        placeholder={dict.reviewUi.usernamePlaceholder}
                                                     />
                                                     {isCheckingUsername && (
                                                         <div className="absolute right-4 top-1/2 -translate-y-1/2">
@@ -220,13 +223,15 @@ export function SettingsContent({ user, activeTab }: SettingsContentProps) {
                                                 )}
                                             </div>
                                             <div className="space-y-2">
-                                                <label className="text-[10px] font-black text-neutral-400 uppercase tracking-widest px-1">Biyografi</label>
+                                                <label className="text-[10px] font-black text-neutral-400 uppercase tracking-widest px-1">{dict.reviewUi.bio}</label>
                                                 <textarea
                                                     value={bio}
+                                                    maxLength={1000}
+                                                    aria-label={dict.reviewUi.bio}
                                                     onChange={(e) => setBio(e.target.value)}
                                                     rows={3}
                                                     className="w-full bg-white/5 border border-white/5 rounded-2xl px-5 py-3.5 text-sm font-medium text-white focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all hover:bg-white/[0.08] resize-none"
-                                                    placeholder="Kendinden bahset..."
+                                                    placeholder={dict.reviewUi.bioPlaceholder}
                                                 />
                                             </div>
                                         </div>
@@ -272,12 +277,11 @@ export function SettingsContent({ user, activeTab }: SettingsContentProps) {
                                     <div className="pt-4 flex justify-end">
                                         <button
                                             onClick={handleSaveGeneral}
-                                            disabled={isPending}
+                                            disabled={isPending || isCheckingUsername || !!usernameError}
                                             className="px-8 py-3.5 bg-white text-black font-black rounded-2xl hover:bg-neutral-200 transition-all flex items-center gap-2 active:scale-95 disabled:opacity-50"
                                         >
                                             {isPending ? <Loader2 size={18} className="animate-spin" /> : <Check size={18} />}
-                                            Değişiklikleri Kaydet
-                                        </button>
+                                            {dict.reviewUi.saveChanges}</button>
                                     </div>
                                 </div>
                             )}
@@ -287,13 +291,15 @@ export function SettingsContent({ user, activeTab }: SettingsContentProps) {
                                     className="space-y-8 animate-in fade-in slide-in-from-right-2 duration-300"
                                 >
                                     <div>
-                                        <h3 className="text-lg font-black text-white mb-1">Gizlilik ve Görünürlük</h3>
-                                        <p className="text-xs text-neutral-500 font-medium font-bold uppercase tracking-wider">Profilinizin ve aktivitelerinizin kimler tarafından görülebileceğini seçin.</p>
+                                        <h3 className="text-lg font-black text-white mb-1">{dict.reviewUi.privacy}</h3>
+                                        <p className="text-xs text-neutral-500 font-medium font-bold uppercase tracking-wider">{dict.reviewUi.privacyHint}</p>
                                     </div>
 
                                     <div className="space-y-4">
                                         {/* Toggles... */}
                                         <div
+                                            role="switch" aria-checked={isPrivate} tabIndex={0}
+                                            onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setIsPrivate(!isPrivate); } } }
                                             onClick={() => setIsPrivate(!isPrivate)}
                                             className={cn(
                                                 "flex items-center justify-between p-5 rounded-3xl border cursor-pointer transition-all group",
@@ -308,8 +314,8 @@ export function SettingsContent({ user, activeTab }: SettingsContentProps) {
                                                     {isPrivate ? <Lock size={20} /> : <Eye size={20} />}
                                                 </div>
                                                 <div>
-                                                    <p className="text-sm font-black text-white">Gizli Profil</p>
-                                                    <p className="text-[10px] text-neutral-500 font-bold uppercase">Sadece takipçilerin profilini görebilir.</p>
+                                                    <p className="text-sm font-black text-white">{dict.reviewUi.privateProfile}</p>
+                                                    <p className="text-[10px] text-neutral-500 font-bold uppercase">{dict.reviewUi.privateHint}</p>
                                                 </div>
                                             </div>
                                             <div className={cn(
@@ -324,6 +330,8 @@ export function SettingsContent({ user, activeTab }: SettingsContentProps) {
                                         </div>
                                         {/* Diğer togglelar... */}
                                         <div
+                                            role="switch" aria-checked={showActivities} tabIndex={0}
+                                            onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setShowActivities(!showActivities); } } }
                                             onClick={() => setShowActivities(!showActivities)}
                                             className={cn(
                                                 "flex items-center justify-between p-5 rounded-3xl border cursor-pointer transition-all group",
@@ -338,8 +346,8 @@ export function SettingsContent({ user, activeTab }: SettingsContentProps) {
                                                     <Activity size={20} />
                                                 </div>
                                                 <div>
-                                                    <p className="text-sm font-black text-white">Aktiviteleri Göster</p>
-                                                    <p className="text-[10px] text-neutral-500 font-bold uppercase">İzleme ve puanlama aktivitelerin akışta görünür.</p>
+                                                    <p className="text-sm font-black text-white">{dict.reviewUi.showActivities}</p>
+                                                    <p className="text-[10px] text-neutral-500 font-bold uppercase">{dict.reviewUi.activityHint}</p>
                                                 </div>
                                             </div>
                                             <div className={cn(
@@ -354,6 +362,8 @@ export function SettingsContent({ user, activeTab }: SettingsContentProps) {
                                         </div>
 
                                         <div
+                                            role="switch" aria-checked={showStats} tabIndex={0}
+                                            onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setShowStats(!showStats); } } }
                                             onClick={() => setShowStats(!showStats)}
                                             className={cn(
                                                 "flex items-center justify-between p-5 rounded-3xl border cursor-pointer transition-all group",
@@ -368,8 +378,8 @@ export function SettingsContent({ user, activeTab }: SettingsContentProps) {
                                                     <BarChart3 size={20} />
                                                 </div>
                                                 <div>
-                                                    <p className="text-sm font-black text-white">İstatistikleri Göster</p>
-                                                    <p className="text-[10px] text-neutral-500 font-bold uppercase">Profilindeki toplam izleme sayıları başkalarına görünür.</p>
+                                                    <p className="text-sm font-black text-white">{dict.reviewUi.showStats}</p>
+                                                    <p className="text-[10px] text-neutral-500 font-bold uppercase">{dict.reviewUi.statsHint}</p>
                                                 </div>
                                             </div>
                                             <div className={cn(
@@ -391,8 +401,7 @@ export function SettingsContent({ user, activeTab }: SettingsContentProps) {
                                             className="px-8 py-3.5 bg-white text-black font-black rounded-2xl hover:bg-neutral-200 transition-all flex items-center gap-2 active:scale-95 disabled:opacity-50"
                                         >
                                             {isPending ? <Loader2 size={18} className="animate-spin" /> : <Check size={18} />}
-                                            Gizlilik Ayarlarını Kaydet
-                                        </button>
+                                            {dict.reviewUi.savePrivacy}</button>
                                     </div>
                                 </div>
                             )}
@@ -402,8 +411,8 @@ export function SettingsContent({ user, activeTab }: SettingsContentProps) {
                                     className="space-y-8 pb-10 animate-in fade-in slide-in-from-right-2 duration-300"
                                 >
                                     <div>
-                                        <h3 className="text-lg font-black text-white mb-1">İzleme Tercihleri</h3>
-                                        <p className="text-xs text-neutral-500 font-medium font-bold uppercase tracking-wider">Size özel önerilerimizi bu tercihlerine göre şekillendiriyoruz.</p>
+                                        <h3 className="text-lg font-black text-white mb-1">{dict.reviewUi.watchPreferences}</h3>
+                                        <p className="text-xs text-neutral-500 font-medium font-bold uppercase tracking-wider">{dict.reviewUi.preferencesHint}</p>
                                     </div>
 
                                     <div className="space-y-6">
@@ -411,13 +420,12 @@ export function SettingsContent({ user, activeTab }: SettingsContentProps) {
                                             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                                                 <h4 className="text-sm font-black text-white px-1 flex items-center gap-2">
                                                     <Heart size={16} className="text-primary fill-current" />
-                                                    Favori Türler
-                                                </h4>
+                                                    {dict.reviewUi.genres}</h4>
                                                 <div className="relative">
                                                     <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500" />
                                                     <input
                                                         type="text"
-                                                        placeholder="Tür ara..."
+                                                        placeholder={dict.reviewUi.searchGenre}
                                                         value={genreSearch}
                                                         onChange={(e) => setGenreSearch(e.target.value)}
                                                         className="w-full sm:w-48 pl-8 pr-4 py-1.5 bg-white/5 border border-white/10 rounded-xl text-xs font-medium text-white focus:outline-none focus:border-primary/50 transition-colors"
@@ -458,7 +466,7 @@ export function SettingsContent({ user, activeTab }: SettingsContentProps) {
                                                     onClick={() => setShowAllGenres(!showAllGenres)}
                                                     className="w-full py-2 text-[10px] font-black uppercase tracking-widest text-neutral-500 hover:text-white transition-colors"
                                                 >
-                                                    {showAllGenres ? "Daha Az Göster" : "Daha Fazla Göster"}
+                                                    {showAllGenres ? dict.reviewUi.less : dict.reviewUi.more}
                                                 </button>
                                             )}
                                         </div>
@@ -467,13 +475,12 @@ export function SettingsContent({ user, activeTab }: SettingsContentProps) {
                                             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                                                 <h4 className="text-sm font-black text-white px-1 flex items-center gap-2">
                                                     <Monitor size={16} className="text-amber-500" />
-                                                    Kullandığınız Platformlar
-                                                </h4>
+                                                    {dict.reviewUi.platforms}</h4>
                                                 <div className="relative">
                                                     <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500" />
                                                     <input
                                                         type="text"
-                                                        placeholder="Platform ara..."
+                                                        placeholder={dict.reviewUi.searchPlatform}
                                                         value={platformSearch}
                                                         onChange={(e) => setPlatformSearch(e.target.value)}
                                                         className="w-full sm:w-48 pl-8 pr-4 py-1.5 bg-white/5 border border-white/10 rounded-xl text-xs font-medium text-white focus:outline-none focus:border-amber-500/50 transition-colors"
@@ -525,8 +532,7 @@ export function SettingsContent({ user, activeTab }: SettingsContentProps) {
                                             className="px-8 py-3.5 bg-white text-black font-black rounded-2xl hover:bg-neutral-200 transition-all flex items-center gap-2 active:scale-95 disabled:opacity-50"
                                         >
                                             {isPending ? <Loader2 size={18} className="animate-spin" /> : <Check size={18} />}
-                                            Tercihlerimi Kaydet
-                                        </button>
+                                            {dict.reviewUi.savePreferences}</button>
                                     </div>
                                 </div>
                             )}
@@ -536,8 +542,8 @@ export function SettingsContent({ user, activeTab }: SettingsContentProps) {
                                     className="space-y-8 animate-in fade-in slide-in-from-right-2 duration-300"
                                 >
                                     <div>
-                                        <h3 className="text-lg font-black text-white mb-1">Hesap Yönetimi</h3>
-                                        <p className="text-xs text-neutral-500 font-medium font-bold uppercase tracking-wider">Hesabınızı askıya alabilir veya kalıcı olarak silebilirsiniz.</p>
+                                        <h3 className="text-lg font-black text-white mb-1">{dict.reviewUi.account}</h3>
+                                        <p className="text-xs text-neutral-500 font-medium font-bold uppercase tracking-wider">{dict.reviewUi.accountHint}</p>
                                     </div>
 
                                     <div className="space-y-4">
@@ -549,10 +555,10 @@ export function SettingsContent({ user, activeTab }: SettingsContentProps) {
                                                 <div className="p-3 bg-amber-500/10 rounded-2xl group-hover:bg-amber-500 group-hover:text-black transition-colors text-amber-500">
                                                     <History size={20} />
                                                 </div>
-                                                <p className="text-sm font-black text-white">Hesabı Askıya Al</p>
+                                                <p className="text-sm font-black text-white">{dict.reviewUi.suspend}</p>
                                             </div>
                                             <p className="text-[10px] text-neutral-500 font-bold uppercase leading-relaxed">
-                                                Hesabınız dondurulur ve başkaları tarafından görülemez. 3 ay içerisinde giriş yapmazsanız hesabınız otomatik olarak <span className="text-amber-500">kalıcı olarak silinecektir.</span>
+                                                {dict.reviewUi.suspendHint}
                                             </p>
                                         </div>
 
@@ -564,11 +570,10 @@ export function SettingsContent({ user, activeTab }: SettingsContentProps) {
                                                 <div className="p-3 bg-rose-500/10 rounded-2xl group-hover:bg-rose-500 group-hover:text-white transition-colors text-rose-500">
                                                     <Trash2 size={20} />
                                                 </div>
-                                                <p className="text-sm font-black text-white">Hesabı Kalıcı Olarak Sil</p>
+                                                <p className="text-sm font-black text-white">{dict.reviewUi.delete}</p>
                                             </div>
                                             <p className="text-[10px] text-neutral-500 font-bold uppercase leading-relaxed">
-                                                Bu işlem geri alınamaz. Hesabınıza ait tüm veriler (aktiviteler, yorumlar, mesajlar) <span className="text-rose-500">tamamen ve kalıcı olarak</span> veritabanından temizlenecektir.
-                                            </p>
+                                                {dict.reviewUi.deleteHint}<span className="text-rose-500">{dict.reviewUi.permanently}</span> {dict.reviewUi.fromDatabase}</p>
                                         </div>
                                     </div>
                                 </div>
@@ -591,11 +596,11 @@ export function SettingsContent({ user, activeTab }: SettingsContentProps) {
                             )}>
                                 <AlertTriangle size={40} />
                             </div>
-                            <h4 className="text-2xl font-black text-white tracking-tight">Emin misiniz?</h4>
+                            <h4 className="text-2xl font-black text-white tracking-tight">{dict.reviewUi.confirm}</h4>
                             <p className="text-neutral-400 text-sm font-medium leading-relaxed">
                                 {showDeleteConfirm
-                                    ? "Bu işlem geri alınamaz. Hesabınızdaki her şey tamamen silinecek."
-                                    : "Hesabınız askıya alınacak. 3 ay boyunca giriş yapmazsanız kalıcı olarak silinecek."}
+                                    ? dict.reviewUi.deleteConfirm
+                                    : dict.reviewUi.suspendConfirm}
                             </p>
                             <div className="flex flex-col gap-3 pt-4">
                                 <button
@@ -607,14 +612,13 @@ export function SettingsContent({ user, activeTab }: SettingsContentProps) {
                                     )}
                                 >
                                     {isPending ? <Loader2 size={18} className="animate-spin" /> : <Check size={18} />}
-                                    {showDeleteConfirm ? "Evet, Hesabımı Sil" : "Evet, Hesabımı Askıya Al"}
+                                    {showDeleteConfirm ? dict.reviewUi.yesDelete : dict.reviewUi.yesSuspend}
                                 </button>
                                 <button
                                     onClick={() => { setShowDeleteConfirm(false); setShowSuspendConfirm(false); }}
                                     className="w-full py-4 rounded-2xl bg-white/5 text-neutral-400 hover:text-white hover:bg-white/10 transition-all font-bold text-sm"
                                 >
-                                    Vazgeç
-                                </button>
+                                    {dict.reviewUi.cancel}</button>
                             </div>
                         </div>
                     </div>

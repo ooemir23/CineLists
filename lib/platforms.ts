@@ -1,4 +1,5 @@
 import { tmdb } from "./tmdb";
+import { getServerCountry } from "./country";
 
 export const APP_PLATFORMS: Record<number, { id: string, name: string }> = {
     8: { id: "netflix", name: "Netflix" },
@@ -10,12 +11,13 @@ export const APP_PLATFORMS: Record<number, { id: string, name: string }> = {
 };
 
 export async function getAppPlatforms() {
+    const country = await getServerCountry();
     const [movieProviders, tvProviders] = await Promise.all([
-        tmdb.fetch("/watch/providers/movie", { params: { watch_region: "TR" } }),
-        tmdb.fetch("/watch/providers/tv", { params: { watch_region: "TR" } })
+        tmdb.fetch("/watch/providers/movie", { params: { watch_region: country } }),
+        tmdb.fetch("/watch/providers/tv", { params: { watch_region: country } })
     ]);
 
-    const allProviders = [...(movieProviders.results || []), ...(tvProviders.results || [])];
+    const allProviders = [...(movieProviders?.results || []), ...(tvProviders?.results || [])];
     const platformsMap = new Map<number, { id: string, name: string, icon: string, priority: number }>();
     
     allProviders.forEach((p: any) => {
@@ -24,7 +26,7 @@ export async function getAppPlatforms() {
                 id: p.provider_id.toString(),
                 name: p.provider_name,
                 icon: `https://image.tmdb.org/t/p/original${p.logo_path}`,
-                priority: p.display_priorities?.TR ?? p.display_priority ?? 999
+                priority: p.display_priorities?.[country] ?? p.display_priority ?? 999
             });
         }
     });

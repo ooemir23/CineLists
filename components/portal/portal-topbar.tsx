@@ -38,6 +38,7 @@ type PortalTopbarProps = {
     id?: string | null;
   };
   isAdmin?: boolean;
+  needsProfileCompletion?: boolean;
 };
 
 type SuggestionItem = {
@@ -51,7 +52,7 @@ type SuggestionItem = {
   department?: string;
 };
 
-export function PortalTopbar({ user, isAdmin = false }: PortalTopbarProps) {
+export function PortalTopbar({ user, isAdmin = false, needsProfileCompletion = false }: PortalTopbarProps) {
   const { dict } = useTranslation();
   const router = useRouter();
   const pathname = usePathname();
@@ -726,6 +727,23 @@ export function PortalTopbar({ user, isAdmin = false }: PortalTopbarProps) {
             })}
           </div>
         </div>
+        {user && needsProfileCompletion && pathname !== "/onboarding" && (
+          <div className="border-t border-amber-400/15 bg-amber-400/5 px-3 py-2 sm:px-6">
+            <div className="mx-auto flex max-w-[1600px] items-center justify-between gap-3">
+              <p className="text-xs text-slate-300 sm:text-sm">
+                {dict.nav.completeProfileHint}
+              </p>
+              <Link
+                href="/onboarding"
+                className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-amber-400/30 bg-amber-400/10 px-3 py-2 text-xs font-bold text-amber-400 transition-colors hover:bg-amber-400/20 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-400"
+              >
+                <User className="h-3.5 w-3.5" aria-hidden="true" />
+                {dict.nav.completeProfile}
+                <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
+              </Link>
+            </div>
+          </div>
+        )}
       </header>
     </>
   );

@@ -41,7 +41,7 @@ export function getTheatricalStatus(
     const digitalOrPhysicalReleases = releases.filter((rd: any) => rd.type === 4 || rd.type === 5);
 
     // Identify target theatrical release date
-    let theatricalDateStr: string | null =
+    const theatricalDateStr: string | null =
         theatricalReleases[0]?.release_date ||
         (theatricalReleases.length === 0 && data.release_date ? data.release_date : null);
 

@@ -1,4 +1,6 @@
 "use server";
+import { getDictionary, getServerLocale } from "@/lib/i18n/server";
+import { ensureMediaItem } from "@/lib/media-item";
 
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
@@ -15,11 +17,12 @@ export async function recommendMedia(params: {
     posterPath: string | null;
     message?: string;
 }) {
+    const dict = getDictionary(await getServerLocale());
     const session = await auth();
-    if (!session?.user?.id) return { error: "Giriş yapmalısınız" };
+    if (!session?.user?.id) return { error: dict.common.errorOccurred };
 
     if ((session.user as any).isGuest || session.user.id.startsWith("guest_")) {
-        return { error: "Tavsiye göndermek için giriş yapmalısınız" };
+        return { error: dict.common.errorOccurred };
     }
 
     const { receiverId: receiverIdOrEmail, mediaId, mediaType, title, posterPath, message } = params;
@@ -46,7 +49,7 @@ export async function recommendMedia(params: {
     });
 
     if (!media) {
-        media = await prisma.mediaItem.create({
+        media = await ensureMediaItem({
             data: {
                 tmdbId: mediaId,
                 type: mediaType === "movie" ? "MOVIE" : "TV",
@@ -77,6 +80,7 @@ export async function recommendMedia(params: {
             data: {
                 userId: receiver.id,
                 type: "NEW_RECOMMENDATION",
+                        payload: { kind: "recommendation", name: session.user.name || "", title },
                 message: `${session.user.name || "Birisi"} sana bir ${mediaType === "movie" ? "film" : "dizi"} tavsiye etti: ${title}`,
                 link: `/${mediaType}/${mediaId}`,
             },

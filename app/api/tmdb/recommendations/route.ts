@@ -1,3 +1,4 @@
+import { validateTmdbRequest } from "@/lib/api-budget";
 import { NextRequest, NextResponse } from "next/server";
 import { getEnvVar } from "@/lib/env";
 
@@ -5,6 +6,9 @@ const TMDB_API_KEY = getEnvVar("TMDB_API_KEY");
 const TMDB_BASE_URL = "https://api.themoviedb.org/3";
 
 export async function GET(request: NextRequest) {
+  const rejected = validateTmdbRequest(request);
+  if (rejected) return rejected;
+
     const searchParams = request.nextUrl.searchParams;
     const type = searchParams.get("type") === "tv" ? "tv" : "movie";
     const id = searchParams.get("id");

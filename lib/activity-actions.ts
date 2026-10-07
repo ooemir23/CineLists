@@ -1,5 +1,10 @@
 "use server";
+import { ensureMediaItem } from "@/lib/media-item";
 
+import { mediaKey } from "@/lib/media-key";
+import { withUserTransaction } from "@/lib/user-transaction";
+import { setVote } from "@/lib/votes";
+import { getDictionary, getServerLocale } from "@/lib/i18n/server";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { tmdb } from "@/lib/tmdb";
@@ -16,9 +21,10 @@ function isPrismaConnectionError(error: unknown) {
 }
 
 export async function toggleWatchedStatus(mediaId: number, type: "movie" | "tv", title: string, posterPath: string | null) {
+    const dict = getDictionary(await getServerLocale());
     const session = await auth();
     if (!session?.user?.id) {
-        return { error: "Giriş yapmalısınız" };
+        return { error: dict.common.errorOccurred };
     }
 
     if ((session.user as any).isGuest) {
@@ -37,7 +43,7 @@ export async function toggleWatchedStatus(mediaId: number, type: "movie" | "tv",
         }
 
         if (!dbUser) {
-            return { error: "Oturum geçersiz, lütfen tekrar giriş yapın." };
+            return { error: dict.common.errorOccurred };
         }
 
         const currentUserId = dbUser.id;
@@ -51,7 +57,7 @@ export async function toggleWatchedStatus(mediaId: number, type: "movie" | "tv",
             const details = await tmdb.getDetails(type, mediaId.toString());
             const genres = details.genres?.map((g: any) => g.name) || [];
 
-            media = await prisma.mediaItem.create({
+            media = await ensureMediaItem({
                 data: {
                     tmdbId: mediaId,
                     type: type === "movie" ? "MOVIE" : "TV",
@@ -64,12 +70,13 @@ export async function toggleWatchedStatus(mediaId: number, type: "movie" | "tv",
             });
         }
 
+        return await withUserTransaction(currentUserId, async tx => {
         // Check current status
-        const existingEntry = await prisma.watched.findUnique({
+        const existingEntry = await tx.watched.findUnique({
             where: {
                 userId_mediaId: {
                     userId: currentUserId,
-                    mediaId: media.id,
+                    mediaId: media!.id,
                 },
             },
         });
@@ -78,20 +85,20 @@ export async function toggleWatchedStatus(mediaId: number, type: "movie" | "tv",
 
         if (isCurrentlyWatched) {
             // Toggle OFF
-            await prisma.watched.delete({
+            await tx.watched.delete({
                 where: {
                     userId_mediaId: {
                         userId: currentUserId,
-                        mediaId: media.id,
+                        mediaId: media!.id,
                     },
                 },
             });
 
             // Remove major WATCHED activities (where episodeId is null) to keep feed clean
-            await prisma.activity.deleteMany({
+            await tx.activity.deleteMany({
                 where: {
                     userId: currentUserId,
-                    mediaId: media.id,
+                    mediaId: media!.id,
                     type: "WATCHED",
                     episodeId: null
                 },
@@ -107,39 +114,39 @@ export async function toggleWatchedStatus(mediaId: number, type: "movie" | "tv",
         } else {
             // Toggle ON (Mark as WATCHED)
             // Remove from toWatch if exists
-            const toWatch = await prisma.toWatch.findUnique({
+            const toWatch = await tx.toWatch.findUnique({
                 where: {
                     userId_mediaId: {
                         userId: currentUserId,
-                        mediaId: media.id,
+                        mediaId: media!.id,
                     },
                 },
             });
 
             if (toWatch) {
-                await prisma.toWatch.delete({
+                await tx.toWatch.delete({
                     where: { id: toWatch.id },
                 });
             }
 
-            await prisma.watched.create({
+            await tx.watched.create({
                 data: {
                     userId: currentUserId,
-                    mediaId: media.id,
+                    mediaId: media!.id,
                 },
             });
 
-            const existingActivity = await prisma.activity.findFirst({
+            const existingActivity = await tx.activity.findFirst({
                 where: {
                     userId: currentUserId,
-                    mediaId: media.id,
+                    mediaId: media!.id,
                     type: "WATCHED",
                     episodeId: null
                 },
             });
 
             if (existingActivity) {
-                await prisma.activity.update({
+                await tx.activity.update({
                     where: { id: existingActivity.id },
                     data: {
                         watchedAt: new Date(),
@@ -147,10 +154,10 @@ export async function toggleWatchedStatus(mediaId: number, type: "movie" | "tv",
                     }
                 });
             } else {
-                await prisma.activity.create({
+                await tx.activity.create({
                     data: {
                         userId: currentUserId,
-                        mediaId: media.id,
+                        mediaId: media!.id,
                         type: "WATCHED",
                         watchedAt: new Date(),
                     },
@@ -165,17 +172,19 @@ export async function toggleWatchedStatus(mediaId: number, type: "movie" | "tv",
 
             return { success: true, isWatched: true };
         }
+        });
     } catch (error: any) {
         if (isPrismaConnectionError(error)) {
-            return { error: "Veritabanı bağlantısı kurulamadı. Lütfen veritabanı servisinin çalıştığından emin olun." };
+            return { error: dict.common.errorOccurred };
         }
-        return { error: error?.message || "İşlem gerçekleştirilemedi." };
+        return { error: dict.common.errorOccurred };
     }
 }
 
-export async function setWatchStatus(mediaId: number, type: "movie" | "tv", title: string, posterPath: string | null, status: "PLAN_TO_WATCH" | "WATCHING" | null) {
+export async function setWatchStatus(mediaId: number, type: "movie" | "tv", title: string, posterPath: string | null, status: "PLAN_TO_WATCH" | "WATCHING" | null): Promise<{ error?: string; success?: boolean }> {
+    const dict = getDictionary(await getServerLocale());
     const session = await auth();
-    if (!session?.user?.id) return { error: "Giriş yapmalısınız" };
+    if (!session?.user?.id) return { error: dict.common.errorOccurred };
 
     try {
         let dbUser = await prisma.user.findUnique({
@@ -189,7 +198,7 @@ export async function setWatchStatus(mediaId: number, type: "movie" | "tv", titl
         }
 
         if (!dbUser) {
-            return { error: "Oturum geçersiz, lütfen tekrar giriş yapın." };
+            return { error: dict.common.errorOccurred };
         }
 
         const currentUserId = dbUser.id;
@@ -202,7 +211,7 @@ export async function setWatchStatus(mediaId: number, type: "movie" | "tv", titl
             const details = await tmdb.getDetails(type, mediaId.toString());
             const genres = details.genres?.map((g: any) => g.name) || [];
 
-            media = await prisma.mediaItem.create({
+            media = await ensureMediaItem({
                 data: {
                     tmdbId: mediaId,
                     type: type === "movie" ? "MOVIE" : "TV",
@@ -215,11 +224,12 @@ export async function setWatchStatus(mediaId: number, type: "movie" | "tv", titl
             });
         }
 
+        return await withUserTransaction(currentUserId, async tx => {
         if (status === null) {
-            await prisma.toWatch.deleteMany({
+            await tx.toWatch.deleteMany({
                 where: {
                     userId: currentUserId,
-                    mediaId: media.id,
+                    mediaId: media!.id,
                 },
             });
 
@@ -231,25 +241,25 @@ export async function setWatchStatus(mediaId: number, type: "movie" | "tv", titl
         }
 
         // Remove from watched if moving to a to-watch state
-        await prisma.watched.deleteMany({
+        await tx.watched.deleteMany({
             where: {
                 userId: currentUserId,
-                mediaId: media.id,
+                mediaId: media!.id,
             },
         });
 
         // Upsert toWatch with specific status
-        await prisma.toWatch.upsert({
+        await tx.toWatch.upsert({
             where: {
                 userId_mediaId: {
                     userId: currentUserId,
-                    mediaId: media.id,
+                    mediaId: media!.id,
                 },
             },
             update: { status: status as any },
             create: {
                 userId: currentUserId,
-                mediaId: media.id,
+                mediaId: media!.id,
                 status: status as any,
             },
         });
@@ -259,11 +269,12 @@ export async function setWatchStatus(mediaId: number, type: "movie" | "tv", titl
         revalidatePath(`/${type}/${mediaId}`);
 
         return { success: true };
+        });
     } catch (error: any) {
         if (isPrismaConnectionError(error)) {
-            return { error: "Veritabanı bağlantısı kurulamadı. Lütfen veritabanı servisinin çalıştığından emin olun." };
+            return { error: dict.common.errorOccurred };
         }
-        return { error: error?.message || "İşlem gerçekleştirilemedi." };
+        return { error: dict.common.errorOccurred };
     }
 }
 
@@ -282,7 +293,7 @@ export async function getWatchStatus(mediaId: number, type: "movie" | "tv" = "mo
             where: {
                 userId_mediaId: {
                     userId: session.user.id,
-                    mediaId: media.id,
+                    mediaId: media!.id,
                 },
             },
         });
@@ -293,7 +304,7 @@ export async function getWatchStatus(mediaId: number, type: "movie" | "tv" = "mo
             where: {
                 userId_mediaId: {
                     userId: session.user.id,
-                    mediaId: media.id,
+                    mediaId: media!.id,
                 },
             },
         });
@@ -308,9 +319,10 @@ export async function getWatchStatus(mediaId: number, type: "movie" | "tv" = "mo
 
 
 export async function addComment(mediaId: number, type: "movie" | "tv", content: string, title: string, posterPath: string | null, isSpoiler: boolean = false, parentId?: string) {
+    const dict = getDictionary(await getServerLocale());
     const session = await auth();
     if (!session?.user?.id) {
-        return { error: "Giriş yapmalısınız" };
+        return { error: dict.common.errorOccurred };
     }
 
     if ((session.user as any).isGuest) {
@@ -330,7 +342,7 @@ export async function addComment(mediaId: number, type: "movie" | "tv", content:
                 ? details?.runtime
                 : (details?.episode_run_time?.[0] || null);
 
-            media = await prisma.mediaItem.create({
+            media = await ensureMediaItem({
                 data: {
                     tmdbId: mediaId,
                     type: type === "movie" ? "MOVIE" : "TV",
@@ -370,6 +382,7 @@ export async function addComment(mediaId: number, type: "movie" | "tv", content:
                         data: {
                             userId: comment.activity.userId,
                             type: "NEW_COMMENT",
+                        payload: { kind: "comment", name: session.user.name || "", title, preview: content.slice(0, 60) },
                             message: `${session.user.name || "Birisi"} ${title} hakkındaki incelemene yorum yaptı: "${preview}"`,
                             link: `/${type}/${mediaId}?tab=comments`,
                             image: posterPath,
@@ -384,7 +397,7 @@ export async function addComment(mediaId: number, type: "movie" | "tv", content:
             await prisma.activity.create({
                 data: {
                     userId: currentUserId,
-                    mediaId: media.id,
+                    mediaId: media!.id,
                     type: "REVIEWED",
                     review: content,
                     isSpoiler: isSpoiler,
@@ -398,48 +411,30 @@ export async function addComment(mediaId: number, type: "movie" | "tv", content:
         return { success: true };
     } catch (error: any) {
         if (isPrismaConnectionError(error)) {
-            return { error: "Veritabanı bağlantısı kurulamadı. Lütfen veritabanı servisinin çalıştığından emin olun." };
+            return { error: dict.common.errorOccurred };
         }
-        return { error: error?.message || "Yorum gönderilemedi." };
+        return { error: dict.common.errorOccurred };
     }
 }
 
-export async function voteActivity(activityId: string, increment: number) {
+export async function voteActivity(activityId: string, value: number) {
+    const dict = getDictionary(await getServerLocale());
     const session = await auth();
-    if (!session?.user?.id) return { error: "Giriş yapmalısınız" };
-
+    if (!session?.user?.id) return { error: dict.onboarding.signInRequired };
     try {
-        await prisma.activity.update({
-            where: { id: activityId },
-            data: { votes: { increment } }
-        });
-
-        return { success: true };
-    } catch (error: any) {
-        if (isPrismaConnectionError(error)) {
-            return { error: "Veritabanı bağlantısı kurulamadı." };
-        }
-        return { error: error?.message || "İşlem başarısız." };
-    }
+        const votes = await setVote(session.user.id, activityId, value, "activity");
+        return votes === null ? { error: dict.common.errorOccurred } : { success: true, votes };
+    } catch { return { error: dict.common.errorOccurred }; }
 }
 
-export async function voteComment(commentId: string, increment: number) {
+export async function voteComment(commentId: string, value: number) {
+    const dict = getDictionary(await getServerLocale());
     const session = await auth();
-    if (!session?.user?.id) return { error: "Giriş yapmalısınız" };
-
+    if (!session?.user?.id) return { error: dict.onboarding.signInRequired };
     try {
-        await prisma.comment.update({
-            where: { id: commentId },
-            data: { votes: { increment } }
-        });
-
-        return { success: true };
-    } catch (error: any) {
-        if (isPrismaConnectionError(error)) {
-            return { error: "Veritabanı bağlantısı kurulamadı." };
-        }
-        return { error: error?.message || "İşlem başarısız." };
-    }
+        const votes = await setVote(session.user.id, commentId, value, "comment");
+        return votes === null ? { error: dict.common.errorOccurred } : { success: true, votes };
+    } catch { return { error: dict.common.errorOccurred }; }
 }
 
 export async function saveWatchDetails(params: {
@@ -454,9 +449,10 @@ export async function saveWatchDetails(params: {
     recommendedByText?: string;
     review?: string;
 }) {
+    const dict = getDictionary(await getServerLocale());
     const session = await auth();
     if (!session?.user?.id) {
-        return { error: "Giriş yapmalısınız" };
+        return { error: dict.common.errorOccurred };
     }
 
     if ((session.user as any).isGuest) {
@@ -477,7 +473,7 @@ export async function saveWatchDetails(params: {
             ? details?.runtime
             : (details?.episode_run_time?.[0] || null);
 
-        media = await prisma.mediaItem.create({
+        media = await ensureMediaItem({
             data: {
                 tmdbId,
                 type: type === "movie" ? "MOVIE" : "TV",
@@ -501,12 +497,14 @@ export async function saveWatchDetails(params: {
         if (dbUser) currentUserId = dbUser.id;
     }
 
+    await withUserTransaction(currentUserId, async tx => {
+    await tx.toWatch.deleteMany({ where: { userId: currentUserId, mediaId: media!.id } });
     // Update Watched entry
-    await prisma.watched.upsert({
+    await tx.watched.upsert({
         where: {
             userId_mediaId: {
                 userId: currentUserId,
-                mediaId: media.id,
+                mediaId: media!.id,
             },
         },
         update: {
@@ -517,7 +515,7 @@ export async function saveWatchDetails(params: {
         },
         create: {
             userId: currentUserId,
-            mediaId: media.id,
+            mediaId: media!.id,
             rating: rating || null,
             watchedAt: watchedAt || new Date(),
             recommendedById: recommendedById || null,
@@ -526,17 +524,17 @@ export async function saveWatchDetails(params: {
     });
 
     // Update Activity
-    const existingActivity = await prisma.activity.findFirst({
+    const existingActivity = await tx.activity.findFirst({
         where: {
             userId: currentUserId,
-            mediaId: media.id,
+            mediaId: media!.id,
             type: "WATCHED",
             episodeId: null
         },
     });
 
     if (existingActivity) {
-        await prisma.activity.update({
+        await tx.activity.update({
             where: { id: existingActivity.id },
             data: {
                 rating: rating !== undefined ? rating : undefined,
@@ -549,10 +547,10 @@ export async function saveWatchDetails(params: {
             }
         });
     } else {
-        await prisma.activity.create({
+        await tx.activity.create({
             data: {
                 userId: currentUserId,
-                mediaId: media.id,
+                mediaId: media!.id,
                 type: "WATCHED",
                 rating: rating || null,
                 watchedAt: watchedAt || new Date(),
@@ -564,6 +562,8 @@ export async function saveWatchDetails(params: {
         });
     }
 
+    });
+
     // Create notification for the recommender if applicable
     if (recommendedById && recommendedById !== currentUserId) {
         try {
@@ -571,6 +571,7 @@ export async function saveWatchDetails(params: {
                 data: {
                     userId: recommendedById,
                     type: "NEW_RECOMMENDATION",
+                        payload: { kind: "watchThanks", name: session.user.name || "", title },
                     message: `${session.user.name || "Birisi"} tavsiye ettiğin ${title} içeriğini izledi!`,
                     link: `/profile/${currentUserId}`,
                     image: posterPath,
@@ -590,18 +591,18 @@ export async function saveWatchDetails(params: {
 }
 
 export async function getMediaMetadataBulk(items: { id: number; type: "movie" | "tv" }[]) {
-    if (!items.length) return {};
+    if (!Array.isArray(items) || !items.length || items.length > 100) return {};
     try {
         const mediaItems = await prisma.mediaItem.findMany({
             where: { tmdbId: { in: items.map(item => item.id) } },
             select: { tmdbId: true, type: true, runtime: true }
         });
-        const metadataMap: Record<number, { runtime: number | null }> = {};
+        const metadataMap: Record<string, { runtime: number | null }> = {};
         for (const item of items) {
             const stored = mediaItems.find(row => row.tmdbId === item.id && row.type === item.type.toUpperCase());
-            if (stored) metadataMap[item.id] = { runtime: stored.runtime };
+            if (stored) metadataMap[mediaKey(item.id, item.type)] = { runtime: stored.runtime };
         }
-        const missing = items.filter(item => !metadataMap[item.id]?.runtime);
+        const missing = items.filter(item => !metadataMap[mediaKey(item.id, item.type)]?.runtime);
         if (missing.length) {
             after(async () => {
                 const { refreshMediaRuntime } = await import("@/lib/media-runtime");
@@ -616,8 +617,9 @@ export async function getMediaMetadataBulk(items: { id: number; type: "movie" | 
 }
 
 export async function updateComment(activityId: string, content: string, isSpoiler: boolean) {
+    const dict = getDictionary(await getServerLocale());
     const session = await auth();
-    if (!session?.user?.id) return { error: "Giriş yapmalısınız" };
+    if (!session?.user?.id) return { error: dict.common.errorOccurred };
 
     const activity = await prisma.activity.findUnique({
         where: { id: activityId },
@@ -625,7 +627,7 @@ export async function updateComment(activityId: string, content: string, isSpoil
     });
 
     if (!activity || activity.userId !== session.user.id) {
-        return { error: "Bu yorumu düzenleme yetkiniz yok" };
+        return { error: dict.common.errorOccurred };
     }
 
     await prisma.activity.update({
@@ -644,8 +646,9 @@ export async function updateComment(activityId: string, content: string, isSpoil
 }
 
 export async function deleteComment(activityId: string) {
+    const dict = getDictionary(await getServerLocale());
     const session = await auth();
-    if (!session?.user?.id) return { error: "Giriş yapmalısınız" };
+    if (!session?.user?.id) return { error: dict.common.errorOccurred };
 
     const activity = await prisma.activity.findUnique({
         where: { id: activityId },
@@ -653,7 +656,7 @@ export async function deleteComment(activityId: string) {
     });
 
     if (!activity || activity.userId !== session.user.id) {
-        return { error: "Bu yorumu silme yetkiniz yok" };
+        return { error: dict.common.errorOccurred };
     }
 
     await prisma.activity.delete({

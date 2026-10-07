@@ -1,106 +1,51 @@
+import { timingSafeEqual } from "node:crypto";
 import { prisma } from "@/lib/prisma";
 import { tmdb } from "@/lib/tmdb";
 import { sendDailyReminderEmail } from "@/lib/mail";
-import { NextResponse } from "next/server";
+import { getDictionary } from "@/lib/i18n/server";
 
 export async function GET(request: Request) {
-    // Security check: Only allow if a secret key matches or if it's a known cron service
-    const { searchParams } = new URL(request.url);
-    const key = searchParams.get("key");
-    const cronSecret = process.env.CRON_SECRET;
-
-    if (!cronSecret || key !== cronSecret) {
-        return new Response("Unauthorized", { status: 401 });
-    }
-
+    const secret = process.env.CRON_SECRET;
+    const supplied = request.headers.get("authorization")?.replace(/^Bearer /, "") || "";
+    if (!secret || Buffer.byteLength(supplied) !== Buffer.byteLength(secret) || !timingSafeEqual(Buffer.from(supplied), Buffer.from(secret))) return new Response(null, { status: 401 });
     try {
-        console.log("Starting daily reminders cron job...");
-        const today = new Date().toISOString().split("T")[0];
-
-        // 1. Get all unique TV show IDs that users are interested in (WATCHING or TO_WATCH)
-        const watchingShows = await prisma.watched.findMany({
-            where: { media: { type: "TV" } },
-            select: { media: { select: { tmdbId: true } } }
+        const today = new Date().toISOString().slice(0, 10);
+        const users = await prisma.user.findMany({
+            where: { email: { not: null }, isSuspended: false },
+            select: {
+                email: true, name: true, locale: true, country: true,
+                watched: { where: { media: { type: "TV" } }, select: { media: { select: { tmdbId: true } } } },
+                toWatch: { where: { media: { type: "TV" } }, select: { media: { select: { tmdbId: true } } } },
+            },
         });
-
-        const toWatchShows = await prisma.toWatch.findMany({
-            where: { media: { type: "TV" } },
-            select: { media: { select: { tmdbId: true } } }
-        });
-
-        const allShowIds = Array.from(new Set([
-            ...watchingShows.map(s => s.media.tmdbId),
-            ...toWatchShows.map(s => s.media.tmdbId)
-        ]));
-
-        console.log(`Found ${allShowIds.length} unique TV shows to check.`);
-
-        // 2. Check which shows have episodes today
-        // We'll do this in batches to avoid TMDB rate limits
-        const showsWithEpisodesToday: any[] = [];
-        
-        for (const tmdbId of allShowIds) {
-            const details = await tmdb.getTVShow(tmdbId.toString());
-            const nextEpisode = details?.next_episode_to_air;
-
-            if (nextEpisode && nextEpisode.air_date === today) {
-                const providers = await tmdb.getWatchProviders("tv", tmdbId.toString());
-                const trProviders = providers?.results?.TR?.flatrate?.map((p: any) => p.provider_name) || [];
-
-                showsWithEpisodesToday.push({
-                    tmdbId,
-                    title: details.name,
-                    posterPath: details.poster_path,
-                    episodeInfoTr: `${nextEpisode.season_number}. Sezon ${nextEpisode.episode_number}. Bölüm`,
-                    episodeInfoEn: `Season ${nextEpisode.season_number}, Episode ${nextEpisode.episode_number}`,
-                    platforms: trProviders
+        // Shared request promises avoid fetching a show once per subscriber.
+        const details = new Map<string, Promise<any>>();
+        const providers = new Map<number, Promise<any>>();
+        let recipients = 0;
+        for (const user of users) {
+            const locale = user.locale === "en" ? "en" : "tr";
+            const dictionary = getDictionary(locale);
+            const ids = new Set([...user.watched, ...user.toWatch].map(w => w.media.tmdbId));
+            const shows = [];
+            for (const id of ids) {
+                const key = `${locale}:${id}`;
+                if (!details.has(key)) details.set(key, tmdb.fetch(`/tv/${id}`, { params: { language: locale === "en" ? "en-US" : "tr-TR" } }));
+                const show = await details.get(key);
+                const episode = show?.next_episode_to_air;
+                if (episode?.air_date !== today) continue;
+                if (!providers.has(id)) providers.set(id, tmdb.fetch(`/tv/${id}/watch/providers`, { params: { language: "en-US" } }));
+                const availability = await providers.get(id);
+                shows.push({
+                    title: show.name, posterPath: show.poster_path,
+                    episodeInfo: dictionary.reviewUi.episode.replace("{season}", String(episode.season_number)).replace("{episode}", String(episode.episode_number)),
+                    platforms: availability?.results?.[user.country]?.flatrate?.map((p: { provider_name: string }) => p.provider_name) || [],
                 });
             }
-        }
-
-        console.log(`Found ${showsWithEpisodesToday.length} shows airing today.`);
-
-        if (showsWithEpisodesToday.length === 0) {
-            return NextResponse.json({ message: "No shows airing today for any user." });
-        }
-
-        // 3. Find users who follow these shows and send emails
-        const users = await prisma.user.findMany({
-            where: { email: { not: null } },
-            select: { id: true, email: true, name: true, locale: true }
-        });
-
-        for (const user of users) {
-            // Get shows this user follows that are airing today
-            const userShows = await prisma.mediaItem.findMany({
-                where: {
-                    tmdbId: { in: showsWithEpisodesToday.map(s => s.tmdbId) },
-                    OR: [
-                        { watchedBy: { some: { userId: user.id } } },
-                        { toWatchBy: { some: { userId: user.id } } }
-                    ]
-                }
-            });
-
-            if (userShows.length > 0 && user.email) {
-                const locale = user.locale === "en" ? "en" : "tr";
-                const mailData = showsWithEpisodesToday
-                    .filter(s => userShows.some(us => us.tmdbId === s.tmdbId))
-                    .map(s => ({
-                        title: s.title,
-                        posterPath: s.posterPath,
-                        episodeInfo: locale === "en" ? s.episodeInfoEn : s.episodeInfoTr,
-                        platforms: s.platforms
-                    }));
-
-                console.log(`Sending reminder to ${user.email} for ${mailData.length} shows.`);
-                await sendDailyReminderEmail(user.email, user.name || (locale === "en" ? "Film fan" : "Sinefil"), mailData, locale);
+            if (shows.length && user.email) {
+                await sendDailyReminderEmail(user.email, user.name || dictionary.common.appName, shows, locale);
+                recipients++;
             }
         }
-
-        return NextResponse.json({ success: true, processedShows: showsWithEpisodesToday.length });
-    } catch (error) {
-        console.error("Cron job error:", error);
-        return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
-    }
+        return Response.json({ success: true, recipients });
+    } catch { return Response.json({ success: false }, { status: 500 }); }
 }

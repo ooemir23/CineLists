@@ -1,3 +1,4 @@
+import { visibleUserWhere } from "@/lib/profile-access";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
@@ -10,6 +11,7 @@ async function getGroupedFeedActivities(userId: string, followingIds: string[]) 
     const activities = await prisma.activity.findMany({
         where: {
             userId: { in: feedUserIds },
+            user: visibleUserWhere(userId, "showActivities"),
         },
         include: {
             user: {
@@ -19,6 +21,7 @@ async function getGroupedFeedActivities(userId: string, followingIds: string[]) 
                     image: true,
                 },
             },
+            voterRecords: { where: { userId }, select: { value: true } },
             media: true,
             episode: {
                 select: {
@@ -113,7 +116,7 @@ async function getGroupedFeedActivities(userId: string, followingIds: string[]) 
         }
     }
 
-    return groupedActivities.slice(0, 30);
+    return groupedActivities.slice(0, 30).map(({ voterRecords, ...a }) => ({ ...a, viewerVote: voterRecords?.[0]?.value ?? 0 }));
 }
 
 export default async function FeedPage() {
@@ -149,6 +152,8 @@ export default async function FeedPage() {
                 where: {
                     id: { notIn: [...followingIds, session.user.id] },
                     isPrivate: false,
+                    isSuspended: false,
+                    showStats: true,
                 },
                 select: {
                     id: true,
@@ -169,6 +174,7 @@ export default async function FeedPage() {
             }).catch(() => []),
             prisma.activity.findMany({
                 where: {
+                    user: visibleUserWhere(session.user.id, "showActivities"),
                     OR: [
                         { type: "REVIEWED" },
                         { review: { not: null } }

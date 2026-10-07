@@ -63,7 +63,6 @@ const nextConfig: NextConfig = {
   // Performance optimizations
   experimental: {
     optimizePackageImports: ['lucide-react', '@prisma/client'],
-    turbopackUseSystemTlsCerts: true,
   },
 
   // Security headers

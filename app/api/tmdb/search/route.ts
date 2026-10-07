@@ -1,7 +1,11 @@
+import { validateTmdbRequest, tmdbErrorResponse } from "@/lib/api-budget";
 import { tmdb } from "@/lib/tmdb";
 import { NextResponse } from "next/server";
 
 export async function GET(request: Request) {
+  const rejected = validateTmdbRequest(request);
+  if (rejected) return rejected;
+
     const { searchParams } = new URL(request.url);
     const query = searchParams.get("q");
     const type = searchParams.get("type") || "multi";
@@ -26,6 +30,6 @@ export async function GET(request: Request) {
         return NextResponse.json({ results: results.slice(0, 10) });
     } catch (error) {
         console.error("Search API error:", error);
-        return NextResponse.json({ error: "Failed to fetch" }, { status: 500 });
+        return tmdbErrorResponse(error, request);
     }
 }

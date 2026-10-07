@@ -1,16 +1,12 @@
 "use server";
 
 import { auth } from "@/auth";
+import { accessibleProfileId, visibleUserWhere } from "@/lib/profile-access";
 import { prisma } from "@/lib/prisma";
 
 export async function getUserStats(userId?: string) {
     try {
-        let targetUserId = userId;
-        if (!targetUserId) {
-            const session = await auth();
-            targetUserId = session?.user?.id;
-        }
-
+        const targetUserId = await accessibleProfileId(userId);
         if (!targetUserId) return null;
 
         // Counts from the new lists
@@ -65,7 +61,7 @@ export async function getLeaderboard() {
         // 1. Episode Counts
         const episodeCounts = await prisma.watchedEpisode.groupBy({
             by: ['userId'],
-            where: { userId: { in: userIds } },
+            where: { userId: { in: userIds }, user: visibleUserWhere(session.user.id, "showStats") },
             _count: { episodeId: true }
         });
 
@@ -73,6 +69,7 @@ export async function getLeaderboard() {
         const watchedMovies = await prisma.watched.findMany({
             where: {
                 userId: { in: userIds },
+                user: visibleUserWhere(session.user.id, "showStats"),
                 media: { type: "MOVIE" }
             },
             select: { userId: true }
@@ -85,7 +82,7 @@ export async function getLeaderboard() {
 
         // 3. User Details
         const users = await prisma.user.findMany({
-            where: { id: { in: userIds } },
+            where: { id: { in: userIds }, ...visibleUserWhere(session.user.id, "showStats") },
             select: { id: true, name: true, image: true }
         });
 

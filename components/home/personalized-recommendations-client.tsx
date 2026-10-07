@@ -24,8 +24,8 @@ type RecommendationItem = {
 
 type PersonalizedRecommendationsClientProps = {
     results: RecommendationItem[];
-    userRatingsMap: Record<number, number>;
-    metadataMap: Record<number, { runtime?: number | null }>;
+    userRatingsMap: Record<string, number>;
+    metadataMap: Record<string, { runtime?: number | null }>;
 };
 
 const formatRuntime = (minutes?: number | null) => {
@@ -66,7 +66,7 @@ export function PersonalizedRecommendationsClient({
                 <div className="flex flex-col gap-3">
                     {visibleResults.map((item) => {
                         const releaseDate = item.release_date || item.first_air_date;
-                        const runtime = item.runtime || metadataMap[item.id]?.runtime || undefined;
+                        const runtime = item.runtime || metadataMap[`${item.mediaType || "movie"}:${item.id}`]?.runtime || undefined;
                         const year = releaseDate ? new Date(releaseDate).getFullYear() : "TBA";
 
                         return (
@@ -132,7 +132,7 @@ export function PersonalizedRecommendationsClient({
                                         <div className="flex items-center gap-1.5 shrink-0 rounded-full bg-white/5 border border-white/10 px-2.5 py-1">
                                             <Star className="w-3.5 h-3.5 text-amber-400 fill-current" />
                                             <span className="text-xs font-black text-white">
-                                                {userRatingsMap[item.id] !== undefined ? userRatingsMap[item.id].toFixed(1) : (item.vote_average || 0).toFixed(1)}
+                                                {userRatingsMap[`${item.mediaType || "movie"}:${item.id}`] !== undefined ? userRatingsMap[`${item.mediaType || "movie"}:${item.id}`].toFixed(1) : (item.vote_average || 0).toFixed(1)}
                                             </span>
                                         </div>
                                     </div>
@@ -151,9 +151,9 @@ export function PersonalizedRecommendationsClient({
                                 originalTitle={item.original_title || item.original_name}
                                 posterPath={item.poster_path ?? null}
                                 voteAverage={item.vote_average || 0}
-                                userRating={userRatingsMap[item.id]}
+                                userRating={userRatingsMap[`${item.mediaType || "movie"}:${item.id}`]}
                                 releaseDate={item.release_date || item.first_air_date}
-                                runtime={item.runtime || metadataMap[item.id]?.runtime || undefined}
+                                runtime={item.runtime || metadataMap[`${item.mediaType || "movie"}:${item.id}`]?.runtime || undefined}
                                 type={item.mediaType}
                                 compact={isCompactMode}
                                 fullWidth={!isCompactMode}

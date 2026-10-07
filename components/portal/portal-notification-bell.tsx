@@ -1,5 +1,7 @@
 "use client";
+import { useTranslation } from "@/lib/i18n/i18n-context";
 
+import { subscribeUnreadCount } from "@/lib/notification-poll";
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -28,20 +30,13 @@ type NotificationItem = {
     createdAt: string;
 };
 
-function formatRelativeTime(dateStr: string): string {
-    try {
-        const diffMs = Date.now() - new Date(dateStr).getTime();
-        const diffMinutes = Math.floor(diffMs / (1000 * 60));
-        if (diffMinutes < 1) return "Az önce";
-        if (diffMinutes < 60) return `${diffMinutes} dk önce`;
-        const diffHours = Math.floor(diffMinutes / 60);
-        if (diffHours < 24) return `${diffHours} sa önce`;
-        const diffDays = Math.floor(diffHours / 24);
-        if (diffDays < 7) return `${diffDays} gün önce`;
-        return new Intl.DateTimeFormat("tr-TR", { day: "numeric", month: "short" }).format(new Date(dateStr));
-    } catch {
-        return "";
-    }
+function formatRelativeTime(dateStr: string, locale: string): string {
+    const seconds = Math.round((new Date(dateStr).getTime() - Date.now()) / 1000);
+    const formatter = new Intl.RelativeTimeFormat(locale, { numeric: "auto" });
+    if (Math.abs(seconds) < 60) return formatter.format(seconds, "second");
+    if (Math.abs(seconds) < 3600) return formatter.format(Math.round(seconds / 60), "minute");
+    if (Math.abs(seconds) < 86400) return formatter.format(Math.round(seconds / 3600), "hour");
+    return formatter.format(Math.round(seconds / 86400), "day");
 }
 
 function getNotificationIcon(type: string) {
@@ -62,6 +57,7 @@ function getNotificationIcon(type: string) {
 }
 
 export function PortalNotificationBell() {
+  const { dict, locale } = useTranslation();
     const [isOpen, setIsOpen] = useState(false);
     const [unreadCount, setUnreadCount] = useState(0);
     const [items, setItems] = useState<NotificationItem[]>([]);
@@ -69,40 +65,7 @@ export function PortalNotificationBell() {
     const dropdownRef = useRef<HTMLDivElement>(null);
     const router = useRouter();
 
-    // Fetch unread count lightweight polling
-    const fetchUnreadCount = async () => {
-        try {
-            const res = await fetch("/api/notifications/unread-count", { cache: "no-store" });
-            if (res.ok) {
-                const data = await res.json();
-                setUnreadCount(typeof data.count === "number" ? data.count : 0);
-            }
-        } catch {
-            // Silently ignore network glitches
-        }
-    };
-
-    // Initial load + live polling
-    useEffect(() => {
-        fetchUnreadCount();
-
-        const interval = setInterval(fetchUnreadCount, 20000); // Poll every 20s
-
-        const handleVisibilityOrFocus = () => {
-            if (document.visibilityState === "visible") {
-                fetchUnreadCount();
-            }
-        };
-
-        window.addEventListener("focus", handleVisibilityOrFocus);
-        document.addEventListener("visibilitychange", handleVisibilityOrFocus);
-
-        return () => {
-            clearInterval(interval);
-            window.removeEventListener("focus", handleVisibilityOrFocus);
-            document.removeEventListener("visibilitychange", handleVisibilityOrFocus);
-        };
-    }, []);
+    useEffect(() => subscribeUnreadCount(setUnreadCount), []);
 
     // Load recent notifications when dropdown is opened
     const handleOpenDropdown = async () => {
@@ -177,8 +140,8 @@ export function PortalNotificationBell() {
             <button
                 type="button"
                 onClick={handleOpenDropdown}
-                aria-label="Bildirimler"
-                title={unreadCount > 0 ? `${unreadCount} okunmamış bildirim` : "Bildirimler"}
+                aria-label={dict.reviewUi.notifications}
+                title={unreadCount > 0 ? dict.reviewUi.unreadNotifications.replace("{count}", String(unreadCount)) : dict.reviewUi.notifications}
                 className={`w-9 h-9 rounded-xl flex items-center justify-center border transition-all relative ${
                     unreadCount > 0
                         ? "text-white border-amber-400/30 bg-amber-400/10 hover:bg-amber-400/20"
@@ -202,12 +165,10 @@ export function PortalNotificationBell() {
                     <div className="flex items-center justify-between border-b border-white/10 px-4 py-3 bg-white/[0.02]">
                         <div className="flex items-center gap-2">
                             <span className="text-xs font-black uppercase tracking-wider text-white">
-                                Bildirimler
-                            </span>
+                                {dict.reviewUi.notifications}</span>
                             {unreadCount > 0 && (
                                 <span className="rounded-full bg-rose-500/20 px-2 py-0.5 text-[10px] font-black text-rose-400 border border-rose-500/30">
-                                    {unreadCount} yeni
-                                </span>
+                                    {unreadCount} {dict.reviewUi.new}</span>
                             )}
                         </div>
 
@@ -218,7 +179,7 @@ export function PortalNotificationBell() {
                                 className="flex items-center gap-1 text-[11px] font-bold text-slate-400 hover:text-amber-400 transition-colors"
                             >
                                 <CheckCheck size={13} />
-                                <span>Tümünü Oku</span>
+                                <span>{dict.reviewUi.markAll}</span>
                             </button>
                         )}
                     </div>
@@ -228,19 +189,17 @@ export function PortalNotificationBell() {
                         {isLoading ? (
                             <div className="flex flex-col items-center justify-center py-10 text-slate-500">
                                 <Loader2 size={22} className="animate-spin text-amber-400 mb-2" />
-                                <span className="text-xs font-medium">Bildirimler yükleniyor...</span>
+                                <span className="text-xs font-medium">{dict.reviewUi.notificationLoading}</span>
                             </div>
                         ) : items.length === 0 ? (
                             <div className="flex flex-col items-center justify-center py-10 px-4 text-center text-slate-500">
                                 <Bell size={28} className="opacity-20 mb-2" />
-                                <span className="text-xs font-semibold text-slate-400">Yeni bildirim bulunmuyor</span>
+                                <span className="text-xs font-semibold text-slate-400">{dict.reviewUi.noNotifications}</span>
                                 <span className="text-[11px] text-slate-600 mt-0.5">
-                                    Takipçi, yorum ve önerilerin burada listelenir.
-                                </span>
+                                    {dict.reviewUi.notificationsHint}</span>
                             </div>
                         ) : (
                             items.map((item) => {
-                                const isFollower = item.type === "NEW_FOLLOWER";
                                 const avatarSrc = item.image
                                     ? item.image.startsWith("http")
                                         ? item.image
@@ -265,7 +224,7 @@ export function PortalNotificationBell() {
                                             {avatarSrc ? (
                                                 <img
                                                     src={avatarSrc}
-                                                    alt="Bildirim"
+                                                    alt=""
                                                     className="h-full w-full object-cover"
                                                     onError={(e) => {
                                                         e.currentTarget.style.display = "none";
@@ -287,7 +246,7 @@ export function PortalNotificationBell() {
                                             </p>
                                             <div className="flex items-center gap-1.5 mt-1 text-[10px] text-slate-500 font-medium">
                                                 <Clock size={11} />
-                                                <span>{formatRelativeTime(item.createdAt)}</span>
+                                                <span>{formatRelativeTime(item.createdAt, locale)}</span>
                                             </div>
                                         </div>
 
@@ -307,7 +266,7 @@ export function PortalNotificationBell() {
                             onClick={() => setIsOpen(false)}
                             className="inline-flex items-center justify-center gap-1.5 text-xs font-bold text-amber-400 hover:text-amber-300 transition-colors py-1 px-3 rounded-lg hover:bg-amber-400/10 w-full"
                         >
-                            <span>Tüm Bildirimleri Gör</span>
+                            <span>{dict.reviewUi.allNotifications}</span>
                             <ChevronRight size={13} />
                         </Link>
                     </div>

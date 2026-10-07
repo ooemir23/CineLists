@@ -1,3 +1,6 @@
+import { getDictionary } from "@/lib/i18n/server";
+import type { Dictionary } from "@/lib/i18n/types";
+import { escapeHtml, safeHtmlUrl } from "@/lib/mail-html";
 import { Resend } from "resend";
 
 export type MailLocale = "tr" | "en";
@@ -21,8 +24,9 @@ export function getAppDomain(): string {
     return (process.env.NEXT_PUBLIC_APP_URL || process.env.AUTH_URL || process.env.NEXTAUTH_URL || "http://localhost:3000").replace(/\/$/, "");
 }
 
-function pick(locale: MailLocale | undefined, tr: string, en: string): string {
-    return locale === "en" ? en : tr;
+function mailText(locale: MailLocale | undefined, key: keyof Dictionary["emailTemplates"], values: Record<string, unknown> = {}) {
+    const template = getDictionary(locale || "tr").emailTemplates[key];
+    return template.replace(/\{(p\d+)\}/g, (_, key) => String(values[key] ?? ""));
 }
 
 export const sendPasswordResetEmail = async (email: string, token: string, locale: MailLocale = "tr") => {
@@ -31,22 +35,14 @@ export const sendPasswordResetEmail = async (email: string, token: string, local
         throw new Error("E-posta servisi yapilandirilmamis.");
     }
     const domain = getAppDomain();
-    const resetLink = `${domain}/reset-password?token=${token}`;
+    const resetLink = `${domain}/reset-password?token=${encodeURIComponent(token)}`;
 
-    const subject = pick(locale, "Şifrenizi Sıfırlayın", "Reset Your Password");
-    const heading = pick(locale, "Şifre Sıfırlama", "Password Reset");
-    const body = pick(
-        locale,
-        "Hesabın için bir şifre sıfırlama talebi aldık. Eğer bu işlemi sen başlattıysan, aşağıdaki butona tıklayarak yeni şifreni belirleyebilirsin.",
-        "We received a password reset request for your account. If you made this request, click the button below to set a new password."
-    );
-    const buttonLabel = pick(locale, "Şifremi Sıfırla", "Reset My Password");
-    const footer = pick(
-        locale,
-        "Bu talep senin tarafından yapılmadıysa bu e-postayı silebilirsin.<br>Güvenliğin için bu bağlantı <strong>1 saat</strong> içinde geçerliliğini yitirecektir.",
-        "If you didn't request this, you can safely delete this email.<br>For your security, this link will expire in <strong>1 hour</strong>."
-    );
-    const brandLine = pick(locale, "© 2026 CineLists • Sinema Sosyal Ağı", "© 2026 CineLists • Social Network for Film Lovers");
+    const subject = mailText(locale, "template1");
+    const heading = mailText(locale, "template2");
+    const body = mailText(locale, "template3");
+    const buttonLabel = mailText(locale, "template4");
+    const footer = mailText(locale, "template5");
+    const brandLine = mailText(locale, "template6");
 
     try {
         const result = await resend.emails.send({
@@ -59,7 +55,7 @@ export const sendPasswordResetEmail = async (email: string, token: string, local
 
                         <!-- Logo -->
                         <div style="margin-bottom: 30px;">
-                            <img src="${domain}/icon-192.png" width="60" height="60" alt="CineLists" style="width: 60px; height: 60px; border-radius: 16px; margin: 0 auto; display: block; border: 1px solid rgba(255, 255, 255, 0.1);" />
+                            <img src="${safeHtmlUrl(domain)}/icon-192.png" width="60" height="60" alt="CineLists" style="width: 60px; height: 60px; border-radius: 16px; margin: 0 auto; display: block; border: 1px solid rgba(255, 255, 255, 0.1);" />
                             <h1 style="color: #ffffff; font-size: 28px; font-weight: 900; letter-spacing: -1px; margin-top: 15px; text-transform: uppercase; font-style: italic;">
                                 <span style="color: #fbbf24;">cine</span>lists
                             </h1>
@@ -74,7 +70,7 @@ export const sendPasswordResetEmail = async (email: string, token: string, local
                         </p>
 
                         <!-- Action Button -->
-                        <a href="${resetLink}" style="display: inline-block; background-color: #fbbf24; color: #020617; padding: 18px 36px; border-radius: 16px; font-weight: 900; text-decoration: none; text-transform: uppercase; font-size: 13px; letter-spacing: 1px; box-shadow: 0 10px 20px rgba(251, 191, 36, 0.2);">
+                        <a href="${safeHtmlUrl(resetLink)}" style="display: inline-block; background-color: #fbbf24; color: #020617; padding: 18px 36px; border-radius: 16px; font-weight: 900; text-decoration: none; text-transform: uppercase; font-size: 13px; letter-spacing: 1px; box-shadow: 0 10px 20px rgba(251, 191, 36, 0.2);">
                             ${buttonLabel}
                         </a>
 
@@ -126,7 +122,7 @@ export const sendRecommendationEmail = async (params: {
     }
 
     const domain = getAppDomain();
-    const mediaLabel = mediaType === "movie" ? pick(locale, "FİLM", "MOVIE") : pick(locale, "DİZİ", "SHOW");
+    const mediaLabel = mediaType === "movie" ? mailText(locale, "template7") : mailText(locale, "template8");
     const posterUrl = posterPath ? `https://image.tmdb.org/t/p/w400${posterPath}` : null;
     const backdropUrl = backdropPath ? `https://image.tmdb.org/t/p/w780${backdropPath}` : posterUrl;
     const mediaLink = `${domain}/${mediaType}/${mediaId}`;
@@ -138,23 +134,19 @@ export const sendRecommendationEmail = async (params: {
 
     const formattedRuntime = runtime
         ? (runtime > 60
-            ? pick(locale, `${Math.floor(runtime / 60)}s ${runtime % 60}dk`, `${Math.floor(runtime / 60)}h ${runtime % 60}m`)
-            : pick(locale, `${runtime}dk`, `${runtime}m`))
+            ? mailText(locale, "template9", { p0: Math.floor(runtime / 60), p1: runtime % 60 })
+            : mailText(locale, "template10", { p0: runtime }))
         : null;
 
-    const subject = pick(
-        locale,
-        `${senderName} sana bir ${mediaLabel.toLowerCase()} tavsiye etti!`,
-        `${senderName} recommended a ${mediaLabel.toLowerCase()} to you!`
-    );
-    const introText = pick(locale, "sana bir öneride bulundu", "sent you a recommendation");
-    const introSub = pick(locale, "Sana harika bir tavsiyesi var!", "They have a great recommendation for you!");
-    const ratingLabel = pick(locale, "Puanı", "Rating");
-    const noOverview = pick(locale, "Bu içerik hakkında özet bulunmuyor.", "No summary available for this content.");
-    const watchedLabel = pick(locale, "✅ İzledim", "✅ Watched");
-    const watchingLabel = pick(locale, "📺 İzliyorum", "📺 Watching");
-    const watchlistLabel = pick(locale, "➕ Listeme Ekle", "➕ Add to My List");
-    const thoughtsLabel = pick(locale, "DÜŞÜNCELERİ", "THEIR THOUGHTS");
+    const subject = mailText(locale, "template11", { p0: senderName, p1: mediaLabel.toLowerCase() });
+    const introText = mailText(locale, "template12");
+    const introSub = mailText(locale, "template13");
+    const ratingLabel = mailText(locale, "template14");
+    const noOverview = mailText(locale, "template15");
+    const watchedLabel = mailText(locale, "template16");
+    const watchingLabel = mailText(locale, "template17");
+    const watchlistLabel = mailText(locale, "template18");
+    const thoughtsLabel = mailText(locale, "template19");
 
     try {
         await resend.emails.send({
@@ -162,7 +154,7 @@ export const sendRecommendationEmail = async (params: {
             to: email,
             subject,
             html: `
-                <div style="background-color: #020617; ${backdropUrl ? `background-image: linear-gradient(rgba(2, 6, 23, 0.7), rgba(2, 6, 23, 0.85)), url('${backdropUrl}'); background-size: cover; background-position: center;` : ''} padding: 60px 0; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #f8fafc; text-align: center; min-height: 100%;">
+                <div style="background-color: #020617; ${backdropUrl ? `background-image: linear-gradient(rgba(2, 6, 23, 0.7), rgba(2, 6, 23, 0.85)), url('${safeHtmlUrl(backdropUrl)}'); background-size: cover; background-position: center;` : ''} padding: 60px 0; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #f8fafc; text-align: center; min-height: 100%;">
                     <div style="max-width: 740px; margin: 0 auto; background-color: rgba(15, 23, 42, 0.85); border: 1px solid rgba(255,255,255,0.12); border-radius: 40px; overflow: hidden; box-shadow: 0 60px 120px -20px rgba(0, 0, 0, 0.8); text-align: left; backdrop-filter: blur(10px);">
 
                         <!-- Header with Sender Info -->
@@ -171,12 +163,12 @@ export const sendRecommendationEmail = async (params: {
                                 <div style="display: table-row;">
                                     <div style="display: table-cell; width: 48px; vertical-align: middle; padding-right: 20px;">
                                         ${senderImage ?
-                                            `<img src="${senderImage}" style="width: 48px; height: 48px; border-radius: 16px; border: 2.5px solid #fbbf24; object-fit: cover;" />` :
-                                            `<div style="width: 48px; height: 48px; border-radius: 16px; background-color: #fbbf24; color: #020617; line-height: 48px; font-size: 20px; font-weight: 900; text-align: center;">${senderName[0].toUpperCase()}</div>`
+                                            `<img src="${safeHtmlUrl(senderImage)}" style="width: 48px; height: 48px; border-radius: 16px; border: 2.5px solid #fbbf24; object-fit: cover;" />` :
+                                            `<div style="width: 48px; height: 48px; border-radius: 16px; background-color: #fbbf24; color: #020617; line-height: 48px; font-size: 20px; font-weight: 900; text-align: center;">${escapeHtml((senderName[0] || "C").toUpperCase())}</div>`
                                         }
                                     </div>
                                     <div style="display: table-cell; vertical-align: middle;">
-                                        <h2 style="color: #ffffff; font-size: 16px; font-weight: 900; margin: 0; letter-spacing: -0.5px;">${senderName} <span style="color: #94a3b8; font-weight: 500; font-size: 14px; margin-left: 5px;">${introText}</span></h2>
+                                        <h2 style="color: #ffffff; font-size: 16px; font-weight: 900; margin: 0; letter-spacing: -0.5px;">${escapeHtml(senderName)} <span style="color: #94a3b8; font-weight: 500; font-size: 14px; margin-left: 5px;">${introText}</span></h2>
                                         <p style="color: #fbbf24; font-size: 11px; font-weight: 800; margin-top: 2px; text-transform: uppercase; letter-spacing: 1px;">${introSub}</p>
                                     </div>
                                 </div>
@@ -190,9 +182,9 @@ export const sendRecommendationEmail = async (params: {
 
                                     <!-- Column 1: Poster & Label/Platforms -->
                                     <div style="display: table-cell; width: 160px; vertical-align: top; padding-right: 30px;">
-                                        <a href="${mediaLink}" style="text-decoration: none; border: none; outline: none;">
+                                        <a href="${safeHtmlUrl(mediaLink)}" style="text-decoration: none; border: none; outline: none;">
                                             ${posterUrl ?
-                                                `<img src="${posterUrl}" style="width: 160px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 20px 40px rgba(0,0,0,0.5);" />` :
+                                                `<img src="${safeHtmlUrl(posterUrl)}" style="width: 160px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 20px 40px rgba(0,0,0,0.5);" />` :
                                                 `<div style="width: 160px; height: 240px; background-color: rgba(255,255,255,0.05); border-radius: 20px;"></div>`
                                             }
                                         </a>
@@ -202,8 +194,8 @@ export const sendRecommendationEmail = async (params: {
                                             ${platforms && platforms.length > 0 ? `
                                                 <div style="display: inline-flex; align-items: center; gap: 6px;">
                                                     ${platforms.slice(0, 3).map(p => `
-                                                        <div style="background: rgba(255,255,255,0.08); padding: 4px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.1);" title="${p.name}">
-                                                            ${p.logo ? `<img src="https://image.tmdb.org/t/p/w92${p.logo}" style="width: 16px; height: 16px; border-radius: 3px; display: block;" />` : ''}
+                                                        <div style="background: rgba(255,255,255,0.08); padding: 4px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.1);" title="${escapeHtml(p.name)}">
+                                                            ${p.logo ? `<img src="https://image.tmdb.org/t/p/w92${escapeHtml(p.logo)}" style="width: 16px; height: 16px; border-radius: 3px; display: block;" />` : ''}
                                                         </div>
                                                     `).join('')}
                                                 </div>
@@ -213,8 +205,8 @@ export const sendRecommendationEmail = async (params: {
 
                                     <!-- Column 2: Summary -->
                                     <div style="display: table-cell; vertical-align: top; padding-right: 30px;">
-                                        <a href="${mediaLink}" style="text-decoration: none; color: inherit; display: block;">
-                                            <h3 style="color: #ffffff; font-size: 26px; font-weight: 900; margin: 0 0 10px 0; line-height: 1.1; letter-spacing: -0.8px;">${mediaTitle}</h3>
+                                        <a href="${safeHtmlUrl(mediaLink)}" style="text-decoration: none; color: inherit; display: block;">
+                                            <h3 style="color: #ffffff; font-size: 26px; font-weight: 900; margin: 0 0 10px 0; line-height: 1.1; letter-spacing: -0.8px;">${escapeHtml(mediaTitle)}</h3>
 
                                             <div style="margin-bottom: 15px; display: flex; align-items: center; gap: 12px;">
                                                 <span style="color: #94a3b8; font-size: 13px; font-weight: 800;">⭐ TMDB: ${globalRating?.toFixed(1) || '0.0'}</span>
@@ -223,7 +215,7 @@ export const sendRecommendationEmail = async (params: {
                                             </div>
 
                                             <p style="color: #94a3b8; font-size: 13px; line-height: 1.6; margin: 0; font-weight: 500;">
-                                                ${overview ? (overview.length > 250 ? overview.substring(0, 250) + '...' : overview) : noOverview}
+                                                ${escapeHtml(overview ? (overview.length > 250 ? overview.substring(0, 250) + '...' : overview) : noOverview)}
                                             </p>
                                         </a>
                                     </div>
@@ -233,15 +225,15 @@ export const sendRecommendationEmail = async (params: {
                                         <div style="display: table; width: 100%; border-collapse: separate; border-spacing: 0;">
                                             <div style="display: table-row;">
                                                 <div style="display: table-cell; width: 50%; padding-right: 5px;">
-                                                    <a href="${watchedLink}" style="display: block; background-color: rgba(34, 197, 94, 0.1); color: #22c55e; padding: 12px; border-radius: 14px; font-weight: 800; text-decoration: none; text-transform: uppercase; font-size: 10px; border: 1px solid rgba(34, 197, 94, 0.2); text-align: center;">${watchedLabel}</a>
+                                                    <a href="${safeHtmlUrl(watchedLink)}" style="display: block; background-color: rgba(34, 197, 94, 0.1); color: #22c55e; padding: 12px; border-radius: 14px; font-weight: 800; text-decoration: none; text-transform: uppercase; font-size: 10px; border: 1px solid rgba(34, 197, 94, 0.2); text-align: center;">${watchedLabel}</a>
                                                 </div>
                                                 <div style="display: table-cell; width: 50%; padding-left: 5px;">
-                                                    <a href="${watchingLink}" style="display: block; background-color: rgba(59, 130, 246, 0.1); color: #3b82f6; padding: 12px; border-radius: 14px; font-weight: 800; text-decoration: none; text-transform: uppercase; font-size: 10px; border: 1px solid rgba(59, 130, 246, 0.2); text-align: center;">${watchingLabel}</a>
+                                                    <a href="${safeHtmlUrl(watchingLink)}" style="display: block; background-color: rgba(59, 130, 246, 0.1); color: #3b82f6; padding: 12px; border-radius: 14px; font-weight: 800; text-decoration: none; text-transform: uppercase; font-size: 10px; border: 1px solid rgba(59, 130, 246, 0.2); text-align: center;">${watchingLabel}</a>
                                                 </div>
                                             </div>
                                         </div>
 
-                                        <a href="${watchlistLink}" style="display: block; background-color: rgba(255,255,255,0.05); color: #ffffff; padding: 12px; border-radius: 14px; font-weight: 800; text-decoration: none; text-transform: uppercase; font-size: 11px; border: 1px solid rgba(255,255,255,0.1); text-align: center; margin-top: 10px;">${watchlistLabel}</a>
+                                        <a href="${safeHtmlUrl(watchlistLink)}" style="display: block; background-color: rgba(255,255,255,0.05); color: #ffffff; padding: 12px; border-radius: 14px; font-weight: 800; text-decoration: none; text-transform: uppercase; font-size: 11px; border: 1px solid rgba(255,255,255,0.1); text-align: center; margin-top: 10px;">${watchlistLabel}</a>
                                     </div>
 
                                 </div>
@@ -253,7 +245,7 @@ export const sendRecommendationEmail = async (params: {
                             <div style="padding: 0 40px 10px 40px;">
                                 <div style="padding: 20px; background: rgba(255, 255, 255, 0.03); border-left: 4px solid #fbbf24; border-radius: 20px; border: 1px solid rgba(255,255,255,0.05);">
                                     <p style="margin: 0; color: #fbbf24; font-size: 9px; font-weight: 900; text-transform: uppercase; margin-bottom: 8px; letter-spacing: 0.5px;">${thoughtsLabel}</p>
-                                    <p style="margin: 0; color: #f8fafc; font-size: 14px; font-weight: 500; font-style: italic; line-height: 1.5;">"${message}"</p>
+                                    <p style="margin: 0; color: #f8fafc; font-size: 14px; font-weight: 500; font-style: italic; line-height: 1.5;">"${escapeHtml(message)}"</p>
                                 </div>
                             </div>
                         ` : ''}
@@ -286,14 +278,10 @@ export const sendDailyReminderEmail = async (
 
     const domain = getAppDomain();
 
-    const subject = pick(
-        locale,
-        `🍿 Bugün Yayında! Senin için ${shows.length} yeni bölüm var`,
-        `🍿 Airing Today! You have ${shows.length} new episode${shows.length === 1 ? "" : "s"}`
-    );
-    const greeting = pick(locale, `GÜNAYDIN ${userName.toUpperCase()}!`, `GOOD MORNING ${userName.toUpperCase()}!`);
-    const subheading = pick(locale, "Takip ettiğin dizilerin yeni bölümleri bugün yayında.", "New episodes of shows you follow are airing today.");
-    const calendarLabel = pick(locale, "Takvimi Görüntüle", "View Calendar");
+    const subject = mailText(locale, "template20", { p0: shows.length, p1: locale === "en" ? (shows.length === 1 ? "" : "s") : ("") });
+    const greeting = mailText(locale, "template21", { p0: escapeHtml(userName.toUpperCase()) });
+    const subheading = mailText(locale, "template22");
+    const calendarLabel = mailText(locale, "template23");
 
     try {
         await resend.emails.send({
@@ -317,20 +305,20 @@ export const sendDailyReminderEmail = async (
                                 <div style="display: table; width: 100%; margin-bottom: 25px; background: rgba(255,255,255,0.02); border: 1px solid #1e293b; border-radius: 24px; padding: 15px; text-align: left;">
                                     <div style="display: table-row;">
                                         <div style="display: table-cell; width: 80px; vertical-align: middle;">
-                                            <img src="https://image.tmdb.org/t/p/w200${show.posterPath}" style="width: 80px; border-radius: 12px;" />
+                                            <img src="https://image.tmdb.org/t/p/w200${escapeHtml(show.posterPath)}" style="width: 80px; border-radius: 12px;" />
                                         </div>
                                         <div style="display: table-cell; vertical-align: middle; padding-left: 20px;">
-                                            <h3 style="color: #ffffff; font-size: 18px; font-weight: 800; margin: 0;">${show.title}</h3>
-                                            <p style="color: #fbbf24; font-size: 13px; font-weight: 700; margin: 5px 0;">${show.episodeInfo}</p>
+                                            <h3 style="color: #ffffff; font-size: 18px; font-weight: 800; margin: 0;">${escapeHtml(show.title)}</h3>
+                                            <p style="color: #fbbf24; font-size: 13px; font-weight: 700; margin: 5px 0;">${escapeHtml(show.episodeInfo)}</p>
                                             <div style="color: #64748b; font-size: 11px; font-weight: 600;">
-                                                ${show.platforms.join(' • ')}
+                                                ${escapeHtml(show.platforms.join(' • '))}
                                             </div>
                                         </div>
                                     </div>
                                 </div>
                             `).join('')}
 
-                            <a href="${domain}/calendar" style="display: block; background-color: #fbbf24; color: #020617; padding: 20px; border-radius: 20px; font-weight: 900; text-decoration: none; text-transform: uppercase; font-size: 14px; letter-spacing: 1px; margin-top: 20px; text-align: center;">
+                            <a href="${safeHtmlUrl(domain)}/calendar" style="display: block; background-color: #fbbf24; color: #020617; padding: 20px; border-radius: 20px; font-weight: 900; text-decoration: none; text-transform: uppercase; font-size: 14px; letter-spacing: 1px; margin-top: 20px; text-align: center;">
                                 ${calendarLabel}
                             </a>
                         </div>
@@ -366,22 +354,14 @@ export const sendFollowerEmail = async (params: {
     }
 
     const domain = getAppDomain();
-    const profileLink = `${domain}/profile/${followerId}`;
+    const profileLink = `${domain}/profile/${encodeURIComponent(followerId)}`;
     const initials = followerName ? followerName.slice(0, 2).toUpperCase() : "CL";
 
-    const subject = pick(locale, `🎬 ${followerName} seni CineLists'te takip etmeye başladı!`, `🎬 ${followerName} started following you on CineLists!`);
-    const introText = pick(
-        locale,
-        `Merhaba <strong>${recipientName}</strong>, CineLists sinema topluluğunda yeni bir takipçin var! Artık izlediğin filmleri, dizi bölümlerini ve incelemelerini takip edebilecek.`,
-        `Hi <strong>${recipientName}</strong>, you have a new follower in the CineLists film community! They'll now be able to follow the movies, episodes, and reviews you log.`
-    );
-    const ctaLabel = pick(locale, "Profili İncele & Geri Takip Et ↗", "View Profile & Follow Back ↗");
-    const footerText = pick(
-        locale,
-        `Bu bildirimi CineLists hesabına kayıtlı olduğun için aldın.<br><a href="${domain}/settings" style="color: #94a3b8; text-decoration: underline;">Bildirim ayarlarını</a> dilediğin zaman güncelleyebilirsin.`,
-        `You received this notification because you have a CineLists account.<br>You can update your <a href="${domain}/settings" style="color: #94a3b8; text-decoration: underline;">notification settings</a> anytime.`
-    );
-    const brandLine = pick(locale, "© 2026 CineLists • Sinema ve Dizi Sosyal Ağı", "© 2026 CineLists • Movie & TV Social Network");
+    const subject = mailText(locale, "template24", { p0: followerName });
+    const introText = mailText(locale, "template25", { p0: escapeHtml(recipientName) });
+    const ctaLabel = mailText(locale, "template26");
+    const footerText = mailText(locale, "template27", { p0: safeHtmlUrl(domain) });
+    const brandLine = mailText(locale, "template28");
 
     try {
         await client.emails.send({
@@ -394,7 +374,7 @@ export const sendFollowerEmail = async (params: {
 
                         <!-- Logo Header -->
                         <div style="margin-bottom: 28px;">
-                            <img src="${domain}/icon-192.png" width="48" height="48" alt="CineLists" style="width: 48px; height: 48px; border-radius: 14px; margin: 0 auto 12px auto; display: block; border: 1px solid rgba(255, 255, 255, 0.1);" />
+                            <img src="${safeHtmlUrl(domain)}/icon-192.png" width="48" height="48" alt="CineLists" style="width: 48px; height: 48px; border-radius: 14px; margin: 0 auto 12px auto; display: block; border: 1px solid rgba(255, 255, 255, 0.1);" />
                             <h1 style="color: #ffffff; font-size: 24px; font-weight: 900; letter-spacing: -0.5px; margin: 0; text-transform: uppercase; font-style: italic;">
                                 <span style="color: #fbbf24;">cine</span>lists
                             </h1>
@@ -404,20 +384,20 @@ export const sendFollowerEmail = async (params: {
                         <div style="background-color: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 20px; padding: 24px; margin-bottom: 24px;">
                             <div style="margin-bottom: 16px;">
                                 ${followerImage ? `
-                                    <img src="${followerImage}" width="72" height="72" alt="${followerName}" style="width: 72px; height: 72px; border-radius: 50%; object-fit: cover; margin: 0 auto; display: block; border: 3px solid #fbbf24; box-shadow: 0 8px 16px rgba(251, 191, 36, 0.2);" />
+                                    <img src="${safeHtmlUrl(followerImage)}" width="72" height="72" alt="${escapeHtml(followerName)}" style="width: 72px; height: 72px; border-radius: 50%; object-fit: cover; margin: 0 auto; display: block; border: 3px solid #fbbf24; box-shadow: 0 8px 16px rgba(251, 191, 36, 0.2);" />
                                 ` : `
                                     <div style="width: 72px; height: 72px; border-radius: 50%; background: linear-gradient(135deg, #fbbf24, #d97706); color: #020617; line-height: 72px; font-size: 24px; font-weight: 900; margin: 0 auto; display: block; box-shadow: 0 8px 16px rgba(251, 191, 36, 0.2);">
-                                        ${initials}
+                                        ${escapeHtml(initials)}
                                     </div>
                                 `}
                             </div>
 
                             <h2 style="color: #ffffff; font-size: 20px; font-weight: 800; margin: 0 0 4px 0;">
-                                ${followerName}
+                                ${escapeHtml(followerName)}
                             </h2>
                             ${followerUsername ? `
                                 <p style="color: #fbbf24; font-size: 13px; font-weight: 700; margin: 0 0 12px 0;">
-                                    @${followerUsername}
+                                    @${escapeHtml(followerUsername)}
                                 </p>
                             ` : ''}
 
@@ -428,7 +408,7 @@ export const sendFollowerEmail = async (params: {
 
                         <!-- CTA Button -->
                         <div style="margin-bottom: 28px;">
-                            <a href="${profileLink}" style="display: inline-block; background-color: #fbbf24; color: #020617; padding: 15px 32px; border-radius: 14px; font-weight: 900; text-decoration: none; text-transform: uppercase; font-size: 13px; letter-spacing: 0.5px; box-shadow: 0 8px 24px rgba(251, 191, 36, 0.25);">
+                            <a href="${safeHtmlUrl(profileLink)}" style="display: inline-block; background-color: #fbbf24; color: #020617; padding: 15px 32px; border-radius: 14px; font-weight: 900; text-decoration: none; text-transform: uppercase; font-size: 13px; letter-spacing: 0.5px; box-shadow: 0 8px 24px rgba(251, 191, 36, 0.25);">
                                 ${ctaLabel}
                             </a>
                         </div>
@@ -469,13 +449,9 @@ export const sendCommentNotificationEmail = async (params: {
     const domain = getAppDomain();
     const fullLink = mediaLink.startsWith("http") ? mediaLink : `${domain}${mediaLink}`;
 
-    const subject = pick(locale, `💬 ${commenterName}, ${mediaTitle} paylaşımına yorum yaptı`, `💬 ${commenterName} commented on ${mediaTitle}`);
-    const introText = pick(
-        locale,
-        `Merhaba <strong>${recipientName}</strong>, <strong>${commenterName}</strong> içeriğine bir yorum bıraktı:`,
-        `Hi <strong>${recipientName}</strong>, <strong>${commenterName}</strong> left a comment on your post:`
-    );
-    const ctaLabel = pick(locale, "Yorumu Gör ve Yanıtla ↗", "View and Reply ↗");
+    const subject = mailText(locale, "template29", { p0: commenterName, p1: mediaTitle });
+    const introText = mailText(locale, "template30", { p0: escapeHtml(recipientName), p1: escapeHtml(commenterName) });
+    const ctaLabel = mailText(locale, "template31");
 
     try {
         await client.emails.send({
@@ -495,11 +471,11 @@ export const sendCommentNotificationEmail = async (params: {
                                 ${introText}
                             </p>
                             <blockquote style="margin: 0; padding: 12px 16px; background-color: rgba(0, 0, 0, 0.3); border-left: 3px solid #fbbf24; border-radius: 8px; color: #ffffff; font-size: 14px; font-style: italic;">
-                                "${commentContent}"
+                                "${escapeHtml(commentContent)}"
                             </blockquote>
                         </div>
                         <div style="margin-bottom: 24px;">
-                            <a href="${fullLink}" style="display: inline-block; background-color: #fbbf24; color: #020617; padding: 14px 28px; border-radius: 12px; font-weight: 900; text-decoration: none; text-transform: uppercase; font-size: 12px; letter-spacing: 0.5px;">
+                            <a href="${safeHtmlUrl(fullLink)}" style="display: inline-block; background-color: #fbbf24; color: #020617; padding: 14px 28px; border-radius: 12px; font-weight: 900; text-decoration: none; text-transform: uppercase; font-size: 12px; letter-spacing: 0.5px;">
                                 ${ctaLabel}
                             </a>
                         </div>

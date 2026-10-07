@@ -2,7 +2,7 @@
 
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
-import { unstable_cache } from "next/cache";
+import { visibleUserWhere } from "@/lib/profile-access";
 
 export type FeedActivity = {
     id: string;
@@ -11,6 +11,7 @@ export type FeedActivity = {
     rating: number | null;
     review: string | null;
     votes: number;
+    viewerVote?: number;
     content?: string | null; // For comments
     user: {
         id: string;
@@ -67,9 +68,10 @@ async function getFriendsActivityForUser(userId: string): Promise<FeedActivity[]
         const [activities, comments, watchlist] = await Promise.all([
             // 1. Regular Activities
             prisma.activity.findMany({
-                where: { userId: { in: followingIds } },
+                where: { userId: { in: followingIds }, user: visibleUserWhere(userId, "showActivities") },
                 include: {
                     user: { select: { id: true, name: true, image: true } },
+                    voterRecords: { where: { userId: userId || "__anonymous__" }, select: { value: true } },
                     media: true,
                     episode: { select: { id: true, seasonNumber: true, episodeNumber: true, title: true } },
                     recommendedBy: { select: { id: true, name: true } },
@@ -80,7 +82,7 @@ async function getFriendsActivityForUser(userId: string): Promise<FeedActivity[]
             }),
             // 2. Comments
             prisma.comment.findMany({
-                where: { userId: { in: followingIds } },
+                where: { userId: { in: followingIds }, user: visibleUserWhere(userId, "showActivities"), OR: [{ activityId: null }, { activity: { user: visibleUserWhere(userId, "showActivities") } }] },
                 include: {
                     user: { select: { id: true, name: true, image: true } },
                     activity: { include: { media: true, episode: { select: { id: true, seasonNumber: true, episodeNumber: true, title: true } } } },
@@ -91,7 +93,7 @@ async function getFriendsActivityForUser(userId: string): Promise<FeedActivity[]
             }),
             // 3. Watchlist (ToWatch)
             prisma.toWatch.findMany({
-                where: { userId: { in: followingIds } },
+                where: { userId: { in: followingIds }, user: visibleUserWhere(userId, "showActivities") },
                 include: {
                     user: { select: { id: true, name: true, image: true } },
                     media: true
@@ -102,7 +104,7 @@ async function getFriendsActivityForUser(userId: string): Promise<FeedActivity[]
         ]);
 
         // Map everything to FeedActivity
-        const mappedActivities: FeedActivity[] = activities.map(a => a as unknown as FeedActivity);
+        const mappedActivities: FeedActivity[] = activities.map(({ voterRecords, ...a }) => ({ ...a, viewerVote: voterRecords[0]?.value ?? 0 }) as unknown as FeedActivity);
 
         const mappedComments: FeedActivity[] = comments.map(c => {
             const media = (c.episode?.media || c.activity?.media) as FeedActivity["media"] | undefined;
@@ -236,27 +238,23 @@ function groupFeedActivities(activities: FeedActivity[]): FeedActivity[] {
     return grouped;
 }
 
-const cachedGetFriendsActivityForUser = unstable_cache(
-    getFriendsActivityForUser,
-    ["friends-activity"],
-    { revalidate: 120 }
-);
-
 export async function getFriendsActivity(): Promise<FeedActivity[]> {
     const session = await auth();
     if (!session?.user?.id) {
         return [];
     }
 
-    return cachedGetFriendsActivityForUser(session.user.id);
+    return getFriendsActivityForUser(session.user.id);
 }
 
 export async function getHomeFeedActivities(userId?: string): Promise<FeedActivity[]> {
     try {
         let activities: FeedActivity[] = [];
 
+        const session = await auth();
+        userId = session?.user?.id;
         if (userId) {
-            activities = await cachedGetFriendsActivityForUser(userId).catch(() => []);
+            activities = await getFriendsActivityForUser(userId).catch(() => []);
         }
 
         // Backfill with recent community activities if fewer than 6 grouped items
@@ -266,6 +264,7 @@ export async function getHomeFeedActivities(userId?: string): Promise<FeedActivi
             const community = await prisma.activity.findMany({
                 where: {
                     id: { notIn: Array.from(existingIds) },
+                    user: { isPrivate: false, isSuspended: false, showActivities: true },
                     OR: [
                         { type: "REVIEWED" },
                         { review: { not: null } },
@@ -275,6 +274,7 @@ export async function getHomeFeedActivities(userId?: string): Promise<FeedActivi
                 },
                 include: {
                     user: { select: { id: true, name: true, image: true } },
+                    voterRecords: { where: { userId: userId || "__anonymous__" }, select: { value: true } },
                     media: true,
                     episode: {
                         select: {
@@ -298,6 +298,7 @@ export async function getHomeFeedActivities(userId?: string): Promise<FeedActivi
                 rating: a.rating,
                 review: a.review,
                 votes: a.votes,
+                viewerVote: a.voterRecords[0]?.value ?? 0,
                 user: a.user,
                 media: a.media as unknown as FeedActivity["media"],
                 episode: a.episode

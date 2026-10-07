@@ -10,11 +10,14 @@ import crypto from "crypto";
 import { safeInternalRedirect } from "@/lib/admin/policy";
 import { checkRateLimit } from "@/lib/ratelimit";
 import { headers } from "next/headers";
+import { withUserTransaction } from "@/lib/user-transaction";
+import { getServerCountry } from "@/lib/country";
+import { trustedClientIp } from "@/lib/auth-rate-limit";
 import { getServerLocale } from "@/lib/i18n/server";
 
 async function getClientIp() {
     const headersList = await headers();
-    return headersList.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
+    return trustedClientIp(headersList);
 }
 
 export async function loginUser(formData: FormData) {
@@ -25,14 +28,6 @@ export async function loginUser(formData: FormData) {
 
     if (!rawInput || !password) {
         redirect("/login?error=missing");
-    }
-
-    const ip = await getClientIp();
-    // Max 10 attempts per 5 minutes, keyed by IP + attempted account so a single
-    // account can't be brute-forced and a single IP can't spray many accounts.
-    const rateLimit = checkRateLimit(`login:${ip}:${rawInput.toLowerCase()}`, 10, 5 * 60 * 1000);
-    if (!rateLimit.allowed) {
-        redirect(`/login?error=ratelimit${rawCallbackUrl ? `&callbackUrl=${encodeURIComponent(rawCallbackUrl)}` : ""}`);
     }
 
     try {
@@ -59,7 +54,7 @@ export async function registerUser(formData: FormData) {
         redirect("/register?error=missing");
     }
 
-    if (password.length < 6) {
+    if (password.length < 6 || Buffer.byteLength(password, "utf8") > 72) {
         redirect("/register?error=weak");
     }
 
@@ -100,39 +95,49 @@ export async function registerUser(formData: FormData) {
 
     try {
         const existingUsername = await prisma.user.findFirst({
-            where: { username: { equals: username, mode: "insensitive" } },
+            where: { OR: [{ username: { equals: username, mode: "insensitive" } }, { usernameAliases: { some: { username: { equals: username, mode: "insensitive" } } } }] },
         });
         if (existingUsername) {
-            username = `${username}_${Math.floor(1000 + Math.random() * 9000)}`;
+            username = `${username}_${crypto.randomBytes(4).toString("hex")}`;
         }
     } catch (error) {
         console.error("Username uniqueness check error:", error);
     }
 
     // Create user in real PostgreSQL database
-    try {
-        const newUser = await prisma.user.create({
-            data: {
-                email,
-                username,
-                name: resolvedName,
-                password: hashedPassword,
-                hasCompletedOnboarding: false,
-            },
-        });
+    const locale = await getServerLocale();
+    const country = await getServerCountry();
+    for (let attempt = 0; attempt < 4; attempt++) {
         try {
-            await prisma.userAdminProfile.create({ data: { userId: newUser.id, registeredAt: new Date() } });
-        } catch { console.warn("[Admin] Registration analytics unavailable"); }
-    } catch (error: any) {
-        if (error?.code === "P2002") {
-            redirect("/register?error=exists");
+            const newUser = await prisma.user.create({
+                data: { email, username, name: resolvedName, password: hashedPassword,
+                    hasCompletedOnboarding: false, locale, country },
+            });
+            try {
+                await prisma.userAdminProfile.create({ data: { userId: newUser.id, registeredAt: new Date() } });
+            } catch { console.warn("[Admin] Registration analytics unavailable"); }
+            break;
+        } catch (error: unknown) {
+            const conflict = error as { code?: string; meta?: { target?: unknown } };
+            if (conflict.code === "P2002") {
+                if (String(conflict.meta?.target).toLowerCase().includes("username") && attempt < 3) {
+                    username = `${baseUsername || "user"}_${crypto.randomBytes(4).toString("hex")}`;
+                    const reserved = await prisma.user.findFirst({
+                        where: { OR: [{ username: { equals: username, mode: "insensitive" } }, { usernameAliases: { some: { username: { equals: username, mode: "insensitive" } } } }] },
+                        select: { id: true },
+                    });
+                    if (reserved) redirect("/register?error=unknown");
+                    continue;
+                }
+                redirect("/register?error=exists");
+            }
+            console.error("Registration database error:", error);
+            redirect("/register?error=unknown");
         }
-        console.error("Registration database error:", error);
-        redirect("/register?error=unknown");
     }
 
     try {
-        await signIn("email", { email, password, redirectTo: "/onboarding" });
+        await signIn("email", { email, password, redirectTo: "/" });
     } catch (error) {
         if (error instanceof AuthError) {
             redirect("/login?error=invalid");
@@ -164,7 +169,7 @@ export async function signInWithGoogle() {
     if (!hasGoogleKeys) {
         redirect("/login?error=OAuthNotConfigured");
     }
-    await signIn("google", { redirectTo: "/onboarding" });
+    await signIn("google", { redirectTo: "/" });
 }
 
 export async function requestPasswordReset(formData: FormData) {
@@ -179,7 +184,8 @@ export async function requestPasswordReset(formData: FormData) {
     const ip = await getClientIp();
     // Max 3 reset requests per hour per IP+email so this can't be used to spam
     // a victim's inbox or brute-force account existence at volume.
-    const rateLimit = checkRateLimit(`reset:${ip}:${email}`, 3, 60 * 60 * 1000);
+    const checks = [checkRateLimit(`reset:ip:${ip}`, 20, 60 * 60 * 1000), checkRateLimit(`reset:account:${email}`, 3, 60 * 60 * 1000), checkRateLimit(`reset:pair:${ip}:${email}`, 3, 60 * 60 * 1000)];
+    const rateLimit = { allowed: checks.every(result => result.allowed) };
     if (!rateLimit.allowed) {
         // Same success response as the happy path: don't let response timing/shape
         // reveal whether the account exists or is just rate-limited.
@@ -200,7 +206,6 @@ export async function requestPasswordReset(formData: FormData) {
         if (!user || !user.email) {
             // Don't reveal whether the account exists - respond exactly like the
             // success path so this endpoint can't be used to enumerate accounts.
-            console.warn(`Password reset requested for non-existent email: ${rawEmail}`);
             redirect("/forgot-password?success=sent");
         }
 
@@ -210,17 +215,12 @@ export async function requestPasswordReset(formData: FormData) {
         const token = crypto.randomBytes(32).toString("hex");
         const expires = new Date(Date.now() + 3600 * 1000);
 
-        // Eski tokenları temizle ve yenisini kaydet
-        await prisma.verificationToken.deleteMany({
-            where: { identifier: userEmail }
-        });
-
-        await prisma.verificationToken.create({
-            data: {
+        await withUserTransaction(user.id, async tx => {
+            await tx.verificationToken.deleteMany({ where: { identifier: userEmail } });
+            await tx.verificationToken.create({ data: {
                 identifier: userEmail,
-                token,
-                expires
-            }
+                token: crypto.createHash("sha256").update(token).digest("hex"), expires,
+            } });
         });
 
         // E-posta gönder (talebi yapan kişinin o an aktif olan arayüz diline göre)
@@ -246,25 +246,28 @@ export async function resetPassword(formData: FormData) {
     const token = String(formData.get("token") || "").trim();
 
     if (!password || !confirmPassword || !token) {
-        redirect(`/reset-password?token=${token}&error=missing`);
+        redirect(`/reset-password?token=${encodeURIComponent(token)}&error=missing`);
     }
 
     if (password !== confirmPassword) {
-        redirect(`/reset-password?token=${token}&error=mismatch`);
+        redirect(`/reset-password?token=${encodeURIComponent(token)}&error=mismatch`);
     }
 
-    if (password.length < 6) {
-        redirect(`/reset-password?token=${token}&error=weak`);
+    if (password.length < 6 || Buffer.byteLength(password, "utf8") > 72) {
+        redirect(`/reset-password?token=${encodeURIComponent(token)}&error=weak`);
     }
 
+    if (!/^[a-f0-9]{64}$/.test(token)) redirect("/reset-password?error=invalid");
+    const ip = await getClientIp();
+    if (!checkRateLimit(`reset:consume:${ip}`, 20, 5 * 60_000).allowed) redirect("/reset-password?error=invalid");
     try {
         // Token'ı doğrula
         const verificationToken = await prisma.verificationToken.findUnique({
-            where: { token }
+            where: { token: crypto.createHash("sha256").update(token).digest("hex") }
         });
 
         if (!verificationToken || verificationToken.expires < new Date()) {
-            redirect(`/reset-password?token=${token}&error=invalid`);
+            redirect(`/reset-password?token=${encodeURIComponent(token)}&error=invalid`);
         }
 
         const hashedPassword = await bcrypt.hash(password, 12);
@@ -280,28 +283,29 @@ export async function resetPassword(formData: FormData) {
         });
 
         if (!targetUser) {
-            redirect(`/reset-password?token=${token}&error=invalid`);
+            redirect(`/reset-password?token=${encodeURIComponent(token)}&error=invalid`);
         }
 
-        // Şifreyi güncelle (ID ile güvenli güncelleme)
-        await prisma.user.update({
-            where: { id: targetUser.id },
-            data: { password: hashedPassword }
+        const consumed = await prisma.$transaction(async tx => {
+            const result = await tx.verificationToken.deleteMany({ where: {
+                token: verificationToken.token, expires: { gt: new Date() },
+            } });
+            if (result.count !== 1) return false;
+            await tx.user.update({ where: { id: targetUser.id }, data: {
+                password: hashedPassword, sessionVersion: { increment: 1 },
+            } });
+            await tx.session.deleteMany({ where: { userId: targetUser.id } });
+            await tx.verificationToken.deleteMany({ where: { identifier: verificationToken.identifier } });
+            return true;
         });
+        if (!consumed) redirect(`/reset-password?token=${encodeURIComponent(token)}&error=invalid`);
 
-        // Kullanılan token'ları sil
-        await prisma.verificationToken.deleteMany({
-            where: { identifier: verificationToken.identifier }
-        });
-
-        console.log(`Password reset successfully for user: ${targetUser.email}`);
-        
         redirect("/login?reset=success");
     } catch (error) {
         if (error instanceof Error && error.message.includes("NEXT_REDIRECT")) {
             throw error;
         }
         console.error("Password reset error:", error);
-        redirect(`/reset-password?token=${token}&error=db`);
+        redirect(`/reset-password?token=${encodeURIComponent(token)}&error=db`);
     }
 }

@@ -1,0 +1,53 @@
+{
+  "tests": {
+    "suites": 29,
+    "passed": 154
+  },
+  "build": {
+    "next": "16.4.0",
+    "passed": true
+  },
+  "migration": {
+    "engine": "PGlite PostgreSQL",
+    "passed": true,
+    "productionApplied": false
+  },
+  "lint": {
+    "errors": 0,
+    "warnings": 488
+  },
+  "auditProduction": {
+    "info": 0,
+    "low": 0,
+    "moderate": 0,
+    "high": 0,
+    "critical": 0,
+    "total": 0
+  },
+  "auditAll": {
+    "info": 0,
+    "low": 0,
+    "moderate": 19,
+    "high": 5,
+    "critical": 0,
+    "total": 24
+  },
+  "responsive": {
+    "locales": [
+      "tr",
+      "en"
+    ],
+    "viewportWidths": [
+      320,
+      1440
+    ],
+    "domChecks": 24,
+    "screenshotsVerified": false
+  },
+  "health": {
+    "standaloneStatus": 200,
+    "cacheControl": "no-store",
+    "containerVerifiedLocally": false
+  },
+  "deployed": false
+}

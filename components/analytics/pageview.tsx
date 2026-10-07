@@ -7,8 +7,7 @@ export function Pageview() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const last = useRef("");
-  const lastActivityTime = useRef<number>(Date.now());
-  const activeSecondsAccumulator = useRef<number>(0);
+  const lastActivityTime = useRef<number>(0);
 
   // Map homepage section query params to identifiable paths
   let currentPath = pathname;
@@ -41,6 +40,8 @@ export function Pageview() {
 
   // 2. Real-time Heartbeat & Active Time Spent Tracking (Every 45s)
   useEffect(() => {
+    if (currentPath.startsWith("/admin") || navigator.doNotTrack === "1") return;
+    lastActivityTime.current = Date.now();
     const handleUserActivity = () => {
       lastActivityTime.current = Date.now();
     };
@@ -97,7 +98,7 @@ export function Pageview() {
       window.removeEventListener("click", handleUserActivity);
       document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
-  }, []);
+  }, [currentPath]);
 
   return null;
 }

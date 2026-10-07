@@ -140,44 +140,14 @@ export default async function ProfilePage() {
         ? ratedItems.reduce((sum: number, w: any) => sum + (w.rating || 0), 0) / ratedItems.length
         : 0;
 
-    // Collect favorite backdrops from favoriteMediaIds or top watched/watchlist
-    const favoriteIds = (user.favoriteMediaIds || []).map(Number).filter(Boolean);
-    let favoriteBackdrops: string[] = [];
+  const favorites = await prisma.favoriteMedia.findMany({
+    where: { userId: user.id }, orderBy: { position: "asc" }, take: 12,
+    include: { media: true },
+  });
+  user.favoriteMedia = favorites;
+  let favoriteBackdrops: string[] = favorites.flatMap(f => f.media.backdropPath ? [`https://image.tmdb.org/t/p/w1280${f.media.backdropPath}`] : []);
 
-    if (favoriteIds.length > 0) {
-        try {
-            const favoriteMediaItems = await prisma.mediaItem.findMany({
-                where: { tmdbId: { in: favoriteIds } },
-                select: { tmdbId: true, backdropPath: true, posterPath: true },
-            });
-
-            favoriteBackdrops = favoriteMediaItems
-                .map(m => m.backdropPath ? `https://image.tmdb.org/t/p/w1280${m.backdropPath}` : null)
-                .filter(Boolean) as string[];
-
-            if (favoriteBackdrops.length < favoriteIds.length) {
-                const missingIds = favoriteIds.filter((id: number) => !favoriteMediaItems.some(m => m.tmdbId === id));
-                const tmdbResults = await Promise.all(
-                    missingIds.slice(0, 4).map(async (id: number) => {
-                        try {
-                            const m = await tmdb.getDetails("movie", String(id));
-                            if (m?.backdrop_path) return `https://image.tmdb.org/t/p/w1280${m.backdrop_path}`;
-                            const s = await tmdb.getDetails("tv", String(id));
-                            if (s?.backdrop_path) return `https://image.tmdb.org/t/p/w1280${s.backdrop_path}`;
-                        } catch {
-                            return null;
-                        }
-                        return null;
-                    })
-                );
-                favoriteBackdrops.push(...(tmdbResults.filter(Boolean) as string[]));
-            }
-        } catch (e) {
-            console.warn("Error resolving favorite backdrops:", e);
-        }
-    }
-
-    // If still empty, check watched
+  // If still empty, check watched
     if (favoriteBackdrops.length === 0) {
         const ratedWithBackdrop = allWatched
             .filter((w: any) => w.media?.backdropPath)

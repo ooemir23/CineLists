@@ -1,5 +1,7 @@
 "use client";
+import { useTranslation } from "@/lib/i18n/i18n-context";
 
+import { mediaKey } from "@/lib/media-key";
 import { useState, useEffect } from "react";
 import Image from "next/image";
 import { Search, Heart, X, Film, Check, Loader2, Sparkles } from "lucide-react";
@@ -21,6 +23,7 @@ export function ManageFavoritesModal({
   watchedItems = [],
   onFavoritesChange,
 }: ManageFavoritesModalProps) {
+  const { dict } = useTranslation();
   const [activeTab, setActiveTab] = useState<"search" | "watched">("search");
   const [query, setQuery] = useState("");
   const [searchResults, setSearchResults] = useState<any[]>([]);
@@ -34,18 +37,19 @@ export function ManageFavoritesModal({
 
   // Debounced search on TMDB
   useEffect(() => {
-    if (!query.trim()) {
+    if (!query.trim() || query.length > 200) {
       setSearchResults([]);
       return;
     }
 
+    const controller = new AbortController();
     const timer = setTimeout(async () => {
       setIsSearching(true);
       try {
-        const res = await fetch(`/api/tmdb/search?q=${encodeURIComponent(query)}`);
+        const res = await fetch(`/api/tmdb/search?q=${encodeURIComponent(query)}`, { signal: controller.signal });
         if (res.ok) {
           const data = await res.json();
-          setSearchResults(data.results || data || []);
+          if (!controller.signal.aborted) setSearchResults((data.results || []).filter((item: any) => item.media_type !== "person"));
         }
       } catch (e) {
         console.warn("Search error:", e);
@@ -54,7 +58,7 @@ export function ManageFavoritesModal({
       }
     }, 350);
 
-    return () => clearTimeout(timer);
+    return () => { clearTimeout(timer); controller.abort(); };
   }, [query]);
 
   if (!isOpen) return null;
@@ -67,7 +71,7 @@ export function ManageFavoritesModal({
     backdrop_path?: string | null;
     media_type?: string;
   }) => {
-    const strId = String(item.id);
+    const strId = mediaKey(item.id, item.media_type === "tv" ? "tv" : "movie");
     const isFav = favoriteIds.includes(strId);
     const newFavs = isFav
       ? favoriteIds.filter((id) => id !== strId)
@@ -78,7 +82,7 @@ export function ManageFavoritesModal({
 
     try {
       const type = (item.media_type === "tv" ? "tv" : "movie") as "movie" | "tv";
-      const title = item.title || item.name || "İçerik";
+      const title = item.title || item.name || dict.reviewUi.content;
       const res = await toggleFavoriteMedia(
         item.id,
         type,
@@ -91,16 +95,17 @@ export function ManageFavoritesModal({
         setFavoriteIds(favoriteIds); // Revert
         toast.error(res.error);
       } else {
-        onFavoritesChange?.(newFavs);
+        onFavoritesChange?.(res.favorites || newFavs);
+        setFavoriteIds(res.favorites || newFavs);
         if (res?.isFavorite) {
-          toast.success(`"${title}" favorilere eklendi! Profil kapağı güncellendi.`);
+          toast.success(dict.reviewUi.favoriteAdded.replace("{title}", title));
         } else {
-          toast.info(`"${title}" favorilerden çıkarıldı.`);
+          toast.info(dict.reviewUi.favoriteRemoved.replace("{title}", title));
         }
       }
     } catch {
       setFavoriteIds(favoriteIds);
-      toast.error("Bir hata oluştu.");
+      toast.error(dict.reviewUi.error);
     } finally {
       setTogglingId(null);
     }
@@ -118,15 +123,14 @@ export function ManageFavoritesModal({
             </div>
             <div>
               <h3 className="text-base font-bold text-white tracking-tight">
-                Favori Filmlerini Yönet
-              </h3>
+                {dict.reviewUi.manageFavorites}</h3>
               <p className="text-xs text-neutral-400">
-                Seçtiğin favoriler profil kapağında silik bir sinema kolajı olarak yer alır.
-              </p>
+                {dict.reviewUi.favoritesHint}</p>
             </div>
           </div>
           <button
             onClick={onClose}
+            aria-label={dict.common.close}
             className="p-2 rounded-xl bg-white/5 hover:bg-white/10 text-neutral-400 hover:text-white transition-colors"
           >
             <X className="w-5 h-5" />
@@ -143,8 +147,7 @@ export function ManageFavoritesModal({
                 : "border-transparent text-neutral-400 hover:text-white"
             }`}
           >
-            Film/Dizi Ara
-          </button>
+            {dict.reviewUi.searchMedia}</button>
           <button
             onClick={() => setActiveTab("watched")}
             className={`pb-2.5 px-3 text-xs font-bold transition-all border-b-2 ${
@@ -153,7 +156,7 @@ export function ManageFavoritesModal({
                 : "border-transparent text-neutral-400 hover:text-white"
             }`}
           >
-            İzlediklerimden Seç ({watchedItems.length})
+            {dict.reviewUi.chooseWatched}{watchedItems.length})
           </button>
         </div>
 
@@ -167,7 +170,7 @@ export function ManageFavoritesModal({
                 <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-500" />
                 <input
                   type="text"
-                  placeholder="Favorilere eklemek istediğin film veya diziyi ara..."
+                  placeholder={dict.reviewUi.favoritesPlaceholder}
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
                   autoFocus
@@ -182,11 +185,11 @@ export function ManageFavoritesModal({
               {searchResults.length > 0 ? (
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                   {searchResults.slice(0, 12).map((item) => {
-                    const isFav = favoriteIds.includes(String(item.id));
-                    const isToggling = togglingId === String(item.id);
+                    const isFav = favoriteIds.includes(mediaKey(item.id, item.media_type === "tv" ? "tv" : "movie"));
+                    const isToggling = togglingId === mediaKey(item.id, item.media_type === "tv" ? "tv" : "movie");
                     return (
                       <div
-                        key={item.id}
+                        key={mediaKey(item.id, item.media_type)}
                         className="group relative rounded-xl overflow-hidden bg-white/[0.03] border border-white/10 p-2 flex gap-2.5 items-center hover:bg-white/[0.06] transition-all"
                       >
                         <div className="relative w-12 h-16 rounded-lg overflow-hidden bg-neutral-800 shrink-0">
@@ -209,7 +212,7 @@ export function ManageFavoritesModal({
                             {item.title || item.name}
                           </p>
                           <p className="text-[10px] text-neutral-400 mt-0.5 capitalize">
-                            {item.media_type === "tv" ? "Dizi" : "Film"}
+                            {item.media_type === "tv" ? dict.reviewUi.tv : dict.reviewUi.movie}
                           </p>
                           <button
                             onClick={() => handleToggle(item)}
@@ -221,7 +224,7 @@ export function ManageFavoritesModal({
                             }`}
                           >
                             <Heart className={`w-3 h-3 ${isFav ? "fill-white" : ""}`} />
-                            <span>{isFav ? "Favori" : "Ekle"}</span>
+                            <span>{isFav ? dict.reviewUi.favorite : dict.reviewUi.add}</span>
                           </button>
                         </div>
                       </div>
@@ -230,12 +233,10 @@ export function ManageFavoritesModal({
                 </div>
               ) : query.trim() ? (
                 <div className="py-12 text-center text-xs text-neutral-500">
-                  Sonuç bulunamadı.
-                </div>
+                  {dict.reviewUi.noResults}</div>
               ) : (
                 <div className="py-12 text-center text-xs text-neutral-500">
-                  Favorilerine eklemek istediğin filmleri aratarak seçebilirsin.
-                </div>
+                  {dict.reviewUi.favoritesEmpty}</div>
               )}
             </div>
           )}
@@ -247,11 +248,11 @@ export function ManageFavoritesModal({
                   {watchedItems.map((w: any) => {
                     const media = w.media;
                     if (!media) return null;
-                    const isFav = favoriteIds.includes(String(media.tmdbId));
-                    const isToggling = togglingId === String(media.tmdbId);
+                    const isFav = favoriteIds.includes(mediaKey(media.tmdbId, media.type));
+                    const isToggling = togglingId === mediaKey(media.tmdbId, media.type);
                     return (
                       <div
-                        key={media.tmdbId}
+                        key={mediaKey(media.tmdbId, media.type)}
                         className="group relative rounded-xl overflow-hidden bg-white/[0.03] border border-white/10 p-2 flex gap-2.5 items-center hover:bg-white/[0.06] transition-all"
                       >
                         <div className="relative w-12 h-16 rounded-lg overflow-hidden bg-neutral-800 shrink-0">
@@ -274,7 +275,7 @@ export function ManageFavoritesModal({
                             {media.title}
                           </p>
                           <p className="text-[10px] text-neutral-400 mt-0.5 capitalize">
-                            {media.type?.toLowerCase() === "tv" ? "Dizi" : "Film"}
+                            {media.type?.toLowerCase() === "tv" ? dict.reviewUi.tv : dict.reviewUi.movie}
                           </p>
                           <button
                             onClick={() =>
@@ -294,7 +295,7 @@ export function ManageFavoritesModal({
                             }`}
                           >
                             <Heart className={`w-3 h-3 ${isFav ? "fill-white" : ""}`} />
-                            <span>{isFav ? "Favori" : "Ekle"}</span>
+                            <span>{isFav ? dict.reviewUi.favorite : dict.reviewUi.add}</span>
                           </button>
                         </div>
                       </div>
@@ -303,8 +304,7 @@ export function ManageFavoritesModal({
                 </div>
               ) : (
                 <div className="py-12 text-center text-xs text-neutral-500">
-                  Henüz izlediğin bir yapım bulunmuyor.
-                </div>
+                  {dict.reviewUi.watchedEmpty}</div>
               )}
             </div>
           )}
@@ -315,14 +315,14 @@ export function ManageFavoritesModal({
         <div className="flex items-center justify-between px-6 py-3.5 border-t border-white/10 bg-black/40">
           <span className="text-xs text-neutral-400 flex items-center gap-1.5">
             <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-            <span>Toplam {favoriteIds.length} favori seçildi</span>
+            <span>{dict.reviewUi.total}{favoriteIds.length} {dict.reviewUi.favoritesSelected}</span>
           </span>
           <button
             onClick={onClose}
+            aria-label={dict.common.close}
             className="px-5 py-2 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-bold text-xs transition-all active:scale-95"
           >
-            Tamamla
-          </button>
+            {dict.reviewUi.done}</button>
         </div>
 
       </div>

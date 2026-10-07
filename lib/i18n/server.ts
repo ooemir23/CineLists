@@ -1,4 +1,5 @@
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
+import { resolveLocale } from "./resolve-locale";
 import { Locale, DEFAULT_LOCALE, Dictionary } from "./types";
 import { tr } from "./dictionaries/tr";
 import { en } from "./dictionaries/en";
@@ -15,6 +16,7 @@ export async function getServerLocale(): Promise<Locale> {
     if (localeCookie === "tr" || localeCookie === "en") {
       return localeCookie;
     }
+    return resolveLocale(await headers(), cookieStore);
   } catch {
     // If cookies() is called outside request scope
   }

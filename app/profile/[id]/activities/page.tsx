@@ -1,3 +1,4 @@
+import { accessibleProfileId } from "@/lib/profile-access";
 import { notFound } from "next/navigation";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
@@ -15,6 +16,7 @@ export default async function ActivitiesDetailPage({ params }: ActivitiesPagePro
   const { id } = await params;
   const session = await auth();
   
+  if (!await accessibleProfileId(id, "showActivities")) notFound();
   const user = await prisma.user.findUnique({
     where: { id },
     include: {

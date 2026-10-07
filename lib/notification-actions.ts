@@ -1,4 +1,6 @@
 "use server";
+import { notificationText } from "@/lib/notification-text";
+import { getDictionary, getServerLocale } from "@/lib/i18n/server";
 
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
@@ -6,6 +8,7 @@ import { revalidatePath } from "next/cache";
 
 export async function getNotifications() {
     try {
+        const dictionary = getDictionary(await getServerLocale());
         const session = await auth();
         if (!session?.user?.id) return [];
 
@@ -18,7 +21,7 @@ export async function getNotifications() {
         return notifications.map(n => ({
             id: n.id,
             type: n.type,
-            message: n.message,
+            message: notificationText(n, dictionary),
             link: n.link,
             isRead: n.isRead,
             image: n.image,

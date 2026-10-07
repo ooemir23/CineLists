@@ -21,16 +21,7 @@ function cleanupExpiredEntries(now: number) {
         }
     }
 
-    // If still oversized after removing expired, clear oldest entries
-    if (rateLimitStore.size >= MAX_STORE_ENTRIES) {
-        const excess = rateLimitStore.size - MAX_STORE_ENTRIES + 500;
-        let deleted = 0;
-        for (const k of rateLimitStore.keys()) {
-            rateLimitStore.delete(k);
-            deleted++;
-            if (deleted >= excess) break;
-        }
-    }
+
 }
 
 export function checkRateLimit(
@@ -44,6 +35,9 @@ export function checkRateLimit(
     const entry = rateLimitStore.get(key);
 
     if (!entry || now > entry.resetTime) {
+        if (rateLimitStore.size >= MAX_STORE_ENTRIES && !entry) {
+            return { allowed: false, remaining: 0, resetTime: now + windowMs };
+        }
         // First request or window expired
         rateLimitStore.set(key, {
             count: 1,

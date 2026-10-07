@@ -24,7 +24,7 @@ cinelists, kullanıcıların film ve dizileri takip edebileceği, arkadaşlarıy
 
 ### Ön Gereksinimler
 
-- Node.js 18+
+- Node.js 22.14+
 - PostgreSQL
 - TMDB API Key
 
@@ -83,26 +83,13 @@ Canlıda hangi container'ın servis verdiğini kontrol etmek için:
 https://cinelists.com/api/version
 ```
 
-### Dokploy container refresh settings
+### Üretim dağıtımı
 
-For Dockerfile deployments, pass these build args in Dokploy so each deploy gets a
-stable build identity and Server Actions do not drift between rolling containers:
+Güncel geçiş ve geri dönüş adımları: [güvenlik dağıtım rehberi](reports/security-deployment-runbook-2026-10-07.md).
 
-```text
-APP_COMMIT_SHA=<git commit sha>
-APP_BUILD_DATE=<build timestamp>
-APP_DEPLOYMENT_ID=<git commit sha>
-NEXT_SERVER_ACTIONS_ENCRYPTION_KEY=<stable base64 32-byte key>
-```
+`APP_COMMIT_SHA`, `APP_BUILD_DATE` ve `APP_DEPLOYMENT_ID` build metadata olarak verilir. Çalışma zamanı anahtarlarını Docker build argümanlarına eklemeyin. Sabit Server Actions anahtarı gerekiyorsa GitHub secret `NEXT_SERVER_ACTIONS_ENCRYPTION_KEY` BuildKit `server_actions_key` secret mount'una bağlanır; çalışma zamanı override'ı aynı değer olmalıdır.
 
-`NEXT_SERVER_ACTIONS_ENCRYPTION_KEY` must be the same value at build time for
-every deploy. Generate it once, save it as a Dokploy secret/build arg, and do not
-change it unless you intentionally want all open clients to reload.
-
-After a deploy, verify that `https://cinelists.com/api/version` returns the new
-`commit`, `deploymentId`, `nextBuildId`, and `container` values. If Dokploy still
-shows the old container, use a Dockerfile deployment instead of native deployment
-and trigger a clean redeploy.
+PR kontrolleri test, migration, lint, production audit, build ve container smoke testini çalıştırır. Image yayımlama ve Dokploy çağrısı yalnızca `main` üzerinde çalışır. Yeni şema gerektiren sürümü canlıya almadan önce veritabanı yedeği ve migration tamamlanmalıdır. Dağıtım sonrası `/api/version` commit değeri ve `/api/health` kontrol edilmelidir.
 
 ## 📜 Scripts
 

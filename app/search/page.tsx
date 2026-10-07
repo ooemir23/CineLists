@@ -218,8 +218,8 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
   );
 
   const [userRatingsMap, communityRatingsMap, metadataMap] = await Promise.all([
-    getUserRatingsBulk(mediaItems.map((m) => m.id)),
-    getCommunityRatingsBulk(mediaItems.map((m) => m.id)),
+    getUserRatingsBulk(mediaItems.map((m) => ({ id: m.id, type: m.media_type === "tv" ? "tv" : "movie" }))),
+    getCommunityRatingsBulk(mediaItems.map((m) => ({ id: m.id, type: m.media_type === "tv" ? "tv" : "movie" }))),
     getMediaMetadataBulk(
       mediaItems.map((m) => ({
         id: m.id,

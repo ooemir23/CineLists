@@ -108,6 +108,7 @@ export async function toggleFollow(targetUserIdOrUsername: string) {
                         userId: targetUserId,
                         type: "NEW_FOLLOWER",
                         message: `${followerDisplayName} seni takip etmeye başladı.`,
+                        payload: { kind: "follower", name: followerDisplayName },
                         link: followerProfileLink,
                         image: currentUser.image,
                     }

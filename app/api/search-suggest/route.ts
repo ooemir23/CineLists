@@ -2,6 +2,7 @@
 import { NextResponse } from "next/server";
 import { tmdb } from "@/lib/tmdb";
 import { searchUsers } from "@/lib/social-actions";
+import { resolveLocale } from "@/lib/i18n/resolve-locale";
 
 import type { NextRequest } from "next/server";
 
@@ -45,7 +46,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json([]);
   }
 
-  const locale = req.cookies.get("NEXT_LOCALE")?.value || "tr";
+  const locale = resolveLocale(req.headers, req.cookies);
   const primaryLang = locale === "en" ? "en-US" : "tr-TR";
   const altLang = locale === "en" ? "tr-TR" : "en-US";
 

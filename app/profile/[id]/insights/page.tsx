@@ -1,3 +1,4 @@
+import { accessibleProfileId } from "@/lib/profile-access";
 import { notFound } from "next/navigation";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
@@ -46,6 +47,7 @@ export default async function InsightsDetailPage({ params }: InsightsPageProps) 
   const { id } = await params;
   const session = await auth();
   
+  if (!await accessibleProfileId(id, "showStats")) notFound();
   const user = await prisma.user.findUnique({
     where: { id },
     include: {

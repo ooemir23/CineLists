@@ -1,6 +1,6 @@
 "use client";
 
-import { motion } from "framer-motion";
+
 import { X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -59,14 +59,11 @@ export function GenreTags({
   return (
     <div className="w-full">
       <div className="flex flex-wrap gap-1.5 sm:gap-2">
-        {displayedGenres.map((genre, index) => (
-          <motion.div
+        {displayedGenres.map((genre) => (
+          <div
             key={genre.id}
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: index * 0.05 }}
             className={cn(
-              "inline-flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1 sm:py-1.5 rounded-full border backdrop-blur-sm transition-all text-[10px] sm:text-xs font-bold whitespace-nowrap",
+              "animate-enter inline-flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1 sm:py-1.5 rounded-full border backdrop-blur-sm transition-all text-[10px] sm:text-xs font-bold whitespace-nowrap",
               getGenreColor(genre.name)
             )}
           >
@@ -79,18 +76,15 @@ export function GenreTags({
                 <X className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
               </button>
             )}
-          </motion.div>
+          </div>
         ))}
 
         {hiddenCount > 0 && (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: displayedGenres.length * 0.05 }}
+          <div
             className="inline-flex items-center px-2 sm:px-3 py-1 sm:py-1.5 rounded-full bg-white/5 border border-white/10 backdrop-blur-sm text-[10px] sm:text-xs font-bold text-neutral-400 hover:bg-white/10 transition-all cursor-default"
           >
             +{hiddenCount} daha
-          </motion.div>
+          </div>
         )}
       </div>
     </div>

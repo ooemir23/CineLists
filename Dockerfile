@@ -1,4 +1,5 @@
-FROM node:20-slim AS base
+# syntax=docker/dockerfile:1.7
+FROM node:22-slim AS base
 
 # Install dependencies only when needed
 FROM base AS deps
@@ -23,19 +24,10 @@ WORKDIR /app
 ARG APP_COMMIT_SHA=unknown
 ARG APP_BUILD_DATE=unknown
 ARG APP_DEPLOYMENT_ID
-ARG NEXT_SERVER_ACTIONS_ENCRYPTION_KEY
-ARG AUTH_SECRET
-ARG NEXTAUTH_SECRET
 
 ENV APP_COMMIT_SHA=$APP_COMMIT_SHA
 ENV APP_BUILD_DATE=$APP_BUILD_DATE
 ENV APP_DEPLOYMENT_ID=$APP_DEPLOYMENT_ID
-ENV NEXT_SERVER_ACTIONS_ENCRYPTION_KEY=$NEXT_SERVER_ACTIONS_ENCRYPTION_KEY
-ENV AUTH_SECRET=${AUTH_SECRET:-cinelists-secret-key-development-2026-auth-3891724}
-ENV NEXTAUTH_SECRET=${NEXTAUTH_SECRET:-cinelists-secret-key-development-2026-auth-3891724}
-ARG RESEND_API_KEY
-ENV TMDB_API_KEY=bf8f936fe43431e6714917c0c9a172e5
-ENV RESEND_API_KEY=$RESEND_API_KEY
 ENV MAIL_FROM="CineLists <noreply@cinelists.com>"
 ENV NEXT_PUBLIC_APP_URL=https://cinelists.com
 ENV NEXT_TELEMETRY_DISABLED=1
@@ -45,7 +37,8 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
 # Build only; database migrations are run separately from the web container
-RUN npm run build
+RUN --mount=type=secret,id=server_actions_key \
+    NEXT_SERVER_ACTIONS_ENCRYPTION_KEY="$(cat /run/secrets/server_actions_key 2>/dev/null || true)" npm run build
 
 # Production stage
 FROM base AS runner
@@ -62,8 +55,6 @@ ENV NODE_OPTIONS="--max-old-space-size=1536"
 ENV APP_COMMIT_SHA=$APP_COMMIT_SHA
 ENV APP_BUILD_DATE=$APP_BUILD_DATE
 ENV APP_DEPLOYMENT_ID=$APP_DEPLOYMENT_ID
-ARG RESEND_API_KEY
-ENV RESEND_API_KEY=$RESEND_API_KEY
 ENV MAIL_FROM="CineLists <noreply@cinelists.com>"
 ENV NEXT_PUBLIC_APP_URL=https://cinelists.com
 ENV AUTH_URL=https://cinelists.com
@@ -91,5 +82,7 @@ EXPOSE 3000
 
 ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 CMD node -e "fetch('http://127.0.0.1:3000/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
 
 CMD ["./start.sh"]

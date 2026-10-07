@@ -1,4 +1,5 @@
 "use client";
+import { mediaKey } from "@/lib/media-key";
 
 import React, { useState, useMemo } from "react";
 import Image from "next/image";
@@ -53,6 +54,7 @@ export interface ProfileUserData {
   favoritePersons: any[];
   activities: any[];
   favoriteMediaIds?: string[];
+  favoriteMedia?: Array<{ media: any }>;
   _count: {
     followedBy: number;
     following: number;
@@ -159,8 +161,9 @@ export function ProfileUnifiedView({
     if (favIds.length > 0) {
       favIds.forEach((id) => {
         const item =
-          watchedItems.find((w: any) => String(w.media?.tmdbId) === id) ||
-          watchlistItems.find((w: any) => String(w.media?.tmdbId) === id);
+          user.favoriteMedia?.find((w: any) => mediaKey(w.media?.tmdbId, w.media?.type || "movie") === id) ||
+          watchedItems.find((w: any) => mediaKey(w.media?.tmdbId, w.media?.type || "movie") === id) ||
+          watchlistItems.find((w: any) => mediaKey(w.media?.tmdbId, w.media?.type || "movie") === id);
         if (item) {
           explicitFavs.push({
             id: item.media.tmdbId,
@@ -175,11 +178,11 @@ export function ProfileUnifiedView({
     }
 
     const rated = [...watchedItems]
-      .filter((w: any) => w.rating != null && w.rating > 0 && !explicitFavs.some((f) => f.id === w.media.tmdbId))
+      .filter((w: any) => w.rating != null && w.rating > 0 && !explicitFavs.some((f) => mediaKey(f.id, f.type) === mediaKey(w.media.tmdbId, w.media.type)))
       .sort((a: any, b: any) => (b.rating || 0) - (a.rating || 0));
 
     const unrated = watchedItems.filter(
-      (w: any) => !explicitFavs.some((f) => f.id === w.media.tmdbId) && !rated.some((r: any) => r.media.tmdbId === w.media.tmdbId)
+      (w: any) => !explicitFavs.some((f) => mediaKey(f.id, f.type) === mediaKey(w.media.tmdbId, w.media.type)) && !rated.some((r: any) => mediaKey(r.media.tmdbId, r.media.type) === mediaKey(w.media.tmdbId, w.media.type))
     );
 
     const combined = [
@@ -203,7 +206,7 @@ export function ProfileUnifiedView({
     ];
 
     return combined.slice(0, explicitFavs.length > 4 ? 6 : 4);
-  }, [watchedItems, watchlistItems, localFavorites]);
+  }, [watchedItems, watchlistItems, localFavorites, user.favoriteMedia]);
 
   // Dynamic Genre Stats based on watched history
   const genreBreakdown = useMemo(() => {
