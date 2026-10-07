@@ -152,6 +152,9 @@ export interface Dictionary {
     noNotifications: string;
     notificationsHint: string;
     allNotifications: string;
+    noMessages: string;
+    messageFriend: string;
+    youPrefix: string;
     olderMessages: string;
     startChat: string;
     messagePlaceholder: string;
