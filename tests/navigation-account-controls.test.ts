@@ -1,6 +1,6 @@
 /** @jest-environment jsdom */
 import React, { act } from "react";
-import { render, screen, fireEvent, cleanup } from "@testing-library/react";
+import { render, screen, fireEvent, cleanup, within } from "@testing-library/react";
 import { signOut } from "next-auth/react";
 import { toast } from "sonner";
 import { SignOutButton } from "@/components/layout/sign-out-button";
@@ -19,7 +19,7 @@ jest.mock("next/navigation", () => ({
   useRouter: () => ({ push: jest.fn() }),
 }));
 jest.mock("@/lib/i18n/i18n-context", () => ({ useTranslation: jest.fn() }));
-jest.mock("@/components/layout/language-selector", () => ({ LanguageSelector: () => null }));
+jest.mock("@/components/layout/language-selector", () => ({ LanguageSelector: () => React.createElement("button", {}, "Language selector") }));
 jest.mock("@/components/portal/portal-notification-bell", () => ({ PortalNotificationBell: () => null }));
 
 const user = { id: "qa-user", name: "QA", email: "qa@example.invalid", image: null };
@@ -32,12 +32,19 @@ beforeEach(() => {
 for (const [locale, dict] of [["tr", tr], ["en", en]] as const) {
   test(`authenticated portal navigation exposes inbox and logout in ${locale}`, () => {
     (useTranslation as jest.Mock).mockReturnValue({ dict, locale });
-    for (const Component of [PortalTopbar, PortalSidebar]) {
-      const result = render(React.createElement(Component, { user }));
-      expect(screen.getByRole("link", { name: dict.nav.messages }).getAttribute("href")).toBe("/messages");
-      expect(screen.getByRole("button", { name: dict.nav.logout })).toBeTruthy();
-      result.unmount();
-    }
+    const topbar = render(React.createElement(PortalTopbar, { user }));
+    const header = within(screen.getByRole("banner"));
+    expect(header.getByRole("link", { name: dict.nav.messages }).getAttribute("href")).toBe("/messages");
+    expect(header.queryByRole("button", { name: dict.nav.logout })).toBeNull();
+    expect(header.queryByRole("button", { name: "Language selector" })).toBeNull();
+    expect(topbar.container.querySelector('a[href="/profile"]')).toBeNull();
+    topbar.unmount();
+    const sidebar = render(React.createElement(PortalSidebar, { user }));
+    expect(screen.getByRole("link", { name: dict.nav.messages }).getAttribute("href")).toBe("/messages");
+    expect(screen.getByRole("button", { name: dict.nav.logout })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Language selector" })).toBeTruthy();
+    expect(sidebar.container.querySelector('a[href="/profile"]')).toBeTruthy();
+    sidebar.unmount();
     render(React.createElement(PortalMobileDrawer, { user, isOpen: true, onClose: jest.fn() }));
     expect(screen.getByRole("link", { name: dict.nav.messages }).getAttribute("href")).toBe("/messages");
     expect(screen.getByRole("button", { name: dict.nav.logout })).toBeTruthy();

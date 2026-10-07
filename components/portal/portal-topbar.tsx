@@ -25,11 +25,9 @@ import {
   Eye,
   MessageCircle,
 } from "lucide-react";
-import { SignOutButton } from "@/components/layout/sign-out-button";
 import { cn } from "@/lib/utils";
 import { PortalMobileDrawer } from "./portal-mobile-drawer";
 import { PortalNotificationBell } from "./portal-notification-bell";
-import { LanguageSelector } from "@/components/layout/language-selector";
 import { useTranslation } from "@/lib/i18n/i18n-context";
 
 type PortalTopbarProps = {
@@ -631,9 +629,6 @@ export function PortalTopbar({ user, isAdmin = false, needsProfileCompletion = f
 
               {/* Right Actions */}
               <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
-                {/* Language Selector (mobilde menü çekmecesinde yer alıyor) */}
-                <LanguageSelector variant="dropdown" className="hidden sm:block" />
-
                 {/* Mobile Search Button trigger (Visible only on < md) */}
                 <button
                   type="button"
@@ -654,29 +649,6 @@ export function PortalTopbar({ user, isAdmin = false, needsProfileCompletion = f
                       <MessageCircle className="h-4 w-4" aria-hidden="true" />
                     </Link>
                     <PortalNotificationBell />
-                    <SignOutButton compact className="h-9 w-9 shrink-0 justify-center" />
-                    <Link
-                      href="/profile"
-                      className="flex items-center gap-2 p-1 pl-1.5 sm:pl-2 rounded-xl hover:bg-white/5 border border-transparent hover:border-white/10 transition-colors"
-                    >
-                      <div className="w-8 h-8 rounded-full overflow-hidden relative bg-amber-400/20 border border-amber-400/40">
-                        {user.image ? (
-                          <Image
-                            src={user.image}
-                            alt={user.name || "Kullanıcı"}
-                            fill
-                            className="object-cover"
-                          />
-                        ) : (
-                          <span className="w-full h-full flex items-center justify-center text-amber-400 font-black text-xs">
-                            {user.name?.charAt(0) || "U"}
-                          </span>
-                        )}
-                      </div>
-                      <span className="hidden lg:inline text-xs font-bold text-white max-w-[120px] truncate">
-                        {user.name}
-                      </span>
-                    </Link>
                   </div>
                 ) : (
                   <div className="flex items-center gap-1.5 sm:gap-2">
