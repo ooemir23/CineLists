@@ -1,5 +1,7 @@
 "use server";
 
+import { registrationAcquisition } from "@/lib/acquisition-server";
+import { discoveryAnswer, DISCOVERY_COOKIE } from "@/lib/acquisition";
 import { signOut, auth, signIn } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
@@ -9,7 +11,7 @@ import { sendPasswordResetEmail } from "./mail";
 import crypto from "crypto";
 import { safeInternalRedirect } from "@/lib/admin/policy";
 import { checkRateLimit } from "@/lib/ratelimit";
-import { headers } from "next/headers";
+import { headers, cookies } from "next/headers";
 import { withUserTransaction } from "@/lib/user-transaction";
 import { getServerCountry } from "@/lib/country";
 import { trustedClientIp } from "@/lib/auth-rate-limit";
@@ -49,6 +51,9 @@ export async function registerUser(formData: FormData) {
     const email = rawEmail.toLowerCase();
     const password = String(formData.get("password") || "");
     const name = String(formData.get("name") || "").trim();
+    const rawDiscovery = formData.get("discoveryAnswer");
+    const answer = discoveryAnswer(rawDiscovery);
+    if (rawDiscovery && !answer) redirect("/register?error=discovery");
 
     if (!email || !password) {
         redirect("/register?error=missing");
@@ -107,6 +112,7 @@ export async function registerUser(formData: FormData) {
     // Create user in real PostgreSQL database
     const locale = await getServerLocale();
     const country = await getServerCountry();
+    const acquisition = await registrationAcquisition();
     for (let attempt = 0; attempt < 4; attempt++) {
         try {
             const newUser = await prisma.user.create({
@@ -114,7 +120,7 @@ export async function registerUser(formData: FormData) {
                     hasCompletedOnboarding: false, locale, country },
             });
             try {
-                await prisma.userAdminProfile.create({ data: { userId: newUser.id, registeredAt: new Date() } });
+                await prisma.userAdminProfile.create({ data: { userId: newUser.id, registeredAt: new Date(), ...acquisition, discoveryAnswer: answer } });
             } catch { console.warn("[Admin] Registration analytics unavailable"); }
             break;
         } catch (error: unknown) {
@@ -161,7 +167,7 @@ export async function handleSignOut() {
     await signOut({ redirectTo: "/" });
 }
 
-export async function signInWithGoogle() {
+export async function signInWithGoogle(formData?: FormData) {
     const hasGoogleKeys = Boolean(
         (process.env.AUTH_GOOGLE_ID || process.env.GOOGLE_CLIENT_ID || process.env.GOOGLE_ID) &&
         (process.env.AUTH_GOOGLE_SECRET || process.env.GOOGLE_CLIENT_SECRET || process.env.GOOGLE_SECRET)
@@ -169,6 +175,11 @@ export async function signInWithGoogle() {
     if (!hasGoogleKeys) {
         redirect("/login?error=OAuthNotConfigured");
     }
+    const rawAnswer = formData?.get("discoveryAnswer"), answer = discoveryAnswer(rawAnswer);
+    if (rawAnswer && !answer) redirect("/register?error=discovery");
+    const cookieStore = await cookies();
+    if (answer) cookieStore.set(DISCOVERY_COOKIE, answer, { httpOnly: true, secure: process.env.NODE_ENV === "production", sameSite: "lax", path: "/", maxAge: 600 });
+    else cookieStore.delete(DISCOVERY_COOKIE);
     await signIn("google", { redirectTo: "/" });
 }
 

@@ -2,8 +2,10 @@
 
 import { signInWithGoogle } from "@/lib/auth-actions";
 import { useTransition } from "react";
+import { useTranslation } from "@/lib/i18n/i18n-context";
 
 export function SocialAuth() {
+    const { dict } = useTranslation();
     const [isPending, startTransition] = useTransition();
 
     const handleMailClick = () => {
@@ -15,8 +17,11 @@ export function SocialAuth() {
     };
 
     const handleGoogleLogin = () => {
+        const registration = new FormData();
+        const discovery = document.getElementById("discoveryAnswer") as HTMLSelectElement | null;
+        if (discovery) registration.set("discoveryAnswer", discovery.value);
         startTransition(() => {
-            signInWithGoogle().catch((error) => {
+            signInWithGoogle(registration).catch((error) => {
                 if (error?.message?.includes("NEXT_REDIRECT")) return;
                 console.error("Google login error:", error);
             });
@@ -60,9 +65,8 @@ export function SocialAuth() {
                     <rect width="20" height="16" x="2" y="4" rx="2" />
                     <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
                 </svg>
-                <span className="text-[10px] font-semibold uppercase opacity-60">Mail</span>
+                <span className="text-[10px] font-semibold uppercase opacity-60">{dict.auth.email}</span>
             </button>
         </div>
     );
 }
-

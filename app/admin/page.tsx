@@ -25,6 +25,9 @@ import { DailyChart } from "@/components/admin/daily-chart";
 import { MetricCards } from "@/components/admin/metric-cards";
 import { AdminActionButton } from "@/components/admin/action-button";
 import { prisma } from "@/lib/prisma";
+import { AcquisitionReport } from "@/components/admin/acquisition-report";
+import { acquisitionLabel } from "@/lib/acquisition-format";
+import { SOURCE_OPTIONS } from "@/lib/acquisition";
 type Params = UserFilters & { tab?: string };
 async function context() {
   const locale = await getServerLocale(),
@@ -54,6 +57,10 @@ export default async function AdminPage({
       { key: "users", label: t.users },
       { key: "content", label: t.content },
       { key: "audit", label: t.audit },
+      {
+        key: "sources",
+        label: getDictionary(await getServerLocale()).acquisition.title,
+      },
       { key: "system", label: t.system },
     ],
     tab = tabs.some((item) => item.key === params.tab)
@@ -85,6 +92,8 @@ export default async function AdminPage({
         <Moderation params={params} />
       ) : tab === "audit" ? (
         <Audit params={params} />
+      ) : tab === "sources" ? (
+        <AcquisitionReport days={params.days} />
       ) : (
         <System />
       )}
@@ -235,10 +244,18 @@ async function Overview({ days, since }: { days: number; since: Date }) {
   );
 }
 async function UsersTab({ params }: { params: Params }) {
+  const acquisition = getDictionary(await getServerLocale()).acquisition;
   const { t, locale, n, d, country } = await context(),
     data = await getUsers(params);
   const exports = new URLSearchParams();
-  for (const k of ["q", "status", "country", "metric", "days"] as const)
+  for (const k of [
+    "q",
+    "status",
+    "country",
+    "metric",
+    "days",
+    "source",
+  ] as const)
     if (params[k]) exports.set(k, params[k]!);
   return (
     <Panel
@@ -247,13 +264,34 @@ async function UsersTab({ params }: { params: Params }) {
     >
       <form
         action="/admin"
-        className="mb-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-[2fr_1fr_1fr_1fr_auto]"
+        className="mb-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-3"
       >
         <input type="hidden" name="tab" value="users" />
         {params.metric && (
           <input type="hidden" name="metric" value={params.metric} />
         )}
         <input type="hidden" name="days" value={params.days || "30"} />
+        <label className="text-xs text-slate-400">
+          {acquisition.source}
+          <select
+            name="source"
+            defaultValue={params.source || ""}
+            className={`${fieldClass} mt-2`}
+          >
+            <option value="">{t.all}</option>
+            <option value="unknown">{acquisition.unknown}</option>
+            {SOURCE_OPTIONS.map((value) => (
+              <option key={value} value={value}>
+                {acquisitionLabel(value, acquisition)}
+              </option>
+            ))}
+            {params.source &&
+              params.source !== "unknown" &&
+              !SOURCE_OPTIONS.some((value) => value === params.source) && (
+                <option value={params.source}>{params.source}</option>
+              )}
+          </select>
+        </label>
         <label className="text-xs text-slate-400">
           {t.search}
           <input
@@ -332,6 +370,7 @@ async function UsersTab({ params }: { params: Params }) {
                   t.country,
                   t.status,
                   t.registeredAt,
+                  acquisition.source,
                   t.watched + " / " + t.episodes,
                   t.details,
                 ].map((label) => (
@@ -393,6 +432,12 @@ async function UsersTab({ params }: { params: Params }) {
                   </td>
                   <td className="px-3 py-4 text-xs">
                     {d(user.adminProfile?.registeredAt)}
+                  </td>
+                  <td className="max-w-48 break-words px-3 py-4 text-xs">
+                    {acquisitionLabel(
+                      user.adminProfile?.acquisitionSource,
+                      acquisition,
+                    )}
                   </td>
                   <td className="px-3 py-4">
                     {n(user._count.watched)} / {n(user._count.watchedEpisodes)}

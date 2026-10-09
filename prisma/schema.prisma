@@ -97,8 +97,16 @@ model UserAdminProfile {
   totalMinutes  Int       @default(0)
   activeSeconds Int       @default(0)
   heartbeatAt   DateTime?
+  acquisitionSource String?
+  acquisitionMedium String?
+  acquisitionCampaign String?
+  referrerHost String?
+  acquisitionCapturedAt DateTime?
+  discoveryAnswer String?
   user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  @@index([acquisitionSource, registeredAt])
+  @@index([discoveryAnswer, registeredAt])
   @@index([registeredAt])
   @@index([lastSeenAt])
   @@index([country])

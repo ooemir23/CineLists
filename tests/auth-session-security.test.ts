@@ -7,6 +7,9 @@ jest.mock("next-auth", () => ({
     signOut: jest.fn(),
   })),
 }));
+jest.mock("@/lib/acquisition-server", () => ({ registrationAcquisition: jest.fn().mockResolvedValue({ acquisitionSource: "instagram", acquisitionCampaign: "launch", discoveryAnswer: "friend" }) }));
+jest.mock("@/lib/i18n/server", () => ({ getServerLocale: jest.fn().mockResolvedValue("en") }));
+jest.mock("@/lib/country", () => ({ getServerCountry: jest.fn().mockResolvedValue("US") }));
 jest.mock("next-auth/providers/google", () => ({
   __esModule: true,
   default: jest.fn(() => ({})),
@@ -20,7 +23,8 @@ jest.mock("@auth/prisma-adapter", () => ({
 }));
 jest.mock("@/lib/prisma", () => ({
   prisma: {
-    user: { findUnique: jest.fn(), findFirst: jest.fn() },
+    user: { findUnique: jest.fn(), findFirst: jest.fn(), update: jest.fn() },
+    userAdminProfile: { upsert: jest.fn() },
     account: { findFirst: jest.fn() },
   },
 }));
@@ -33,6 +37,10 @@ import { allowCredentialAttempt } from "@/lib/auth-rate-limit";
 import "@/auth";
 const config = (NextAuth as jest.Mock).mock.calls[0][0];
 beforeEach(() => jest.clearAllMocks());
+test("OAuth create-user event records the actual arrival source and preserves an existing profile", async () => {
+  await config.events.createUser({ user: { id: "oauth-new" } });
+  expect(prisma.userAdminProfile.upsert).toHaveBeenCalledWith({ where: { userId: "oauth-new" }, create: expect.objectContaining({ userId: "oauth-new", registeredAt: expect.any(Date), acquisitionSource: "instagram", acquisitionCampaign: "launch", discoveryAnswer: "friend" }), update: {} });
+});
 
 test("a deleted-account JWT cannot attach to a new account with the same email", async () => {
   (prisma.user.findUnique as jest.Mock).mockResolvedValue(null);

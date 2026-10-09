@@ -15,11 +15,14 @@ export type UserFilters = {
   country?: string;
   sort?: string;
   page?: string;
+  source?: string;
 };
 export function userWhere(filters: UserFilters): Prisma.UserWhereInput {
   const q = filters.q?.trim().slice(0, 100);
   const parts: Prisma.UserWhereInput[] = [];
   const { since } = dateWindow(filters.days);
+  if (filters.source === "unknown") parts.push({ OR: [{ adminProfile: null }, { adminProfile: { acquisitionSource: null } }] });
+  else if (filters.source && filters.source.length <= 80) parts.push({ adminProfile: { acquisitionSource: filters.source } });
   if (filters.metric === "online")
     parts.push({
       isSuspended: false,
