@@ -14,6 +14,7 @@ import {
 import { Panel, Metric, Empty } from "@/components/admin/ui";
 import { AdminActionButton } from "@/components/admin/action-button";
 import { Film, Tv, MessageSquare, Users, Clock } from "lucide-react";
+import { acquisitionLabel } from "@/lib/acquisition-format";
 export default async function AdminUserPage({
   params,
 }: {
@@ -29,6 +30,7 @@ export default async function AdminUserPage({
     n = (v: number) => adminNumber(v, locale),
     isOnline = onlineAt(user.adminProfile?.lastSeenAt, user.isSuspended),
     minutes = user.adminProfile?.totalMinutes || 0;
+  const acquisition = getDictionary(locale).acquisition;
   const details = [
     [t.userId, user.id],
     [t.email, user.email || t.notSpecified],
@@ -40,6 +42,27 @@ export default async function AdminUserPage({
       user.accounts.map((a) => a.provider).join(", ") || t.noProviders,
     ],
     [t.registeredAt, d(user.adminProfile?.registeredAt)],
+    [
+      acquisition.source,
+      acquisitionLabel(user.adminProfile?.acquisitionSource, acquisition),
+    ],
+    [
+      acquisition.medium,
+      user.adminProfile?.acquisitionMedium || acquisition.unknown,
+    ],
+    [
+      acquisition.campaign,
+      user.adminProfile?.acquisitionCampaign || acquisition.unknown,
+    ],
+    [
+      acquisition.referrer,
+      user.adminProfile?.referrerHost || acquisition.unknown,
+    ],
+    [acquisition.capturedAt, d(user.adminProfile?.acquisitionCapturedAt)],
+    [
+      acquisition.answer,
+      acquisitionLabel(user.adminProfile?.discoveryAnswer, acquisition),
+    ],
     [t.country, countryLabel(user.adminProfile?.country, locale, t.unknown)],
     [t.visibility, user.isPrivate ? t.private : t.public],
     [

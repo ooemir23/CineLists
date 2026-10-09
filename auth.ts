@@ -1,6 +1,7 @@
 import NextAuth from "next-auth";
 import Google from "next-auth/providers/google";
 import Credentials from "next-auth/providers/credentials";
+import { registrationAcquisition } from "@/lib/acquisition-server";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import { prisma } from "@/lib/prisma";
 import { authConfig } from "./auth.config";
@@ -269,7 +270,7 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
         });
         await prisma.userAdminProfile.upsert({
           where: { userId: user.id },
-          create: { userId: user.id, registeredAt: new Date() },
+          create: { userId: user.id, registeredAt: new Date(), ...await registrationAcquisition() },
           update: {},
         });
       } catch {

@@ -8,6 +8,7 @@ import { TopNav } from "@/components/layout/top-nav";
 import { MobileDock } from "@/components/layout/mobile-dock";
 import { cn } from "@/lib/utils";
 import { ErrorBoundary } from "@/components/ui/error-boundary";
+import { AcquisitionCapture } from "@/components/analytics/acquisition";
 import { Pageview } from "@/components/analytics/pageview";
 import { isAdminId } from "@/lib/admin/policy";
 
@@ -123,6 +124,7 @@ export default async function RootLayout({
                   <Pageview />
                 </Suspense>
               )}
+              <Suspense fallback={null}><AcquisitionCapture /></Suspense>
               <main className="flex-1 pb-24 md:pb-12 relative z-0">
                 <ErrorBoundary>
                   {children}

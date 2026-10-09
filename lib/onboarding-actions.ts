@@ -1,5 +1,6 @@
 "use server";
 
+import { discoveryAnswer } from "@/lib/acquisition";
 import { isValidUsername, normalizeUsername } from "@/lib/username";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
@@ -19,6 +20,10 @@ export async function completeOnboarding(formData: FormData) {
     if ((session.user as any).isGuest || session.user.id.startsWith("guest_")) {
         redirect("/");
     }
+
+    const rawDiscovery = formData.get("discoveryAnswer");
+    const answer = discoveryAnswer(rawDiscovery);
+    if (rawDiscovery && !answer) return { error: dict.acquisition.invalidAnswer };
 
     const rawUsername = formData.get("username");
     if (rawUsername !== null && typeof rawUsername !== "string") {
@@ -43,6 +48,7 @@ export async function completeOnboarding(formData: FormData) {
         platforms: [...new Set(platforms as string[])],
         hasCompletedOnboarding: true,
         ...(username ? { username } : {}),
+        ...(answer ? { adminProfile: { upsert: { create: { discoveryAnswer: answer }, update: { discoveryAnswer: answer } } } } : {}),
     };
 
     try {

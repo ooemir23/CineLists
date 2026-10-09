@@ -112,3 +112,13 @@ test.each([{ id: "guest_123" }, { id: "guest", isGuest: true }])("guests bypass 
   await expect(completeOnboarding(new FormData())).rejects.toThrow("NEXT_REDIRECT");
   expect(prisma.user.update).not.toHaveBeenCalled();
 });
+
+test('optional survey answer is saved with preferences without changing arrival attribution',async()=>{
+ const form=new FormData();form.set('discoveryAnswer','friend');
+ await expect(completeOnboarding(form)).rejects.toThrow('NEXT_REDIRECT');
+ expect(prisma.user.update).toHaveBeenCalledWith(expect.objectContaining({data:expect.objectContaining({adminProfile:{upsert:{create:{discoveryAnswer:'friend'},update:{discoveryAnswer:'friend'}}}})}));
+});
+test('invalid survey answer never writes preferences',async()=>{
+ const form=new FormData();form.set('discoveryAnswer','unbounded arbitrary answer');
+ expect(await completeOnboarding(form)).toEqual({error:en.acquisition.invalidAnswer});expect(prisma.user.update).not.toHaveBeenCalled();
+});

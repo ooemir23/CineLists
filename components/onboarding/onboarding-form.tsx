@@ -1,5 +1,6 @@
 "use client";
 
+import { DiscoverySelect } from "@/components/auth/discovery-select";
 import { useActionState, useState, useTransition } from "react";
 import { Check, Sparkles, User, Tv, Film, ArrowRight, Loader2, FastForward } from "lucide-react";
 import { useTranslation } from "@/lib/i18n/i18n-context";
@@ -23,9 +24,10 @@ interface OnboardingFormProps {
     defaultUsername?: string;
     defaultGenres?: string[];
     defaultPlatforms?: string[];
+    defaultDiscovery?: string;
 }
 
-export function OnboardingForm({ genres, platforms, defaultUsername = "", defaultGenres = [], defaultPlatforms = [] }: OnboardingFormProps) {
+export function OnboardingForm({ genres, platforms, defaultUsername = "", defaultGenres = [], defaultPlatforms = [], defaultDiscovery = "" }: OnboardingFormProps) {
     const { dict } = useTranslation();
     const [username, setUsername] = useState(defaultUsername);
     const [selectedGenres, setSelectedGenres] = useState<number[]>(defaultGenres.map(Number));
@@ -201,6 +203,8 @@ export function OnboardingForm({ genres, platforms, defaultUsername = "", defaul
                         })}
                     </div>
                 </div>
+
+                <DiscoverySelect defaultValue={defaultDiscovery} disabled={isPending} />
 
                 {/* Hidden Inputs for Form submission */}
                 {selectedGenres.map((id) => (

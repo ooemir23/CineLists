@@ -4,9 +4,12 @@ import { csvCell } from "@/lib/admin/policy";
 import { checkRateLimit } from "@/lib/ratelimit";
 import { adminRequest, privateJson } from "@/lib/admin/http";
 import { interpolate } from "@/lib/admin/format";
+import { getDictionary } from "@/lib/i18n/server";
+import { acquisitionLabel } from "@/lib/acquisition-format";
 export async function GET(request: Request) {
-  const { admin, error, t } = await adminRequest(request);
+  const { admin, error, t, locale } = await adminRequest(request);
   if (error || !admin) return error!;
+  const acquisition = getDictionary(locale).acquisition;
   if (!checkRateLimit(`admin-export:${admin.id}`, 5, 60_000).allowed)
     return privateJson({ error: t.rateLimited }, 429);
   const qs = new URL(request.url).searchParams,
@@ -16,6 +19,7 @@ export async function GET(request: Request) {
       status: qs.get("status") || "",
       metric: qs.get("metric") || "",
       days: qs.get("days") || "30",
+      source: qs.get("source") || "",
     });
   try {
     if ((await prisma.user.count({ where })) > 5000)
@@ -46,6 +50,11 @@ export async function GET(request: Request) {
         t.lastSeen + " (UTC)",
         t.duration,
         t.country,
+        acquisition.source,
+        acquisition.medium,
+        acquisition.campaign,
+        acquisition.referrer,
+        acquisition.answer,
       ],
       ...users.map((u) => [
         u.id,
@@ -58,6 +67,11 @@ export async function GET(request: Request) {
         u.adminProfile?.lastSeenAt?.toISOString(),
         u.adminProfile?.totalMinutes || 0,
         u.adminProfile?.country || t.unknown,
+        acquisitionLabel(u.adminProfile?.acquisitionSource, acquisition),
+        u.adminProfile?.acquisitionMedium,
+        u.adminProfile?.acquisitionCampaign,
+        u.adminProfile?.referrerHost,
+        acquisitionLabel(u.adminProfile?.discoveryAnswer, acquisition),
       ]),
     ];
     await prisma.adminAuditLog.create({

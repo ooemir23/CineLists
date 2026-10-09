@@ -2,12 +2,67 @@ export type Locale = "tr" | "en";
 
 export const DEFAULT_LOCALE: Locale = "tr";
 
-export const SUPPORTED_LOCALES: { code: Locale; label: string; flag: string }[] = [
+export const SUPPORTED_LOCALES: {
+  code: Locale;
+  label: string;
+  flag: string;
+}[] = [
   { code: "tr", label: "Türkçe", flag: "🇹🇷" },
   { code: "en", label: "English", flag: "🇬🇧" },
 ];
 
 export interface Dictionary {
+  acquisition: {
+    limitHint: string;
+    title: string;
+    source: string;
+    campaign: string;
+    medium: string;
+    referrer: string;
+    capturedAt: string;
+    answer: string;
+    question: string;
+    optional: string;
+    questionHint: string;
+    invalidAnswer: string;
+    unknown: string;
+    allTime: string;
+    summary: string;
+    automatic: string;
+    survey: string;
+    hint: string;
+    historyHint: string;
+    privacyNote: string;
+    registerTitle: string;
+    registerSubtitle: string;
+    name: string;
+    namePlaceholder: string;
+    emailPlaceholder: string;
+    passwordPlaceholder: string;
+    quickSignup: string;
+    privacyPrefix: string;
+    privacyLink: string;
+    privacySuffix: string;
+    missing: string;
+    weak: string;
+    exists: string;
+    oauth: string;
+    db: string;
+    unexpected: string;
+    rateLimited: string;
+    channels: {
+      google: string;
+      bing: string;
+      instagram: string;
+      youtube: string;
+      tiktok: string;
+      x: string;
+      facebook: string;
+      friend: string;
+      other: string;
+      direct: string;
+    };
+  };
   admin: {
     title: string;
     subtitle: string;

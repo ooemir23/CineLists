@@ -283,6 +283,19 @@ try {
     (await member("/api/admin/metric-details?type=users")).status === 403,
     "Metric details deny ordinary member",
   );
+  await prisma.userAdminProfile.update({where:{userId:"member-test-02"},data:{acquisitionSource:"instagram",acquisitionMedium:"social",acquisitionCampaign:"launch",discoveryAnswer:"friend"}});
+  for (const [locale, title, sourceLabel] of [["tr","Kayıt kaynakları","Geliş kaynağı"],["en","Registration sources","Arrival source"]]) {
+    const sources=await admin("/admin?tab=sources&days=all",{locale});
+    const sourcesHtml=await sources.text();
+    verify(sources.status===200 && sourcesHtml.includes(title) && sourcesHtml.includes("Instagram"), "Localized source report: "+locale);
+    const detail=await admin("/admin/users/member-test-02",{locale});
+    const detailHtml=await detail.text();
+    verify(detail.status===200 && detailHtml.includes(sourceLabel) && detailHtml.includes("launch"),"Source and campaign on user detail: "+locale);
+    const filtered=await admin("/api/admin/export?source=instagram",{locale});
+    const filteredCsv=await filtered.text();
+    verify(filtered.status===200 && filteredCsv.includes(sourceLabel) && filteredCsv.includes("launch") && !filteredCsv.includes("test_uye_03@example.test"),"Filtered source export: "+locale);
+  }
+  verify((await prisma.userAdminProfile.findUnique({where:{userId:"admin-test"}})).acquisitionSource===null,"Historical sources are not fabricated");
   console.log(`${checks} HTTP / database integration checks passed.`);
 } finally {
   await prisma.$disconnect();

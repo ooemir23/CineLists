@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { getDictionary, getServerLocale } from "@/lib/i18n/server";
 import { ArrowLeft, ShieldCheck, Database, Lock, UserCheck, Trash2, Mail, ExternalLink } from "lucide-react";
 
 export const metadata: Metadata = {
@@ -7,7 +8,8 @@ export const metadata: Metadata = {
   description: "cinelists Gizlilik Politikası ve Kişisel Verilerin Korunması Hakkında Bilgilendirme.",
 };
 
-export default function PrivacyPolicyPage() {
+export default async function PrivacyPolicyPage() {
+  const acquisition = getDictionary(await getServerLocale()).acquisition;
   const lastUpdated = "9 Eylül 2026";
 
   return (
@@ -42,6 +44,7 @@ export default function PrivacyPolicyPage() {
 
         {/* İçerik Bölümleri */}
         <div className="space-y-8 text-sm sm:text-base leading-relaxed text-muted-foreground">
+          <section className="bg-card/50 border border-border/50 rounded-2xl p-6 sm:p-8"><h2 className="mb-4 text-lg font-semibold text-foreground">{acquisition.title}</h2><p>{acquisition.privacyNote}</p></section>
           {/* 1. Toplanan Veriler */}
           <section className="bg-card/50 border border-border/50 rounded-2xl p-6 sm:p-8 backdrop-blur-sm">
             <div className="flex items-center gap-3 text-foreground font-semibold text-lg sm:text-xl mb-4 font-bricolage">

@@ -25,7 +25,7 @@ export default async function OnboardingPage() {
     const [movieGenres, tvGenres, dbUser] = await Promise.all([
         tmdb.getGenres("movie"),
         tmdb.getGenres("tv"),
-        prisma.user.findUnique({ where: { id: session.user.id }, select: { username: true, favoriteGenres: true, platforms: true } })
+        prisma.user.findUnique({ where: { id: session.user.id }, select: { username: true, favoriteGenres: true, platforms: true, adminProfile: { select: { discoveryAnswer: true } } } })
     ]);
 
     // Merge and unique genres from TMDB
@@ -57,6 +57,7 @@ export default async function OnboardingPage() {
                 <OnboardingForm 
                     genres={allGenres} 
                     platforms={platforms}
+                    defaultDiscovery={dbUser?.adminProfile?.discoveryAnswer || ""}
                     defaultUsername={dbUser?.username || ""}
                     defaultGenres={dbUser?.favoriteGenres || []}
                     defaultPlatforms={(dbUser?.platforms || []).map(id =>

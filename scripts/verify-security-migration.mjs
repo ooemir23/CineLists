@@ -153,6 +153,11 @@ await assert.rejects(
     `INSERT INTO "MemberDailyVisit" (id,"userId",day) VALUES ('duplicate','u1','2026-10-07')`,
   ),
 );
+await db.exec(fs.readFileSync(new URL("../prisma/migrations/20261007200000_signup_acquisition/migration.sql", import.meta.url), "utf8"));
+assert.equal((await db.query(`SELECT "acquisitionSource" FROM "UserAdminProfile" WHERE "userId"='u1'`)).rows[0].acquisitionSource, null);
+assert.equal((await db.query(`SELECT "activeSeconds" FROM "UserAdminProfile" WHERE "userId"='u1'`)).rows[0].activeSeconds, 240);
+await db.exec(`UPDATE "UserAdminProfile" SET "acquisitionSource"='instagram', "discoveryAnswer"='friend' WHERE "userId"='u1'`);
+assert.equal((await db.query(`SELECT "discoveryAnswer" FROM "UserAdminProfile" WHERE "userId"='u1'`)).rows[0].discoveryAnswer, 'friend');
 await db.close();
 console.log(
   "PostgreSQL migration passed: username aliases, duplicates, comment preservation, typed favorites and unique/validation constraints.",
