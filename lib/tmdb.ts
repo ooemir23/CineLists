@@ -45,6 +45,29 @@ const requestBudget = new RequestBudget(25, 100);
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
+export const TMDB_TIMEOUT_MS = 10_000;
+
+class TmdbTimeoutError extends Error {
+    constructor(endpoint: string) {
+        super(`TMDB request exceeded ${TMDB_TIMEOUT_MS}ms: ${endpoint}`);
+        this.name = "TmdbTimeoutError";
+    }
+}
+
+/**
+ * Altta yatan istek hiç sonuçlanmasa bile süre dolunca reddeder.
+ * Böylece `finally` bloğu çalışır ve limiter slotu her durumda geri verilir.
+ */
+function withDeadline<T>(promise: Promise<T>, deadline: number, endpoint: string): Promise<T> {
+    const remaining = Math.max(1, deadline - Date.now());
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const timeout = new Promise<never>((_, reject) => {
+        timer = setTimeout(() => reject(new TmdbTimeoutError(endpoint)), remaining);
+    });
+    promise.catch(() => {}); // süre dolduktan sonra gelen reddetmeyi sessize al
+    return Promise.race([promise, timeout]).finally(() => clearTimeout(timer));
+}
+
 function getCacheTTL(endpoint: string): number {
     if (endpoint.includes("/genre") || endpoint.includes("/providers")) {
         return 24 * 60 * 60 * 1000; // 24 hours
@@ -115,28 +138,31 @@ export const tmdb = {
         }
 
         const fetchPromise = (async () => {
-            const deadline = Date.now() + 10_000;
+            const deadline = Date.now() + TMDB_TIMEOUT_MS;
             let release: (() => void) | undefined;
             try {
                 release = await requestBudget.acquire(deadline);
-                const fetchOptions: RequestInit & { next?: { revalidate: number } } = {
+                // Next.js'in fetch önbelleği (incremental cache) anahtar başına kilit tutar ve bu
+                // kilidi beklerken AbortSignal'i dikkate almaz. Takılan bir istek limiter slotunu
+                // sonsuza kadar meşgul ediyordu. Kendi bellek önbelleğimiz olduğu için Next'in
+                // fetch önbelleğini atlıyoruz.
+                const fetchOptions: RequestInit = {
+                    cache: "no-store",
                     signal: AbortSignal.timeout(Math.max(1, deadline - Date.now())),
                 };
 
-                if (cache === "no-store") {
-                    fetchOptions.next = { revalidate: 0 };
-                } else {
-                    fetchOptions.next = { revalidate: 3600 };
-                }
-
-                let res = await fetch(cacheKey, fetchOptions);
+                let res = await withDeadline(fetch(cacheKey, fetchOptions), deadline, endpoint);
 
                 // Handle 429 (Rate Limit) with graceful backoff retry
                 if (res.status === 429) {
                     console.warn(`[TMDB RateLimit] 429 on ${endpoint}, waiting 600ms before retry...`);
                     await sleep(600);
                     if (Date.now() >= deadline) throw new RequestOverloadError();
-                    res = await fetch(cacheKey, { ...fetchOptions, signal: AbortSignal.timeout(Math.max(1, deadline - Date.now())) });
+                    res = await withDeadline(
+                        fetch(cacheKey, { ...fetchOptions, signal: AbortSignal.timeout(Math.max(1, deadline - Date.now())) }),
+                        deadline,
+                        endpoint,
+                    );
                 }
 
                 if (!res.ok) {
@@ -150,7 +176,7 @@ export const tmdb = {
                     return null;
                 }
 
-                const data = await res.json();
+                const data = await withDeadline(res.json(), deadline, endpoint);
 
                 // Save to in-memory cache
                 if (cache !== "no-store" && data && JSON.stringify(data).length <= 100_000) {
@@ -167,6 +193,7 @@ export const tmdb = {
 
                 return data;
             } catch (_error) {
+                if (_error instanceof TmdbTimeoutError) console.warn(`[TMDB Timeout] ${endpoint}`);
                 if (_error instanceof RequestOverloadError) throw _error;
                 // Fallback to stale cache if available
                 const stale = memoryCache.get(cacheKey);
