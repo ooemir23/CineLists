@@ -6,6 +6,7 @@ import Link from "next/link";
 import { SocialAuth } from "@/components/auth/social-auth";
 import { PosterBackground } from "@/components/auth/poster-background";
 import { BrandLogo } from "@/components/layout/brand-logo";
+import { RegisterBotFields } from "@/components/auth/register-bot-fields";
 
 type RegisterPageProps = {
   searchParams: Promise<{ error?: string }>;
@@ -29,7 +30,6 @@ export default async function RegisterPage({
     bot: t.botRejected,
   };
   const errorMessage = params.error ? errors[params.error] : null;
-  const formLoadedAt = String(Date.now());
 
   return (
     <div className="fixed inset-0 z-50 flex items-start sm:items-center justify-center px-4 overflow-y-auto py-6">
@@ -61,15 +61,7 @@ export default async function RegisterPage({
           )}
 
           <form action={registerUser} className="space-y-3">
-            <input
-              type="text"
-              name="website"
-              tabIndex={-1}
-              autoComplete="off"
-              aria-hidden="true"
-              className="hidden"
-            />
-            <input type="hidden" name="formLoadedAt" value={formLoadedAt} />
+            <RegisterBotFields />
             <div className="space-y-1">
               <label
                 htmlFor="name"
