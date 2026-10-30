@@ -34,7 +34,7 @@
     "dotenv": "^17.2.3",
     "framer-motion": "^12.28.1",
     "lucide-react": "^0.562.0",
-    "next": "^16.4.0",
+    "next": "^16.4.3",
     "next-auth": "^5.0.0-beta.32",
     "prisma": "^5.22.0",
     "react": "19.2.3",
@@ -46,7 +46,7 @@
     "tailwind-merge": "^3.4.0",
     "tesseract.js": "^7.0.0",
     "use-debounce": "^10.1.0",
-    "zod": "^3.22.4"
+    "zod": "^4.6.7"
   },
   "devDependencies": {
     "@electric-sql/pglite": "^0.5.8",
@@ -62,7 +62,7 @@
     "@typescript-eslint/eslint-plugin": "^8.71.1",
     "@typescript-eslint/parser": "^8.71.1",
     "eslint": "^9",
-    "eslint-config-next": "^16.4.0",
+    "eslint-config-next": "^16.4.3",
     "husky": "^8.0.3",
     "jest": "^30.5.2",
     "jest-environment-jsdom": "^30.5.2",
