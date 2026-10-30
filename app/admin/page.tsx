@@ -8,7 +8,7 @@ import {
   type UserFilters,
 } from "@/lib/admin/data";
 import { dateWindow } from "@/lib/admin/policy";
-import { countryLabel } from "@/lib/admin/analytics";
+import { countryLabel, isAllowedCountryHeader } from "@/lib/admin/analytics";
 import { getDictionary, getServerLocale } from "@/lib/i18n/server";
 import {
   adminNumber,
@@ -229,6 +229,19 @@ async function Overview({ days, since }: { days: number; since: Date }) {
             rows={data.popular.map((r) => ({
               label: r.title,
               value: r._count.watchedBy,
+              href: `/${r.type === "TV" ? "tv" : "movie"}/${r.tmdbId}`,
+            }))}
+          />
+        </Panel>
+        <Panel
+          title={t.popularPeriod}
+          subtitle={interpolate(t.lastDays, { days })}
+        >
+          <Bars
+            rows={data.popularPeriod.map((r) => ({
+              label: r.title,
+              value: Number(r.count),
+              href: `/${r.type === "TV" ? "tv" : "movie"}/${r.tmdbId}`,
             }))}
           />
         </Panel>
@@ -255,8 +268,36 @@ async function UsersTab({ params }: { params: Params }) {
     "metric",
     "days",
     "source",
+    "answer",
   ] as const)
     if (params[k]) exports.set(k, params[k]!);
+  const metricLabel = params.metric
+    ? (
+        {
+          online: t.online,
+          active: t.activeMembers,
+          "new-users": t.newUsers,
+          duration: t.duration,
+          users: t.registeredUsers,
+        } as Record<string, string>
+      )[params.metric] || params.metric
+    : null;
+  const withoutParam = (key: "metric" | "answer") => {
+    const qs = new URLSearchParams();
+    qs.set("tab", "users");
+    for (const k of [
+      "q",
+      "status",
+      "country",
+      "metric",
+      "days",
+      "source",
+      "answer",
+      "sort",
+    ] as const)
+      if (k !== key && params[k]) qs.set(k, params[k]!);
+    return `/admin?${qs}`;
+  };
   return (
     <Panel
       title={t.userDirectory}
@@ -269,6 +310,9 @@ async function UsersTab({ params }: { params: Params }) {
         <input type="hidden" name="tab" value="users" />
         {params.metric && (
           <input type="hidden" name="metric" value={params.metric} />
+        )}
+        {params.answer && (
+          <input type="hidden" name="answer" value={params.answer} />
         )}
         <input type="hidden" name="days" value={params.days || "30"} />
         <label className="text-xs text-slate-400">
@@ -349,6 +393,37 @@ async function UsersTab({ params }: { params: Params }) {
           {t.filter}
         </button>
       </form>
+      {(metricLabel || params.answer) && (
+        <div className="mb-4 flex flex-wrap gap-2 text-xs">
+          {metricLabel && (
+            <Link
+              href={withoutParam("metric")}
+              className="inline-flex items-center gap-2 rounded-lg border border-amber-400/30 bg-amber-400/10 px-3 py-1.5 text-amber-200 hover:bg-amber-400/20"
+            >
+              <span>
+                {interpolate(t.activeMetricFilter, { metric: metricLabel })}
+              </span>
+              <span aria-hidden="true">×</span>
+            </Link>
+          )}
+          {params.answer && (
+            <Link
+              href={withoutParam("answer")}
+              className="inline-flex items-center gap-2 rounded-lg border border-amber-400/30 bg-amber-400/10 px-3 py-1.5 text-amber-200 hover:bg-amber-400/20"
+            >
+              <span>
+                {interpolate(t.activeAnswerFilter, {
+                  answer: acquisitionLabel(
+                    params.answer === "unknown" ? null : params.answer,
+                    acquisition,
+                  ),
+                })}
+              </span>
+              <span aria-hidden="true">×</span>
+            </Link>
+          )}
+        </div>
+      )}
       <div className="mb-4 flex flex-wrap justify-between gap-3 text-xs">
         <Link href="/admin?tab=users" className="text-slate-400">
           {t.clearFilters}
@@ -521,40 +596,75 @@ async function Moderation({ params }: { params: Params }) {
         {interpolate(t.countRecords, { count: n(data.total) })}
       </p>
       <div className="space-y-4">
-        {data.comments.map((c) => (
-          <article key={c.id} className="rounded-xl border border-white/10 p-4">
-            <div className="flex flex-wrap justify-between gap-2 text-xs">
-              <Link
-                href={`/admin/users/${c.user.id}`}
-                className="text-amber-300"
-              >
-                @{c.user.username}
-              </Link>
-              <time>{d(c.createdAt)}</time>
-            </div>
-            <p className="my-3 max-h-40 overflow-auto whitespace-pre-wrap break-words text-sm">
-              {REMOVED_COMMENTS.includes(c.content)
-                ? t.removedComment
-                : c.content}
-            </p>
-            <div className="flex flex-wrap justify-between gap-3">
-              <span className="text-xs text-slate-500">
-                {c.isSpoiler ? t.spoiler : t.comment}
-              </span>
-              {!REMOVED_COMMENTS.includes(c.content) && (
-                <AdminActionButton
-                  action="redact-comment"
-                  targetId={c.id}
-                  label={t.redactComment}
-                  description={t.redactHint}
-                />
+        {data.comments.map((c) => {
+          const contextTarget = c.episode
+            ? {
+                href: `/tv/${c.episode.media.tmdbId}/season/${c.episode.seasonNumber}/episode/${c.episode.episodeNumber}`,
+                label: `${c.episode.media.title} · S${c.episode.seasonNumber}E${c.episode.episodeNumber}`,
+              }
+            : c.activity?.media
+              ? {
+                  href: `/${c.activity.media.type === "TV" ? "tv" : "movie"}/${c.activity.media.tmdbId}`,
+                  label: c.activity.media.title,
+                }
+              : c.personId
+                ? {
+                    href: `/person/${c.personId}`,
+                    label: `${t.pathPersonDetail} #${c.personId}`,
+                  }
+                : null;
+          return (
+            <article
+              key={c.id}
+              className="rounded-xl border border-white/10 p-4"
+            >
+              {contextTarget && (
+                <Link
+                  href={contextTarget.href}
+                  className="mb-1 inline-block text-sm font-bold text-white hover:text-amber-300"
+                >
+                  {contextTarget.label} ↗
+                </Link>
               )}
-            </div>
-          </article>
-        ))}
+              <div className="flex flex-wrap justify-between gap-2 text-xs">
+                <Link
+                  href={`/admin/users/${c.user.id}`}
+                  className="text-amber-300"
+                >
+                  @{c.user.username}
+                </Link>
+                <time>{d(c.createdAt)}</time>
+              </div>
+              <p className="my-3 max-h-40 overflow-auto whitespace-pre-wrap break-words text-sm">
+                {REMOVED_COMMENTS.includes(c.content)
+                  ? t.removedComment
+                  : c.content}
+              </p>
+              <div className="flex flex-wrap justify-between gap-3">
+                <span className="text-xs text-slate-500">
+                  {c.isSpoiler ? t.spoiler : t.comment}
+                </span>
+                {!REMOVED_COMMENTS.includes(c.content) && (
+                  <AdminActionButton
+                    action="redact-comment"
+                    targetId={c.id}
+                    label={t.redactComment}
+                    description={t.redactHint}
+                  />
+                )}
+              </div>
+            </article>
+          );
+        })}
         {data.reviews.map((r) => (
           <article key={r.id} className="rounded-xl border border-white/10 p-4">
-            <p className="text-sm font-bold">{r.media.title}</p>
+            <Link
+              href={`/${r.media.type === "TV" ? "tv" : "movie"}/${r.media.tmdbId}`}
+              className="inline-block text-sm font-bold hover:text-amber-300"
+            >
+              {r.media.title}
+              {r.rating !== null ? ` · ${n(r.rating)}/10` : ""} ↗
+            </Link>
             <div className="mt-1 flex flex-wrap justify-between gap-2 text-xs">
               <Link
                 href={`/admin/users/${r.user.id}`}
@@ -616,9 +726,11 @@ async function Audit({ params }: { params: Params }) {
             {[
               "suspend",
               "activate",
+              "revoke-sessions",
               "redact-comment",
               "redact-review",
               "export-users",
+              "purge-expired",
             ].map((a) => (
               <option key={a} value={a}>
                 {adminActionLabel(a, t)}
@@ -634,23 +746,42 @@ async function Audit({ params }: { params: Params }) {
         {interpolate(t.countRecords, { count: n(data.total) })}
       </p>
       <div className="space-y-3">
-        {data.logs.map((log) => (
-          <article
-            key={log.id}
-            className="rounded-xl border border-white/10 p-4"
-          >
-            <div className="flex flex-wrap justify-between gap-2">
-              <p className="text-sm font-bold">
-                {adminActionLabel(log.action, t)}
+        {data.logs.map((log) => {
+          const isUserTarget = [
+            "suspend",
+            "activate",
+            "revoke-sessions",
+          ].includes(log.action);
+          return (
+            <article
+              key={log.id}
+              className="rounded-xl border border-white/10 p-4"
+            >
+              <div className="flex flex-wrap justify-between gap-2">
+                <p className="text-sm font-bold">
+                  {adminActionLabel(log.action, t)}
+                </p>
+                <time className="text-xs text-slate-500">
+                  {d(log.createdAt)}
+                </time>
+              </div>
+              <p className="mt-2 break-words text-sm">{log.reason}</p>
+              <p className="mt-2 break-all text-xs text-slate-500">
+                @{log.actorName} · {t.target}:{" "}
+                {isUserTarget ? (
+                  <Link
+                    href={`/admin/users/${log.targetId}`}
+                    className="text-amber-300 hover:underline"
+                  >
+                    {log.targetId}
+                  </Link>
+                ) : (
+                  log.targetId
+                )}
               </p>
-              <time className="text-xs text-slate-500">{d(log.createdAt)}</time>
-            </div>
-            <p className="mt-2 break-words text-sm">{log.reason}</p>
-            <p className="mt-2 break-all text-xs text-slate-500">
-              @{log.actorName} · {t.target}: {log.targetId}
-            </p>
-          </article>
-        ))}
+            </article>
+          );
+        })}
       </div>
       {!data.total && <Empty />}
       <Pager
@@ -662,13 +793,31 @@ async function Audit({ params }: { params: Params }) {
   );
 }
 async function System() {
-  const { t } = await context();
-  let healthy = false;
+  const { t, n } = await context();
+  let healthy = false,
+    expiredSessions = 0,
+    expiredTokens = 0,
+    expiredLimits = 0;
   try {
-    await prisma.$queryRaw`SELECT 1`;
+    const now = new Date();
+    const [, sessions, tokens, limits] = await Promise.all([
+      prisma.$queryRaw`SELECT 1`,
+      prisma.session.count({ where: { expires: { lt: now } } }),
+      prisma.verificationToken.count({ where: { expires: { lt: now } } }),
+      prisma.authRateLimit.count({ where: { expires: { lt: now } } }),
+    ]);
     healthy = true;
+    expiredSessions = sessions;
+    expiredTokens = tokens;
+    expiredLimits = limits;
   } catch {}
   const configured = (ok: boolean) => (ok ? t.configured : t.notConfigured);
+  const rawCountryHeader = process.env.ANALYTICS_COUNTRY_HEADER;
+  const countrySourceValue = !rawCountryHeader
+    ? t.notConfigured
+    : isAllowedCountryHeader(rawCountryHeader)
+      ? rawCountryHeader
+      : interpolate(t.invalidHeader, { header: rawCountryHeader });
   const checks = [
     [t.health, healthy ? t.healthy : t.unhealthy],
     [t.version, (process.env.APP_COMMIT_SHA || "").slice(0, 12) || t.unknown],
@@ -676,7 +825,7 @@ async function System() {
       t.analytics,
       process.env.ANALYTICS_ENABLED === "true" ? t.enabled : t.disabled,
     ],
-    [t.countrySource, process.env.ANALYTICS_COUNTRY_HEADER || t.notConfigured],
+    [t.countrySource, countrySourceValue],
     [
       t.google,
       configured(
@@ -697,6 +846,11 @@ async function System() {
       process.env.NODE_ENV === "production" ? t.production : t.development,
     ],
   ];
+  const maintenanceItems = [
+    [t.expiredSessions, n(expiredSessions)],
+    [t.expiredTokens, n(expiredTokens)],
+    [t.expiredRateLimits, n(expiredLimits)],
+  ];
   return (
     <div className="grid gap-5 lg:grid-cols-2">
       <Panel title={t.services} subtitle={t.servicesHint}>
@@ -712,15 +866,40 @@ async function System() {
           ))}
         </dl>
       </Panel>
-      <Panel title={t.accessScope}>
-        <div className="space-y-4 text-sm text-slate-400">
-          <p>{t.accessHint}</p>
-          <p>{t.privacyHint}</p>
-          <p>{t.registrationHint}</p>
-          <p>{t.countriesHint}</p>
-          <p>{t.messagesHint}</p>
-        </div>
-      </Panel>
+      <div className="space-y-5">
+        <Panel title={t.maintenance} subtitle={t.maintenanceHint}>
+          <dl className="space-y-4">
+            {maintenanceItems.map(([label, value]) => (
+              <div
+                key={label}
+                className="flex flex-wrap justify-between gap-3 border-b border-white/5 pb-3 text-sm"
+              >
+                <dt className="text-slate-400">{label}</dt>
+                <dd>{value}</dd>
+              </div>
+            ))}
+          </dl>
+          {expiredSessions + expiredTokens + expiredLimits > 0 && (
+            <div className="mt-4">
+              <AdminActionButton
+                action="purge-expired"
+                targetId="system"
+                label={t.purgeExpired}
+                description={t.purgeExpiredHint}
+              />
+            </div>
+          )}
+        </Panel>
+        <Panel title={t.accessScope}>
+          <div className="space-y-4 text-sm text-slate-400">
+            <p>{t.accessHint}</p>
+            <p>{t.privacyHint}</p>
+            <p>{t.registrationHint}</p>
+            <p>{t.countriesHint}</p>
+            <p>{t.messagesHint}</p>
+          </div>
+        </Panel>
+      </div>
     </div>
   );
 }

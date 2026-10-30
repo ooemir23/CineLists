@@ -57,9 +57,11 @@ export function adminActionLabel(action: string, t: AdminText) {
       {
         suspend: t.suspendLog,
         activate: t.activateLog,
+        "revoke-sessions": t.revokeSessionsLog,
         "redact-comment": t.commentLog,
         "redact-review": t.reviewLog,
         "export-users": t.exportLog,
+        "purge-expired": t.purgeExpiredLog,
       } as Record<string, string>
     )[action] || action
   );
@@ -68,20 +70,35 @@ export function adminPathLabel(path: string, t: AdminText) {
   return (
     (
       {
-        "/": t.home,
-        "/search": t.search,
-        "/calendar": t.traffic,
-        "/watched": t.watched,
-        "/watchlist": t.watchlist,
-        "/watching": t.watching,
-        "/community": t.users,
-        "/feed": t.activities,
-        "/messages": t.messages,
-        "/messages/[id]": t.messages,
-        "/profile/[id]": t.profile,
-        "/settings": t.profilePreferences,
-        "/stats": t.summary,
-        "/achievements": t.achievements,
+        "/": t.pathHome,
+        "/in-theatres": t.pathInTheatres,
+        "/tv-shows": t.pathTvShows,
+        "/top-rated": t.pathTopRated,
+        "/movie/[id]": t.pathMovieDetail,
+        "/tv/[id]": t.pathTvDetail,
+        "/tv/[id]/episode": t.pathEpisodeDetail,
+        "/person/[id]": t.pathPersonDetail,
+        "/profile": t.pathProfile,
+        "/profile/[id]": t.pathProfile,
+        "/search": t.pathSearch,
+        "/watched": t.pathWatched,
+        "/watchlist": t.pathWatchlist,
+        "/watching": t.pathWatching,
+        "/community": t.pathCommunity,
+        "/feed": t.pathFeed,
+        "/calendar": t.pathCalendar,
+        "/achievements": t.pathAchievements,
+        "/upcoming-episodes": t.pathUpcomingEpisodes,
+        "/messages": t.pathMessages,
+        "/messages/[id]": t.pathMessages,
+        "/notifications": t.pathNotifications,
+        "/settings": t.pathSettings,
+        "/stats": t.pathStats,
+        "/taste-match": t.pathTasteMatch,
+        "/recommendations": t.pathRecommendations,
+        "/explore/[type]/[category]": t.pathExploreCategory,
+        "/privacy": t.pathPrivacy,
+        "/privacy-policy": t.pathPrivacy,
       } as Record<string, string>
     )[path] || path
   );

@@ -8,7 +8,14 @@ import { getDictionary, getServerLocale } from "@/lib/i18n/server";
 import { checkRateLimit } from "@/lib/ratelimit";
 import { z } from "zod";
 const inputSchema = z.object({
-  action: z.enum(["suspend", "activate", "redact-comment", "redact-review"]),
+  action: z.enum([
+    "suspend",
+    "activate",
+    "revoke-sessions",
+    "redact-comment",
+    "redact-review",
+    "purge-expired",
+  ]),
   targetId: z.string().trim().min(1).max(150),
   reason: z.string().trim().min(5).max(500),
 });
@@ -22,7 +29,7 @@ export async function performAdminAction(input: z.infer<typeof inputSchema>) {
     if (!parsed.success) return { error: t.invalidInput };
     const { action, targetId, reason } = parsed.data;
     if (
-      ["suspend", "activate"].includes(action) &&
+      ["suspend", "activate", "revoke-sessions"].includes(action) &&
       (targetId === admin.id || isAdminId(targetId))
     )
       return { error: t.protectedAdmin };
@@ -40,6 +47,22 @@ export async function performAdminAction(input: z.infer<typeof inputSchema>) {
         count = result.count;
         if (count && action === "suspend")
           await tx.session.deleteMany({ where: { userId: targetId } });
+      } else if (action === "revoke-sessions") {
+        const result = await tx.user.updateMany({
+          where: { id: targetId },
+          data: { sessionVersion: { increment: 1 } },
+        });
+        count = result.count;
+        if (count)
+          await tx.session.deleteMany({ where: { userId: targetId } });
+      } else if (action === "purge-expired") {
+        const now = new Date();
+        const [sessions, tokens, limits] = await Promise.all([
+          tx.session.deleteMany({ where: { expires: { lt: now } } }),
+          tx.verificationToken.deleteMany({ where: { expires: { lt: now } } }),
+          tx.authRateLimit.deleteMany({ where: { expires: { lt: now } } }),
+        ]);
+        count = sessions.count + tokens.count + limits.count;
       } else if (action === "redact-comment") {
         const result = await tx.comment.updateMany({
           where: { id: targetId, content: { notIn: REMOVED_COMMENTS } },

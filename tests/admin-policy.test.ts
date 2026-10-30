@@ -9,7 +9,11 @@ import {
   analyticsDevice,
   analyticsPath,
   analyticsOriginAllowed,
+  isAllowedCountryHeader,
 } from "@/lib/admin/analytics";
+import { adminPathLabel } from "@/lib/admin/format";
+import { tr } from "@/lib/i18n/dictionaries/tr";
+import { en } from "@/lib/i18n/dictionaries/en";
 
 describe("admin authorization and exports", () => {
   test("requires exact allowlisted ID and defaults to no access", () => {
@@ -71,6 +75,8 @@ describe("analytics accuracy and minimization", () => {
     expect(
       analyticsCountry(new Headers({ "cf-ip-country": "XX" }), "cf-ip-country"),
     ).toBe("ZZ");
+    expect(isAllowedCountryHeader("cf-ip-country")).toBe(true);
+    expect(isAllowedCountryHeader("x-custom-country")).toBe(false);
   });
   test("redacts identifiers and excludes account and admin pages", () => {
     expect(analyticsPath("/profile/private-user")).toBe("/profile/[id]");
@@ -84,6 +90,14 @@ describe("analytics accuracy and minimization", () => {
       "/unknown-path",
     ])
       expect(analyticsPath(path)).toBeNull();
+  });
+  test("localizes all tracked analytics paths in both Turkish and English", () => {
+    expect(adminPathLabel("/calendar", tr.admin)).toBe("Yayın takvimi");
+    expect(adminPathLabel("/calendar", en.admin)).toBe("Release calendar");
+    expect(adminPathLabel("/movie/[id]", tr.admin)).toBe("Film detayı");
+    expect(adminPathLabel("/movie/[id]", en.admin)).toBe("Movie detail");
+    expect(adminPathLabel("/community", tr.admin)).toBe("Topluluk");
+    expect(adminPathLabel("/community", en.admin)).toBe("Community");
   });
   test("excludes bots and classifies devices", () => {
     expect(analyticsDevice("Googlebot")).toBeNull();

@@ -4,7 +4,13 @@ import { performAdminAction } from "@/lib/admin/actions";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { useTranslation } from "@/lib/i18n/i18n-context";
-type Action = "suspend" | "activate" | "redact-comment" | "redact-review";
+type Action =
+  | "suspend"
+  | "activate"
+  | "revoke-sessions"
+  | "redact-comment"
+  | "redact-review"
+  | "purge-expired";
 export function AdminActionButton({
   action,
   targetId,

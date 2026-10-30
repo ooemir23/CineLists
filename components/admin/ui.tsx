@@ -61,7 +61,7 @@ export async function Metric({
 export async function Bars({
   rows,
 }: {
-  rows: { label: string; value: number }[];
+  rows: { label: string; value: number; href?: string }[];
 }) {
   const locale = await getServerLocale();
   const max = Math.max(1, ...rows.map((r) => r.value));
@@ -70,9 +70,19 @@ export async function Bars({
       {rows.map((r) => (
         <div key={r.label}>
           <div className="mb-1 flex justify-between gap-3 text-sm">
-            <span className="truncate" title={r.label}>
-              {r.label}
-            </span>
+            {r.href ? (
+              <Link
+                href={r.href}
+                className="truncate text-amber-300 hover:underline"
+                title={r.label}
+              >
+                {r.label}
+              </Link>
+            ) : (
+              <span className="truncate" title={r.label}>
+                {r.label}
+              </span>
+            )}
             <span>{adminNumber(r.value, locale)}</span>
           </div>
           <div className="h-1.5 rounded-full bg-white/5">

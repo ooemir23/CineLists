@@ -10,6 +10,7 @@ import {
   adminDuration,
   adminNumber,
   onlineAt,
+  REMOVED_COMMENTS,
 } from "@/lib/admin/format";
 import { Panel, Metric, Empty } from "@/components/admin/ui";
 import { AdminActionButton } from "@/components/admin/action-button";
@@ -25,12 +26,13 @@ export default async function AdminUserPage({
     user = await getUserDetail(id);
   if (!user) notFound();
   const locale = await getServerLocale(),
-    t = getDictionary(locale).admin,
+    dict = getDictionary(locale),
+    t = dict.admin,
     d = (v: Date | null | undefined) => adminDate(v, locale, t.unknown),
     n = (v: number) => adminNumber(v, locale),
     isOnline = onlineAt(user.adminProfile?.lastSeenAt, user.isSuspended),
     minutes = user.adminProfile?.totalMinutes || 0;
-  const acquisition = getDictionary(locale).acquisition;
+  const acquisition = dict.acquisition;
   const details = [
     [t.userId, user.id],
     [t.email, user.email || t.notSpecified],
@@ -99,17 +101,39 @@ export default async function AdminUserPage({
           )}
           <Link
             href={`/profile/${user.id}`}
-            className="rounded-xl border border-white/10 px-3 py-2 text-xs"
+            className="rounded-xl border border-white/10 px-3 py-2 text-xs hover:bg-white/5"
           >
             {t.profile}
           </Link>
+          <Link
+            href={`/admin?tab=content&q=${encodeURIComponent(user.username)}`}
+            className="rounded-xl border border-white/10 px-3 py-2 text-xs hover:bg-white/5"
+          >
+            {t.viewUserModeration}
+          </Link>
+          <Link
+            href={`/admin?tab=audit&q=${encodeURIComponent(user.id)}`}
+            className="rounded-xl border border-white/10 px-3 py-2 text-xs hover:bg-white/5"
+          >
+            {t.viewUserAudit}
+          </Link>
           {!isAdminId(user.id) && (
-            <AdminActionButton
-              action={user.isSuspended ? "activate" : "suspend"}
-              targetId={user.id}
-              label={user.isSuspended ? t.activate : t.suspend}
-              description={user.isSuspended ? t.activateHint : t.suspendHint}
-            />
+            <>
+              {!user.isSuspended && (
+                <AdminActionButton
+                  action="revoke-sessions"
+                  targetId={user.id}
+                  label={t.revokeSessions}
+                  description={t.revokeSessionsHint}
+                />
+              )}
+              <AdminActionButton
+                action={user.isSuspended ? "activate" : "suspend"}
+                targetId={user.id}
+                label={user.isSuspended ? t.activate : t.suspend}
+                description={user.isSuspended ? t.activateHint : t.suspendHint}
+              />
+            </>
           )}
         </div>
       </div>
@@ -189,15 +213,37 @@ export default async function AdminUserPage({
               </p>
             </div>
           </Panel>
+          <Panel title={t.achievements} subtitle={t.recentHint}>
+            {user.achievements.length ? (
+              <div className="flex flex-wrap gap-2">
+                {user.achievements.map((ach) => (
+                  <span
+                    key={ach.id}
+                    title={d(ach.unlockedAt)}
+                    className="rounded-xl border border-amber-400/20 bg-amber-400/10 px-3 py-1.5 text-xs text-amber-200"
+                  >
+                    {dict.achievementNames[ach.type] || ach.type}
+                  </span>
+                ))}
+              </div>
+            ) : (
+              <Empty />
+            )}
+          </Panel>
         </div>
       </div>
-      <div className="grid gap-5 lg:grid-cols-3">
+      <div className="grid gap-5 lg:grid-cols-2">
         <Panel title={t.recentActivities} subtitle={t.recentHint}>
           {user.activities.length ? (
             <div className="space-y-4">
               {user.activities.map((a) => (
                 <div key={a.id} className="border-b border-white/5 pb-3">
-                  <p className="text-sm font-semibold">{a.media.title}</p>
+                  <Link
+                    href={`/${a.media.type === "TV" ? "tv" : "movie"}/${a.media.tmdbId}`}
+                    className="text-sm font-semibold hover:text-amber-300"
+                  >
+                    {a.media.title} ↗
+                  </Link>
                   <p className="mt-1 text-xs text-slate-400">
                     {
                       {
@@ -208,7 +254,20 @@ export default async function AdminUserPage({
                     }{" "}
                     {a.rating !== null ? `· ${n(a.rating)}/10` : ""}
                   </p>
-                  <time className="text-xs text-slate-500">
+                  {a.review && (
+                    <div className="mt-2 space-y-2 rounded-lg border border-white/5 bg-slate-950/60 p-3">
+                      <p className="max-h-32 overflow-auto whitespace-pre-wrap break-words text-xs text-slate-300">
+                        {a.review}
+                      </p>
+                      <AdminActionButton
+                        action="redact-review"
+                        targetId={a.id}
+                        label={t.redactReview}
+                        description={t.redactHint}
+                      />
+                    </div>
+                  )}
+                  <time className="mt-1 block text-xs text-slate-500">
                     {d(a.createdAt)}
                   </time>
                 </div>
@@ -218,12 +277,80 @@ export default async function AdminUserPage({
             <Empty />
           )}
         </Panel>
+        <Panel title={t.recentComments} subtitle={t.recentHint}>
+          {user.comments.length ? (
+            <div className="space-y-4">
+              {user.comments.map((c) => {
+                const contextTarget = c.episode
+                  ? {
+                      href: `/tv/${c.episode.media.tmdbId}/season/${c.episode.seasonNumber}/episode/${c.episode.episodeNumber}`,
+                      label: `${c.episode.media.title} · S${c.episode.seasonNumber}E${c.episode.episodeNumber}`,
+                    }
+                  : c.activity?.media
+                    ? {
+                        href: `/${c.activity.media.type === "TV" ? "tv" : "movie"}/${c.activity.media.tmdbId}`,
+                        label: c.activity.media.title,
+                      }
+                    : c.personId
+                      ? {
+                          href: `/person/${c.personId}`,
+                          label: `${t.pathPersonDetail} #${c.personId}`,
+                        }
+                      : null;
+                return (
+                  <div key={c.id} className="border-b border-white/5 pb-3">
+                    <div className="flex flex-wrap justify-between gap-2 text-xs">
+                      {contextTarget ? (
+                        <Link
+                          href={contextTarget.href}
+                          className="font-semibold text-amber-300 hover:underline"
+                        >
+                          {contextTarget.label} ↗
+                        </Link>
+                      ) : (
+                        <span className="text-slate-500">{t.comment}</span>
+                      )}
+                      <time className="text-slate-500">{d(c.createdAt)}</time>
+                    </div>
+                    <p className="my-2 max-h-32 overflow-auto whitespace-pre-wrap break-words text-sm">
+                      {REMOVED_COMMENTS.includes(c.content)
+                        ? t.removedComment
+                        : c.content}
+                    </p>
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <span className="text-xs text-slate-500">
+                        {c.isSpoiler ? t.spoiler : t.comment}
+                      </span>
+                      {!REMOVED_COMMENTS.includes(c.content) && (
+                        <AdminActionButton
+                          action="redact-comment"
+                          targetId={c.id}
+                          label={t.redactComment}
+                          description={t.redactHint}
+                        />
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <Empty />
+          )}
+        </Panel>
+      </div>
+      <div className="grid gap-5 lg:grid-cols-2">
         <Panel title={t.recentWatched} subtitle={t.recentHint}>
           {user.watched.length ? (
             <div className="space-y-4">
               {user.watched.map((w) => (
                 <div key={w.id} className="border-b border-white/5 pb-3">
-                  <p className="text-sm">{w.media.title}</p>
+                  <Link
+                    href={`/${w.media.type === "TV" ? "tv" : "movie"}/${w.media.tmdbId}`}
+                    className="text-sm hover:text-amber-300"
+                  >
+                    {w.media.title} ↗
+                  </Link>
                   <p className="mt-1 text-xs text-slate-400">
                     {d(w.watchedAt)} · {w.rating === null ? "—" : n(w.rating)}
                     /10
@@ -240,7 +367,12 @@ export default async function AdminUserPage({
             <div className="space-y-4">
               {user.toWatch.map((w) => (
                 <div key={w.id} className="border-b border-white/5 pb-3">
-                  <p className="text-sm">{w.media.title}</p>
+                  <Link
+                    href={`/${w.media.type === "TV" ? "tv" : "movie"}/${w.media.tmdbId}`}
+                    className="text-sm hover:text-amber-300"
+                  >
+                    {w.media.title} ↗
+                  </Link>
                   <p className="mt-1 text-xs text-amber-300">
                     {w.status === "WATCHING" ? t.watching : t.planToWatch}
                   </p>

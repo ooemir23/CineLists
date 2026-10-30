@@ -20,6 +20,7 @@ export async function GET(request: Request) {
       metric: qs.get("metric") || "",
       days: qs.get("days") || "30",
       source: qs.get("source") || "",
+      answer: qs.get("answer") || "",
     });
   try {
     if ((await prisma.user.count({ where })) > 5000)

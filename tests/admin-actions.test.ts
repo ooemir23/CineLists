@@ -133,3 +133,58 @@ test("reactivation revokes old JWTs without restoring sessions", async () => {
     }),
   );
 });
+test("revoke-sessions increments sessionVersion and deletes active sessions without suspending", async () => {
+  const tx = {
+    user: { updateMany: jest.fn().mockResolvedValue({ count: 1 }) },
+    session: { deleteMany: jest.fn() },
+    adminAuditLog: { create: jest.fn() },
+  };
+  transaction.mockImplementationOnce(async (callback) => callback(tx));
+  expect(
+    await performAdminAction({
+      action: "revoke-sessions",
+      targetId: "user",
+      reason: "Şüpheli oturum hareketi",
+    }),
+  ).toEqual({ success: true });
+  expect(tx.user.updateMany).toHaveBeenCalledWith({
+    where: { id: "user" },
+    data: { sessionVersion: { increment: 1 } },
+  });
+  expect(tx.session.deleteMany).toHaveBeenCalledWith({
+    where: { userId: "user" },
+  });
+  expect(tx.adminAuditLog.create).toHaveBeenCalledWith({
+    data: expect.objectContaining({
+      action: "revoke-sessions",
+      targetId: "user",
+    }),
+  });
+});
+test("purge-expired deletes expired sessions, tokens, and rate limits and records audit log", async () => {
+  const tx = {
+    session: { deleteMany: jest.fn().mockResolvedValue({ count: 2 }) },
+    verificationToken: {
+      deleteMany: jest.fn().mockResolvedValue({ count: 1 }),
+    },
+    authRateLimit: { deleteMany: jest.fn().mockResolvedValue({ count: 3 }) },
+    adminAuditLog: { create: jest.fn() },
+  };
+  transaction.mockImplementationOnce(async (callback) => callback(tx));
+  expect(
+    await performAdminAction({
+      action: "purge-expired",
+      targetId: "system",
+      reason: "Rutin veritabanı temizliği",
+    }),
+  ).toEqual({ success: true });
+  expect(tx.session.deleteMany).toHaveBeenCalled();
+  expect(tx.verificationToken.deleteMany).toHaveBeenCalled();
+  expect(tx.authRateLimit.deleteMany).toHaveBeenCalled();
+  expect(tx.adminAuditLog.create).toHaveBeenCalledWith({
+    data: expect.objectContaining({
+      action: "purge-expired",
+      targetId: "system",
+    }),
+  });
+});

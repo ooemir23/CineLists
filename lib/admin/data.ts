@@ -16,13 +16,24 @@ export type UserFilters = {
   sort?: string;
   page?: string;
   source?: string;
+  answer?: string;
 };
 export function userWhere(filters: UserFilters): Prisma.UserWhereInput {
   const q = filters.q?.trim().slice(0, 100);
   const parts: Prisma.UserWhereInput[] = [];
   const { since } = dateWindow(filters.days);
-  if (filters.source === "unknown") parts.push({ OR: [{ adminProfile: null }, { adminProfile: { acquisitionSource: null } }] });
-  else if (filters.source && filters.source.length <= 80) parts.push({ adminProfile: { acquisitionSource: filters.source } });
+  if (filters.source === "unknown")
+    parts.push({
+      OR: [{ adminProfile: null }, { adminProfile: { acquisitionSource: null } }],
+    });
+  else if (filters.source && filters.source.length <= 80)
+    parts.push({ adminProfile: { acquisitionSource: filters.source } });
+  if (filters.answer === "unknown")
+    parts.push({
+      OR: [{ adminProfile: null }, { adminProfile: { discoveryAnswer: null } }],
+    });
+  else if (filters.answer && filters.answer.length <= 80)
+    parts.push({ adminProfile: { discoveryAnswer: filters.answer } });
   if (filters.metric === "online")
     parts.push({
       isSuspended: false,
@@ -150,6 +161,7 @@ export async function getOverview(since: Date) {
     registrations,
     memberCountries,
     popular,
+    popularPeriod,
     firstDay,
   ] = await Promise.all([
     prisma.user.count(),
@@ -224,6 +236,15 @@ export async function getOverview(since: Date) {
         _count: { select: { watchedBy: true } },
       },
     }),
+    prisma.$queryRaw<
+      {
+        id: string;
+        tmdbId: number;
+        title: string;
+        type: string;
+        count: bigint;
+      }[]
+    >`SELECT m."id", m."tmdbId", m."title", m."type"::text AS "type", COUNT(w."id") AS count FROM "Watched" w JOIN "MediaItem" m ON m."id" = w."mediaId" WHERE w."watchedAt" >= ${since} GROUP BY m."id", m."tmdbId", m."title", m."type" ORDER BY count DESC LIMIT 5`,
     prisma.analyticsDaily.aggregate({ _min: { day: true } }),
   ]);
   return {
@@ -248,6 +269,7 @@ export async function getOverview(since: Date) {
     registrations,
     memberCountries,
     popular,
+    popularPeriod,
     firstDay: firstDay._min.day,
   };
 }
@@ -286,6 +308,7 @@ export async function getUserDetail(id: string) {
           id: true,
           type: true,
           rating: true,
+          review: true,
           createdAt: true,
           media: { select: { title: true, type: true, tmdbId: true } },
         },
@@ -297,13 +320,50 @@ export async function getUserDetail(id: string) {
           id: true,
           rating: true,
           watchedAt: true,
-          media: { select: { title: true } },
+          media: { select: { title: true, type: true, tmdbId: true } },
         },
       },
       toWatch: {
         take: 12,
         orderBy: { addedAt: "desc" },
-        select: { id: true, status: true, media: { select: { title: true } } },
+        select: {
+          id: true,
+          status: true,
+          media: { select: { title: true, type: true, tmdbId: true } },
+        },
+      },
+      comments: {
+        take: 12,
+        orderBy: { createdAt: "desc" },
+        select: {
+          id: true,
+          content: true,
+          createdAt: true,
+          isSpoiler: true,
+          personId: true,
+          activity: {
+            select: {
+              id: true,
+              media: { select: { title: true, type: true, tmdbId: true } },
+            },
+          },
+          episode: {
+            select: {
+              seasonNumber: true,
+              episodeNumber: true,
+              media: { select: { title: true, type: true, tmdbId: true } },
+            },
+          },
+        },
+      },
+      achievements: {
+        take: 12,
+        orderBy: { unlockedAt: "desc" },
+        select: {
+          id: true,
+          type: true,
+          unlockedAt: true,
+        },
       },
     },
   });
@@ -319,6 +379,16 @@ export async function getModeration(filters: UserFilters) {
           OR: [
             { content: { contains: q, mode: "insensitive" } },
             { user: { username: { contains: q, mode: "insensitive" } } },
+            {
+              activity: {
+                media: { title: { contains: q, mode: "insensitive" } },
+              },
+            },
+            {
+              episode: {
+                media: { title: { contains: q, mode: "insensitive" } },
+              },
+            },
           ],
         }
       : {}),
@@ -359,7 +429,21 @@ export async function getModeration(filters: UserFilters) {
             content: true,
             createdAt: true,
             isSpoiler: true,
+            personId: true,
             user: { select: { id: true, username: true } },
+            activity: {
+              select: {
+                id: true,
+                media: { select: { title: true, type: true, tmdbId: true } },
+              },
+            },
+            episode: {
+              select: {
+                seasonNumber: true,
+                episodeNumber: true,
+                media: { select: { title: true, type: true, tmdbId: true } },
+              },
+            },
           },
         })
       : [];
@@ -373,9 +457,10 @@ export async function getModeration(filters: UserFilters) {
           select: {
             id: true,
             review: true,
+            rating: true,
             createdAt: true,
             user: { select: { id: true, username: true } },
-            media: { select: { title: true } },
+            media: { select: { title: true, type: true, tmdbId: true } },
           },
         })
       : [];
@@ -387,9 +472,11 @@ export async function getAudit(filters: UserFilters) {
   const actions = [
     "suspend",
     "activate",
+    "revoke-sessions",
     "redact-comment",
     "redact-review",
     "export-users",
+    "purge-expired",
   ];
   const where: Prisma.AdminAuditLogWhereInput = {
     ...(q

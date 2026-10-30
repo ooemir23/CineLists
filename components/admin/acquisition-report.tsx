@@ -13,25 +13,47 @@ export async function AcquisitionReport({ days }: { days?: string }) {
     t = dict.acquisition;
   const since = days === "all" ? null : dateWindow(days).since;
   const where = since ? { registeredAt: { gte: since } } : {};
-  const [sources, answers, total] = await Promise.all([
-    prisma.userAdminProfile.groupBy({
-      by: ["acquisitionSource"],
-      where,
-      _count: { userId: true },
-      orderBy: { _count: { userId: "desc" } },
-      take: 50,
-    }),
-    prisma.userAdminProfile.groupBy({
-      by: ["discoveryAnswer"],
-      where,
-      _count: { userId: true },
-      orderBy: { _count: { userId: "desc" } },
-      take: 12,
-    }),
-    prisma.user.count({
-      where: since ? { adminProfile: { registeredAt: { gte: since } } } : {},
-    }),
-  ]);
+  const [sources, answers, campaigns, mediums, referrers, total] =
+    await Promise.all([
+      prisma.userAdminProfile.groupBy({
+        by: ["acquisitionSource"],
+        where,
+        _count: { userId: true },
+        orderBy: { _count: { userId: "desc" } },
+        take: 50,
+      }),
+      prisma.userAdminProfile.groupBy({
+        by: ["discoveryAnswer"],
+        where,
+        _count: { userId: true },
+        orderBy: { _count: { userId: "desc" } },
+        take: 12,
+      }),
+      prisma.userAdminProfile.groupBy({
+        by: ["acquisitionCampaign"],
+        where: { ...where, acquisitionCampaign: { not: null } },
+        _count: { userId: true },
+        orderBy: { _count: { userId: "desc" } },
+        take: 15,
+      }),
+      prisma.userAdminProfile.groupBy({
+        by: ["acquisitionMedium"],
+        where: { ...where, acquisitionMedium: { not: null } },
+        _count: { userId: true },
+        orderBy: { _count: { userId: "desc" } },
+        take: 15,
+      }),
+      prisma.userAdminProfile.groupBy({
+        by: ["referrerHost"],
+        where: { ...where, referrerHost: { not: null } },
+        _count: { userId: true },
+        orderBy: { _count: { userId: "desc" } },
+        take: 15,
+      }),
+      prisma.user.count({
+        where: since ? { adminProfile: { registeredAt: { gte: since } } } : {},
+      }),
+    ]);
   const withoutProfile = since
     ? 0
     : await prisma.user.count({ where: { adminProfile: null } });
@@ -50,6 +72,11 @@ export async function AcquisitionReport({ days }: { days?: string }) {
       else rows.push({ value: null, count: withoutProfile });
     }
   const n = (value: number) => adminNumber(value, locale);
+  const pct = (count: number) =>
+    new Intl.NumberFormat(locale === "tr" ? "tr-TR" : "en-US", {
+      style: "percent",
+      maximumFractionDigits: 0,
+    }).format(total ? count / total : 0);
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -79,8 +106,8 @@ export async function AcquisitionReport({ days }: { days?: string }) {
       </p>
       <div className="grid gap-6 lg:grid-cols-2">
         {[
-          { title: t.automatic, rows: sourceRows, links: true },
-          { title: t.survey, rows: answerRows, links: false },
+          { title: t.automatic, rows: sourceRows, param: "source" as const },
+          { title: t.survey, rows: answerRows, param: "answer" as const },
         ].map((section) => (
           <Panel key={section.title} title={section.title}>
             {section.rows.length ? (
@@ -93,23 +120,63 @@ export async function AcquisitionReport({ days }: { days?: string }) {
                       className="flex items-start justify-between gap-3 border-b border-white/5 py-2 text-sm"
                     >
                       <span className="min-w-0 break-words">
-                        {section.links ? (
-                          <Link
-                            className="text-amber-300"
-                            href={`/admin?tab=users&source=${encodeURIComponent(row.value || "unknown")}${since ? `&metric=new-users&days=${days || "30"}` : ""}`}
-                          >
-                            {acquisitionLabel(row.value, t)}
-                          </Link>
-                        ) : (
-                          acquisitionLabel(row.value, t)
-                        )}
+                        <Link
+                          className="text-amber-300 hover:underline"
+                          href={`/admin?tab=users&${section.param}=${encodeURIComponent(row.value || "unknown")}${since ? `&metric=new-users&days=${days || "30"}` : ""}`}
+                        >
+                          {acquisitionLabel(row.value, t)}
+                        </Link>
                       </span>
                       <span className="shrink-0 text-slate-400">
-                        {n(row.count)} ·{" "}
-                        {new Intl.NumberFormat(locale === "tr" ? "tr-TR" : "en-US", { style: "percent", maximumFractionDigits: 0 }).format(total ? row.count / total : 0)}
+                        {n(row.count)} · {pct(row.count)}
                       </span>
                     </li>
                   ))}
+              </ul>
+            ) : (
+              <Empty />
+            )}
+          </Panel>
+        ))}
+      </div>
+      <div className="grid gap-6 md:grid-cols-3">
+        {[
+          {
+            title: dict.admin.referrers,
+            rows: referrers.map((r) => ({
+              label: r.referrerHost || t.unknown,
+              count: r._count.userId,
+            })),
+          },
+          {
+            title: dict.admin.campaigns,
+            rows: campaigns.map((r) => ({
+              label: r.acquisitionCampaign || t.unknown,
+              count: r._count.userId,
+            })),
+          },
+          {
+            title: dict.admin.mediums,
+            rows: mediums.map((r) => ({
+              label: r.acquisitionMedium || t.unknown,
+              count: r._count.userId,
+            })),
+          },
+        ].map((section) => (
+          <Panel key={section.title} title={section.title}>
+            {section.rows.length ? (
+              <ul className="space-y-3">
+                {section.rows.map((row) => (
+                  <li
+                    key={row.label}
+                    className="flex items-start justify-between gap-3 border-b border-white/5 py-2 text-sm"
+                  >
+                    <span className="min-w-0 break-all">{row.label}</span>
+                    <span className="shrink-0 text-slate-400">
+                      {n(row.count)}
+                    </span>
+                  </li>
+                ))}
               </ul>
             ) : (
               <Empty />
