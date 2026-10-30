@@ -55,22 +55,23 @@ export default async function Page(props: Props) {
 
     // Kategoriye göre title ve data çekme.
     // Filtre seçiliyse TMDB'nin kategori uç noktaları filtre desteklemediği için discover kullanılır.
+    const emptyFallback = { results: [], total_pages: 1 };
     if (category === "trending") {
         title = `Trend ${TYPE_NAMES[type]}ler`;
         initialData = hasFilters
-            ? await tmdb.discover(type, discoverParams)
-            : await tmdb.getTrending(type, "day", pageParams);
+            ? await tmdb.discover(type, discoverParams).catch(() => emptyFallback)
+            : await tmdb.getTrending(type, "day", pageParams).catch(() => emptyFallback);
     } else if (CATEGORY_NAMES[category]) {
         title = `${CATEGORY_NAMES[category]} ${TYPE_NAMES[type]}ler`;
-        if (hasFilters) initialData = await tmdb.discover(type, discoverParams);
-        else if (category === "popular") initialData = await tmdb.getPopular(type, pageParams);
-        else if (category === "top_rated") initialData = await tmdb.getTopRated(type, pageParams);
-        else if (category === "upcoming" && type === "movie") initialData = await tmdb.getUpcomingMovies(pageParams);
-        else if (category === "now_playing" && type === "movie") initialData = await tmdb.getNowPlayingMovies(pageParams);
-        else initialData = await tmdb.discover(type, discoverParams);
+        if (hasFilters) initialData = await tmdb.discover(type, discoverParams).catch(() => emptyFallback);
+        else if (category === "popular") initialData = await tmdb.getPopular(type, pageParams).catch(() => emptyFallback);
+        else if (category === "top_rated") initialData = await tmdb.getTopRated(type, pageParams).catch(() => emptyFallback);
+        else if (category === "upcoming" && type === "movie") initialData = await tmdb.getUpcomingMovies(pageParams).catch(() => emptyFallback);
+        else if (category === "now_playing" && type === "movie") initialData = await tmdb.getNowPlayingMovies(pageParams).catch(() => emptyFallback);
+        else initialData = await tmdb.discover(type, discoverParams).catch(() => emptyFallback);
     } else {
         title = `${TYPE_NAMES[type]}leri Keşfet`;
-        initialData = await tmdb.discover(type, discoverParams);
+        initialData = await tmdb.discover(type, discoverParams).catch(() => emptyFallback);
     }
 
     const totalPages = Math.min(initialData?.total_pages || 1, 500);

@@ -19,7 +19,9 @@ function isListEndpoint(endpoint: string): boolean {
         endpoint.includes("search") ||
         endpoint.includes("genre") ||
         endpoint.includes("upcoming") ||
+        endpoint.includes("now_playing") ||
         endpoint.includes("airing_today") ||
+        endpoint.includes("on_the_air") ||
         endpoint.includes("top_rated") ||
         endpoint.includes("recommendations") ||
         endpoint.includes("similar")

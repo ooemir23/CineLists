@@ -23,8 +23,8 @@ export default async function OnboardingPage() {
 
     const locale = await getServerLocale();
     const [movieGenres, tvGenres, dbUser] = await Promise.all([
-        tmdb.getGenres("movie"),
-        tmdb.getGenres("tv"),
+        tmdb.getGenres("movie").catch(() => ({ genres: [] })),
+        tmdb.getGenres("tv").catch(() => ({ genres: [] })),
         prisma.user.findUnique({ where: { id: session.user.id }, select: { username: true, favoriteGenres: true, platforms: true, adminProfile: { select: { discoveryAnswer: true } } } })
     ]);
 

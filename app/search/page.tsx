@@ -160,17 +160,19 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
         }
 
         const [movieData, tvData] = await Promise.all([
-          tmdb.discover("movie", apiParams),
-          tmdb.discover("tv", tvParams),
+          tmdb.discover("movie", apiParams).catch(() => ({ results: [] })),
+          tmdb.discover("tv", tvParams).catch(() => ({ results: [] })),
         ]);
 
         results = [
-          ...movieData.results.map((m: any) => ({ ...m, media_type: "movie" })),
-          ...tvData.results.map((t: any) => ({ ...t, media_type: "tv" })),
+          ...(movieData?.results || []).map((m: any) => ({ ...m, media_type: "movie" })),
+          ...(tvData?.results || []).map((t: any) => ({ ...t, media_type: "tv" })),
         ].sort((a, b) => (b.popularity || 0) - (a.popularity || 0));
       } else {
-        const data = await tmdb.discover(type as "movie" | "tv", apiParams);
-        results = (data.results || []).map((item: any) => ({
+        const data = await tmdb
+          .discover(type as "movie" | "tv", apiParams)
+          .catch(() => ({ results: [] }));
+        results = (data?.results || []).map((item: any) => ({
           ...item,
           media_type: type,
         }));
@@ -202,8 +204,10 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
       discoverParams["vote_count.gte"] = "150";
     }
 
-    const data = await tmdb.discover(discoveryType, discoverParams);
-    discoveryItems = (data.results || []).map((item: any) => ({
+    const data = await tmdb
+      .discover(discoveryType, discoverParams)
+      .catch(() => ({ results: [] }));
+    discoveryItems = (data?.results || []).map((item: any) => ({
       ...item,
       media_type: discoveryType,
     })).slice(0, 20);
