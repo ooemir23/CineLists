@@ -14,6 +14,22 @@ env:
   IMAGE_NAME: ooemir23/cinelists
 
 jobs:
+  sync-dokploy-tag:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Point sha-5a7b04a to latest
+        run: docker buildx imagetools create -t ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:sha-5a7b04a ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+
   validate:
     runs-on: ubuntu-latest
     permissions:
@@ -63,6 +79,7 @@ jobs:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           tags: |
             type=raw,value=latest
+            type=raw,value=sha-5a7b04a
             type=sha,format=short
 
       - name: Set build metadata
