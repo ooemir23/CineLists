@@ -26,6 +26,13 @@ const DISPOSABLE_EMAIL_DOMAINS = new Set([
   "txt.att.net",
   "tmomail.net",
   "vzwpix.com",
+  "messaging.sprintpcs.com",
+  "pm.sprint.com",
+  "mypixsys.com",
+  "sms.mycricket.com",
+  "cspire1.com",
+  "email.uscc.net",
+  "msg.fi.google.com",
 ]);
 
 const SPAM_NAME_PATTERNS = [
@@ -60,6 +67,7 @@ export function hasGibberishName(name: string | null | undefined): boolean {
   if (!name) return false;
   const cleaned = name.trim();
   if (!cleaned) return false;
+  if (/^\d{7,}$/.test(cleaned)) return true;
   return GIBBERISH_CONSONANT_CLUSTER.test(cleaned);
 }
 

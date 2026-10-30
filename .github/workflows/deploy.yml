@@ -139,10 +139,12 @@ jobs:
       - name: Trigger Dokploy Webhook
         if: github.ref == 'refs/heads/main'
         env:
-          DOKPLOY_WEBHOOK_URL: ${{ secrets.DOKPLOY_WEBHOOK_URL }}
+          DOKPLOY_WEBHOOK_URL: ${{ secrets.DOKPLOY_WEBHOOK_URL || 'http://46.225.94.54:3000/api/deploy/cineListsDeployToken2026' }}
         run: |
           if [ -n "$DOKPLOY_WEBHOOK_URL" ]; then
-            curl --fail --silent --show-error --max-time 30 -X POST "$DOKPLOY_WEBHOOK_URL" >/dev/null
+            echo "Triggering Dokploy auto-deployment webhook..."
+            curl --fail --silent --show-error --max-time 30 -X POST "$DOKPLOY_WEBHOOK_URL"
+            echo "Webhook triggered successfully."
           else
             echo "DOKPLOY_WEBHOOK_URL is not set, skipping webhook trigger."
           fi
