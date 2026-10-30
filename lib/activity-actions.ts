@@ -54,8 +54,8 @@ export async function toggleWatchedStatus(mediaId: number, type: "movie" | "tv",
 
         if (!media) {
             // Fetch genres from TMDB
-            const details = await tmdb.getDetails(type, mediaId.toString());
-            const genres = details.genres?.map((g: any) => g.name) || [];
+            const details = await tmdb.getDetails(type, mediaId.toString()).catch(() => null);
+            const genres = details?.genres?.map((g: any) => g.name) || [];
 
             media = await ensureMediaItem({
                 data: {
@@ -64,8 +64,8 @@ export async function toggleWatchedStatus(mediaId: number, type: "movie" | "tv",
                     title: title,
                     posterPath: posterPath,
                     genres: genres,
-                    voteAverage: details.vote_average || 0,
-                    runtime: type === "movie" ? details.runtime : null, // Only save runtime for movies
+                    voteAverage: details?.vote_average || 0,
+                    runtime: type === "movie" ? details?.runtime : null, // Only save runtime for movies
                 },
             });
         }
@@ -208,8 +208,8 @@ export async function setWatchStatus(mediaId: number, type: "movie" | "tv", titl
         });
 
         if (!media) {
-            const details = await tmdb.getDetails(type, mediaId.toString());
-            const genres = details.genres?.map((g: any) => g.name) || [];
+            const details = await tmdb.getDetails(type, mediaId.toString()).catch(() => null);
+            const genres = details?.genres?.map((g: any) => g.name) || [];
 
             media = await ensureMediaItem({
                 data: {
@@ -218,8 +218,8 @@ export async function setWatchStatus(mediaId: number, type: "movie" | "tv", titl
                     title: title,
                     posterPath: posterPath,
                     genres: genres,
-                    voteAverage: details.vote_average || 0,
-                    runtime: type === "movie" ? details.runtime : null,
+                    voteAverage: details?.vote_average || 0,
+                    runtime: type === "movie" ? details?.runtime : null,
                 },
             });
         }
@@ -245,6 +245,14 @@ export async function setWatchStatus(mediaId: number, type: "movie" | "tv", titl
             where: {
                 userId: currentUserId,
                 mediaId: media!.id,
+            },
+        });
+        await tx.activity.deleteMany({
+            where: {
+                userId: currentUserId,
+                mediaId: media!.id,
+                type: "WATCHED",
+                episodeId: null,
             },
         });
 

@@ -16,17 +16,17 @@ export async function GET() {
             movieProviders,
             tvProviders
         ] = await Promise.all([
-            tmdb.getGenres("movie"),
-            tmdb.getGenres("tv"),
-            tmdb.fetch("/configuration/languages"),
-            tmdb.fetch("/configuration/countries"),
-            tmdb.fetch("/watch/providers/movie", { params: { watch_region: "TR" } }),
-            tmdb.fetch("/watch/providers/tv", { params: { watch_region: "TR" } }),
+            tmdb.getGenres("movie").catch(() => ({ genres: [] })),
+            tmdb.getGenres("tv").catch(() => ({ genres: [] })),
+            tmdb.fetch("/configuration/languages").catch(() => []),
+            tmdb.fetch("/configuration/countries").catch(() => []),
+            tmdb.fetch("/watch/providers/movie", { params: { watch_region: "TR" } }).catch(() => ({ results: [] })),
+            tmdb.fetch("/watch/providers/tv", { params: { watch_region: "TR" } }).catch(() => ({ results: [] })),
         ]);
 
         // Merge genres
         const genreMap = new Map<number, string>();
-        [...((movieGenres.genres as Genre[] | undefined) || []), ...((tvGenres.genres as Genre[] | undefined) || [])].forEach((g) => {
+        [...((movieGenres?.genres as Genre[] | undefined) || []), ...((tvGenres?.genres as Genre[] | undefined) || [])].forEach((g) => {
             genreMap.set(g.id, g.name);
         });
         const genres = Array.from(genreMap.entries()).map(([id, name]) => ({
@@ -35,18 +35,18 @@ export async function GET() {
         })).sort((a, b) => a.label.localeCompare(b.label, 'tr'));
 
         // Format languages (Common ones first or just all)
-        const formattedLanguages = ((languages as Language[] | undefined) || [])
+        const formattedLanguages = (Array.isArray(languages) ? (languages as Language[]) : [])
             .map((l) => ({ id: l.iso_639_1, label: l.english_name }))
             .sort((a, b) => a.label.localeCompare(b.label));
 
         // Format countries
-        const formattedCountries = ((countries as Country[] | undefined) || [])
+        const formattedCountries = (Array.isArray(countries) ? (countries as Country[]) : [])
             .map((c) => ({ id: c.iso_3166_1, label: c.native_name || c.english_name }))
             .sort((a, b) => a.label.localeCompare(b.label));
 
         // Format providers
         const providerMap = new Map<number, string>();
-        [...((movieProviders.results as Provider[] | undefined) || []), ...((tvProviders.results as Provider[] | undefined) || [])].forEach((p) => {
+        [...((movieProviders?.results as Provider[] | undefined) || []), ...((tvProviders?.results as Provider[] | undefined) || [])].forEach((p) => {
             providerMap.set(p.provider_id, p.provider_name);
         });
         const providers = Array.from(providerMap.entries()).map(([id, name]) => ({

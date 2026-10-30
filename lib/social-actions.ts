@@ -173,10 +173,10 @@ export async function searchUsers(query: string) {
     try {
         const users = await prisma.user.findMany({
             where: {
+                isSuspended: false,
                 OR: [
                     { name: { contains: query, mode: "insensitive" } },
                     { username: { contains: query, mode: "insensitive" } },
-                    { email: { contains: query, mode: "insensitive" } },
                 ],
             },
             select: {
@@ -215,6 +215,7 @@ export async function getGlobalActiveUsers() {
     try {
         // Get top users by achievement count + activity count + watched
         const users = await prisma.user.findMany({
+            where: { isSuspended: false, isPrivate: false },
             take: 24,
             orderBy: [
                 { achievements: { _count: 'desc' } },

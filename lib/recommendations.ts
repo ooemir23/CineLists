@@ -49,19 +49,15 @@ type SocialMediaRecord = {
 async function getPersonalizedRecommendationsForUser(userId: string, locale: Locale, country: string) {
     const dict = getDictionary(locale);
     try {
-        // 1. Fetch user profile
-        const user = await prisma.user.findUnique({
-            where: { id: userId },
-            select: {
-                favoriteGenres: true,
-                platforms: true,
-            },
-        });
-
-        if (!user) return null;
-
-        // 2. Fetch watched and watchlist IDs to exclude them
-        const [watchedItems, watchlistItems] = await Promise.all([
+        // 1-4 & 6. Parallelize initial user, history, rating, social, and genre queries
+        const [user, watchedItems, watchlistItems, highRatings, following, movieGenres, tvGenres] = await Promise.all([
+            prisma.user.findUnique({
+                where: { id: userId },
+                select: {
+                    favoriteGenres: true,
+                    platforms: true,
+                },
+            }),
             prisma.watched.findMany({
                 where: { userId },
                 select: { media: { select: { tmdbId: true, type: true } } }
@@ -69,25 +65,31 @@ async function getPersonalizedRecommendationsForUser(userId: string, locale: Loc
             prisma.toWatch.findMany({
                 where: { userId },
                 select: { media: { select: { tmdbId: true, type: true } } }
-            })
+            }),
+            prisma.watched.findMany({
+                where: {
+                    userId,
+                    rating: { gte: 8 },
+                },
+                include: {
+                    media: true,
+                },
+                take: 10,
+            }),
+            prisma.follow.findMany({
+                where: { followerId: userId },
+                select: { followingId: true }
+            }),
+            tmdb.getGenres("movie", locale === "en" ? "en-US" : "tr-TR").catch(() => ({ genres: [] })),
+            tmdb.getGenres("tv", locale === "en" ? "en-US" : "tr-TR").catch(() => ({ genres: [] })),
         ]);
+
+        if (!user) return null;
 
         const excludeIds = new Set([
             ...watchedItems.map(item => mediaKey(item.media.tmdbId, item.media.type)),
-            ...watchlistItems.map(item => item.media.tmdbId)
+            ...watchlistItems.map(item => mediaKey(item.media.tmdbId, item.media.type))
         ]);
-
-        // 3. Fetch high ratings (>= 8) to find preferred genres organically
-        const highRatings = await prisma.watched.findMany({
-            where: {
-                userId,
-                rating: { gte: 8 },
-            },
-            include: {
-                media: true,
-            },
-            take: 10,
-        });
 
         const ratedGenres = new Set<string>();
         highRatings.forEach((rating) => {
@@ -95,10 +97,6 @@ async function getPersonalizedRecommendationsForUser(userId: string, locale: Loc
         });
 
         // 4. Social Signal: What are friends watching?
-        const following = await prisma.follow.findMany({
-            where: { followerId: userId },
-            select: { followingId: true }
-        });
         const followingIds = following.map(f => f.followingId);
 
         let friendsPopularItems: DiscoverItem[] = [];
@@ -139,16 +137,10 @@ async function getPersonalizedRecommendationsForUser(userId: string, locale: Loc
                 }));
         }
 
-        // 6. Fetch genres to map names to IDs if necessary
-        const [movieGenres, tvGenres] = await Promise.all([
-            tmdb.getGenres("movie", locale === "en" ? "en-US" : "tr-TR"),
-            tmdb.getGenres("tv", locale === "en" ? "en-US" : "tr-TR"),
-        ]);
-
         const genreNameToId: Record<string, number> = {};
         const genreIdToName: Record<number, string> = {};
 
-        [...movieGenres.genres, ...tvGenres.genres].forEach((g: TmdbGenre) => {
+        [...(movieGenres?.genres || []), ...(tvGenres?.genres || [])].forEach((g: TmdbGenre) => {
             genreNameToId[g.name.toLowerCase()] = g.id;
             genreIdToName[g.id] = g.name;
         });

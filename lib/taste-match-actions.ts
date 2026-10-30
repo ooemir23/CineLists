@@ -224,20 +224,12 @@ export async function getMyTasteProfile() {
     const session = await auth();
     if (!session?.user?.id) return null;
 
-    const [watched, ratings, genres] = await Promise.all([
-        prisma.watched.findMany({
-            where: { userId: session.user.id },
-            include: { media: { select: { genres: true, type: true } } },
-        }),
-        prisma.watched.findMany({
-            where: { userId: session.user.id, rating: { not: null } },
-            select: { rating: true },
-        }),
-        prisma.watched.findMany({
-            where: { userId: session.user.id },
-            include: { media: { select: { genres: true } } },
-        }),
-    ]);
+    const watched = await prisma.watched.findMany({
+        where: { userId: session.user.id },
+        include: { media: { select: { genres: true, type: true } } },
+    });
+    const ratings = watched.filter((w) => w.rating !== null);
+    const genres = watched;
 
     const genreCounts: Record<string, number> = {};
     genres.forEach((g) => {

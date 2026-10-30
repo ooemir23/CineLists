@@ -9,25 +9,23 @@ export async function getUserStats(userId?: string) {
         const targetUserId = await accessibleProfileId(userId);
         if (!targetUserId) return null;
 
-        // Counts from the new lists
-        const watchedMovies = await prisma.watched.count({
-            where: {
-                userId: targetUserId,
-                media: { type: "MOVIE" }
-            }
-        });
-
-        const watchedShows = await prisma.watched.count({
-            where: {
-                userId: targetUserId,
-                media: { type: "TV" }
-            }
-        });
-
-        // Total episodes watched (still source of truth)
-        const watchedEpisodes = await prisma.watchedEpisode.count({
-            where: { userId: targetUserId }
-        });
+        const [watchedMovies, watchedShows, watchedEpisodes] = await Promise.all([
+            prisma.watched.count({
+                where: {
+                    userId: targetUserId,
+                    media: { type: "MOVIE" }
+                }
+            }),
+            prisma.watched.count({
+                where: {
+                    userId: targetUserId,
+                    media: { type: "TV" }
+                }
+            }),
+            prisma.watchedEpisode.count({
+                where: { userId: targetUserId }
+            })
+        ]);
 
         return {
             movieCount: watchedMovies,
@@ -57,34 +55,30 @@ export async function getLeaderboard() {
 
         const userIds = [session.user.id, ...following.map(f => f.followingId)];
 
-        // Aggregate stats for these users
-        // 1. Episode Counts
-        const episodeCounts = await prisma.watchedEpisode.groupBy({
-            by: ['userId'],
-            where: { userId: { in: userIds }, user: visibleUserWhere(session.user.id, "showStats") },
-            _count: { episodeId: true }
-        });
-
-        // 2. Movie Counts (Now from Watched table using findMany because Prisma groupBy does not support relation filters)
-        const watchedMovies = await prisma.watched.findMany({
-            where: {
-                userId: { in: userIds },
-                user: visibleUserWhere(session.user.id, "showStats"),
-                media: { type: "MOVIE" }
-            },
-            select: { userId: true }
-        });
+        const [episodeCounts, watchedMovies, users] = await Promise.all([
+            prisma.watchedEpisode.groupBy({
+                by: ['userId'],
+                where: { userId: { in: userIds }, user: visibleUserWhere(session.user.id, "showStats") },
+                _count: { episodeId: true }
+            }),
+            prisma.watched.findMany({
+                where: {
+                    userId: { in: userIds },
+                    user: visibleUserWhere(session.user.id, "showStats"),
+                    media: { type: "MOVIE" }
+                },
+                select: { userId: true }
+            }),
+            prisma.user.findMany({
+                where: { id: { in: userIds }, ...visibleUserWhere(session.user.id, "showStats") },
+                select: { id: true, name: true, image: true }
+            }),
+        ]);
 
         const movieCountMap = new Map<string, number>();
         for (const item of watchedMovies) {
             movieCountMap.set(item.userId, (movieCountMap.get(item.userId) || 0) + 1);
         }
-
-        // 3. User Details
-        const users = await prisma.user.findMany({
-            where: { id: { in: userIds }, ...visibleUserWhere(session.user.id, "showStats") },
-            select: { id: true, name: true, image: true }
-        });
 
         // Merge
         const leaderboard = users.map(user => {

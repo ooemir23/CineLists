@@ -40,36 +40,38 @@ type HomeProps = {
 };
 
 export default async function Home({ searchParams }: HomeProps) {
-  const params = await searchParams;
-  const userCountry = await getServerCountry();
+  const [params, userCountry, session] = await Promise.all([
+    searchParams,
+    getServerCountry(),
+    auth(),
+  ]);
   const { type = "", year, rating, provider, genre, q, category } = params;
   const isFiltering = Boolean(year || rating || provider || genre || type || q || category);
-  const session = await auth();
 
   let filterResults: any = null;
 
   if (isFiltering) {
     if (q) {
-      const data = await tmdb.searchMulti(q);
+      const data = await tmdb.searchMulti(q).catch(() => ({ results: [], total_pages: 1, total_results: 0 }));
       const allResults = type
-        ? (data.results || []).filter((item: any) => item.media_type === type)
-        : data.results || [];
+        ? (data?.results || []).filter((item: any) => item.media_type === type)
+        : data?.results || [];
 
       filterResults = {
         results: allResults,
-        total_pages: data.total_pages || 1,
-        total_results: data.total_results || allResults.length,
+        total_pages: data?.total_pages || 1,
+        total_results: data?.total_results || allResults.length,
       };
     } else if (category === "top_rated") {
       const targetType = (type || "movie") as "movie" | "tv";
-      const data = await tmdb.getTopRated(targetType);
+      const data = await tmdb.getTopRated(targetType).catch(() => ({ results: [], total_pages: 1, total_results: 0 }));
       filterResults = {
-        results: (data.results || []).map((item: any) => ({
+        results: (data?.results || []).map((item: any) => ({
           ...item,
           media_type: targetType,
         })),
-        total_pages: data.total_pages || 1,
-        total_results: data.total_results || (data.results || []).length,
+        total_pages: data?.total_pages || 1,
+        total_results: data?.total_results || (data?.results || []).length,
       };
     } else {
       const discoverParams: Record<string, string> = {
@@ -95,8 +97,8 @@ export default async function Home({ searchParams }: HomeProps) {
         if (year) tvParams["first_air_date_year"] = year;
 
         const [movieResults, tvResults] = await Promise.all([
-          tmdb.discover("movie", discoverParams),
-          tmdb.discover("tv", tvParams),
+          tmdb.discover("movie", discoverParams).catch(() => ({ results: [], total_pages: 1, total_results: 0 })),
+          tmdb.discover("tv", tvParams).catch(() => ({ results: [], total_pages: 1, total_results: 0 })),
         ]);
 
         filterResults = {
@@ -121,7 +123,7 @@ export default async function Home({ searchParams }: HomeProps) {
         if (rating) discoverParams["vote_average.gte"] = rating;
         if (genre) discoverParams["with_genres"] = genre;
 
-        const data = await tmdb.discover(type as "movie" | "tv", discoverParams);
+        const data = await tmdb.discover(type as "movie" | "tv", discoverParams).catch(() => ({ results: [], total_pages: 1, total_results: 0 }));
         filterResults = {
           ...data,
           results: (data?.results || []).map((item: any) => ({
@@ -244,7 +246,13 @@ export default async function Home({ searchParams }: HomeProps) {
     tmdb.getTopRated("movie").catch(() => ({ results: [] })),
     tmdb.getPopular("movie").catch(() => ({ results: [] })),
     getHomeFeedActivities(session?.user?.id).catch(() => []),
-    getCommunityPulse(),
+    getCommunityPulse().catch(() => ({
+      activeMembersToday: 0,
+      reviewsThisWeek: 0,
+      listsCount: 0,
+      averageRating: 0,
+      reactions: [],
+    })),
   ]);
 
   // 1. Hero Items (Merlin'in Kazanı large featured slider)

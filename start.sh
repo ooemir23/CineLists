@@ -19,6 +19,10 @@ if [ -z "$AUTH_TRUST_HOST" ]; then
   export AUTH_TRUST_HOST="true"
 fi
 
+if [ -z "$TRUSTED_CLIENT_IP_HEADER" ]; then
+  export TRUSTED_CLIENT_IP_HEADER="x-forwarded-for"
+fi
+
 if [ -z "$AUTH_URL" ]; then
   if [ -n "$NEXTAUTH_URL" ]; then
     export AUTH_URL="$NEXTAUTH_URL"

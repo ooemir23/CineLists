@@ -16,13 +16,13 @@ export default async function PreferencesSettingsPage() {
     if (!user) redirect("/login");
 
     const [movieGenres, tvGenres, allPlatforms] = await Promise.all([
-        tmdb.getGenres("movie"),
-        tmdb.getGenres("tv"),
-        getAppPlatforms()
+        tmdb.getGenres("movie").catch(() => ({ genres: [] })),
+        tmdb.getGenres("tv").catch(() => ({ genres: [] })),
+        getAppPlatforms().catch(() => []),
     ]);
 
     const allGenres = Array.from(
-        new Map([...movieGenres.genres, ...tvGenres.genres].map((g: any) => [g.id, g])).values()
+        new Map([...(movieGenres?.genres || []), ...(tvGenres?.genres || [])].map((g: any) => [g.id, g])).values()
     ).sort((a: any, b: any) => a.name.localeCompare(b.name));
 
     const userData = {

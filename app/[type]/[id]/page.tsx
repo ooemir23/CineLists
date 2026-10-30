@@ -64,12 +64,15 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 type Props = { params: Promise<{ type: string; id: string }> };
 
 export default async function DetailsPage(props: Props) {
-  const params = await props.params;
+  const [params, session, userCountry] = await Promise.all([
+    props.params,
+    auth(),
+    getServerCountry(),
+  ]);
   const { type, id } = params;
   if (!isValidMediaRoute(type, id)) notFound();
 
   const mediaId = parseInt(id);
-  const session = await auth();
   const isAuthenticated = !!session?.user?.id;
   const isGuest = (session?.user as any)?.isGuest;
 
@@ -90,7 +93,6 @@ export default async function DetailsPage(props: Props) {
     })
     .catch(() => null);
   if (!data) notFound();
-  const userCountry = await getServerCountry();
   const theatricalStatus = getTheatricalStatus(data, userCountry);
   // These requests stream into their own slots; the title/overview/afiş do not wait for them.
   const extras = (async () => {

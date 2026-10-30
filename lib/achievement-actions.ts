@@ -13,15 +13,12 @@ export async function checkAndUnlockAchievements(userId: string) {
   if (session?.user?.id !== userId) return [];
   const newAchievements: string[] = [];
 
-  // Mevcut rozetleri al
-  const existingAchievements = await prisma.achievement.findMany({
-    where: { userId },
-    select: { type: true },
-  });
-  const existingTypes = new Set(existingAchievements.map((a: any) => a.type));
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
 
-  // Kullanıcı istatistiklerini topla
+  // Mevcut rozetleri ve kullanıcı istatistiklerini tek paralel sorgu grubunda topla
   const [
+    existingAchievements,
     watchedMovies,
     watchedTVShows,
     watchedEpisodes,
@@ -32,7 +29,13 @@ export async function checkAndUnlockAchievements(userId: string) {
     followers,
     recommendations,
     genres,
+    nightWatch,
+    todayWatched,
   ] = await Promise.all([
+    prisma.achievement.findMany({
+      where: { userId },
+      select: { type: true },
+    }),
     prisma.watched.count({
       where: { userId, media: { type: "MOVIE" } },
     }),
@@ -50,7 +53,19 @@ export async function checkAndUnlockAchievements(userId: string) {
       where: { userId },
       include: { media: { select: { genres: true } } },
     }),
+    prisma.activity.findFirst({
+      where: { userId, type: "WATCHED" },
+      orderBy: { createdAt: "desc" },
+    }),
+    prisma.watched.count({
+      where: {
+        userId,
+        watchedAt: { gte: today },
+        media: { type: "MOVIE" },
+      },
+    }),
   ]);
+  const existingTypes = new Set(existingAchievements.map((a: any) => a.type));
 
   // Benzersiz türleri hesapla
   const uniqueGenres = new Set<string>();
@@ -101,10 +116,6 @@ export async function checkAndUnlockAchievements(userId: string) {
   ];
 
   // Gece kuşu kontrolü
-  const nightWatch = await prisma.activity.findFirst({
-    where: { userId, type: "WATCHED" },
-    orderBy: { createdAt: "desc" },
-  });
   if (nightWatch) {
     const hour = new Date(nightWatch.createdAt).getHours();
     if (hour >= 0 && hour < 5) {
@@ -113,24 +124,19 @@ export async function checkAndUnlockAchievements(userId: string) {
   }
 
   // Maraton kontrolü - aynı gün 3+ film
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const todayWatched = await prisma.watched.count({
-    where: {
-      userId,
-      watchedAt: { gte: today },
-      media: { type: "MOVIE" },
-    },
-  });
   checks.push(["MARATHON_RUNNER", todayWatched >= 3]);
 
   // Yeni rozetleri kilidi aç
   for (const [type, condition] of checks) {
     if (condition && !existingTypes.has(type)) {
-      await prisma.achievement.create({
-        data: { userId, type: type as any },
-      });
-      newAchievements.push(type);
+      try {
+        await prisma.achievement.create({
+          data: { userId, type: type as any },
+        });
+        newAchievements.push(type);
+      } catch {
+        // Ignore concurrent duplicate unlock (P2002)
+      }
     }
   }
 

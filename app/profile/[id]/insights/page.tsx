@@ -47,9 +47,10 @@ export default async function InsightsDetailPage({ params }: InsightsPageProps) 
   const { id } = await params;
   const session = await auth();
   
-  if (!await accessibleProfileId(id, "showStats")) notFound();
+  const targetUserId = await accessibleProfileId(id, "showStats");
+  if (!targetUserId) notFound();
   const user = await prisma.user.findUnique({
-    where: { id },
+    where: { id: targetUserId },
     include: {
       watched: {
         select: { rating: true, watchedAt: true }

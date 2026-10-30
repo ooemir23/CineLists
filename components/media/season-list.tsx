@@ -212,10 +212,16 @@ function SeasonEpisodes({ tmdbId, seasonNumber, watchedEpisodes }: { tmdbId: num
 
     useEffect(() => {
         setLoading(true);
-        fetchSeasonEpisodes(tmdbId, seasonNumber).then(data => {
-            setEpisodes(data.episodes || []);
-            setLoading(false);
-        });
+        fetchSeasonEpisodes(tmdbId, seasonNumber)
+            .then(data => {
+                setEpisodes(data?.episodes || []);
+            })
+            .catch(() => {
+                setEpisodes([]);
+            })
+            .finally(() => {
+                setLoading(false);
+            });
     }, [tmdbId, seasonNumber, refreshKey]);
 
     if (loading && episodes.length === 0) return (

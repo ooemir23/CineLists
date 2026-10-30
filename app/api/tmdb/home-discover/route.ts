@@ -258,6 +258,8 @@ export async function GET(request: NextRequest) {
                 media: { type: mediaType === "movie" ? "MOVIE" : "TV" },
               },
               include: { media: true },
+              orderBy: { addedAt: "desc" },
+              take: 15,
             }),
             prisma.toWatch.findMany({
               where: {
@@ -266,6 +268,8 @@ export async function GET(request: NextRequest) {
                 media: { type: mediaType === "movie" ? "MOVIE" : "TV" },
               },
               include: { media: true },
+              orderBy: { addedAt: "desc" },
+              take: 15,
             }),
           ]);
 

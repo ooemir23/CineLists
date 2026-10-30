@@ -35,8 +35,13 @@ export function checkRateLimit(
     const entry = rateLimitStore.get(key);
 
     if (!entry || now > entry.resetTime) {
-        if (rateLimitStore.size >= MAX_STORE_ENTRIES && !entry) {
-            return { allowed: false, remaining: 0, resetTime: now + windowMs };
+        if (entry) {
+            rateLimitStore.delete(key);
+        } else if (rateLimitStore.size >= MAX_STORE_ENTRIES) {
+            const oldestKey = rateLimitStore.keys().next().value;
+            if (oldestKey !== undefined) {
+                rateLimitStore.delete(oldestKey);
+            }
         }
         // First request or window expired
         rateLimitStore.set(key, {
@@ -51,5 +56,7 @@ export function checkRateLimit(
     }
 
     entry.count++;
+    rateLimitStore.delete(key);
+    rateLimitStore.set(key, entry);
     return { allowed: true, remaining: limit - entry.count, resetTime: entry.resetTime };
 }

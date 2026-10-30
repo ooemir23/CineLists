@@ -59,8 +59,8 @@ export async function toggleToWatch(mediaId: number, type: "movie" | "tv" | "per
             let details: TmdbMediaDetails | null = null;
             if (type !== "person") {
                 // Fetch genres from TMDB
-                details = await tmdb.getDetails(type, mediaId.toString()) as TmdbMediaDetails;
-                genres = details.genres?.map((genre) => GENRE_MAP[genre.id] || genre.name) || [];
+                details = (await tmdb.getDetails(type, mediaId.toString()).catch(() => null)) as TmdbMediaDetails | null;
+                genres = details?.genres?.map((genre) => GENRE_MAP[genre.id] || genre.name) || [];
             }
 
             media = await ensureMediaItem({

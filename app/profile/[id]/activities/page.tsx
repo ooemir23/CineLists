@@ -16,9 +16,10 @@ export default async function ActivitiesDetailPage({ params }: ActivitiesPagePro
   const { id } = await params;
   const session = await auth();
   
-  if (!await accessibleProfileId(id, "showActivities")) notFound();
+  const targetUserId = await accessibleProfileId(id, "showActivities");
+  if (!targetUserId) notFound();
   const user = await prisma.user.findUnique({
-    where: { id },
+    where: { id: targetUserId },
     include: {
       activities: {
         take: 300,

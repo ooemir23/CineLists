@@ -83,9 +83,24 @@ async function trackedReleases(
     dict = getDictionary(locale);
   const [following, watched] = await Promise.all([
     prisma.toWatch.findMany({
-      where: { userId },
+      where: {
+        userId,
+        OR: [
+          { media: { type: "TV" } },
+          {
+            media: {
+              type: "MOVIE",
+              OR: [
+                { releaseDate: null },
+                { releaseDate: { gte: new Date(`${today}T00:00:00Z`) } },
+              ],
+            },
+          },
+        ],
+      },
       include: { media: true },
       orderBy: { addedAt: "desc" },
+      take: 40,
     }),
     prisma.watched.findMany({
       where: {
@@ -102,6 +117,7 @@ async function trackedReleases(
       },
       include: { media: true },
       orderBy: { watchedAt: "desc" },
+      take: 40,
     }),
   ]);
   const unique = new Map<
@@ -213,6 +229,7 @@ async function favoriteReleases(
   const persons = await prisma.favoritePerson.findMany({
     where: { userId },
     orderBy: { addedAt: "desc" },
+    take: 20,
   });
   return (
     await batches(persons, async (person) => {
@@ -222,8 +239,8 @@ async function favoriteReleases(
         );
         // Cast credits cover actors; only Director crew credits count for directors.
         const projects = [
-          ...(credits.cast || []),
-          ...(credits.crew || []).filter((c: any) => c.job === "Director"),
+          ...(credits?.cast || []),
+          ...(credits?.crew || []).filter((c: any) => c.job === "Director"),
         ];
         return projects
           .filter(

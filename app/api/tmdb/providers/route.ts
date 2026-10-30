@@ -22,7 +22,7 @@ export async function GET(request: NextRequest) {
         const data = await tmdb.fetch(`/watch/providers/${type}`, { params: { watch_region: country } });
 
         // Format providers with logo URLs and filter by region availability
-        const providers = (data.results as Provider[] | undefined)?.filter((provider) => {
+        const providers = (data?.results as Provider[] | undefined)?.filter((provider) => {
             // STRICT FILTERING: Only show providers that explicitly have a priority for this country.
             if (provider.display_priorities && provider.display_priorities[country] !== undefined) {
                 return true;

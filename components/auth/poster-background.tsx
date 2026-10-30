@@ -1,11 +1,12 @@
+import { Suspense } from "react";
 import { tmdb } from "@/lib/tmdb";
 import Image from "next/image";
 
-export async function PosterBackground() {
+async function PosterBackgroundGrid() {
     let posters: string[] = [];
     try {
         const data = await tmdb.getTopRated("movie", { page: "1" });
-        posters = data.results
+        posters = (data?.results || [])
             .slice(0, 24)
             .map((m: any) => m.poster_path)
             .filter(Boolean);
@@ -29,6 +30,7 @@ export async function PosterBackground() {
                             src={`https://image.tmdb.org/t/p/w300${path}`}
                             alt="Poster"
                             fill
+                            sizes="(max-width: 768px) 25vw, 12vw"
                             className="object-cover"
                         />
                     </div>
@@ -43,6 +45,7 @@ export async function PosterBackground() {
                             src={`https://image.tmdb.org/t/p/w300${path}`}
                             alt="Poster"
                             fill
+                            sizes="(max-width: 768px) 25vw, 12vw"
                             className="object-cover"
                         />
                     </div>
@@ -53,5 +56,13 @@ export async function PosterBackground() {
             <div className="absolute inset-0 bg-gradient-to-b from-slate-950/80 via-slate-950/90 to-slate-950 z-10" />
             <div className="absolute inset-0 backdrop-blur-[4px] z-10" />
         </div>
+    );
+}
+
+export function PosterBackground() {
+    return (
+        <Suspense fallback={<div className="absolute inset-0 bg-slate-950" />}>
+            <PosterBackgroundGrid />
+        </Suspense>
     );
 }

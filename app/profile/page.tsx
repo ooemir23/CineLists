@@ -27,8 +27,10 @@ export default async function ProfilePage() {
     let allWatched: any[] = [];
     let toWatch: any[] = [];
 
+    let favorites: any[] = [];
+
     try {
-        const [userData, statsData, movieG, tvG, recentW, allW, toW] = await Promise.all([
+        const [userData, statsData, movieG, tvG, allW, toW, favMedia] = await Promise.all([
             prisma.user.findUnique({
                 where: { id: session.user.id },
                 include: {
@@ -53,12 +55,6 @@ export default async function ProfilePage() {
             tmdb.getGenres("tv").catch(() => ({ genres: [] })),
             prisma.watched.findMany({
                 where: { userId: session.user.id },
-                take: 12,
-                orderBy: { watchedAt: "desc" },
-                include: { media: true },
-            }).catch(() => []),
-            prisma.watched.findMany({
-                where: { userId: session.user.id },
                 take: 100,
                 orderBy: { watchedAt: "desc" },
                 include: { media: true },
@@ -69,15 +65,22 @@ export default async function ProfilePage() {
                 orderBy: { addedAt: "desc" },
                 include: { media: true },
             }).catch(() => []),
+            prisma.favoriteMedia.findMany({
+                where: { userId: session.user.id },
+                orderBy: { position: "asc" },
+                take: 12,
+                include: { media: true },
+            }).catch(() => []),
         ]);
 
         user = userData;
         stats = statsData;
         movieGenres = movieG;
         tvGenres = tvG;
-        recentWatched = recentW;
         allWatched = allW;
+        recentWatched = allW.slice(0, 12);
         toWatch = toW;
+        favorites = favMedia;
     } catch (error) {
         console.warn("[ProfilePage] DB fetch error:", error);
     }
@@ -130,20 +133,16 @@ export default async function ProfilePage() {
     // Calculate this month's count
     const oneMonthAgo = new Date();
     oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
-    const thisMonthCount = recentWatched.filter(
+    const thisMonthCount = allWatched.filter(
         (w: any) => w.watchedAt && new Date(w.watchedAt) > oneMonthAgo
     ).length;
 
     // Calculate average rating
-    const ratedItems = recentWatched.filter((w: any) => w.rating != null && w.rating > 0);
+    const ratedItems = allWatched.filter((w: any) => w.rating != null && w.rating > 0);
     const averageRating = ratedItems.length > 0
         ? ratedItems.reduce((sum: number, w: any) => sum + (w.rating || 0), 0) / ratedItems.length
         : 0;
 
-  const favorites = await prisma.favoriteMedia.findMany({
-    where: { userId: user.id }, orderBy: { position: "asc" }, take: 12,
-    include: { media: true },
-  });
   user.favoriteMedia = favorites;
   let favoriteBackdrops: string[] = favorites.flatMap(f => f.media.backdropPath ? [`https://image.tmdb.org/t/p/w1280${f.media.backdropPath}`] : []);
 

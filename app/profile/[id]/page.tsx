@@ -67,32 +67,26 @@ export default async function PublicProfilePage({
     stats,
     movieGenres,
     tvGenres,
-    recentWatched,
     allWatched,
     toWatch,
     fullUser,
+    favorites,
   ] = await Promise.all([
-    user.showStats ? getUserStats(resolvedUserId) : Promise.resolve({ movieCount: 0, showCount: 0, episodeCount: 0 }),
-    tmdb.getGenres("movie"),
-    tmdb.getGenres("tv"),
-    user.showActivities ? prisma.watched.findMany({
-      where: { userId: resolvedUserId },
-      take: 12,
-      orderBy: { watchedAt: "desc" },
-      include: { media: true },
-    }) : Promise.resolve([]),
+    user.showStats ? getUserStats(resolvedUserId).catch(() => ({ movieCount: 0, showCount: 0, episodeCount: 0 })) : Promise.resolve({ movieCount: 0, showCount: 0, episodeCount: 0 }),
+    tmdb.getGenres("movie").catch(() => ({ genres: [] })),
+    tmdb.getGenres("tv").catch(() => ({ genres: [] })),
     user.showActivities ? prisma.watched.findMany({
       where: { userId: resolvedUserId },
       take: 100,
       orderBy: { watchedAt: "desc" },
       include: { media: true },
-    }) : Promise.resolve([]),
+    }).catch(() => []) : Promise.resolve([]),
     user.showActivities ? prisma.toWatch.findMany({
       where: { userId: resolvedUserId },
       take: 100,
       orderBy: { addedAt: "desc" },
       include: { media: true },
-    }) : Promise.resolve([]),
+    }).catch(() => []) : Promise.resolve([]),
     prisma.user.findUnique({
       where: { id: resolvedUserId },
       select: {
@@ -107,8 +101,15 @@ export default async function PublicProfilePage({
           select: { toWatch: user.showActivities, watched: user.showStats },
         },
       },
-    }),
+    }).catch(() => null),
+    prisma.favoriteMedia.findMany({
+      where: { userId: resolvedUserId },
+      orderBy: { position: "asc" },
+      take: 12,
+      include: { media: true },
+    }).catch(() => []),
   ]);
+  const recentWatched = allWatched.slice(0, 12);
 
   if (!stats || !fullUser) {
     notFound();
@@ -118,10 +119,6 @@ export default async function PublicProfilePage({
     _count: { ...user._count, ...fullUser._count },
   });
 
-  const favorites = await prisma.favoriteMedia.findMany({
-    where: { userId: user.id }, orderBy: { position: "asc" }, take: 12,
-    include: { media: true },
-  });
   user.favoriteMedia = favorites;
   let favoriteBackdrops: string[] = favorites.flatMap(f => f.media.backdropPath ? [`https://image.tmdb.org/t/p/w1280${f.media.backdropPath}`] : []);
 

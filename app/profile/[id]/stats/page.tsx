@@ -1,3 +1,4 @@
+import { accessibleProfileId } from "@/lib/profile-access";
 import { notFound } from "next/navigation";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
@@ -14,9 +15,11 @@ interface StatsPageProps {
 export default async function StatsDetailPage({ params }: StatsPageProps) {
   const { id } = await params;
   const session = await auth();
-  
+  const targetUserId = await accessibleProfileId(id, "showStats");
+  if (!targetUserId) notFound();
+
   const user = await prisma.user.findUnique({
-    where: { id },
+    where: { id: targetUserId },
     include: {
       activities: {
         take: 100,

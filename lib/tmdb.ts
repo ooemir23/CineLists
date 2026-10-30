@@ -24,7 +24,8 @@ function isListEndpoint(endpoint: string): boolean {
         endpoint.includes("on_the_air") ||
         endpoint.includes("top_rated") ||
         endpoint.includes("recommendations") ||
-        endpoint.includes("similar")
+        endpoint.includes("similar") ||
+        endpoint.startsWith("/watch/providers/")
     );
 }
 
@@ -41,7 +42,7 @@ interface CacheEntry {
 
 const memoryCache = new Map<string, CacheEntry>();
 const inFlightRequests = new Map<string, Promise<any>>();
-const MAX_CACHE_SIZE = 300;
+const MAX_CACHE_SIZE = 1000;
 
 const requestBudget = new RequestBudget(25, 100);
 
@@ -126,10 +127,12 @@ export const tmdb = {
         const cacheKey = url.toString();
         const now = Date.now();
 
-        // 1. Check in-memory cache
+        // 1. Check in-memory cache (LRU refresh on hit)
         if (cache !== "no-store") {
             const cached = memoryCache.get(cacheKey);
             if (cached && cached.expiresAt > now) {
+                memoryCache.delete(cacheKey);
+                memoryCache.set(cacheKey, cached);
                 return cached.data;
             }
         }
@@ -180,11 +183,18 @@ export const tmdb = {
 
                 const data = await withDeadline(res.json(), deadline, endpoint);
 
-                // Save to in-memory cache
-                if (cache !== "no-store" && data && JSON.stringify(data).length <= 100_000) {
+                // Save to in-memory cache (evict expired entries first, then LRU)
+                if (cache !== "no-store" && data) {
                     if (memoryCache.size >= MAX_CACHE_SIZE) {
-                        const firstKey = memoryCache.keys().next().value;
-                        if (firstKey) memoryCache.delete(firstKey);
+                        for (const [k, v] of memoryCache.entries()) {
+                            if (v.expiresAt <= now) {
+                                memoryCache.delete(k);
+                            }
+                        }
+                        if (memoryCache.size >= MAX_CACHE_SIZE) {
+                            const firstKey = memoryCache.keys().next().value;
+                            if (firstKey) memoryCache.delete(firstKey);
+                        }
                     }
                     const ttl = getCacheTTL(endpoint);
                     memoryCache.set(cacheKey, {

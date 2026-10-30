@@ -42,7 +42,7 @@ export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const query = searchParams.get("q")?.trim();
 
-  if (!query || query.length < 2) {
+  if (!query || query.length < 2 || query.length > 120) {
     return NextResponse.json([]);
   }
 

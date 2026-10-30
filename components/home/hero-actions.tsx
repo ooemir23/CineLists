@@ -1,17 +1,19 @@
 "use client";
 
-import { useState } from "react";import { Play, X } from "lucide-react";
+import { useState } from "react";
+import { Play, X } from "lucide-react";
 import { createPortal } from "react-dom";
+import { fetchTrailerKey } from "@/lib/client-actions";
 
 type HeroActionsProps = {
     movieId: number;
-    mediaType?: "movie" | "tv"; // Added mediaType support
+    mediaType?: "movie" | "tv";
     trailerKey?: string;
 };
 
-export function HeroActions({ movieId, mediaType = "movie" }: HeroActionsProps) {
+export function HeroActions({ movieId, mediaType = "movie", trailerKey: initialTrailerKey }: HeroActionsProps) {
     const [showTrailer, setShowTrailer] = useState(false);
-    const [trailerKey, setTrailerKey] = useState<string | null>(null);
+    const [trailerKey, setTrailerKey] = useState<string | null>(initialTrailerKey || null);
     const [loading, setLoading] = useState(false);
 
     const openTrailer = async () => {
@@ -19,12 +21,9 @@ export function HeroActions({ movieId, mediaType = "movie" }: HeroActionsProps) 
         if (!trailerKey) {
             setLoading(true);
             try {
-                // Use mediaType for fetching trailer
-                const res = await fetch(`https://api.themoviedb.org/3/${mediaType}/${movieId}/videos?api_key=${process.env.NEXT_PUBLIC_TMDB_API_KEY || 'bf8f936fe43431e6714917c0c9a172e5'}&language=en-US`);
-                const data = await res.json();
-                const trailer = data.results?.find((v: any) => v.type === "Trailer" && v.site === "YouTube");
-                if (trailer) {
-                    setTrailerKey(trailer.key);
+                const key = await fetchTrailerKey(mediaType, movieId);
+                if (key) {
+                    setTrailerKey(key);
                 }
             } catch (error) {
                 console.error("Failed to fetch trailer", error);

@@ -118,6 +118,14 @@ export function ExploreFilterBar() {
     else if (key === "provider") setStagedProvider(value);
     else if (key === "year") setStagedYear(value);
     else if (key === "rating") setStagedRating(value);
+
+    if (!isMobile) {
+      const params = new URLSearchParams(searchParams.toString());
+      params.delete("page");
+      if (value) params.set(key, value);
+      else params.delete(key);
+      router.push(`/explore/${currentType}/${currentCategory}?${params.toString()}`, { scroll: false });
+    }
   };
 
   const commitFilters = () => {

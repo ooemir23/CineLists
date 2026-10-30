@@ -1,38 +1,23 @@
 import { NextResponse } from "next/server";
-import { env } from "@/lib/env";
-
-const TMDB_BASE_URL = "https://api.themoviedb.org/3";
-const API_KEY = env.TMDB_API_KEY;
-
-type WatchProvider = {
-  display_priorities?: Record<string, number>;
-  provider_id: number;
-  provider_name: string;
-  logo_path?: string | null;
-};
+import { validateTmdbRequest } from "@/lib/api-budget";
+import { tmdb } from "@/lib/tmdb";
 
 export async function GET(request: Request) {
+  const rejected = validateTmdbRequest(request);
+  if (rejected) return rejected;
+
   try {
     const { searchParams } = new URL(request.url);
-    const type = searchParams.get("type") || "movie";
-    const country = searchParams.get("country") || "TR";
+    const type = searchParams.get("type") === "tv" ? "tv" : "movie";
+    const rawCountry = searchParams.get("country") || "TR";
+    const country = /^[a-z]{2}$/i.test(rawCountry) ? rawCountry.toUpperCase() : "TR";
 
-    if (!API_KEY) {
-      console.error("TMDB_API_KEY is missing");
-      return NextResponse.json({ results: [] }, { status: 500 });
-    }
+    const data = await tmdb
+      .fetch(`/watch/providers/${type}`, { params: { watch_region: country } })
+      .catch(() => ({ results: [] }));
 
-    const url = `${TMDB_BASE_URL}/watch/providers/${type}?api_key=${API_KEY}&language=tr-TR&watch_region=${country}`;
-    const res = await fetch(url, { next: { revalidate: 86400 } }); // 24 hours cache
-
-    if (!res.ok) {
-      console.error(`TMDB Provider Error: ${res.status}`);
-      return NextResponse.json({ results: [] });
-    }
-
-    const data: { results?: WatchProvider[] } = await res.json();
     return NextResponse.json(
-      { results: data.results || [] },
+      { results: data?.results || [] },
       {
         headers: {
           "Cache-Control": "public, max-age=86400, stale-while-revalidate=604800",

@@ -60,6 +60,7 @@ ENV NEXT_PUBLIC_APP_URL=https://cinelists.com
 ENV AUTH_URL=https://cinelists.com
 ENV NEXTAUTH_URL=https://cinelists.com
 ENV AUTH_TRUST_HOST=true
+ENV TRUSTED_CLIENT_IP_HEADER=x-forwarded-for
 
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs

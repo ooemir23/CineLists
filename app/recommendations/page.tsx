@@ -30,7 +30,7 @@ export default async function RecommendationsPage({ searchParams }: Recommendati
     const genre = params.genre;
 
     // Get personalized recommendations
-    const personalizedData = await getPersonalizedRecommendations(session.user.id);
+    const personalizedData = await getPersonalizedRecommendations(session.user.id).catch(() => null);
 
     let results = personalizedData?.results || [];
     const reasons = personalizedData?.reasons || { favorites: [], organic: [], platforms: [] };
@@ -58,11 +58,14 @@ export default async function RecommendationsPage({ searchParams }: Recommendati
             if (year) tvParams["first_air_date_year"] = year;
 
             const [movieData, tvData] = await Promise.all([
-                tmdb.discover("movie", filterParams),
-                tmdb.discover("tv", tvParams),
+                tmdb.discover("movie", filterParams).catch(() => ({ results: [] })),
+                tmdb.discover("tv", tvParams).catch(() => ({ results: [] })),
             ]);
 
-            results = [...movieData.results, ...tvData.results].sort((a, b) =>
+            results = [
+                ...(movieData?.results || []).map((m: any) => ({ ...m, mediaType: "movie" })),
+                ...(tvData?.results || []).map((t: any) => ({ ...t, mediaType: "tv" })),
+            ].sort((a, b) =>
                 (b.popularity || 0) - (a.popularity || 0)
             );
         } else {
@@ -78,8 +81,8 @@ export default async function RecommendationsPage({ searchParams }: Recommendati
             }
             if (genre) filterParams["with_genres"] = genre;
 
-            const data = await tmdb.discover(type as "movie" | "tv", filterParams);
-            results = data.results || [];
+            const data = await tmdb.discover(type as "movie" | "tv", filterParams).catch(() => ({ results: [] }));
+            results = (data?.results || []).map((item: any) => ({ ...item, mediaType: type }));
         }
     }
 

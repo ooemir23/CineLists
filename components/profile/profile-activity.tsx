@@ -5,7 +5,6 @@ import Link from "next/link";
 import { formatDistanceToNow } from "date-fns";
 import { tr } from "date-fns/locale";
 import { Star, Eye } from "lucide-react";
-import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
 
@@ -68,14 +67,11 @@ export function ProfileActivity({
           ? "space-y-3" 
           : "grid grid-cols-1 md:grid-cols-2 gap-4"
     )}>
-      {activities.map((activity, index) => (
-        <motion.div
+      {activities.map((activity) => (
+        <div
           key={activity.id}
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: index * 0.05 }}
           className={cn(
-            "group",
+            "group animate-in fade-in duration-200",
             variant === "carousel" && "flex-shrink-0"
           )}
         >
@@ -138,7 +134,7 @@ export function ProfileActivity({
               </div>
             </div>
           </Link>
-        </motion.div>
+        </div>
       ))}
     </div>
   );

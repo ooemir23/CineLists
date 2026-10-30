@@ -271,42 +271,42 @@ export async function markSeasonAsWatched(
 
     const mediaId = media.id;
 
-    // Check if all episodes are already watched - if so, unmark them all
-    const allEpisodeIds: string[] = [];
-    for (const ep of seasonData.episodes) {
-      let dbEp = await prisma.episode.findUnique({
-        where: {
-          mediaId_seasonNumber_episodeNumber: {
-            mediaId,
-            seasonNumber,
-            episodeNumber: ep.episode_number,
-          },
-        },
+    // Batch-ensure all season episodes exist in at most 2 queries instead of 2N sequential queries
+    const seasonEpisodes: any[] = seasonData.episodes || [];
+    const episodeNumbers = seasonEpisodes.map((ep: any) => ep.episode_number);
+    let existingDbEpisodes = await prisma.episode.findMany({
+      where: {
+        mediaId,
+        seasonNumber,
+        episodeNumber: { in: episodeNumbers },
+      },
+      select: { id: true, episodeNumber: true },
+    });
+    const existingNumberSet = new Set(existingDbEpisodes.map((e) => e.episodeNumber));
+    const missingEpisodes = seasonEpisodes.filter((ep: any) => !existingNumberSet.has(ep.episode_number));
+    if (missingEpisodes.length > 0) {
+      await prisma.episode.createMany({
+        data: missingEpisodes.map((ep: any) => ({
+          mediaId,
+          seasonNumber,
+          episodeNumber: ep.episode_number,
+          title: ep.name,
+          overview: ep.overview,
+          stillPath: ep.still_path,
+          airDate: ep.air_date ? new Date(ep.air_date) : null,
+        })),
+        skipDuplicates: true,
       });
-
-      if (!dbEp) {
-        dbEp = await prisma.episode.upsert({
-          where: {
-            mediaId_seasonNumber_episodeNumber: {
-              mediaId,
-              seasonNumber,
-              episodeNumber: ep.episode_number,
-            },
-          },
-          update: {},
-          create: {
-            mediaId,
-            seasonNumber,
-            episodeNumber: ep.episode_number,
-            title: ep.name,
-            overview: ep.overview,
-            stillPath: ep.still_path,
-            airDate: ep.air_date ? new Date(ep.air_date) : null,
-          },
-        });
-      }
-      allEpisodeIds.push(dbEp.id);
+      existingDbEpisodes = await prisma.episode.findMany({
+        where: {
+          mediaId,
+          seasonNumber,
+          episodeNumber: { in: episodeNumbers },
+        },
+        select: { id: true, episodeNumber: true },
+      });
     }
+    const allEpisodeIds = existingDbEpisodes.map((e) => e.id);
 
     await withUserTransaction(userId, async (tx) => {
       // Check how many are watched

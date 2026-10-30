@@ -13,6 +13,10 @@ export async function fetchSeasonEpisodes(tmdbId: number, seasonNumber: number) 
             })
         ]);
 
+        if (!tmdbData || !Array.isArray(tmdbData.episodes)) {
+            return { episodes: [] };
+        }
+
         if (mediaItem) {
             const dbEpisodes = await prisma.episode.findMany({
                 where: {
@@ -53,5 +57,16 @@ export async function fetchSeasonEpisodes(tmdbId: number, seasonNumber: number) 
     } catch (error) {
         console.error("Fetch season error:", error);
         return { episodes: [] };
+    }
+}
+
+export async function fetchTrailerKey(mediaType: "movie" | "tv", mediaId: number): Promise<string | null> {
+    try {
+        const data = await tmdb.getVideos(mediaType, String(mediaId));
+        const trailer = data?.results?.find((v: any) => v.type === "Trailer" && v.site === "YouTube");
+        return trailer?.key || null;
+    } catch (error) {
+        console.error("Fetch trailer error:", error);
+        return null;
     }
 }
