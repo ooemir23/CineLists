@@ -10,7 +10,8 @@ type Action =
   | "revoke-sessions"
   | "redact-comment"
   | "redact-review"
-  | "purge-expired";
+  | "purge-expired"
+  | "purge-bots";
 export function AdminActionButton({
   action,
   targetId,

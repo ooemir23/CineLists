@@ -9,9 +9,11 @@ import {
   adminDate,
   adminDuration,
   adminNumber,
+  botSignalLabel,
   onlineAt,
   REMOVED_COMMENTS,
 } from "@/lib/admin/format";
+import { evaluateAccountBotSignals } from "@/lib/bot-protection";
 import { Panel, Metric, Empty } from "@/components/admin/ui";
 import { AdminActionButton } from "@/components/admin/action-button";
 import { Film, Tv, MessageSquare, Users, Clock } from "lucide-react";
@@ -33,8 +35,16 @@ export default async function AdminUserPage({
     isOnline = onlineAt(user.adminProfile?.lastSeenAt, user.isSuspended),
     minutes = user.adminProfile?.totalMinutes || 0;
   const acquisition = dict.acquisition;
+  const botAnalysis = evaluateAccountBotSignals(user);
+  const botVerdictText =
+    botAnalysis.verdict === "bot"
+      ? `${t.botAccount} (${botAnalysis.signals.map((s) => botSignalLabel(s, t)).join(", ")})`
+      : botAnalysis.verdict === "suspicious"
+        ? `${t.suspiciousAccount} (${botAnalysis.signals.map((s) => botSignalLabel(s, t)).join(", ")})`
+        : t.humanAccount;
   const details = [
     [t.userId, user.id],
+    [t.botStatus, botVerdictText],
     [t.email, user.email || t.notSpecified],
     [t.lastSeen, isOnline ? t.online : d(user.adminProfile?.lastSeenAt)],
     [t.duration, adminDuration(minutes, locale, t)],

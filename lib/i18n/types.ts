@@ -50,6 +50,7 @@ export interface Dictionary {
     db: string;
     unexpected: string;
     rateLimited: string;
+    botRejected: string;
     channels: {
       google: string;
       bing: string;
@@ -309,6 +310,18 @@ export interface Dictionary {
     campaigns: string;
     referrers: string;
     mediums: string;
+    botStatus: string;
+    humanAccount: string;
+    botAccount: string;
+    suspiciousAccount: string;
+    botSignalHtmlLink: string;
+    botSignalDisposableEmail: string;
+    botSignalGmailDots: string;
+    botSignalGibberishName: string;
+    botSignalNoActivity: string;
+    purgeBots: string;
+    purgeBotsHint: string;
+    purgeBotsLog: string;
   };
   calendarUi: {
     personalTitle: string;

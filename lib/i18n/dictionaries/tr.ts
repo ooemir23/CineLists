@@ -44,6 +44,8 @@ export const tr: Dictionary = {
     unexpected: "Kayıt sırasında beklenmeyen bir hata oluştu.",
     rateLimited:
       "Çok fazla kayıt denemesi yapıldı. Lütfen biraz sonra tekrar deneyin.",
+    botRejected:
+      "Kayıt güvenlik doğrulamasından geçemedi. Lütfen gerçek bir ad ve e-posta adresi girin.",
     channels: {
       google: "Google / Arama",
       bing: "Bing",
@@ -320,6 +322,19 @@ export const tr: Dictionary = {
     campaigns: "Kampanyalar (UTM)",
     referrers: "Yönlendiren siteler",
     mediums: "Kampanya türleri",
+    botStatus: "Hesap türü / Bot analizi",
+    humanAccount: "Gerçek kullanıcı",
+    botAccount: "Bot / Spam hesap",
+    suspiciousAccount: "Şüpheli (0 etkileşim)",
+    botSignalHtmlLink: "İsimde HTML etiketi veya reklam bağlantısı",
+    botSignalDisposableEmail: "Geçici / sahte e-posta servisi",
+    botSignalGmailDots: "Gmail çoklu nokta (dot-trick) bot kalıbı",
+    botSignalGibberishName: "Rastgele üretilmiş anlamsız harf dizisi",
+    botSignalNoActivity: "Hiçbir sayfa ziyareti, kurulum veya içerik etkileşimi yok",
+    purgeBots: "Bot ve hayalet hesapları temizle",
+    purgeBotsHint:
+      "Yalnızca hiçbir izleme, liste, yorum, OAuth bağlantısı veya aktif süresi olmayan bot/hayalet kayıtları kalıcı olarak silinir.",
+    purgeBotsLog: "Bot ve hayalet hesaplar temizlendi",
   },
   calendarUi: {
     personalTitle: "Kişisel yayın takvimim",

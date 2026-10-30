@@ -44,6 +44,8 @@ export const en: Dictionary = {
     db: "Registration is temporarily unavailable. Please try again.",
     unexpected: "An unexpected registration error occurred.",
     rateLimited: "Too many registration attempts. Please try again later.",
+    botRejected:
+      "Registration did not pass security verification. Please use a valid name and email address.",
     channels: {
       google: "Google / Search",
       bing: "Bing",
@@ -319,6 +321,19 @@ export const en: Dictionary = {
     campaigns: "Campaigns (UTM)",
     referrers: "Referring websites",
     mediums: "Campaign mediums",
+    botStatus: "Account type / Bot analysis",
+    humanAccount: "Verified human",
+    botAccount: "Bot / Spam account",
+    suspiciousAccount: "Suspicious (0 activity)",
+    botSignalHtmlLink: "HTML tag or spam URL in name",
+    botSignalDisposableEmail: "Disposable or temporary email provider",
+    botSignalGmailDots: "Gmail multi-dot bot pattern",
+    botSignalGibberishName: "Random gibberish consonant sequence",
+    botSignalNoActivity: "Zero page visits, onboarding, or media activity",
+    purgeBots: "Purge bot and ghost accounts",
+    purgeBotsHint:
+      "Permanently deletes only bot/ghost accounts that have zero watched titles, watchlist items, comments, OAuth links, or active minutes.",
+    purgeBotsLog: "Bot and ghost accounts purged",
   },
   calendarUi: {
     personalTitle: "My release calendar",

@@ -16,10 +16,12 @@ import {
   adminDuration,
   adminActionLabel,
   adminPathLabel,
+  botSignalLabel,
   onlineAt,
   interpolate,
   REMOVED_COMMENTS,
 } from "@/lib/admin/format";
+import { evaluateAccountBotSignals } from "@/lib/bot-protection";
 import { Panel, Bars, Empty, Pager, fieldClass } from "@/components/admin/ui";
 import { DailyChart } from "@/components/admin/daily-chart";
 import { MetricCards } from "@/components/admin/metric-cards";
@@ -355,6 +357,8 @@ async function UsersTab({ params }: { params: Params }) {
           >
             <option value="">{t.all}</option>
             <option value="active">{t.active}</option>
+            <option value="human">{t.humanAccount}</option>
+            <option value="bot">{t.botAccount}</option>
             <option value="suspended">{t.suspended}</option>
             <option value="onboarding">{t.onboarding}</option>
             <option value="admin">{t.admin}</option>
@@ -424,13 +428,21 @@ async function UsersTab({ params }: { params: Params }) {
           )}
         </div>
       )}
-      <div className="mb-4 flex flex-wrap justify-between gap-3 text-xs">
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3 text-xs">
         <Link href="/admin?tab=users" className="text-slate-400">
           {t.clearFilters}
         </Link>
-        <a href={`/api/admin/export?${exports}`} className="text-amber-300">
-          {t.export} ↓
-        </a>
+        <div className="flex flex-wrap items-center gap-3">
+          <AdminActionButton
+            action="purge-bots"
+            targetId="bot-accounts"
+            label={t.purgeBots}
+            description={t.purgeBotsHint}
+          />
+          <a href={`/api/admin/export?${exports}`} className="text-amber-300">
+            {t.export} ↓
+          </a>
+        </div>
       </div>
       <p className="mb-4 text-xs text-slate-500">{t.exportHint}</p>
       {data.users.length ? (
@@ -501,8 +513,39 @@ async function UsersTab({ params }: { params: Params }) {
                     >
                       {user.isSuspended ? t.suspended : t.active}
                     </span>
+                    {(() => {
+                      const botInfo = evaluateAccountBotSignals(user);
+                      const reasonText = botInfo.signals
+                        .map((s) => botSignalLabel(s, t))
+                        .join(" · ");
+                      if (botInfo.verdict === "bot") {
+                        return (
+                          <p
+                            className="mt-1.5 font-semibold text-rose-400"
+                            title={reasonText}
+                          >
+                            {t.botAccount}
+                          </p>
+                        );
+                      }
+                      if (botInfo.verdict === "suspicious") {
+                        return (
+                          <p
+                            className="mt-1.5 text-amber-300"
+                            title={reasonText}
+                          >
+                            {t.suspiciousAccount}
+                          </p>
+                        );
+                      }
+                      return (
+                        <p className="mt-1.5 text-emerald-400/80">
+                          {t.humanAccount}
+                        </p>
+                      );
+                    })()}
                     {!user.hasCompletedOnboarding && (
-                      <p className="mt-2 text-slate-500">{t.onboarding}</p>
+                      <p className="mt-1 text-slate-500">{t.onboarding}</p>
                     )}
                   </td>
                   <td className="px-3 py-4 text-xs">
@@ -731,6 +774,7 @@ async function Audit({ params }: { params: Params }) {
               "redact-review",
               "export-users",
               "purge-expired",
+              "purge-bots",
             ].map((a) => (
               <option key={a} value={a}>
                 {adminActionLabel(a, t)}

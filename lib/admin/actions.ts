@@ -6,6 +6,7 @@ import { REMOVED_COMMENTS } from "./format";
 import { revalidatePath } from "next/cache";
 import { getDictionary, getServerLocale } from "@/lib/i18n/server";
 import { checkRateLimit } from "@/lib/ratelimit";
+import { evaluateAccountBotSignals } from "@/lib/bot-protection";
 import { z } from "zod";
 const inputSchema = z.object({
   action: z.enum([
@@ -15,6 +16,7 @@ const inputSchema = z.object({
     "redact-comment",
     "redact-review",
     "purge-expired",
+    "purge-bots",
   ]),
   targetId: z.string().trim().min(1).max(150),
   reason: z.string().trim().min(5).max(500),
@@ -63,6 +65,55 @@ export async function performAdminAction(input: z.infer<typeof inputSchema>) {
           tx.authRateLimit.deleteMany({ where: { expires: { lt: now } } }),
         ]);
         count = sessions.count + tokens.count + limits.count;
+      } else if (action === "purge-bots") {
+        const candidates = await tx.user.findMany({
+          where: {
+            hasCompletedOnboarding: false,
+            watched: { none: {} },
+            watchedEpisodes: { none: {} },
+            toWatch: { none: {} },
+            comments: { none: {} },
+            activities: { none: {} },
+            accounts: { none: {} },
+            sentMessages: { none: {} },
+            receivedMessages: { none: {} },
+            OR: [{ adminProfile: null }, { adminProfile: { totalMinutes: 0 } }],
+          },
+          select: {
+            id: true,
+            name: true,
+            username: true,
+            email: true,
+            hasCompletedOnboarding: true,
+            accounts: { select: { provider: true } },
+            adminProfile: { select: { lastSeenAt: true, totalMinutes: true } },
+            _count: {
+              select: {
+                watched: true,
+                watchedEpisodes: true,
+                toWatch: true,
+                comments: true,
+                activities: true,
+              },
+            },
+          },
+        });
+        const botIds = candidates
+          .filter(
+            (u) =>
+              !isAdminId(u.id) &&
+              u.id !== admin.id &&
+              evaluateAccountBotSignals(u).verdict !== "human",
+          )
+          .map((u) => u.id);
+        if (botIds.length > 0) {
+          const deleted = await tx.user.deleteMany({
+            where: { id: { in: botIds } },
+          });
+          count = deleted.count;
+        } else {
+          count = 0;
+        }
       } else if (action === "redact-comment") {
         const result = await tx.comment.updateMany({
           where: { id: targetId, content: { notIn: REMOVED_COMMENTS } },

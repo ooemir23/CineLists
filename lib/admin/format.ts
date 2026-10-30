@@ -62,8 +62,22 @@ export function adminActionLabel(action: string, t: AdminText) {
         "redact-review": t.reviewLog,
         "export-users": t.exportLog,
         "purge-expired": t.purgeExpiredLog,
+        "purge-bots": t.purgeBotsLog,
       } as Record<string, string>
     )[action] || action
+  );
+}
+export function botSignalLabel(signal: string, t: AdminText) {
+  return (
+    (
+      {
+        html_link: t.botSignalHtmlLink,
+        disposable_email: t.botSignalDisposableEmail,
+        gmail_dot_trick: t.botSignalGmailDots,
+        gibberish_name: t.botSignalGibberishName,
+        no_activity: t.botSignalNoActivity,
+      } as Record<string, string>
+    )[signal] || signal
   );
 }
 export function adminPathLabel(path: string, t: AdminText) {

@@ -65,6 +65,26 @@ export function userWhere(filters: UserFilters): Prisma.UserWhereInput {
   if (filters.status === "active") parts.push({ isSuspended: false });
   if (filters.status === "onboarding")
     parts.push({ hasCompletedOnboarding: false });
+  if (filters.status === "human")
+    parts.push({
+      OR: [
+        { hasCompletedOnboarding: true },
+        { watched: { some: {} } },
+        { toWatch: { some: {} } },
+        { comments: { some: {} } },
+        { accounts: { some: {} } },
+        { adminProfile: { totalMinutes: { gt: 0 } } },
+      ],
+    });
+  if (filters.status === "bot")
+    parts.push({
+      hasCompletedOnboarding: false,
+      watched: { none: {} },
+      toWatch: { none: {} },
+      comments: { none: {} },
+      accounts: { none: {} },
+      OR: [{ adminProfile: null }, { adminProfile: { totalMinutes: 0 } }],
+    });
   if (filters.country === "ZZ")
     parts.push({
       OR: [{ adminProfile: null }, { adminProfile: { country: null } }],
@@ -477,6 +497,7 @@ export async function getAudit(filters: UserFilters) {
     "redact-review",
     "export-users",
     "purge-expired",
+    "purge-bots",
   ];
   const where: Prisma.AdminAuditLogWhereInput = {
     ...(q

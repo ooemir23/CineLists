@@ -16,6 +16,7 @@ import { withUserTransaction } from "@/lib/user-transaction";
 import { getServerCountry } from "@/lib/country";
 import { trustedClientIp } from "@/lib/auth-rate-limit";
 import { getServerLocale } from "@/lib/i18n/server";
+import { validateRegistrationBotCheck } from "@/lib/bot-protection";
 
 async function getClientIp() {
     const headersList = await headers();
@@ -61,6 +62,16 @@ export async function registerUser(formData: FormData) {
 
     if (password.length < 6 || Buffer.byteLength(password, "utf8") > 72) {
         redirect("/register?error=weak");
+    }
+
+    const botCheck = validateRegistrationBotCheck({
+        name,
+        email,
+        honeypot: formData.get("website") ? String(formData.get("website")) : null,
+        formLoadedAt: formData.get("formLoadedAt") ? String(formData.get("formLoadedAt")) : null,
+    });
+    if (!botCheck.allowed) {
+        redirect("/register?error=bot");
     }
 
     const ip = await getClientIp();
