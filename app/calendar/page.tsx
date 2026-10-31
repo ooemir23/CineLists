@@ -19,12 +19,9 @@ export default async function CalendarPage() {
   const [upcomingMoviesData, upcomingTVData, nowPlayingData, upcomingEpisodes] =
     await Promise.all([
       tmdb
-        .discover("movie", {
-          sort_by: "popularity.desc",
-          "primary_release_date.gte": todayStr,
+        .getUpcomingMovies({
           region: userCountry,
           language: tmdbLang,
-          "vote_count.gte": "5",
         })
         .catch(() => ({ results: [] })),
       tmdb
@@ -36,12 +33,9 @@ export default async function CalendarPage() {
         })
         .catch(() => ({ results: [] })),
       tmdb
-        .discover("movie", {
-          sort_by: "primary_release_date.desc",
-          "primary_release_date.lte": todayStr,
+        .getNowPlayingMovies({
           region: userCountry,
           language: tmdbLang,
-          "vote_count.gte": "20",
         })
         .catch(() => ({ results: [] })),
       session?.user?.id

@@ -179,8 +179,12 @@ export async function GET(request: NextRequest) {
       };
     };
 
+    const targetRegion =
+      country?.split(",")[0].toUpperCase() ||
+      detectUserCountry(request.headers, request.cookies);
+
     const discoverParams: Record<string, string> = {
-      watch_region: country?.split(",")[0].toUpperCase() || detectUserCountry(request.headers, request.cookies),
+      watch_region: targetRegion,
       sort_by: sortBy,
       page,
     };
@@ -221,7 +225,7 @@ export async function GET(request: NextRequest) {
 
       if (currentCategory === "now_playing") {
         return mediaType === "movie"
-          ? tmdb.getNowPlayingMovies({ page })
+          ? tmdb.getNowPlayingMovies({ page, region: targetRegion })
           : tmdb.getAiringTodayTV({ page });
       }
 

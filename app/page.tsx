@@ -241,8 +241,8 @@ export default async function Home({ searchParams }: HomeProps) {
   ] = await Promise.all([
     tmdb.getTrendingMovies().catch(() => ({ results: [] })),
     tmdb.getTrendingTV().catch(() => ({ results: [] })),
-    tmdb.getNowPlayingMovies({ region: "TR" }).catch(() => ({ results: [] })),
-    tmdb.getUpcomingMovies({ region: "TR" }).catch(() => ({ results: [] })),
+    tmdb.getNowPlayingMovies({ region: userCountry || "TR" }).catch(() => ({ results: [] })),
+    tmdb.getUpcomingMovies({ region: userCountry || "TR" }).catch(() => ({ results: [] })),
     tmdb.getTopRated("movie").catch(() => ({ results: [] })),
     tmdb.getPopular("movie").catch(() => ({ results: [] })),
     getHomeFeedActivities(session?.user?.id).catch(() => []),
@@ -483,7 +483,7 @@ export default async function Home({ searchParams }: HomeProps) {
           {/* Son Vizyondakiler / Haber Izgarası */}
           <PortalNewsGrid
             title="Vizyondakiler & Son Eklenenler"
-            viewAllHref="/?type=movie"
+            viewAllHref="/explore/movie/now_playing"
             featuredItems={featuredGridItems}
             compactItems={compactNewsItems}
           />

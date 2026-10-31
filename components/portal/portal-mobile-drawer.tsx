@@ -226,12 +226,12 @@ export function PortalMobileDrawer({
             </Link>
 
             <Link
-              href="/?type=movie"
+              href="/explore/movie/now_playing"
               onClick={onClose}
               className={cn(
                 "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-all",
-                searchParams.get("type") === "movie"
-                  ? "bg-amber-400/15 text-amber-400 font-black border border-amber-400/30"
+                pathname === "/explore/movie/now_playing"
+                  ? "bg-amber-400 text-slate-950 font-black shadow-md shadow-amber-400/20"
                   : "text-neutral-300 hover:text-white hover:bg-white/5"
               )}
             >

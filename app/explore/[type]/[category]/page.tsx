@@ -66,8 +66,8 @@ export default async function Page(props: Props) {
         if (hasFilters) initialData = await tmdb.discover(type, discoverParams).catch(() => emptyFallback);
         else if (category === "popular") initialData = await tmdb.getPopular(type, pageParams).catch(() => emptyFallback);
         else if (category === "top_rated") initialData = await tmdb.getTopRated(type, pageParams).catch(() => emptyFallback);
-        else if (category === "upcoming" && type === "movie") initialData = await tmdb.getUpcomingMovies(pageParams).catch(() => emptyFallback);
-        else if (category === "now_playing" && type === "movie") initialData = await tmdb.getNowPlayingMovies(pageParams).catch(() => emptyFallback);
+        else if (category === "upcoming" && type === "movie") initialData = await tmdb.getUpcomingMovies({ ...pageParams, region: country || "TR" }).catch(() => emptyFallback);
+        else if (category === "now_playing" && type === "movie") initialData = await tmdb.getNowPlayingMovies({ ...pageParams, region: country || "TR" }).catch(() => emptyFallback);
         else initialData = await tmdb.discover(type, discoverParams).catch(() => emptyFallback);
     } else {
         title = `${TYPE_NAMES[type]}leri Keşfet`;
