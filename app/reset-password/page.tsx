@@ -3,12 +3,19 @@ import Link from "next/link";
 import { PosterBackground } from "@/components/auth/poster-background";
 import { BrandLogo } from "@/components/layout/brand-logo";
 import { resetPassword } from "@/lib/auth-actions";
+import { auth } from "@/auth";
+import { redirect } from "next/navigation";
 
 type ResetPasswordPageProps = {
     searchParams: Promise<{ token?: string; error?: string }>;
 };
 
 export default async function ResetPasswordPage({ searchParams }: ResetPasswordPageProps) {
+    const session = await auth();
+    if (session?.user) {
+        redirect("/");
+    }
+
     const params = await searchParams;
     const token = params.token;
     const errorMessage =

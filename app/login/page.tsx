@@ -4,48 +4,65 @@ import Link from "next/link";
 import { SocialAuth } from "@/components/auth/social-auth";
 import { PosterBackground } from "@/components/auth/poster-background";
 import { BrandLogo } from "@/components/layout/brand-logo";
+import { auth } from "@/auth";
+import { redirect } from "next/navigation";
+import { safeInternalRedirect } from "@/lib/admin/policy";
+import { getDictionary, getServerLocale } from "@/lib/i18n/server";
 
 type LoginPageProps = {
     searchParams: Promise<{ error?: string; reset?: string; callbackUrl?: string }>;
 };
 
 export default async function LoginPage({ searchParams }: LoginPageProps) {
+    const session = await auth();
     const params = await searchParams;
+
+    if (session?.user) {
+        const destination = params.callbackUrl ? safeInternalRedirect(params.callbackUrl) : "/";
+        redirect(destination);
+    }
+
+    const dict = getDictionary(await getServerLocale());
+    const t = dict.auth;
+
     let errorMessage = null;
     if (params.error) {
         switch (params.error) {
             case "invalid":
-                errorMessage = "E-posta veya şifre hatalı.";
+                errorMessage = t.errorInvalid;
                 break;
             case "missing":
-                errorMessage = "E-posta ve şifre zorunludur.";
+                errorMessage = t.errorMissing;
                 break;
             case "OAuthAccountNotLinked":
-                errorMessage = "Bu e-posta adresiyle zaten bir hesap var (Şifre ile kayıt olmuş olabilirsiniz). Lütfen e-posta ve şifrenizle giriş yapın ve ardından profil ayarlarından Google hesabınızı bağlayın.";
+                errorMessage = t.errorOAuthAccountNotLinked;
                 break;
             case "OAuthNotConfigured":
-                errorMessage = "Google ile giriş bu ortamda henüz yapılandırılmamış. Lütfen e-posta ve şifrenizle giriş yapın.";
+                errorMessage = t.errorOAuthNotConfigured;
                 break;
             case "AccessDenied":
-                errorMessage = "Giriş izni reddedildi. Google hesabınızın e-postası doğrulanmamış olabilir.";
+                errorMessage = t.errorAccessDenied;
                 break;
             case "CallbackRouteError":
-                errorMessage = "Giriş işlemi sırasında sunucu hatası oluştu. Lütfen tekrar deneyin.";
+                errorMessage = t.errorCallbackRoute;
                 break;
             case "OAuthCallbackError":
             case "OAuthCallback":
-                errorMessage = "Google servisinden kullanıcı bilgileri alınırken hata oluştu.";
+                errorMessage = t.errorOAuthCallback;
                 break;
             case "ratelimit":
-                errorMessage = "Çok fazla deneme yaptınız. Lütfen birkaç dakika sonra tekrar deneyin.";
+                errorMessage = t.errorRateLimit;
+                break;
+            case "Configuration":
+                errorMessage = t.errorConfiguration;
                 break;
             default:
-                errorMessage = "Giriş yapılırken bir hata oluştu. Lütfen daha sonra tekrar deneyin.";
+                errorMessage = t.errorDefault;
         }
     }
 
     const successMessage = params.reset === "success"
-        ? "Şifreniz başarıyla güncellendi. Yeni şifrenizle giriş yapabilirsiniz."
+        ? t.resetSuccess
         : null;
 
     return (
@@ -59,8 +76,8 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
                     <div className="hidden sm:flex justify-center mb-6">
                         <BrandLogo href="/" size="lg" />
                     </div>
-                    <h1 className="text-xl sm:text-3xl font-black text-white tracking-tight uppercase mb-1">Tekrar Hoş Geldin</h1>
-                    <p className="text-neutral-400 font-medium text-xs sm:text-sm">Sinema dünyasına kaldığın yerden devam et.</p>
+                    <h1 className="text-xl sm:text-3xl font-black text-white tracking-tight uppercase mb-1">{t.welcomeBack}</h1>
+                    <p className="text-neutral-400 font-medium text-xs sm:text-sm">{t.signInToContinue}</p>
                 </div>
 
                 {/* Main Card */}
@@ -85,7 +102,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
                         )}
                         <div className="space-y-1">
                             <label htmlFor="email" className="text-[10px] font-black text-neutral-500 uppercase tracking-widest ml-3">
-                                E-posta veya Kullanıcı Adı
+                                {t.emailOrUsername}
                             </label>
                             <div className="relative group/input">
                                 <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-500 group-focus-within/input:text-amber-400 transition-colors" />
@@ -96,7 +113,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
                                     autoCapitalize="none"
                                     autoCorrect="off"
                                     spellCheck={false}
-                                    placeholder="ornek@mail.com veya kullanıcı adı"
+                                    placeholder={t.emailOrUsernamePlaceholder}
                                     required
                                     className="w-full pl-10 pr-4 py-2.5 sm:py-4 bg-white/5 border border-white/10 rounded-xl sm:rounded-2xl text-white placeholder-neutral-600 focus:outline-none focus:border-amber-400/50 focus:ring-4 focus:ring-amber-400/10 transition-all font-bold text-sm"
                                 />
@@ -106,10 +123,10 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
                         <div className="space-y-1">
                             <div className="flex items-center justify-between px-3">
                                 <label htmlFor="password" className="text-[10px] font-black text-neutral-500 uppercase tracking-widest">
-                                    Şifre
+                                    {t.password}
                                 </label>
                                 <Link href="/forgot-password" className="text-[10px] font-black text-amber-400 uppercase tracking-widest hover:underline">
-                                    Şifremi Unuttum
+                                    {t.forgotPassword}
                                 </Link>
                             </div>
                             <div className="relative group/input">
@@ -130,7 +147,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
                             type="submit"
                             className="w-full bg-amber-400 text-slate-950 font-black py-2.5 sm:py-4 rounded-xl sm:rounded-2xl hover:bg-amber-300 transition-all active:scale-[0.98] shadow-xl shadow-amber-400/20 flex items-center justify-center gap-2 uppercase tracking-widest text-xs"
                         >
-                            Giriş Yap
+                            {t.signIn}
                             <ArrowRight className="w-4 h-4" />
                         </button>
                     </form>
@@ -148,9 +165,9 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
                 </div>
 
                 <p className="mt-3 sm:mt-8 text-center text-sm font-bold text-neutral-400">
-                    Henüz bir hesabın yok mu?{" "}
+                    {t.dontHaveAccount}{" "}
                     <Link href="/register" className="text-amber-400 hover:text-amber-300 transition-colors font-black uppercase tracking-tight ml-1">
-                        Kayıt Ol
+                        {t.signUp}
                     </Link>
                 </p>
             </div>

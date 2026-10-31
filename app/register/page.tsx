@@ -7,6 +7,8 @@ import { SocialAuth } from "@/components/auth/social-auth";
 import { PosterBackground } from "@/components/auth/poster-background";
 import { BrandLogo } from "@/components/layout/brand-logo";
 import { RegisterBotFields } from "@/components/auth/register-bot-fields";
+import { auth } from "@/auth";
+import { redirect } from "next/navigation";
 
 type RegisterPageProps = {
   searchParams: Promise<{ error?: string }>;
@@ -15,6 +17,11 @@ type RegisterPageProps = {
 export default async function RegisterPage({
   searchParams,
 }: RegisterPageProps) {
+  const session = await auth();
+  if (session?.user) {
+    redirect("/");
+  }
+
   const params = await searchParams;
   const dict = getDictionary(await getServerLocale()),
     t = dict.acquisition;

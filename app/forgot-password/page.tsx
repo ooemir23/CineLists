@@ -3,12 +3,19 @@ import Link from "next/link";
 import { PosterBackground } from "@/components/auth/poster-background";
 import { requestPasswordReset } from "@/lib/auth-actions";
 import { BrandLogo } from "@/components/layout/brand-logo";
+import { auth } from "@/auth";
+import { redirect } from "next/navigation";
 
 type ForgotPasswordPageProps = {
     searchParams: Promise<{ error?: string; success?: string }>;
 };
 
 export default async function ForgotPasswordPage({ searchParams }: ForgotPasswordPageProps) {
+    const session = await auth();
+    if (session?.user) {
+        redirect("/");
+    }
+
     const params = await searchParams;
     const errorMessage =
         params.error === "missing"

@@ -666,5 +666,18 @@ export interface Dictionary {
     signUp: string;
     dontHaveAccount: string;
     alreadyHaveAccount: string;
+    errorInvalid: string;
+    errorMissing: string;
+    errorOAuthAccountNotLinked: string;
+    errorOAuthNotConfigured: string;
+    errorAccessDenied: string;
+    errorCallbackRoute: string;
+    errorOAuthCallback: string;
+    errorRateLimit: string;
+    errorConfiguration: string;
+    errorDefault: string;
+    resetSuccess: string;
+    emailOrUsername: string;
+    emailOrUsernamePlaceholder: string;
   };
 }
